@@ -1,0 +1,6 @@
+rsc.io/omap v1.2.1-0.20240709133045-40dad5c0c0fb h1:+2CTPs/tT0t54s9f3vxDUzss6XUKC6C+Z6cDCfV5V38=
+rsc.io/omap v1.2.1-0.20240709133045-40dad5c0c0fb/go.mod h1:V4A0Qx0A9nvl4IPmfBYIKdaH019Oq3Ygnb7fA92uN1U=
+rsc.io/ordered v1.1.0 h1:9U9go719kAa92IjYlnBFNjg2HKuVBflx8Y6gkv8kcvw=
+rsc.io/ordered v1.1.0/go.mod h1:evAi8739bWVBRG9aaufsjVc202+6okf8u2QeVL84BCM=
+rsc.io/top v1.0.2 h1:UEfowYYaJj6zF6Qv7CKOnsUCyxhSopoR1Uoi/HwfLn4=
+rsc.io/top v1.0.2/go.mod h1:/eug4tP/rUnl5Dox3aSZgdLKwMPAtWhJGE/eFY/2fNc=
