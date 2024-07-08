@@ -1,3 +1,3 @@
 module golang.org/x/oscar
 
-go 1.23rc1
+go 1.23
