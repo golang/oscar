@@ -6,6 +6,7 @@
 package llm
 
 import (
+	"context"
 	"encoding/binary"
 	"math"
 )
@@ -23,7 +24,7 @@ import (
 // can nonetheless be helpful when writing tests,
 // and see [golang.org/x/oscar/internal/gemini] for a real implementation.
 type Embedder interface {
-	EmbedDocs(docs []EmbedDoc) ([]Vector, error)
+	EmbedDocs(ctx context.Context, docs []EmbedDoc) ([]Vector, error)
 }
 
 // An EmbedDoc is a single document to be embedded.

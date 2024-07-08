@@ -5,14 +5,16 @@
 package llm
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
 )
 
 func TestQuote(t *testing.T) {
+	ctx := context.Background()
 	docs := []EmbedDoc{{Text: "abc"}, {Text: "alphabetical order"}}
-	vecs, err := QuoteEmbedder().EmbedDocs(docs)
+	vecs, err := QuoteEmbedder().EmbedDocs(ctx, docs)
 	if err != nil {
 		t.Fatal(err)
 	}

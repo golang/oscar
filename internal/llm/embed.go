@@ -4,7 +4,10 @@
 
 package llm
 
-import "math"
+import (
+	"context"
+	"math"
+)
 
 const quoteLen = 123
 
@@ -51,7 +54,7 @@ func quote(text string) Vector {
 type quoter struct{}
 
 // EmbedDocs implements Embedder by quoting.
-func (quoter) EmbedDocs(docs []EmbedDoc) ([]Vector, error) {
+func (quoter) EmbedDocs(ctx context.Context, docs []EmbedDoc) ([]Vector, error) {
 	var vecs []Vector
 	for _, d := range docs {
 		vecs = append(vecs, quote(d.Text))
