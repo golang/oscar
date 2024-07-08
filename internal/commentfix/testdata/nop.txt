@@ -1,0 +1,12 @@
+{{/*
+  make sure this does not loop;
+  it claims to have edited (and did edit) the text,
+  so the result is non-empty,
+  but no actual change is made.
+*/}}
+{{.ReplaceText `cancelled` "canceled"}}
+{{.ReplaceText `canceled` "cancelled"}}
+-- 1.in --
+The context is cancelled.
+-- 1.out --
+The context is cancelled.

@@ -1,0 +1,12 @@
+{{.AutoLink `\bCL (\d+)\b` "https://go.dev/cl/$1"}}
+-- 1.in --
+This is in CL 12345.
+-- 1.out --
+This is in [CL 12345](https://go.dev/cl/12345).
+-- 2.in --
+This is in **CL 12345**.
+-- 2.out --
+This is in **[CL 12345](https://go.dev/cl/12345)**.
+-- 3.in --
+This is in [the CL 12345 page](https://go.dev/cl/12345).
+-- 3.out --

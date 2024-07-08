@@ -1,0 +1,25 @@
+{{.ReplaceURL `https://golang.org/(.*)` "https://go.dev/$1#"}}
+{{.ReplaceURL `(?i)https://lowercase.com/(.*)` "https://lowercase.com/$1"}}
+-- 1.in --
+Visit https://golang.org/doc for more docs.
+-- 1.out --
+Visit [https://go.dev/doc#](https://go.dev/doc#) for more docs.
+-- 2.in --
+Visit <https://golang.org/doc> for more docs.
+-- 2.out --
+Visit <https://go.dev/doc#> for more docs.
+-- 3.in --
+Visit [this page](https://golang.org/doc) for more docs.
+-- 3.out --
+Visit [this page](https://go.dev/doc#) for more docs.
+-- 4.in --
+Visit [https://golang.org/doc](https://golang.org/doc) for more docs.
+-- 4.out --
+Visit [https://go.dev/doc#](https://go.dev/doc#) for more docs.
+-- 5.in --
+Visit <https://LOWERcaSE.cOM/doc> for more docs.
+-- 5.out --
+Visit <https://lowercase.com/doc> for more docs.
+-- 6.in --
+Visit <https://lowercase.com/doc> for more docs.
+-- 6.out --

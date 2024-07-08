@@ -1,0 +1,35 @@
+{{.ReplaceText `cancelled` "canceled"}}
+-- 1.in --
+The context is cancelled.
+-- 1.out --
+The context is canceled.
+-- 2.in --
+	fmt.Printf("cancelled\n")
+-- 2.out --
+-- 3.in --
+The context **is cancelled.**
+-- 3.out --
+The context **is canceled.**
+-- 4.in --
+The context *is cancelled.*
+-- 4.out --
+The context *is canceled.*
+-- 4.in --
+The context ~~is cancelled.~~
+-- 4.out --
+The context ~~is canceled.~~
+-- 5.in --
+# Contexts that are cancelled
+-- 5.out --
+# Contexts that are canceled
+-- 6.in --
+Here is a list of misspelled words:
+ - cancelled
+-- 6.out --
+Here is a list of misspelled words:
+
+  - canceled
+-- 7.in --
+> The context is cancelled.
+-- 7.out --
+> The context is canceled.
