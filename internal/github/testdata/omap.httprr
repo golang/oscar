@@ -1,0 +1,95 @@
+httprr trace v1
+172 1240
+GET https://api.github.com/repos/rsc/omap/issues?direction=asc&page=1&per_page=100&sort=updated&state=all HTTP/1.1
+Host: api.github.com
+User-Agent: Go-http-client/1.1
+
+HTTP/2.0 200 OK
+Content-Length: 2
+Accept-Ranges: bytes
+Access-Control-Allow-Origin: *
+Access-Control-Expose-Headers: ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset
+Cache-Control: public, max-age=60, s-maxage=60
+Content-Security-Policy: default-src 'none'
+Content-Type: application/json; charset=utf-8
+Date: Tue, 04 Jun 2024 16:16:40 GMT
+Etag: "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+Referrer-Policy: origin-when-cross-origin, strict-origin-when-cross-origin
+Server: GitHub.com
+Strict-Transport-Security: max-age=31536000; includeSubdomains; preload
+Vary: Accept, Accept-Encoding, Accept, X-Requested-With
+X-Content-Type-Options: nosniff
+X-Frame-Options: deny
+X-Github-Api-Version-Selected: 2022-11-28
+X-Github-Media-Type: github.v3; format=json
+X-Github-Request-Id: F9AB:A58D8:48273A5:7F79B5E:665F3DE8
+X-Ratelimit-Limit: 60
+X-Ratelimit-Remaining: 59
+X-Ratelimit-Reset: 1717521400
+X-Ratelimit-Resource: core
+X-Ratelimit-Used: 1
+X-Xss-Protection: 0
+
+[]158 1240
+GET https://api.github.com/repos/rsc/omap/issues/comments?direction=asc&page=1&sort=updated HTTP/1.1
+Host: api.github.com
+User-Agent: Go-http-client/1.1
+
+HTTP/2.0 200 OK
+Content-Length: 2
+Accept-Ranges: bytes
+Access-Control-Allow-Origin: *
+Access-Control-Expose-Headers: ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset
+Cache-Control: public, max-age=60, s-maxage=60
+Content-Security-Policy: default-src 'none'
+Content-Type: application/json; charset=utf-8
+Date: Tue, 04 Jun 2024 16:16:40 GMT
+Etag: "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+Referrer-Policy: origin-when-cross-origin, strict-origin-when-cross-origin
+Server: GitHub.com
+Strict-Transport-Security: max-age=31536000; includeSubdomains; preload
+Vary: Accept, Accept-Encoding, Accept, X-Requested-With
+X-Content-Type-Options: nosniff
+X-Frame-Options: deny
+X-Github-Api-Version-Selected: 2022-11-28
+X-Github-Media-Type: github.v3; format=json
+X-Github-Request-Id: F9AB:A58D8:48273F3:7F79BDD:665F3DE8
+X-Ratelimit-Limit: 60
+X-Ratelimit-Remaining: 58
+X-Ratelimit-Reset: 1717521400
+X-Ratelimit-Resource: core
+X-Ratelimit-Used: 2
+X-Xss-Protection: 0
+
+[]142 1240
+GET https://api.github.com/repos/rsc/omap/issues/events?page=1&per_page=100 HTTP/1.1
+Host: api.github.com
+User-Agent: Go-http-client/1.1
+
+HTTP/2.0 200 OK
+Content-Length: 2
+Accept-Ranges: bytes
+Access-Control-Allow-Origin: *
+Access-Control-Expose-Headers: ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset
+Cache-Control: public, max-age=60, s-maxage=60
+Content-Security-Policy: default-src 'none'
+Content-Type: application/json; charset=utf-8
+Date: Tue, 04 Jun 2024 16:16:40 GMT
+Etag: "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+Referrer-Policy: origin-when-cross-origin, strict-origin-when-cross-origin
+Server: GitHub.com
+Strict-Transport-Security: max-age=31536000; includeSubdomains; preload
+Vary: Accept, Accept-Encoding, Accept, X-Requested-With
+X-Content-Type-Options: nosniff
+X-Frame-Options: deny
+X-Github-Api-Version-Selected: 2022-11-28
+X-Github-Media-Type: github.v3; format=json
+X-Github-Request-Id: F9AB:A58D8:482744D:7F79C70:665F3DE8
+X-Ratelimit-Limit: 60
+X-Ratelimit-Remaining: 57
+X-Ratelimit-Reset: 1717521400
+X-Ratelimit-Resource: core
+X-Ratelimit-Used: 3
+X-Xss-Protection: 0
+
+[]

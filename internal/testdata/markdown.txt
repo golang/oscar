@@ -1,0 +1,890 @@
+-- rsc/markdown#1 --
+Title: Support Github Emojis
+State: closed
+Assignee: 
+Closed: 2023-12-12 22:02:32
+Labels: 
+Milestone: 
+URL: https://github.com/rsc/markdown/issues/1
+
+Reported by matloob (2023-12-12 13:57:39)
+
+	This is an issue for supporting github emojis, such as `:smile:` for 
+	😄 . There's a github page that gives a mapping of emojis to image 
+	file names that we can parse the hex representation out of here: 
+	https://api.github.com/emojis.
+
+* rsc closed in commit 0ed0e2d (2023-12-12 22:02:32)
+
+	Author: Russ Cox <rsc@golang.org> 2023-12-12 22:01:10
+	Committer: Russ Cox <rsc@golang.org> 2023-12-12 22:02:18
+
+	markdown: add emoji support
+	
+	It is unclear what the canonical emoji should be.
+	For now we use a list from GitHub.
+	
+	Fixes #1.
+-- rsc/markdown#2 --
+Title: allow capital X in task list items
+State: closed
+Assignee: 
+Closed: 2023-12-12 22:02:30
+Labels: 
+Milestone: 
+URL: https://github.com/rsc/markdown/issues/2
+
+Reported by matloob (2023-12-12 15:28:39)
+
+	Here's a go program running goldmark and markdown on the following 
+	input: https://go.dev/play/p/fZRthH1dl4B
+	```
+	- [X] task list item
+	```
+	Which is rendered on github as:
+	
+	- [X] task list item
+	
+	Its output is:
+	```
+	markdown:
+	<ul>
+	<li>[X] task list item</li>
+	</ul>
+	
+	
+	goldmark:
+	<ul>
+	<li><input checked="" disabled="" type="checkbox" /> task list 
+	item</li>
+	</ul>
+	
+	```
+
+* rsc closed in commit 58f2e15 (2023-12-12 22:02:31)
+
+	Author: Russ Cox <rsc@golang.org> 2023-12-12 17:03:54
+	Committer: Russ Cox <rsc@golang.org> 2023-12-12 17:03:54
+
+	markdown: accept [X] in task list
+	
+	Fixes #2.
+
+Comment by rsc (2024-06-12 17:59:06)
+
+	Test comment; ignore.
+-- rsc/markdown#3 --
+Title: support : in autolinks
+State: closed
+Assignee: 
+Closed: 2023-12-12 16:04:04
+Labels: 
+Milestone: 
+URL: https://github.com/rsc/markdown/issues/3
+
+Reported by matloob (2023-12-12 15:34:03)
+
+	Edit: it looks like github does treat https://localhost as an 
+	autolink even though the GFM spec says a valid domain must have at 
+	least one dot. We should support https://localhost:8080
+	
+	Program running goldmark and markdown on input: 
+	https://go.dev/play/p/FCJ0gp84YZQ
+	
+	```
+	https://localhost:8080
+	```
+	
+	output is ```
+	markdown:
+	<p><a href="https://localhost">https://localhost</a>:8080</p>
+	
+	
+	goldmark:
+	<p>https://localhost:8080</p>
+	```
+	
+	It looks like goldmark is doing the wrong thing here but we should 
+	handle the :8080
+
+* matloob changed title (2023-12-12 16:02:28)
+  - require at least one dot in autolink url domains
+  + support : in autolinks
+
+* matloob closed (2023-12-12 16:04:04)
+
+Comment by matloob (2023-12-12 16:04:04)
+
+	This is a duplicate of #5
+
+* rsc referenced in commit 4b85f2b (2023-12-12 22:02:31)
+
+	Author: Russ Cox <rsc@golang.org> 2023-12-12 17:32:23
+	Committer: Russ Cox <rsc@golang.org> 2023-12-12 22:02:18
+
+	markdown: accept :port in http and https URLs
+	
+	We still do not accept :port in www. URLs.
+	Let's see if it matters.
+	
+	Fixes #3.
+	Fixes #5.
+-- rsc/markdown#4 --
+Title: Replace newlines with spaces in alt text
+State: closed
+Assignee: 
+Closed: 2023-12-12 22:02:31
+Labels: 
+Milestone: 
+URL: https://github.com/rsc/markdown/issues/4
+
+Reported by matloob (2023-12-12 15:43:15)
+
+	Here's a go program that runs markdown and goldmark on the following 
+	input: https://go.dev/play/p/zZ0vWAgKB0c:
+	
+	```
+	[![Line
+	Break](https://line.break/image)](https://line.break)
+	```
+	
+	Which is rendered on github with a space instead of the newline in 
+	the alt text:
+	
+	```
+	<p dir="auto"><a href="https://line.break" rel="nofollow"><img 
+	src="https://camo.githubusercontent.com/743b6218bc25f78b5f7f654f1ce773
+	766351a2e3605cf8b47c60659055c218ac/68747470733a2f2f6c696e652e627265616
+	b2f696d616765" alt="Line Break" 
+	data-canonical-src="https://line.break/image" style="max-width: 
+	100%;"></a></p>
+	```
+	
+	The output is 
+	```
+	markdown:
+	<p><a href="https://line.break"><img src="https://line.break/image" 
+	alt="LineBreak" /></a></p>
+	
+	
+	goldmark:
+	<p><a href="https://line.break"><img src="https://line.break/image" 
+	alt="Line
+	Break" /></a></p>
+	```
+	
+	It seems like goldmark's behavior is also different from github's as 
+	goldmark preserves the line break.
+
+* rsc closed in commit 4468a1e (2023-12-12 22:02:31)
+
+	Author: Russ Cox <rsc@golang.org> 2023-12-12 17:27:18
+	Committer: Russ Cox <rsc@golang.org> 2023-12-12 17:28:50
+
+	markdown: convert \n to space in image titles
+	
+	The Dingus doesn't do it, but GitHub and Goldmark do.
+	
+	Fixes #4.
+-- rsc/markdown#5 --
+Title: Allow `?`, `!`, `.`, `,`, `:,` `*`, `_`, and `~` on the interior of a link
+State: closed
+Assignee: 
+Closed: 2023-12-12 22:02:31
+Labels: 
+Milestone: 
+URL: https://github.com/rsc/markdown/issues/5
+
+Reported by matloob (2023-12-12 15:50:38)
+
+	GFM allows `?`, `!`, `.`, `,`, `:,` `*`, `_`, and `~` on the interior 
+	of a link: 
+	https://github.github.com/gfm/#extended-autolink-path-validation
+	
+	Here's a program that compares markdown and goldmark on the following 
+	input: https://go.dev/play/p/uLHnavChGYX
+	
+	```https://web.site:8080/~matloob```
+	
+	Which is rendered on github as 
+	https://web.site:8080/~matloob
+	
+	The output of the program is 
+	```
+	markdown:
+	<p><a href="https://web.site">https://web.site</a>:8080/~matloob</p>
+	
+	
+	goldmark:
+	<p><a 
+	href="https://web.site:8080/~matloob">https://web.site:8080/~matloob</
+	a></p>
+	```
+
+Comment by rsc (2023-12-12 17:33:06)
+
+	I think this bug was specifically only colon. If you find others let 
+	me know.
+
+* rsc closed in commit 4b85f2b (2023-12-12 22:02:31)
+
+	Author: Russ Cox <rsc@golang.org> 2023-12-12 17:32:23
+	Committer: Russ Cox <rsc@golang.org> 2023-12-12 22:02:18
+
+	markdown: accept :port in http and https URLs
+	
+	We still do not accept :port in www. URLs.
+	Let's see if it matters.
+	
+	Fixes #3.
+	Fixes #5.
+
+Comment by matloob (2023-12-13 12:24:40)
+
+	It's also showing up with ~. Running the program again, I get
+	
+	```
+	markdown:
+	<p><a 
+	href="https://web.site:8080/">https://web.site:8080/</a>~matloob</p>
+	
+	
+	goldmark:
+	<p><a 
+	href="https://web.site:8080/~matloob">https://web.site:8080/~matloob</
+	a></p>
+	
+	```
+
+* rsc referenced in commit 8527271 (2023-12-13 12:44:28)
+
+	Author: Russ Cox <rsc@golang.org> 2023-12-13 12:43:28
+	Committer: Russ Cox <rsc@golang.org> 2023-12-13 12:44:05
+
+	markdown: fix autolink of ~ when strikethrough is enabled
+	
+	Fixes #5.
+-- rsc/markdown#6 --
+Title: goldmark and markdown diff with h1 inside p
+State: closed
+Assignee: 
+Closed: 2023-12-12 22:02:32
+Labels: 
+Milestone: 
+URL: https://github.com/rsc/markdown/issues/6
+
+Reported by matloob (2023-12-12 16:26:15)
+
+	Here's a program that runs goldmark and markdown on the following 
+	input: https://go.dev/play/p/rTnPTxps_zw
+	
+	```
+	<p align="center">
+	
+	<h1>Text</h1>
+	body
+	</p>
+	```
+	
+	It's hard for me to tell exactly what github is doing with this 
+	input, but it doesn't seem like it's putting the h1 into a p:
+	
+	<p align="center">
+	
+	<h1>Text</h1>
+	body
+	</p>
+	
+	Here's the output of the program:
+	```
+	markdown:
+	<p align="center">
+	<p><h1>Text</h1>
+	body</p>
+	</p>
+	
+	
+	goldmark:
+	<p align="center">
+	<h1>Text</h1>
+	body
+	</p>
+	```
+
+* rsc closed in commit 51d9ee0 (2023-12-12 22:02:32)
+
+	Author: Russ Cox <rsc@golang.org> 2023-12-12 17:41:11
+	Committer: Russ Cox <rsc@golang.org> 2023-12-12 22:02:18
+
+	markdown: allow <h1> to start HTMLBlock
+	
+	Forgot to allow digits in the tag name.
+	
+	Fixes #6.
+-- rsc/markdown#7 --
+Title: Empty column heading not recognized in table
+State: closed
+Assignee: 
+Closed: 2023-12-13 18:11:57
+Labels: 
+Milestone: 
+URL: https://github.com/rsc/markdown/issues/7
+
+Reported by matloob (2023-12-13 12:45:33)
+
+	Here's a program that compares markdown and goldmark on the following 
+	input https://go.dev/play/p/kEslff4EyTa
+	
+	```
+	|          | Foo      | Bar      |
+	| -------- | -------- | -------- |
+	| a        | value1   | value2   |
+	| b        | value3   | value4   |
+	```
+	
+	Rendered in github as 
+	|          | Foo      | Bar      |
+	| -------- | -------- | -------- |
+	| a        | value1   | value2   |
+	| b        | value3   | value4   |
+	
+	The output is
+	```
+	markdown:
+	<table>
+	<thead>
+	<tr>
+	<th></th>
+	<th>Foo</th>
+	</tr>
+	</thead>
+	<tbody>
+	<tr>
+	<td>a</td>
+	<td>value1</td>
+	</tr>
+	<tr>
+	<td>b</td>
+	<td>value3</td>
+	</tr>
+	</tbody>
+	</table>
+	
+	
+	goldmark:
+	<table>
+	<thead>
+	<tr>
+	<th></th>
+	<th>Foo</th>
+	<th>Bar</th>
+	</tr>
+	</thead>
+	<tbody>
+	<tr>
+	<td>a</td>
+	<td>value1</td>
+	<td>value2</td>
+	</tr>
+	<tr>
+	<td>b</td>
+	<td>value3</td>
+	<td>value4</td>
+	</tr>
+	</tbody>
+	</table>
+	```
+
+* rsc closed in commit 8c47459 (2023-12-13 18:11:57)
+
+	Author: Russ Cox <rsc@golang.org> 2023-12-13 18:06:26
+	Committer: Russ Cox <rsc@golang.org> 2023-12-13 18:06:26
+
+	markdown: fix empty table cells
+	
+	Cannot trim the outer | | more than once.
+	
+	Fixes #7.
+-- rsc/markdown#8 --
+Title: Autolink can't start immediately after `[`
+State: closed
+Assignee: 
+Closed: 2023-12-14 11:21:54
+Labels: 
+Milestone: 
+URL: https://github.com/rsc/markdown/issues/8
+
+Reported by matloob (2023-12-13 13:44:32)
+
+	From the [gfm 
+	spec](https://github.github.com/gfm/#autolinks-extension): 
+	
+	> All such recognized autolinks can only come at the beginning of a 
+	line, after whitespace, or any of the delimiting characters *, _, ~, 
+	and (.
+	
+	Here's a go program that runs markdown and goldmark on the following 
+	input: https://go.dev/play/p/kTjBshQ82iQ
+	
+	```
+	[https://golang.org]
+	```
+	Rendered in github as 
+	
+	[https://golang.org]
+	
+	The output of the program is 
+	
+	```
+	markdown:
+	<p>[<a href="https://golang.org%5D">https://golang.org]</a></p>
+	
+	
+	goldmark:
+	<p>[https://golang.org]</p>
+	```
+
+Comment by rsc (2023-12-13 18:09:07)
+
+	The spec is full of lies:
+	
+	| input | GitHub |
+	| - | - |
+	`xhttps://go.dev` | xhttps://go.dev
+	`0https://go.dev` | 0https://go.dev
+	`%https://go.dev` | %https://go.dev
+	`αhttps://go.dev` | αhttps://go.dev
+	`[https://go.dev` | [https://go.dev
+	`\[https://go.dev` | \[https://go.dev
+	
+	It is pretty funny that you can have an autolink after a 0 or α or % 
+	but not [.
+
+Comment by rsc (2023-12-13 18:11:43)
+
+	How many of these did you find? I am inclined to leave 
+	[https://go.dev] auto-linking, unless people have adopted an idiom of 
+	writing [url] to mean "do not link".
+
+Comment by matloob (2023-12-14 11:11:41)
+
+	I think I saw just one or two on the sample I looked at. I'm okay 
+	with leaving this as is
+
+* rsc closed (2023-12-14 11:21:54)
+
+Comment by rsc (2023-12-14 11:21:54)
+
+	Please reopen if anything changes.
+-- rsc/markdown#9 --
+Title: Support escaped `|` in table cells
+State: closed
+Assignee: 
+Closed: 2023-12-13 18:11:57
+Labels: 
+Milestone: 
+URL: https://github.com/rsc/markdown/issues/9
+
+Reported by matloob (2023-12-13 14:03:40)
+
+	Here's a program that runs goldmark and markdown on the following 
+	input https://go.dev/play/p/YgApD-obwxL
+	
+	```
+	Foo | Bar
+	--- | ---
+	A   | a\\|b\\|c
+	```
+	
+	rendered in github as 
+	
+	Foo | Bar
+	--- | ---
+	A   | a\\|b\\|c
+	
+	The output of the program is 
+	```
+	markdown:
+	<table>
+	<thead>
+	<tr>
+	<th>Foo</th>
+	<th>Bar</th>
+	</tr>
+	</thead>
+	<tbody>
+	<tr>
+	<td>A</td>
+	<td>a\</td>
+	</tr>
+	</tbody>
+	</table>
+	
+	
+	goldmark:
+	<table>
+	<thead>
+	<tr>
+	<th>Foo</th>
+	<th>Bar</th>
+	</tr>
+	</thead>
+	<tbody>
+	<tr>
+	<td>A</td>
+	<td>a\|b\|c</td>
+	</tr>
+	</tbody>
+	</table>
+	
+	```
+
+* rsc closed in commit dfcbaf6 (2023-12-13 18:11:57)
+
+	Author: Russ Cox <rsc@golang.org> 2023-12-13 17:44:56
+	Committer: Russ Cox <rsc@golang.org> 2023-12-13 17:53:14
+
+	markdown: fix/break table escaping
+	
+	In any sane language, if \\ means \ and | means |
+	and \\ | means \ |, then \\| (without the space) would mean \|.
+	But this is not a sane language.
+	This is GitHub Flavored Markdown, and since it is Markdown,
+	that means any time there is a chance to make a mistake and
+	do something unprincipled, you do it.
+	
+	In this case, \| and \\| both mean |, \\\| and \\\\| both mean \|, 
+	and so on.
+	
+	Fixes #9.
+-- rsc/markdown#10 --
+Title: fix markdown rendering of headings with IDs
+State: closed
+Assignee: 
+Closed: 2024-01-16 23:39:59
+Labels: 
+Milestone: 
+URL: https://github.com/rsc/markdown/pull/10
+
+Reported by jba (2024-01-11 08:15:34)
+
+	Move the newline after the heading text to after the ID.
+
+* jba review_requested (2024-01-11 08:15:34)
+
+* rsc closed (2024-01-16 23:39:59)
+
+Comment by rsc (2024-01-16 23:39:59)
+
+	Cleaned up (gofmt'ed) and pushed.
+-- rsc/markdown#11 --
+Title: render markdown for document link references
+State: closed
+Assignee: 
+Closed: 2024-01-16 23:41:48
+Labels: 
+Milestone: 
+URL: https://github.com/rsc/markdown/pull/11
+
+Reported by jba (2024-01-11 09:20:56)
+
+* rsc closed (2024-01-16 23:41:48)
+
+Comment by rsc (2024-01-16 23:41:48)
+
+	Reworded commit and pushed.
+-- rsc/markdown#12 --
+Title: markdown: fix markdown printing for inline code
+State: closed
+Assignee: 
+Closed: 2024-03-06 09:43:22
+Labels: 
+Milestone: 
+URL: https://github.com/rsc/markdown/pull/12
+
+Reported by jba (2024-02-15 18:18:12)
+
+	Code.printMarkdown outputs the minimum number of backticks that 
+	reproduces the content, and adds spaces on either side if necessary.
+	
+	Removed the unused numTicks field.
+
+* jba review_requested (2024-02-15 18:18:12)
+
+* jba head_ref_force_pushed (2024-02-27 15:29:08)
+
+* jba changed title (2024-02-27 15:29:37)
+  - markdown: export Code.NumTicks
+  + markdown: fix markdown printing for inline code
+
+* rsc closed (2024-03-06 09:43:22)
+
+* rsc merged in commit 0bf8f97 (2024-03-06 09:43:22)
+
+	Author: Jonathan Amsterdam <jba@users.noreply.github.com> 2024-03-06 09:43:22
+	Committer: GitHub <noreply@github.com> 2024-03-06 09:43:22
+
+	markdown: fix markdown printing for inline code (#12)
+	
+	Code.printMarkdown outputs the minimum number of backticks that
+	reproduces the content, and adds spaces on either side if necessary.
+	
+	Removed the unused numTicks field.
+
+* rsc referenced in commit 0bf8f97 (2024-03-06 09:43:24)
+
+	Author: Jonathan Amsterdam <jba@users.noreply.github.com> 2024-03-06 09:43:22
+	Committer: GitHub <noreply@github.com> 2024-03-06 09:43:22
+
+	markdown: fix markdown printing for inline code (#12)
+	
+	Code.printMarkdown outputs the minimum number of backticks that
+	reproduces the content, and adds spaces on either side if necessary.
+	
+	Removed the unused numTicks field.
+-- rsc/markdown#13 --
+Title: Correctly render reference links in Markdown
+State: open
+Assignee: 
+Labels: 
+Milestone: 
+URL: https://github.com/rsc/markdown/issues/13
+
+Reported by zacharysyoung (2024-03-12 15:34:33)
+
+	Putting the following [reference links] through mdfmt, the output 
+	should equal the input:
+	
+	```none
+	[full][full]
+	[collapsed][]
+	[shortcut]
+	
+	[collapsed]: u2
+	[full]: u1
+	[shortcut]: u3
+	```
+	
+	Currently, mdfmt renders all three link styles inline... while 
+	keeping the original link reference definitions:
+	
+	```none
+	[full](u1)
+	[collapsed](u2)
+	[shortcut](u3)
+	
+	[collapsed]: u2
+	[full]: u1
+	[shortcut]: u3
+	```
+	
+	[reference links]: https://spec.commonmark.org/0.31.2/#reference-link
+
+* zacharysyoung changed title (2024-03-14 14:29:53)
+  - Links w/labels should render to MD as such
+  + Correctly render reference links in Markdown
+-- rsc/markdown#14 --
+Title: Render reference links in Markdown
+State: closed
+Assignee: 
+Closed: 2024-03-14 14:41:54
+Labels: 
+Milestone: 
+URL: https://github.com/rsc/markdown/pull/14
+
+Reported by zacharysyoung (2024-03-12 15:38:02)
+
+	Attempting to address #13: correctly render reference links ([full], 
+	[collapsed], [shortcut]) in Markdown.
+	
+	[full]: https://spec.commonmark.org/0.31.2/#full-reference-link
+	[collapsed]: 
+	https://spec.commonmark.org/0.31.2/#collapsed-reference-link
+	[shortcut]: 
+	https://spec.commonmark.org/0.31.2/#shortcut-reference-link
+
+* zacharysyoung changed title (2024-03-14 14:26:19)
+  - Render full reference links in Markdown
+  + Render reference links in Markdown
+
+* zacharysyoung closed (2024-03-14 14:41:55)
+
+* zacharysyoung head_ref_deleted (2024-03-14 14:41:55)
+
+* zacharysyoung head_ref_restored (2024-03-14 14:42:29)
+
+* zacharysyoung head_ref_deleted (2024-03-14 14:43:15)
+-- rsc/markdown#15 --
+Title: Render reference links in Markdown
+State: closed
+Assignee: 
+Closed: 2024-06-17 16:45:27
+Labels: 
+Milestone: 
+URL: https://github.com/rsc/markdown/pull/15
+
+Reported by zacharysyoung (2024-03-14 14:45:13)
+
+	Attempting to address #13: correctly render reference links ([full], 
+	[collapsed], [shortcut]) in Markdown.
+	
+	Sorry for the churn (renaming) with #14.
+	
+	[full]: https://spec.commonmark.org/0.31.2/#full-reference-link
+	[collapsed]: 
+	https://spec.commonmark.org/0.31.2/#collapsed-reference-link
+	[shortcut]: 
+	https://spec.commonmark.org/0.31.2/#shortcut-reference-link
+
+* zacharysyoung closed (2024-06-17 16:45:27)
+
+* zacharysyoung head_ref_deleted (2024-06-17 17:06:09)
+-- rsc/markdown#16 --
+Title: I'd like to get pretty-printed tables
+State: closed
+Assignee: 
+Closed: 2024-06-03 17:56:43
+Labels: 
+Milestone: 
+URL: https://github.com/rsc/markdown/issues/16
+
+Reported by zacharysyoung (2024-03-15 19:24:56)
+
+	I like my tables to look something like:
+	
+	```none
+	| foo col | bar col | baz col |
+	| :------ | :-----: | ------: |
+	| 1       |    2    |       3 |
+	| a       |    b    |       c |
+	```
+	
+	with each column's cells padded to fit the max width of that column 
+	and match the column's alignment.
+	
+	I'll be doing a PR for this. Can mdfmt turn on the Table option in 
+	the parser by default, or with a flag?
+
+* rsc closed (2024-06-03 17:56:43)
+
+Comment by rsc (2024-06-03 17:56:43)
+
+	Merged #17.
+-- rsc/markdown#17 --
+Title: Pretty-print tables in Markdown
+State: closed
+Assignee: 
+Closed: 2024-06-03 17:56:31
+Labels: 
+Milestone: 
+URL: https://github.com/rsc/markdown/pull/17
+
+Reported by zacharysyoung (2024-03-15 19:25:47)
+
+	Addressing #16.
+
+* zacharysyoung changed title (2024-03-15 19:43:26)
+  - Tables are pretty printing
+  + Pretty-print tables
+
+* zacharysyoung changed title (2024-03-15 19:43:50)
+  - Pretty-print tables
+  + Pretty-print tables in Markdown
+
+* rsc closed (2024-06-03 17:56:31)
+
+Comment by rsc (2024-06-03 17:56:31)
+
+	Thanks, I tweaked the code a bit to avoid some temporary strings and 
+	to support Unicode better and merged it.
+
+Comment by zacharysyoung (2024-06-03 21:56:30)
+
+	@rsc, thank you for the comment and the changes. I've fixed the 
+	Unicode-vs-string error in other code bases, can't believe I missed 
+	that :) I also see what you did to obviate the temp strings. Thanks!
+
+* zacharysyoung head_ref_deleted (2024-06-17 17:05:58)
+-- rsc/markdown#18 --
+Title: markdown: emit Info in CodeBlock markdown
+State: closed
+Assignee: 
+Closed: 2024-06-03 17:40:04
+Labels: 
+Milestone: 
+URL: https://github.com/rsc/markdown/pull/18
+
+Reported by juliaogris (2024-05-02 23:59:00)
+
+	Emit the Info field of CodeBlock in the CodeBlock.printMardown 
+	function so 
+	that a round trip from markdown to markdown will preserve the 
+	language Info.
+
+* jba review_requested (2024-05-06 18:16:49)
+
+Comment by jba (2024-05-06 18:16:58)
+
+	LGTM, will let Russ approve.
+
+* rsc closed (2024-06-03 17:40:04)
+
+* rsc merged in commit 6c64a5e (2024-06-03 17:40:04)
+
+	Author: Julia Ogris <julia.ogris@gmail.com> 2024-06-03 17:40:04
+	Committer: GitHub <noreply@github.com> 2024-06-03 17:40:04
+
+	markdown: emit Info in CodeBlock markdown (#18)
+	
+	Emit the Info field of CodeBlock in the CodeBlock.printMardown 
+	function so
+	that a round trip from markdown to markdown will preserve the 
+	language Info.
+
+* rsc referenced in commit 6c64a5e (2024-06-03 17:40:05)
+
+	Author: Julia Ogris <julia.ogris@gmail.com> 2024-06-03 17:40:04
+	Committer: GitHub <noreply@github.com> 2024-06-03 17:40:04
+
+	markdown: emit Info in CodeBlock markdown (#18)
+	
+	Emit the Info field of CodeBlock in the CodeBlock.printMardown 
+	function so
+	that a round trip from markdown to markdown will preserve the 
+	language Info.
+
+Comment by rsc (2024-06-03 22:57:21)
+
+	Thanks very much!
+-- rsc/markdown#19 --
+Title: feature: synthesize lowercase anchors for heading
+State: open
+Assignee: 
+Labels: 
+Milestone: 
+URL: https://github.com/rsc/markdown/issues/19
+
+Reported by adonovan (2024-05-21 13:56:12)
+
+	GitHub's markdown renderer creates lowercase anchors for headings. 
+	For example, this heading, `## Diagnostic`, can be found using either 
+	of these two URLs, which differ in the case of their fragment ID:
+	
+	https://github.com/golang/tools/blob/master/gopls/doc/settings.md#diag
+	nostic
+	https://github.com/golang/tools/blob/master/gopls/doc/settings.md#Diag
+	nostic
+	
+	Perhaps your markdown renderer (which has been really 
+	useful--thanks!) could do the same.
+
+Comment by rsc (2024-06-03 17:58:35)
+
+	Is the GitHub algorithm for turning heading text into anchor IDs 
+	documented somewhere?
+	I don't mind adding it as an option if I can find the spec.
+	Not sure about two choices, but one automatic choice would be good.
+	(GitHub actually supports any casing at all: 
+	https://github.com/golang/tools/blob/master/gopls/doc/settings.md#DiAg
+	NoStIc
+	Clearly JS is doing that.)

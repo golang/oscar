@@ -1,0 +1,92 @@
+httprr trace v1
+207 6198
+GET https://api.github.com/repos/rsc/markdown/issues?direction=asc&page=1&per_page=100&since=2024-06-04T02%3A57%3A22Z&sort=updated&state=all HTTP/1.1
+Host: api.github.com
+User-Agent: Go-http-client/1.1
+
+HTTP/2.0 200 OK
+Accept-Ranges: bytes
+Access-Control-Allow-Origin: *
+Access-Control-Expose-Headers: ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset
+Cache-Control: public, max-age=60, s-maxage=60
+Content-Security-Policy: default-src 'none'
+Content-Type: application/json; charset=utf-8
+Date: Tue, 04 Jun 2024 12:28:22 GMT
+Etag: W/"97372b4a1a5b329a038fade04cd5934c5acca1f74d0515121101e2ce66b1ba4e"
+Referrer-Policy: origin-when-cross-origin, strict-origin-when-cross-origin
+Server: GitHub.com
+Strict-Transport-Security: max-age=31536000; includeSubdomains; preload
+Vary: Accept, Accept-Encoding, Accept, X-Requested-With
+X-Content-Type-Options: nosniff
+X-Frame-Options: deny
+X-Github-Api-Version-Selected: 2022-11-28
+X-Github-Media-Type: github.v3; format=json
+X-Github-Request-Id: DD96:493B9:15322F77:248A5191:665F0866
+X-Ratelimit-Limit: 60
+X-Ratelimit-Remaining: 59
+X-Ratelimit-Reset: 1717507702
+X-Ratelimit-Resource: core
+X-Ratelimit-Used: 1
+X-Xss-Protection: 0
+
+[{"url":"https://api.github.com/repos/rsc/markdown/issues/18","repository_url":"https://api.github.com/repos/rsc/markdown","labels_url":"https://api.github.com/repos/rsc/markdown/issues/18/labels{/name}","comments_url":"https://api.github.com/repos/rsc/markdown/issues/18/comments","events_url":"https://api.github.com/repos/rsc/markdown/issues/18/events","html_url":"https://github.com/rsc/markdown/pull/18","id":2276848742,"node_id":"PR_kwDOKnFwjc5ubgV0","number":18,"title":"markdown: emit Info in CodeBlock markdown","user":{"login":"juliaogris","id":1596871,"node_id":"MDQ6VXNlcjE1OTY4NzE=","avatar_url":"https://avatars.githubusercontent.com/u/1596871?v=4","gravatar_id":"","url":"https://api.github.com/users/juliaogris","html_url":"https://github.com/juliaogris","followers_url":"https://api.github.com/users/juliaogris/followers","following_url":"https://api.github.com/users/juliaogris/following{/other_user}","gists_url":"https://api.github.com/users/juliaogris/gists{/gist_id}","starred_url":"https://api.github.com/users/juliaogris/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/juliaogris/subscriptions","organizations_url":"https://api.github.com/users/juliaogris/orgs","repos_url":"https://api.github.com/users/juliaogris/repos","events_url":"https://api.github.com/users/juliaogris/events{/privacy}","received_events_url":"https://api.github.com/users/juliaogris/received_events","type":"User","site_admin":false},"labels":[],"state":"closed","locked":false,"assignee":null,"assignees":[],"milestone":null,"comments":2,"created_at":"2024-05-03T03:59:00Z","updated_at":"2024-06-04T02:57:22Z","closed_at":"2024-06-03T21:40:04Z","author_association":"CONTRIBUTOR","active_lock_reason":null,"draft":false,"pull_request":{"url":"https://api.github.com/repos/rsc/markdown/pulls/18","html_url":"https://github.com/rsc/markdown/pull/18","diff_url":"https://github.com/rsc/markdown/pull/18.diff","patch_url":"https://github.com/rsc/markdown/pull/18.patch","merged_at":"2024-06-03T21:40:04Z"},"body":"Emit the Info field of CodeBlock in the CodeBlock.printMardown function so \r\nthat a round trip from markdown to markdown will preserve the language Info.","reactions":{"url":"https://api.github.com/repos/rsc/markdown/issues/18/reactions","total_count":1,"+1":1,"-1":0,"laugh":0,"hooray":0,"confused":0,"heart":0,"rocket":0,"eyes":0},"timeline_url":"https://api.github.com/repos/rsc/markdown/issues/18/timeline","performed_via_github_app":null,"state_reason":null},{"url":"https://api.github.com/repos/rsc/markdown/issues/19","repository_url":"https://api.github.com/repos/rsc/markdown","labels_url":"https://api.github.com/repos/rsc/markdown/issues/19/labels{/name}","comments_url":"https://api.github.com/repos/rsc/markdown/issues/19/comments","events_url":"https://api.github.com/repos/rsc/markdown/issues/19/events","html_url":"https://github.com/rsc/markdown/issues/19","id":2308816936,"node_id":"I_kwDOKnFwjc6JncAo","number":19,"title":"feature: synthesize lowercase anchors for heading","user":{"login":"adonovan","id":5658175,"node_id":"MDQ6VXNlcjU2NTgxNzU=","avatar_url":"https://avatars.githubusercontent.com/u/5658175?v=4","gravatar_id":"","url":"https://api.github.com/users/adonovan","html_url":"https://github.com/adonovan","followers_url":"https://api.github.com/users/adonovan/followers","following_url":"https://api.github.com/users/adonovan/following{/other_user}","gists_url":"https://api.github.com/users/adonovan/gists{/gist_id}","starred_url":"https://api.github.com/users/adonovan/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/adonovan/subscriptions","organizations_url":"https://api.github.com/users/adonovan/orgs","repos_url":"https://api.github.com/users/adonovan/repos","events_url":"https://api.github.com/users/adonovan/events{/privacy}","received_events_url":"https://api.github.com/users/adonovan/received_events","type":"User","site_admin":false},"labels":[],"state":"open","locked":false,"assignee":null,"assignees":[],"milestone":null,"comments":1,"created_at":"2024-05-21T17:56:12Z","updated_at":"2024-06-04T12:27:49Z","closed_at":null,"author_association":"NONE","active_lock_reason":null,"body":"GitHub's markdown renderer creates lowercase anchors for headings. For example, this heading, `## Diagnostic`, can be found using either of these two URLs, which differ in the case of their fragment ID:\r\n\r\nhttps://github.com/golang/tools/blob/master/gopls/doc/settings.md#diagnostic\r\nhttps://github.com/golang/tools/blob/master/gopls/doc/settings.md#Diagnostic\r\n\r\nPerhaps your markdown renderer (which has been really useful--thanks!) could do the same.\r\n","reactions":{"url":"https://api.github.com/repos/rsc/markdown/issues/19/reactions","total_count":0,"+1":0,"-1":0,"laugh":0,"hooray":0,"confused":0,"heart":0,"rocket":0,"eyes":0},"timeline_url":"https://api.github.com/repos/rsc/markdown/issues/19/timeline","performed_via_github_app":null,"state_reason":null}]193 2704
+GET https://api.github.com/repos/rsc/markdown/issues/comments?direction=asc&page=1&since=2024-06-04T02%3A57%3A21Z&sort=updated HTTP/1.1
+Host: api.github.com
+User-Agent: Go-http-client/1.1
+
+HTTP/2.0 200 OK
+Accept-Ranges: bytes
+Access-Control-Allow-Origin: *
+Access-Control-Expose-Headers: ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset
+Cache-Control: public, max-age=60, s-maxage=60
+Content-Security-Policy: default-src 'none'
+Content-Type: application/json; charset=utf-8
+Date: Tue, 04 Jun 2024 12:28:22 GMT
+Etag: W/"1075157bc09a784524c573b03b8c28dabbce2697b7dc47f380a9ad6d44a8badf"
+Referrer-Policy: origin-when-cross-origin, strict-origin-when-cross-origin
+Server: GitHub.com
+Strict-Transport-Security: max-age=31536000; includeSubdomains; preload
+Vary: Accept, Accept-Encoding, Accept, X-Requested-With
+X-Content-Type-Options: nosniff
+X-Frame-Options: deny
+X-Github-Api-Version-Selected: 2022-11-28
+X-Github-Media-Type: github.v3; format=json
+X-Github-Request-Id: DD96:493B9:15323000:248A5264:665F0866
+X-Ratelimit-Limit: 60
+X-Ratelimit-Remaining: 58
+X-Ratelimit-Reset: 1717507702
+X-Ratelimit-Resource: core
+X-Ratelimit-Used: 2
+X-Xss-Protection: 0
+
+[{"url":"https://api.github.com/repos/rsc/markdown/issues/comments/2146475274","html_url":"https://github.com/rsc/markdown/pull/18#issuecomment-2146475274","issue_url":"https://api.github.com/repos/rsc/markdown/issues/18","id":2146475274,"node_id":"IC_kwDOKnFwjc5_8J0K","user":{"login":"rsc","id":104030,"node_id":"MDQ6VXNlcjEwNDAzMA==","avatar_url":"https://avatars.githubusercontent.com/u/104030?v=4","gravatar_id":"","url":"https://api.github.com/users/rsc","html_url":"https://github.com/rsc","followers_url":"https://api.github.com/users/rsc/followers","following_url":"https://api.github.com/users/rsc/following{/other_user}","gists_url":"https://api.github.com/users/rsc/gists{/gist_id}","starred_url":"https://api.github.com/users/rsc/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/rsc/subscriptions","organizations_url":"https://api.github.com/users/rsc/orgs","repos_url":"https://api.github.com/users/rsc/repos","events_url":"https://api.github.com/users/rsc/events{/privacy}","received_events_url":"https://api.github.com/users/rsc/received_events","type":"User","site_admin":false},"created_at":"2024-06-04T02:57:21Z","updated_at":"2024-06-04T02:57:21Z","author_association":"OWNER","body":"Thanks very much!\r\n","reactions":{"url":"https://api.github.com/repos/rsc/markdown/issues/comments/2146475274/reactions","total_count":0,"+1":0,"-1":0,"laugh":0,"hooray":0,"confused":0,"heart":0,"rocket":0,"eyes":0},"performed_via_github_app":null}]231 1235
+GET https://api.github.com/repos/rsc/markdown/issues/events?page=1&per_page=100 HTTP/1.1
+Host: api.github.com
+User-Agent: Go-http-client/1.1
+If-None-Match: W/"5f8cdae3e0a577c993191ba0140691c76a0df6b824580833fc3662906ef5aaf3"
+
+HTTP/2.0 304 Not Modified
+Access-Control-Allow-Origin: *
+Access-Control-Expose-Headers: ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset
+Cache-Control: public, max-age=60, s-maxage=60
+Content-Encoding: gzip
+Content-Security-Policy: default-src 'none'
+Content-Type: application/json; charset=utf-8
+Date: Tue, 04 Jun 2024 12:28:23 GMT
+Etag: W/"5f8cdae3e0a577c993191ba0140691c76a0df6b824580833fc3662906ef5aaf3"
+Referrer-Policy: origin-when-cross-origin, strict-origin-when-cross-origin
+Server: GitHub.com
+Strict-Transport-Security: max-age=31536000; includeSubdomains; preload
+Vary: Accept, Accept-Encoding, Accept, X-Requested-With
+X-Content-Type-Options: nosniff
+X-Frame-Options: deny
+X-Github-Api-Version-Selected: 2022-11-28
+X-Github-Media-Type: github.v3; format=json
+X-Github-Request-Id: DD96:493B9:1532304C:248A52EE:665F0866
+X-Ratelimit-Limit: 60
+X-Ratelimit-Remaining: 57
+X-Ratelimit-Reset: 1717507702
+X-Ratelimit-Resource: core
+X-Ratelimit-Used: 3
+X-Xss-Protection: 0
+
