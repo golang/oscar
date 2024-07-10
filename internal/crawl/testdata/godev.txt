@@ -1,0 +1,108 @@
+-- https://go.dev/ --
+HTTP/1.1 200 OK
+Content-Type: text/html
+
+This is the Go home page.
+Here is the <a href="/doc/faq/">FAQ</a>.
+And an old <a href="/doc/faq.html">FAQ</a>.
+And an old <a href="/doc/faq.html?foo=bar">FAQ</a>.
+
+Here is the <a href="https://go.dev/pkg/math/">math package</a>.
+Here is the <a href="https://go.dev/pkg/math/">math package</a> again.
+
+<a id=foo>
+This link should <a href="/s/short">not be visited</a>.
+
+Here's <a href="https://www.google.com/">Google</a>.
+
+This is fine:
+<a href="/player/okay"></a>.
+
+Here are some error cases:
+<a href="/err/bad-status"></a>.
+<a href="/err/bad-content-type"></a>.
+<a href="/err/redirect-no-location"></a>.
+<a href="/err/redirect-bad-url"></a>.
+<a href="/err/body-too-large"></a>.
+<a href="/err/body-read-error"></a>.
+<a href="/err/clean-error"></a>.
+<a href="/err/disallow-after-clean"></a>.
+<a href="h t t p://foo"></a>.
+
+
+-- https://go.dev/root2 --
+HTTP/1.1 200 OK
+Content-Type: text/html
+
+This page is not reachable from the Go home page.
+Here is the <a href="/doc/faq/">FAQ</a>.
+And an old <a href="/doc/faq.html">FAQ</a>.
+
+-- https://go.dev/doc/faq.html --
+HTTP/1.1 301 Found
+Location: /doc/faq
+
+-- https://go.dev/doc/faq/ --
+HTTP/1.1 301 Found
+Location: /doc/faq
+
+-- https://go.dev/doc/faq --
+HTTP/1.1 200 OK
+Content-Type: text/html
+
+This is the Go FAQ.
+
+
+-- https://go.dev/pkg/math/?m=old --
+HTTP/1.1 200 OK
+Content-Type: text/html
+
+This is the math package.
+
+Here is the <a href="/pkg/strings/">strings package</a>.
+
+Don't visit <a href="/play/p/asdf">playground snippets</a>.
+
+-- https://go.dev/pkg/strings/?m=old --
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=ascii
+
+This is the strings package.
+
+Here is the <a href="https://go.dev/pkg/math/">math package</a>.
+
+-- https://go.dev/player/okay --
+HTTP/1.1 200 OK
+Content-Type: text/html
+
+This page should be indexed.
+
+-- https://go.dev/play/p/asdf --
+panic
+
+-- https://go.dev/err/body-too-large --
+bigbody
+
+-- https://go.dev/err/body-read-error --
+HTTP/1.1 200 OK
+Content-Type: text/html
+
+Bad body will be inserted by test harness.
+
+-- https://go.dev/err/redirect-no-location --
+HTTP/1.1 301 Found
+
+No location here!
+
+-- https://go.dev/err/redirect-bad-url --
+HTTP/1.1 301 Found
+Location: h tt p:::badurl
+
+-- https://go.dev/err/bad-status --
+HTTP/1.1 666 Oops
+
+-- https://go.dev/err/bad-content-type --
+HTTP/1.1 200 OK
+Content-Type: text/ebcdic
+
+Oops.
