@@ -67,3 +67,16 @@ func Checker(t *testing.T) (check func(err error)) {
 		}
 	}
 }
+
+// Rot13 returns the rot13 of the input string (swap A-Ma-m with N-Zn-z).
+func Rot13(s string) string {
+	b := []byte(s)
+	for i, x := range b {
+		if 'A' <= x && x <= 'M' || 'a' <= x && x <= 'm' {
+			b[i] = x + 13
+		} else if 'N' <= x && x <= 'Z' || 'n' <= x && x <= 'z' {
+			b[i] = x - 13
+		}
+	}
+	return string(b)
+}

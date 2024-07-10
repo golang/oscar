@@ -66,9 +66,9 @@ func TestMarkdownEditing(t *testing.T) {
 	}
 
 	c.testing = false // edit github directly (except for the httprr in the way)
-	check(c.EditIssueComment(ctx, comment, &IssueCommentChanges{Body: rot13(comment.Body)}))
+	check(c.EditIssueComment(ctx, comment, &IssueCommentChanges{Body: testutil.Rot13(comment.Body)}))
 	check(c.PostIssueComment(ctx, issue, &IssueCommentChanges{Body: "testing. rot13 is the best."}))
-	check(c.EditIssue(ctx, issue, &IssueChanges{Title: rot13(issue.Title)}))
+	check(c.EditIssue(ctx, issue, &IssueChanges{Title: testutil.Rot13(issue.Title)}))
 }
 
 func TestMarkdownDivertEdit(t *testing.T) {
@@ -109,9 +109,9 @@ func TestMarkdownDivertEdit(t *testing.T) {
 		t.Errorf("DownloadIssueComment: Body=%q, want %q", comment1.Body, comment.Body)
 	}
 
-	check(c.EditIssueComment(ctx, comment, &IssueCommentChanges{Body: rot13(comment.Body)}))
+	check(c.EditIssueComment(ctx, comment, &IssueCommentChanges{Body: testutil.Rot13(comment.Body)}))
 	check(c.PostIssueComment(ctx, issue, &IssueCommentChanges{Body: "testing. rot13 is the best."}))
-	check(c.EditIssue(ctx, issue, &IssueChanges{Title: rot13(issue.Title), Labels: &[]string{"ebg13"}}))
+	check(c.EditIssue(ctx, issue, &IssueChanges{Title: testutil.Rot13(issue.Title), Labels: &[]string{"ebg13"}}))
 
 	var edits []string
 	for _, e := range c.Testing().Edits() {
@@ -126,16 +126,4 @@ func TestMarkdownDivertEdit(t *testing.T) {
 	if !slices.Equal(edits, want) {
 		t.Fatalf("Testing().Edits():\nhave %s\nwant %s", edits, want)
 	}
-}
-
-func rot13(s string) string {
-	b := []byte(s)
-	for i, x := range b {
-		if 'A' <= x && x <= 'M' || 'a' <= x && x <= 'm' {
-			b[i] = x + 13
-		} else if 'N' <= x && x <= 'Z' || 'n' <= x && x <= 'z' {
-			b[i] = x - 13
-		}
-	}
-	return string(b)
 }

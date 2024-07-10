@@ -59,7 +59,7 @@ func TestSync(t *testing.T) {
 	}
 
 	for i, text := range texts {
-		dc.Add(fmt.Sprintf("rot13%d", i), "", rot13(text))
+		dc.Add(fmt.Sprintf("rot13%d", i), "", testutil.Rot13(text))
 	}
 	vdb2 := storage.MemVectorDB(db, lg, "step2")
 	Sync(ctx, lg, vdb2, llm.QuoteEmbedder(), dc)
@@ -72,8 +72,8 @@ func TestSync(t *testing.T) {
 
 		vec, ok = vdb2.Get(fmt.Sprintf("rot13%d", i))
 		vtext := llm.UnquoteVector(vec)
-		if vtext != rot13(text) {
-			t.Errorf("rot13%d decoded to %q, want %q", i, vtext, rot13(text))
+		if vtext != testutil.Rot13(text) {
+			t.Errorf("rot13%d decoded to %q, want %q", i, vtext, testutil.Rot13(text))
 		}
 	}
 }
@@ -141,18 +141,6 @@ func TestBadEmbedders(t *testing.T) {
 	if _, ok := vdb.Get("URL001"); !ok {
 		t.Errorf("Sync did not write URL001 after embedHalf")
 	}
-}
-
-func rot13(s string) string {
-	b := []byte(s)
-	for i, x := range b {
-		if 'A' <= x && x <= 'M' || 'a' <= x && x <= 'm' {
-			b[i] = x + 13
-		} else if 'N' <= x && x <= 'Z' || 'n' <= x && x <= 'z' {
-			b[i] = x - 13
-		}
-	}
-	return string(b)
 }
 
 type tooManyEmbed struct{}
