@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="auto">
+<head>
+
+<link rel="preconnect" href="https://www.googletagmanager.com">
+<script >(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  })(window,document,'script','dataLayer','GTM-W8MVQXG');</script>
+  
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#00add8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Material+Icons">
+<link rel="stylesheet" href="/css/styles.css">
+<link rel="icon" href="/images/favicon-gopher.png" sizes="any">
+<link rel="apple-touch-icon" href="/images/favicon-gopher-plain.png"/>
+<link rel="icon" href="/images/favicon-gopher.svg" type="image/svg+xml">
+<link rel="me" href="https://hachyderm.io/@golang">
+
+  
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  })(window,document,'script','dataLayer','GTM-W8MVQXG');</script>
+  
+<script src="/js/site.js"></script>
+<meta name="og:url" content="https://go.dev/doc/toolchain">
+<meta name="og:title" content="Go Toolchains - The Go Programming Language">
+<title>Go Toolchains - The Go Programming Language</title>
+
+<meta name="og:image" content="https://go.dev/doc/gopher/gopher5logo.jpg">
+<meta name="twitter:image" content="https://go.dev/doc/gopher/gopherbelly300.jpg">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:site" content="@golang">
+</head>
+<body class="Site">
+  
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-W8MVQXG"
+  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  
+
+
+<header class="Site-header js-siteHeader">
+  <div class="Header Header--dark">
+    <nav class="Header-nav">
+      <a href="/">
+        <img
+          class="js-headerLogo Header-logo"
+          src="/images/go-logo-white.svg"
+          alt="Go">
+      </a>
+      <div class="skip-navigation-wrapper">
+        <a class="skip-to-content-link" aria-label="Skip to main content" href="#main-content"> Skip to Main Content </a>
+      </div>
+      <div class="Header-rightContent">
+        <ul class="Header-menu">
+          <li class="Header-menuItem ">
+            <a href="#"  class="js-desktop-menu-hover" aria-label=Why&#32;Go aria-describedby="dropdown-description">
+              Why Go <i class="material-icons" aria-hidden="true">arrow_drop_down</i>
+            </a>
+            <div class="screen-reader-only" id="dropdown-description" hidden>
+              Press Enter to activate/deactivate dropdown
+            </div>
+              <ul class="Header-submenu js-desktop-submenu-hover" aria-label="submenu">
+                  <li class="Header-submenuItem">
+                    <div>
+                        <a href="/solutions/case-studies">
+                          Case Studies
+                          
+                        </a>
+                    </div>
+                    <p>Common problems companies solve with Go</p>
+                  </li>
+                  <li class="Header-submenuItem">
+                    <div>
+                        <a href="/solutions/use-cases">
+                          Use Cases
+                          
+                        </a>
+                    </div>
+                    <p>Stories about how and why companies use Go</p>
+                  </li>
+                  <li class="Header-submenuItem">
+                    <div>
+                        <a href="/security/">
+                          Security
+                          
+                        </a>
+                    </div>
+                    <p>How Go can help keep you secure by default</p>
+                  </li>
+              </ul>
+          </li>
+          <li class="Header-menuItem ">
+            <a href="/learn/"  aria-label=Learn aria-describedby="dropdown-description">
+              Learn 
+            </a>
+            <div class="screen-reader-only" id="dropdown-description" hidden>
+              Press Enter to activate/deactivate dropdown
+            </div>
+          </li>
+          <li class="Header-menuItem  Header-menuItem--active">
+            <a href="#"  class="js-desktop-menu-hover" aria-label=Docs aria-describedby="dropdown-description">
+              Docs <i class="material-icons" aria-hidden="true">arrow_drop_down</i>
+            </a>
+            <div class="screen-reader-only" id="dropdown-description" hidden>
+              Press Enter to activate/deactivate dropdown
+            </div>
+              <ul class="Header-submenu js-desktop-submenu-hover" aria-label="submenu">
+                  <li class="Header-submenuItem">
+                    <div>
+                        <a href="/doc/effective_go">
+                          Effective Go
+                          
+                        </a>
+                    </div>
+                    <p>Tips for writing clear, performant, and idiomatic Go code</p>
+                  </li>
+                  <li class="Header-submenuItem">
+                    <div>
+                        <a href="/doc">
+                          Go User Manual
+                          
+                        </a>
+                    </div>
+                    <p>A complete introduction to building software with Go</p>
+                  </li>
+                  <li class="Header-submenuItem">
+                    <div>
+                        <a href="https://pkg.go.dev/std">
+                          Standard library
+                          
+                        </a>
+                    </div>
+                    <p>Reference documentation for Go&#39;s standard library</p>
+                  </li>
+                  <li class="Header-submenuItem">
+                    <div>
+                        <a href="/doc/devel/release">
+                          Release Notes
+                          
+                        </a>
+                    </div>
+                    <p>Learn what&#39;s new in each Go release</p>
+                  </li>
+              </ul>
+          </li>
+          <li class="Header-menuItem ">
+            <a href="https://pkg.go.dev"  aria-label=Packages aria-describedby="dropdown-description">
+              Packages 
+            </a>
+            <div class="screen-reader-only" id="dropdown-description" hidden>
+              Press Enter to activate/deactivate dropdown
+            </div>
+          </li>
+          <li class="Header-menuItem ">
+            <a href="#"  class="js-desktop-menu-hover" aria-label=Community aria-describedby="dropdown-description">
+              Community <i class="material-icons" aria-hidden="true">arrow_drop_down</i>
+            </a>
+            <div class="screen-reader-only" id="dropdown-description" hidden>
+              Press Enter to activate/deactivate dropdown
+            </div>
+              <ul class="Header-submenu js-desktop-submenu-hover" aria-label="submenu">
+                  <li class="Header-submenuItem">
+                    <div>
+                        <a href="/talks/">
+                          Recorded Talks
+                          
+                        </a>
+                    </div>
+                    <p>Videos from prior events</p>
+                  </li>
+                  <li class="Header-submenuItem">
+                    <div>
+                        <a href="https://www.meetup.com/pro/go">
+                          Meetups
+                           <i class="material-icons">open_in_new</i>
+                        </a>
+                    </div>
+                    <p>Meet other local Go developers</p>
+                  </li>
+                  <li class="Header-submenuItem">
+                    <div>
+                        <a href="/wiki/Conferences">
+                          Conferences
+                           <i class="material-icons">open_in_new</i>
+                        </a>
+                    </div>
+                    <p>Learn and network with Go developers from around the world</p>
+                  </li>
+                  <li class="Header-submenuItem">
+                    <div>
+                        <a href="/blog">
+                          Go blog
+                          
+                        </a>
+                    </div>
+                    <p>The Go project&#39;s official blog.</p>
+                  </li>
+                  <li class="Header-submenuItem">
+                    <div>
+                        <a href="/help">
+                          Go project
+                          
+                        </a>
+                    </div>
+                    <p>Get help and stay informed from Go</p>
+                  </li>
+                  <li class="Header-submenuItem">
+                    <div>
+                        Get connected
+                    </div>
+                    <p></p>
+                      <div class="Header-socialIcons">
+                        
+                        <a class="Header-socialIcon" aria-label="Get connected with google-groups (Opens in new window)" href="https://groups.google.com/g/golang-nuts"><img src="/images/logos/social/google-groups.svg" /></a>
+                        <a class="Header-socialIcon" aria-label="Get connected with github (Opens in new window)" href="https://github.com/golang"><img src="/images/logos/social/github.svg" /></a>
+                        <a class="Header-socialIcon" aria-label="Get connected with twitter (Opens in new window)" href="https://twitter.com/golang"><img src="/images/logos/social/twitter.svg" /></a>
+                        <a class="Header-socialIcon" aria-label="Get connected with reddit (Opens in new window)" href="https://www.reddit.com/r/golang/"><img src="/images/logos/social/reddit.svg" /></a>
+                        <a class="Header-socialIcon" aria-label="Get connected with slack (Opens in new window)" href="https://invite.slack.golangbridge.org/"><img src="/images/logos/social/slack.svg" /></a>
+                        <a class="Header-socialIcon" aria-label="Get connected with stack-overflow (Opens in new window)" href="https://stackoverflow.com/tags/go"><img src="/images/logos/social/stack-overflow.svg" /></a>
+                      </div>
+                  </li>
+              </ul>
+          </li>
+        </ul>
+        <button class="Header-navOpen js-headerMenuButton Header-navOpen--white" aria-label="Open navigation.">
+        </button>
+      </div>
+    </nav>
+    
+  </div>
+</header>
+<aside class="NavigationDrawer js-header">
+  <nav class="NavigationDrawer-nav">
+    <div class="NavigationDrawer-header">
+      <a href="/">
+        <img class="NavigationDrawer-logo" src="/images/go-logo-blue.svg" alt="Go.">
+      </a>
+    </div>
+    <ul class="NavigationDrawer-list">
+        
+          <li class="NavigationDrawer-listItem js-mobile-subnav-trigger  NavigationDrawer-hasSubnav">
+            <a href="#"><span>Why Go</span> <i class="material-icons">navigate_next</i></a>
+
+            <div class="NavigationDrawer NavigationDrawer-submenuItem">
+              <nav class="NavigationDrawer-nav">
+                <div class="NavigationDrawer-header">
+                  <a href="#"><i class="material-icons">navigate_before</i>Why Go</a>
+                </div>
+                <ul class="NavigationDrawer-list">
+                    <li class="NavigationDrawer-listItem">
+                        <a href="/solutions/case-studies">
+                          Case Studies
+                          
+                        </a>
+                      
+                    </li>
+                    <li class="NavigationDrawer-listItem">
+                        <a href="/solutions/use-cases">
+                          Use Cases
+                          
+                        </a>
+                      
+                    </li>
+                    <li class="NavigationDrawer-listItem">
+                        <a href="/security/">
+                          Security
+                          
+                        </a>
+                      
+                    </li>
+                </ul>
+              </div>
+            </div>
+          </li>
+
+        
+        
+          <li class="NavigationDrawer-listItem ">
+            <a href="/learn/">Learn</a>
+          </li>
+        
+        
+          <li class="NavigationDrawer-listItem js-mobile-subnav-trigger  NavigationDrawer-listItem--active NavigationDrawer-hasSubnav">
+            <a href="#"><span>Docs</span> <i class="material-icons">navigate_next</i></a>
+
+            <div class="NavigationDrawer NavigationDrawer-submenuItem">
+              <nav class="NavigationDrawer-nav">
+                <div class="NavigationDrawer-header">
+                  <a href="#"><i class="material-icons">navigate_before</i>Docs</a>
+                </div>
+                <ul class="NavigationDrawer-list">
+                    <li class="NavigationDrawer-listItem">
+                        <a href="/doc/effective_go">
+                          Effective Go
+                          
+                        </a>
+                      
+                    </li>
+                    <li class="NavigationDrawer-listItem">
+                        <a href="/doc">
+                          Go User Manual
+                          
+                        </a>
+                      
+                    </li>
+                    <li class="NavigationDrawer-listItem">
+                        <a href="https://pkg.go.dev/std">
+                          Standard library
+                          
+                        </a>
+                      
+                    </li>
+                    <li class="NavigationDrawer-listItem">
+                        <a href="/doc/devel/release">
+                          Release Notes
+                          
+                        </a>
+                      
+                    </li>
+                </ul>
+              </div>
+            </div>
+          </li>
+
+        
+        
+          <li class="NavigationDrawer-listItem ">
+            <a href="https://pkg.go.dev">Packages</a>
+          </li>
+        
+        
+          <li class="NavigationDrawer-listItem js-mobile-subnav-trigger  NavigationDrawer-hasSubnav">
+            <a href="#"><span>Community</span> <i class="material-icons">navigate_next</i></a>
+
+            <div class="NavigationDrawer NavigationDrawer-submenuItem">
+              <nav class="NavigationDrawer-nav">
+                <div class="NavigationDrawer-header">
+                  <a href="#"><i class="material-icons">navigate_before</i>Community</a>
+                </div>
+                <ul class="NavigationDrawer-list">
+                    <li class="NavigationDrawer-listItem">
+                        <a href="/talks/">
+                          Recorded Talks
+                          
+                        </a>
+                      
+                    </li>
+                    <li class="NavigationDrawer-listItem">
+                        <a href="https://www.meetup.com/pro/go">
+                          Meetups
+                           <i class="material-icons">open_in_new</i>
+                        </a>
+                      
+                    </li>
+                    <li class="NavigationDrawer-listItem">
+                        <a href="/wiki/Conferences">
+                          Conferences
+                           <i class="material-icons">open_in_new</i>
+                        </a>
+                      
+                    </li>
+                    <li class="NavigationDrawer-listItem">
+                        <a href="/blog">
+                          Go blog
+                          
+                        </a>
+                      
+                    </li>
+                    <li class="NavigationDrawer-listItem">
+                        <a href="/help">
+                          Go project
+                          
+                        </a>
+                      
+                    </li>
+                    <li class="NavigationDrawer-listItem">
+                        <div>Get connected</div>
+                        <div class="Header-socialIcons">
+                          
+                            <a class="Header-socialIcon" href="https://groups.google.com/g/golang-nuts"><img src="/images/logos/social/google-groups.svg" /></a>
+                            <a class="Header-socialIcon" href="https://github.com/golang"><img src="/images/logos/social/github.svg" /></a>
+                            <a class="Header-socialIcon" href="https://twitter.com/golang"><img src="/images/logos/social/twitter.svg" /></a>
+                            <a class="Header-socialIcon" href="https://www.reddit.com/r/golang/"><img src="/images/logos/social/reddit.svg" /></a>
+                            <a class="Header-socialIcon" href="https://invite.slack.golangbridge.org/"><img src="/images/logos/social/slack.svg" /></a>
+                            <a class="Header-socialIcon" href="https://stackoverflow.com/tags/go"><img src="/images/logos/social/stack-overflow.svg" /></a>
+                        </div>
+                    </li>
+                </ul>
+              </div>
+            </div>
+          </li>
+
+        
+    </ul>
+  </nav>
+</aside>
+<div class="NavigationDrawer-scrim js-scrim" role="presentation"></div>
+<main class="SiteContent SiteContent--default" id="main-content">
+  
+  <article class="Article Article--doc">
+
+    
+    <h1>Go Toolchains</h1>
+    <h2 id="intro">Introduction</h2>
+<p>Starting in Go 1.21, the Go distribution consists of a <code>go</code> command and a bundled Go toolchain,
+which is the standard library as well as the compiler, assembler, and other tools.
+The <code>go</code> command can use its bundled Go toolchain as well as other versions
+that it finds in the local <code>PATH</code> or downloads as needed.</p>
+<p>The choice of Go toolchain being used depends on the <code>GOTOOLCHAIN</code> environment setting
+and the <code>go</code> and <code>toolchain</code> lines in the main module&rsquo;s <code>go.mod</code> file or the current workspace&rsquo;s <code>go.work</code> file.
+As you move between different main modules and workspaces,
+the toolchain version being used can vary, just as module dependency versions do.</p>
+<p>In the standard configuration, the <code>go</code> command uses its own bundled toolchain
+when that toolchain is at least as new as the <code>go</code> or <code>toolchain</code> lines in the main module or workspace.
+For example, when using the <code>go</code> command bundled with Go 1.21.3 in a main module that says <code>go 1.21.0</code>,
+the <code>go</code> command uses Go 1.21.3.
+When the <code>go</code> or <code>toolchain</code> line is newer than the bundled toolchain,
+the <code>go</code> command runs the newer toolchain instead.
+For example, when using the <code>go</code> command bundled with Go 1.21.3 in a main module that says <code>go 1.21.9</code>,
+the <code>go</code> command finds and runs Go 1.21.9 instead.
+It first looks in the PATH for a program named <code>go1.21.9</code> and otherwise downloads and caches
+a copy of the Go 1.21.9 toolchain.
+This automatic toolchain switching can be disabled, but in that case,
+for more precise forwards compatibility,
+the <code>go</code> command will refuse to run in a main module or workspace in which the <code>go</code> line
+requires a newer version of Go.
+That is, the <code>go</code> line sets the minimum required Go version necessary to use a module or workspace.</p>
+<p>Modules that are dependencies of other modules may need to set a minimum Go version requirement
+lower than the preferred toolchain to use when working in that module directly.
+In this case, the <code>toolchain</code> line in <code>go.mod</code> or <code>go.work</code> sets a preferred toolchain
+that takes precedence over the <code>go</code> line when the <code>go</code> command is deciding
+which toolchain to use.</p>
+<p>The <code>go</code> and <code>toolchain</code> lines can be thought of as specifying the version requirements
+for the module&rsquo;s dependency on the Go toolchain itself, just as the <code>require</code> lines in <code>go.mod</code>
+specify the version requirements for dependencies on other modules.
+The <code>go get</code> command manages the Go toolchain dependency just as it
+manages dependencies on other modules.
+For example, <code>go get go@latest</code> updates the module to require the latest released Go toolchain.</p>
+<p>The <code>GOTOOLCHAIN</code> environment setting can force a specific Go version, overriding
+the <code>go</code> and <code>toolchain</code> lines. For example, to test a package with Go 1.21rc3:</p>
+<pre><code>GOTOOLCHAIN=go1.21rc3 go test
+</code></pre>
+<p>The default <code>GOTOOLCHAIN</code> setting is <code>auto</code>, which enables the toolchain switching described earlier.
+The alternate form <code>&lt;name&gt;+auto</code> sets the default toolchain to use before deciding whether to
+switch further. For example <code>GOTOOLCHAIN=go1.21.3+auto</code> directs the <code>go</code> command to
+begin its decision with a default of using Go 1.21.3 but still use a newer toolchain if
+directed by <code>go</code> and <code>toolchain</code> lines.
+Because the default <code>GOTOOLCHAIN</code> setting can be changed with <code>go env -w</code>,
+if you have Go 1.21.0 or later installed, then</p>
+<pre><code>go env -w GOTOOLCHAIN=go1.21.3+auto
+</code></pre>
+<p>is equivalent to replacing your Go 1.21.0 installation with Go 1.21.3.</p>
+<p>The rest of this document explains how Go toolchains are versioned, chosen, and managed in more detail.</p>
+<h2 id="version">Go versions</h2>
+<p>Released versions of Go use the version syntax ‘1.<em>N</em>.<em>P</em>’, denoting the <em>P</em>th release of Go 1.<em>N</em>.
+The initial release is 1.<em>N</em>.0, like in ‘1.21.0’. Later releases like 1.<em>N</em>.9 are often referred to as patch releases.</p>
+<p>Go 1.<em>N</em> release candidates, which are issued before 1.<em>N</em>.0, use the version syntax ‘1.<em>N</em>rc<em>R</em>’.
+The first release candidate for Go 1.<em>N</em> has version 1.<em>N</em>rc1, like in <code>1.23rc1</code>.</p>
+<p>The syntax ‘1.<em>N</em>’ is called a “language version”. It denotes the overall family of Go releases
+implementing that version of the Go language and standard library.</p>
+<p>The language version for a Go version is the result of truncating everything after the <em>N</em>:
+1.21, 1.21rc2, and 1.21.3 all implement language version 1.21.</p>
+<p>Released Go toolchains such as Go 1.21.0 and Go 1.21rc1 report that specific version
+(for example, <code>go1.21.0</code> or <code>go1.21rc1</code>)
+from <code>go version</code> and <a href="/pkg/runtime/#Version"><code>runtime.Version</code></a>.
+Unreleased (still in development) Go toolchains built from the Go development repository
+instead report only the language version (for example, <code>go1.21</code>).</p>
+<p>Any two Go versions can be compared to decide whether one is less than, greater than,
+or equal to the other. If the language versions are different, that decides the comparison:
+1.21.9 &lt; 1.22. Within a language version, the ordering from least to greatest is:
+the language version itself, then release candidates ordered by <em>R</em>, then releases ordered by <em>P</em>.</p>
+<p>For example, 1.21 &lt; 1.21rc1 &lt; 1.21rc2 &lt; 1.21.0 &lt; 1.21.1 &lt; 1.21.2.</p>
+<p>Before Go 1.21, the initial release of a Go toolchain was version 1.<em>N</em>, not 1.<em>N</em>.0,
+so for <em>N</em> &lt; 21, the ordering is adjusted to place 1.<em>N</em> after the release candidates.</p>
+<p>For example, 1.20rc1 &lt; 1.20rc2 &lt; 1.20rc3 &lt; 1.20 &lt; 1.20.1.</p>
+<p>Earlier versions of Go had beta releases, with versions like 1.18beta2.
+Beta releases are placed immediately before release candidates in the version ordering.</p>
+<p>For example, 1.18beta1 &lt; 1.18beta2 &lt; 1.18rc1 &lt; 1.18 &lt; 1.18.1.</p>
+<h2 id="name">Go toolchain names</h2>
+<p>The standard Go toolchains are named <code>go<i>V</i></code> where <em>V</em> is a Go version
+denoting a beta release, release candidate, or release.
+For example, <code>go1.21rc1</code> and <code>go1.21.0</code> are toolchain names;
+<code>go1.21</code> and <code>go1.22</code> are not (the initial releases are <code>go1.21.0</code> and <code>go1.22.0</code>),
+but <code>go1.20</code> and <code>go1.19</code> are.</p>
+<p>Non-standard toolchains use names of the form <code>go<i>V</i>-<i>suffix</i></code>
+for any suffix.</p>
+<p>Toolchains are compared by comparing the version <code><i>V</i></code> embedded in the name
+(dropping the initial <code>go</code> and discarding off any suffix beginning with <code>-</code>).
+For example, <code>go1.21.0</code> and <code>go1.21.0-custom</code> compare equal for ordering purposes.</p>
+<h2 id="config">Module and workspace configuration</h2>
+<p>Go modules and workspaces specify version-related configuration
+in their <code>go.mod</code> or <code>go.work</code> files.</p>
+<p>The <code>go</code> line declares the minimum required Go version for using
+the module or workspace.
+For compatibility reasons, if the <code>go</code> line is omitted from a <code>go.mod</code> file,
+the module is considered to have an implicit <code>go 1.16</code> line,
+and if the <code>go</code> line is omitted from a <code>go.work</code> file,
+the workspace is considered to have an implicit <code>go 1.18</code> line.</p>
+<p>The <code>toolchain</code> line declares a suggested toolchain to use with
+the module or workspace.
+As described in “<a href="#select">Go toolchain selection</a>” below,
+the <code>go</code> command may run this specific toolchain when operating
+in that module or workspace
+if the default toolchain&rsquo;s version is less than the suggested toolchain&rsquo;s version.
+If the <code>toolchain</code> line is omitted,
+the module or workspace is considered to have an implicit
+<code>toolchain go<i>V</i></code> line,
+where <em>V</em> is the Go version from the <code>go</code> line.</p>
+<p>For example, a <code>go.mod</code> that says <code>go 1.21.0</code> with no <code>toolchain</code> line
+is interpreted as if it had a <code>toolchain go1.21.0</code> line.</p>
+<p>The Go toolchain refuses to load a module or workspace that declares
+a minimum required Go version greater than the toolchain&rsquo;s own version.</p>
+<p>For example, Go 1.21.2 will refuse to load a module or workspace
+with a <code>go 1.21.3</code> or <code>go 1.22</code> line.</p>
+<p>A module&rsquo;s <code>go</code> line must declare a version greater than or equal to
+the <code>go</code> version declared by each of the modules listed in <code>require</code> statements.
+A workspace&rsquo;s <code>go</code> line must declare a version greater than or equal to
+the <code>go</code> version declared by each of the modules listed in <code>use</code> statements.</p>
+<p>For example, if module <em>M</em> requires a dependency <em>D</em> with a <code>go.mod</code>
+that declares <code>go 1.22.0</code>, then <em>M</em>&rsquo;s <code>go.mod</code> cannot say <code>go 1.21.3</code>.</p>
+<p>The <code>go</code> line for each module sets the language version the compiler
+enforces when compiling packages in that module.
+The language version can be changed on a per-file basis by using a
+<a href="/cmd/go#hdr-Build_constraints">build constraint</a>.</p>
+<p>For example, a module containing code that uses the Go 1.21 language version
+should have a <code>go.mod</code> file with a <code>go</code> line such as <code>go 1.21</code> or <code>go 1.21.3</code>.
+If a specific source file should be compiled only when using a newer Go toolchain,
+adding <code>//go:build go1.22</code> to that source file both ensures that only Go 1.22 and
+newer toolchains will compile the file and also changes the language version in that
+file to Go 1.22.</p>
+<p>The <code>go</code> and <code>toolchain</code> lines are most conveniently and safely modified
+by using <code>go get</code>; see the <a href="#get">section dedicated to <code>go get</code> below</a>.</p>
+<p>Before Go 1.21, Go toolchains treated the <code>go</code> line as an advisory requirement:
+if builds succeeded the toolchain assumed everything worked,
+and if not it printed a note about the potential version mismatch.
+Go 1.21 changed the <code>go</code> line to be a mandatory requirement instead.
+This behavior is partly backported to earlier language versions:
+Go 1.19 releases starting at Go 1.19.13 and Go 1.20 releases starting at Go 1.20.8,
+refuse to load workspaces or modules declaring version Go 1.22 or later.</p>
+<p>Before Go 1.21, toolchains did not require a module
+or workspace to have a <code>go</code> line greater than or equal to the
+<code>go</code> version required by each of its dependency modules.</p>
+<h2 id="GOTOOLCHAIN">The <code>GOTOOLCHAIN</code> setting</h2>
+<p>The <code>go</code> command selects the Go toolchain to use based on the <code>GOTOOLCHAIN</code> setting.
+To find the <code>GOTOOLCHAIN</code> setting, the <code>go</code> command uses the standard rules for any
+Go environment setting:</p>
+<ul>
+<li>
+<p>If <code>GOTOOLCHAIN</code> is set to a non-empty value in the process environment
+(as queried by <a href="/pkg/os/#Getenv"><code>os.Getenv</code></a>), the <code>go</code> command uses that value.</p>
+</li>
+<li>
+<p>Otherwise, if <code>GOTOOLCHAIN</code> is set in the user&rsquo;s environment default file
+(managed with
+<a href="/cmd/go/#hdr-Print_Go_environment_information"><code>go env -w</code> and <code>go env -u</code></a>),
+the <code>go</code> command uses that value.</p>
+</li>
+<li>
+<p>Otherwise, if <code>GOTOOLCHAIN</code> is set in the bundled Go toolchain&rsquo;s environment
+default file (<code>$GOROOT/go.env</code>), the <code>go</code> command uses that value.</p>
+</li>
+</ul>
+<p>In standard Go toolchains, the <code>$GOROOT/go.env</code> file sets the default <code>GOTOOLCHAIN=auto</code>,
+but repackaged Go toolchains may change this value.</p>
+<p>If the <code>$GOROOT/go.env</code> file is missing or does not set a default, the <code>go</code> command
+assumes <code>GOTOOLCHAIN=local</code>.</p>
+<p>Running <code>go env GOTOOLCHAIN</code> prints the <code>GOTOOLCHAIN</code> setting.</p>
+<h2 id="select">Go toolchain selection</h2>
+<p>At startup, the <code>go</code> command selects which Go toolchain to use.
+It consults the <code>GOTOOLCHAIN</code> setting,
+which takes the form <code>&lt;name&gt;</code>, <code>&lt;name&gt;+auto</code>, or <code>&lt;name&gt;+path</code>.
+<code>GOTOOLCHAIN=auto</code> is shorthand for <code>GOTOOLCHAIN=local+auto</code>;
+similarly, <code>GOTOOLCHAIN=path</code> is shorthand for <code>GOTOOLCHAIN=local+path</code>.
+The <code>&lt;name&gt;</code> sets the default Go toolchain:
+<code>local</code> indicates the bundled Go toolchain
+(the one that shipped with the <code>go</code> command being run), and otherwise <code>&lt;name&gt;</code> must
+be a specific Go toolchain name, such as <code>go1.21.0</code>.
+The <code>go</code> command prefers to run the default Go toolchain.
+As noted above, starting in Go 1.21, Go toolchains refuse to run in
+workspaces or modules that require newer Go versions.
+Instead, they report an error and exit.</p>
+<p>When <code>GOTOOLCHAIN</code> is set to <code>local</code>, the <code>go</code> command always runs the bundled Go toolchain.</p>
+<p>When <code>GOTOOLCHAIN</code> is set to <code>&lt;name&gt;</code> (for example, <code>GOTOOLCHAIN=go1.21.0</code>),
+the <code>go</code> command always runs that specific Go toolchain.
+If a binary with that name is found in the system PATH, the <code>go</code> command uses it.
+Otherwise the <code>go</code> command uses a Go toolchain it downloads and verifies.</p>
+<p>When <code>GOTOOLCHAIN</code> is set to <code>&lt;name&gt;+auto</code> or <code>&lt;name&gt;+path</code> (or the shorthands <code>auto</code> or <code>path</code>),
+the <code>go</code> command selects and runs a newer Go version as needed.
+Specifically, it consults the <code>toolchain</code> and <code>go</code> lines in the current workspace&rsquo;s
+<code>go.work</code> file or, when there is no workspace,
+the main module&rsquo;s <code>go.mod</code> file.
+If the <code>go.work</code> or <code>go.mod</code> file has a <code>toolchain &lt;tname&gt;</code> line
+and <code>&lt;tname&gt;</code> is newer than the default Go toolchain,
+then the <code>go</code> command runs <code>&lt;tname&gt;</code> instead.
+If the file has a <code>toolchain default</code> line,
+then the <code>go</code> command runs the default Go toolchain,
+disabling any attempt at updating beyond <code>&lt;name&gt;</code>.
+Otherwise, if the file has a <code>go &lt;version&gt;</code> line
+and <code>&lt;version&gt;</code> is newer than the default Go toolchain,
+then the <code>go</code> command runs <code>go&lt;version&gt;</code> instead.</p>
+<p>To run a toolchain other than the bundled Go toolchain,
+the <code>go</code> command searches the process&rsquo;s executable path
+(<code>$PATH</code> on Unix and Plan 9, <code>%PATH%</code> on Windows)
+for a program with the given name (for example, <code>go1.21.3</code>) and runs that program.
+If no such program is found, the <code>go</code> command
+<a href="#download">downloads and runs the specified Go toolchain</a>.
+Using the <code>GOTOOLCHAIN</code> form <code>&lt;name&gt;+path</code> disables the download fallback,
+causing the <code>go</code> command to stop after searching the executable path.</p>
+<p>Running <code>go version</code> prints the selected Go toolchain&rsquo;s version
+(by running the selected toolchain&rsquo;s implementation of <code>go version</code>).</p>
+<p>Running <code>GOTOOLCHAIN=local go version</code> prints the bundled Go toolchain&rsquo;s version.</p>
+<h2 id="switch">Go toolchain switches</h2>
+<p>For most commands, the workspace&rsquo;s <code>go.work</code> or the main module&rsquo;s <code>go.mod</code>
+will have a <code>go</code> line that is at least as new as the <code>go</code> line in any module dependency,
+due to the version ordering <a href="#config">configuration requirements</a>.
+In this case, the startup toolchain selection runs a new enough Go toolchain
+to complete the command.</p>
+<p>Some commands incorporate new module versions as part of their operation:
+<code>go get</code> adds new module dependencies to the main module;
+<code>go work use</code> adds new local modules to the workspace;
+<code>go work sync</code> resynchronizes a workspace with local modules that may have been updated
+since the workspace was created;
+<code>go install package@version</code> and <code>go run package@version</code>
+effectively run in an empty main module and add <code>package@version</code> as a new dependency.
+All these commands may encounter a module with a <code>go.mod</code> <code>go</code> line
+requiring a newer Go version than the currently executed Go version.</p>
+<p>When a command encounters a module requiring a newer Go version
+and <code>GOTOOLCHAIN</code> permits running different toolchains
+(it is one of the <code>auto</code> or <code>path</code> forms),
+the <code>go</code> command chooses and switches to an appropriate newer toolchain
+to continue executing the current command.</p>
+<p>Any time the <code>go</code> command switches toolchains after startup toolchain selection,
+it prints a message explaining why. For example:</p>
+<pre><code>go: module example.com/widget@v1.2.3 requires go &gt;= 1.24rc1; switching to go 1.27.9
+</code></pre>
+<p>As shown in the example, the <code>go</code> command may switch to a toolchain
+newer than the discovered requirement.
+In general the <code>go</code> command aims to switch to a supported Go toolchain.</p>
+<p>To choose the toolchain, the <code>go</code> command first obtains a list of available toolchains.
+For the <code>auto</code> form, the <code>go</code> command downloads a list of available toolchains.
+For the <code>path</code> form, the <code>go</code> command scans the PATH for any executables
+named for valid toolchains and uses a list of all the toolchains it finds.
+Using that list of toolchains, the <code>go</code> command identifies up to three candidates:</p>
+<ul>
+<li>the latest release candidate of an unreleased Go language version (1.<em>N</em>₃rc<em>R</em>₃),</li>
+<li>the latest patch release of the most recently released Go language version (1.<em>N</em>₂.<em>P</em>₂), and</li>
+<li>the latest patch release of the previous Go language version (1.<em>N</em>₁.<em>P</em>₁).</li>
+</ul>
+<p>These are the supported Go releases according to Go&rsquo;s <a href="/doc/devel/release#policy">release policy</a>.
+Consistent with <a href="https://research.swtch.com/vgo-mvs" rel="noreferrer" target="_blank">minimal version selection</a>,
+the <code>go</code> command then conservatively uses the candidate with the <em>minimum</em> (oldest)
+version that satisfies the new requirement.</p>
+<p>For example, suppose <code>example.com/widget@v1.2.3</code> requires Go 1.24rc1 or later.
+The <code>go</code> command obtains the list of available toolchains
+and finds that the latest patch releases of the two most recent Go toolchains are
+Go 1.28.3 and Go 1.27.9,
+and the release candidate Go 1.29rc2 is also available.
+In this situation, the <code>go</code> command will choose Go 1.27.9.
+If <code>widget</code> had required Go 1.28 or later, the <code>go</code> command would choose Go 1.28.3,
+because Go 1.27.9 is too old.
+If <code>widget</code> had required Go 1.29 or later, the <code>go</code> command would choose Go 1.29rc2,
+because both Go 1.27.9 and Go 1.28.3 are too old.</p>
+<p>Commands that incorporate new module versions that require new Go versions
+write the new minimum <code>go</code> version requirement to the current workspace&rsquo;s <code>go.work</code> file
+or the main module&rsquo;s <code>go.mod</code> file, updating the <code>go</code> line.
+For <a href="https://research.swtch.com/vgo-principles#repeatability" rel="noreferrer" target="_blank">repeatability</a>,
+any command that updates the <code>go</code> line also updates the <code>toolchain</code> line
+to record its own toolchain name.
+The next time the <code>go</code> command runs in that workspace or module,
+it will use that updated <code>toolchain</code> line during <a href="#select">toolchain selection</a>.</p>
+<p>For example, <code>go get example.com/widget@v1.2.3</code> may print a switching notice
+like above and switch to Go 1.27.9.
+Go 1.27.9 will complete the <code>go get</code> and update the <code>toolchain</code> line
+to say <code>toolchain go1.27.9</code>.
+The next <code>go</code> command run in that module or workspace will select <code>go1.27.9</code>
+during startup and will not print any switching message.</p>
+<p>In general, if any <code>go</code> command is run twice, if the first prints a switching
+message, the second will not, because the first also updated <code>go.work</code> or <code>go.mod</code>
+to select the right toolchain at startup.
+The exception is the <code>go install package@version</code> and <code>go run package@version</code> forms,
+which run in no workspace or main module and cannot write a <code>toolchain</code> line.
+They print a switching message every time they need to switch
+to a newer toolchain.</p>
+<h2 id="download">Downloading toolchains</h2>
+<p>When using <code>GOTOOLCHAIN=auto</code> or <code>GOTOOLCHAIN=&lt;name&gt;+auto</code>, the Go command
+downloads newer toolchains as needed.
+These toolchains are packaged as special modules
+with module path <code>golang.org/toolchain</code>
+and version <code>v0.0.1-go<i>VERSION</i>.<i>GOOS</i>-<i>GOARCH</i></code>.
+Toolchains are downloaded like any other module,
+meaning that toolchain downloads can be proxied by setting <code>GOPROXY</code>
+and have their checksums checked by the Go checksum database.
+Because the specific toolchain used depends on the system&rsquo;s own
+default toolchain as well as the local operating system and architecture (GOOS and GOARCH),
+it is not practical to write toolchain module checksums to <code>go.sum</code>.
+Instead, toolchain downloads fail for lack of verification if <code>GOSUMDB=off</code>.
+<code>GOPRIVATE</code> and <code>GONOSUMDB</code> patterns do not apply to the toolchain downloads.</p>
+<h2 id="get">Managing Go version module requirements with <code>go get</code></h2>
+<p>In general the <code>go</code> command treats the <code>go</code> and <code>toolchain</code> lines
+as declaring versioned toolchain dependencies of the main module.
+The <code>go get</code> command can manage these lines just as it manages
+the <code>require</code> lines that specify versioned module dependencies.</p>
+<p>For example, <code>go get go@1.22.1 toolchain@1.24rc1</code> changes the main module&rsquo;s
+<code>go.mod</code> file to read <code>go 1.22.1</code> and <code>toolchain go1.24rc1</code>.</p>
+<p>The <code>go</code> command understands that the <code>go</code> dependency requires a <code>toolchain</code> dependency
+with a greater or equal Go version.</p>
+<p>Continuing the example, a later <code>go get go@1.25.0</code> will update
+the toolchain to <code>go1.25.0</code> as well.
+When the toolchain matches the <code>go</code> line exactly, it can be
+omitted and implied, so this <code>go get</code> will delete the <code>toolchain</code> line.</p>
+<p>The same requirement applies in reverse when downgrading:
+if the <code>go.mod</code> starts at <code>go 1.22.1</code> and <code>toolchain go1.24rc1</code>,
+then <code>go get toolchain@go1.22.9</code> will update only the <code>toolchain</code> line,
+but <code>go get toolchain@go1.21.3</code> will downgrade the <code>go</code> line to
+<code>go 1.21.3</code> as well.
+The effect will be to leave just <code>go 1.21.3</code> with no <code>toolchain</code> line.</p>
+<p>The special form <code>toolchain@none</code> means to remove any <code>toolchain</code> line,
+as in <code>go get toolchain@none</code> or <code>go get go@1.25.0 toolchain@none</code>.</p>
+<p>The <code>go</code> command understands the version syntax for
+<code>go</code> and <code>toolchain</code> dependencies as well as queries.</p>
+<p>For example, just as <code>go get example.com/widget@v1.2</code> uses
+the latest <code>v1.2</code> version of <code>example.com/widget</code> (perhaps <code>v1.2.3</code>),
+<code>go get go@1.22</code> uses the latest available release of the Go 1.22 language version
+(perhaps <code>1.22rc3</code>, or perhaps <code>1.22.3</code>).
+The same applies to <code>go get toolchain@go1.22</code>.</p>
+<p>The <code>go get</code> and <code>go mod tidy</code> commands maintain the <code>go</code> line to
+be greater than or equal to the <code>go</code> line of any required dependency module.</p>
+<p>For example, if the main module has <code>go 1.22.1</code> and we run
+<code>go get example.com/widget@v1.2.3</code> which declares <code>go 1.24rc1</code>,
+then <code>go get</code> will update the main module&rsquo;s <code>go</code> line to <code>go 1.24rc1</code>.</p>
+<p>Continuing the example, a later <code>go get go@1.22.1</code> will
+downgrade <code>example.com/widget</code> to a version compatible with Go 1.22.1
+or else remove the requirement entirely,
+just as it would when downgrading any other dependency of <code>example.com/widget</code>.</p>
+<p>Before Go 1.21, the suggested way to update a module to a new Go version (say, Go 1.22)
+was <code>go mod tidy -go=1.22</code>, to make sure that any adjustments
+specific to Go 1.22 were made to the <code>go.mod</code> at the same time that the
+<code>go</code> line is updated.
+That form is still valid, but the simpler <code>go get go@1.22</code> is now preferred.</p>
+<p>When <code>go get</code> is run in a module in a directory contained in a workspace root,
+<code>go get</code> mostly ignores the workspace,
+but it does update the <code>go.work</code> file to upgrade the <code>go</code> line
+when the workspace would otherwise be left with too old a <code>go</code> line.</p>
+<h2 id="work">Managing Go version workspace requirements with <code>go work</code></h2>
+<p>As noted in the previous section, <code>go get</code> run in a directory
+inside a workspace root will take care to update the <code>go.work</code> file&rsquo;s <code>go</code> line
+as needed to be greater than or equal to any module inside that root.
+However, workspaces can also refer to modules outside the root directory;
+running <code>go get</code> in those directories may result in an invalid workspace
+configuration, one in which the <code>go</code> version declared in <code>go.work</code> is less
+than one or more of the modules in the <code>use</code> directives.</p>
+<p>The command <code>go work use</code>, which adds new <code>use</code> directives, also checks
+that the <code>go</code> version in the <code>go.work</code> file is new enough for all the
+existing <code>use</code> directives.
+To update a workspace that has gotten its <code>go</code> version out of sync
+with its modules, run <code>go work use</code> with no arguments.</p>
+<p>The commands <code>go work init</code> and <code>go work sync</code> also update the <code>go</code>
+version as needed.</p>
+<p>To remove the <code>toolchain</code> line from a <code>go.work</code> file, use
+<code>go work edit -toolchain=none</code>.</p>
+
+
+    
+  </article>
+
+</main>
+<footer class="Site-footer">
+  <div class="Footer">
+    <div class="Container">
+      <div class="Footer-links">
+          <div class="Footer-linkColumn">
+            <a href="/solutions/" class="Footer-link Footer-link--primary" aria-describedby="footer-description">
+              Why Go
+            </a>
+              <a href="/solutions/use-cases" class="Footer-link" aria-describedby="footer-description">
+                Use Cases
+              </a>
+              <a href="/solutions/case-studies" class="Footer-link" aria-describedby="footer-description">
+                Case Studies
+              </a>
+          </div>
+          <div class="Footer-linkColumn">
+            <a href="/learn/" class="Footer-link Footer-link--primary" aria-describedby="footer-description">
+              Get Started
+            </a>
+              <a href="/play" class="Footer-link" aria-describedby="footer-description">
+                Playground
+              </a>
+              <a href="/tour/" class="Footer-link" aria-describedby="footer-description">
+                Tour
+              </a>
+              <a href="https://stackoverflow.com/questions/tagged/go?tab=Newest" class="Footer-link" aria-describedby="footer-description">
+                Stack Overflow
+              </a>
+              <a href="/help/" class="Footer-link" aria-describedby="footer-description">
+                Help
+              </a>
+          </div>
+          <div class="Footer-linkColumn">
+            <a href="https://pkg.go.dev" class="Footer-link Footer-link--primary" aria-describedby="footer-description">
+              Packages
+            </a>
+              <a href="/pkg/" class="Footer-link" aria-describedby="footer-description">
+                Standard Library
+              </a>
+              <a href="https://pkg.go.dev/about" class="Footer-link" aria-describedby="footer-description">
+                About Go Packages
+              </a>
+          </div>
+          <div class="Footer-linkColumn">
+            <a href="/project" class="Footer-link Footer-link--primary" aria-describedby="footer-description">
+              About
+            </a>
+              <a href="/dl/" class="Footer-link" aria-describedby="footer-description">
+                Download
+              </a>
+              <a href="/blog/" class="Footer-link" aria-describedby="footer-description">
+                Blog
+              </a>
+              <a href="https://github.com/golang/go/issues" class="Footer-link" aria-describedby="footer-description">
+                Issue Tracker
+              </a>
+              <a href="/doc/devel/release" class="Footer-link" aria-describedby="footer-description">
+                Release Notes
+              </a>
+              <a href="/brand" class="Footer-link" aria-describedby="footer-description">
+                Brand Guidelines
+              </a>
+              <a href="/conduct" class="Footer-link" aria-describedby="footer-description">
+                Code of Conduct
+              </a>
+          </div>
+          <div class="Footer-linkColumn">
+            <a href="https://www.twitter.com/golang" class="Footer-link Footer-link--primary" aria-describedby="footer-description">
+              Connect
+            </a>
+              <a href="https://www.twitter.com/golang" class="Footer-link" aria-describedby="footer-description">
+                Twitter
+              </a>
+              <a href="https://github.com/golang" class="Footer-link" aria-describedby="footer-description">
+                GitHub
+              </a>
+              <a href="https://invite.slack.golangbridge.org/" class="Footer-link" aria-describedby="footer-description">
+                Slack
+              </a>
+              <a href="https://reddit.com/r/golang" class="Footer-link" aria-describedby="footer-description">
+                r/golang
+              </a>
+              <a href="https://www.meetup.com/pro/go" class="Footer-link" aria-describedby="footer-description">
+                Meetup
+              </a>
+              <a href="https://golangweekly.com/" class="Footer-link" aria-describedby="footer-description">
+                Golang Weekly
+              </a>
+          </div>
+      </div>
+    </div>
+  </div>
+  <div class="screen-reader-only" id="footer-description" hidden>
+          Opens in new window.
+  </div>
+  <div class="Footer">
+    <div class="Container Container--fullBleed">
+      <div class="Footer-bottom">
+        <img class="Footer-gopher" src="/images/gophers/pilot-bust.svg" alt="The Go Gopher">
+        <ul class="Footer-listRow">
+          <li class="Footer-listItem">
+            <a href="/copyright" aria-describedby="footer-description">Copyright</a>
+          </li>
+          <li class="Footer-listItem">
+            <a href="/tos" aria-describedby="footer-description">Terms of Service</a>
+          </li>
+          <li class="Footer-listItem">
+            <a href="http://www.google.com/intl/en/policies/privacy/" aria-describedby="footer-description"
+              target="_blank"
+              rel="noopener">
+              Privacy Policy
+            </a>
+            </li>
+          <li class="Footer-listItem">
+            <a
+              href="/s/website-issue" aria-describedby="footer-description"
+              target="_blank"
+              rel="noopener"
+              >
+              Report an Issue
+            </a>
+          </li>
+          <li class="Footer-listItem go-Footer-listItem">
+            <button class="go-Button go-Button--text go-Footer-toggleTheme js-toggleTheme" aria-label="Toggle theme">
+              <img
+                data-value="auto"
+                class="go-Icon go-Icon--inverted"
+                height="24"
+                width="24"
+                src="/images/icons/brightness_6_gm_grey_24dp.svg"
+                alt="System theme">
+              <img
+                data-value="dark"
+                class="go-Icon go-Icon--inverted"
+                height="24"
+                width="24"
+                src="/images/icons/brightness_2_gm_grey_24dp.svg"
+                alt="Dark theme">
+              <img
+                data-value="light"
+                class="go-Icon go-Icon--inverted"
+                height="24"
+                width="24"
+                src="/images/icons/light_mode_gm_grey_24dp.svg"
+                alt="Light theme">
+            </button>
+          </li>
+        </ul>
+        <a class="Footer-googleLogo" target="_blank" href="https://google.com" rel="noopener">
+          <img class="Footer-googleLogoImg" src="/images/google-white.png" alt="Google logo">
+        </a>
+      </div>
+    </div>
+  </div>
+  <script src="/js/jquery.js"></script>
+  <script src="/js/carousels.js"></script>
+  <script src="/js/searchBox.js"></script>
+  <script src="/js/misc.js"></script>
+  <script src="/js/hats.js"></script>
+  <script src="/js/playground.js"></script>
+  <script src="/js/godocs.js"></script>
+  <script async src="/js/copypaste.js"></script>
+</footer>
+<section class="Cookie-notice js-cookieNotice">
+  <div>go.dev uses cookies from Google to deliver and enhance the quality of its services and to
+  analyze traffic. <a target=_blank href="https://policies.google.com/technologies/cookies">Learn more.</a></div>
+  <div><button class="go-Button">Okay</button></div>
+</section>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

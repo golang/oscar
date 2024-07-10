@@ -171,6 +171,14 @@ func (c *Crawler) Get(url string) (*Page, bool) {
 	return c.decodePage(e), true
 }
 
+// Set adds p to the crawled page database.
+// It is typically only used for setting up tests.
+func (c *Crawler) Set(p *Page) {
+	b := c.db.Batch()
+	c.set(b, p)
+	b.Apply()
+}
+
 // set records p in the batch b.
 func (c *Crawler) set(b storage.Batch, p *Page) {
 	if strings.Contains(p.URL, "#") {

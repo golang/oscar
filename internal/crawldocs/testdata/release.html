@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="auto">
+<head>
+
+<link rel="preconnect" href="https://www.googletagmanager.com">
+<script >(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  })(window,document,'script','dataLayer','GTM-W8MVQXG');</script>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#00add8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Material+Icons">
+<link rel="stylesheet" href="/css/styles.css">
+<link rel="icon" href="/images/favicon-gopher.png" sizes="any">
+<link rel="apple-touch-icon" href="/images/favicon-gopher-plain.png"/>
+<link rel="icon" href="/images/favicon-gopher.svg" type="image/svg+xml">
+<link rel="me" href="https://hachyderm.io/@golang">
+
+
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  })(window,document,'script','dataLayer','GTM-W8MVQXG');</script>
+
+<script src="/js/site.js"></script>
+<meta name="og:url" content="https://go.dev/wiki/Go-Release-Cycle">
+<meta name="og:title" content="Go Wiki: Go-Release-Cycle - The Go Programming Language">
+<title>Go Wiki: Go-Release-Cycle - The Go Programming Language</title>
+
+<meta name="og:image" content="https://go.dev/doc/gopher/gopher5logo.jpg">
+<meta name="twitter:image" content="https://go.dev/doc/gopher/gopherbelly300.jpg">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:site" content="@golang">
+</head>
+<body class="Site">
+
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-W8MVQXG"
+  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+
+
+<header class="Site-header js-siteHeader">
+  <div class="Header Header--dark">
+    <nav class="Header-nav">
+      <a href="/">
+        <img
+          class="js-headerLogo Header-logo"
+          src="/images/go-logo-white.svg"
+          alt="Go">
+      </a>
+      <div class="skip-navigation-wrapper">
+        <a class="skip-to-content-link" aria-label="Skip to main content" href="#main-content"> Skip to Main Content </a>
+      </div>
+      <div class="Header-rightContent">
+        <ul class="Header-menu">
+          <li class="Header-menuItem ">
+            <a href="#"  class="js-desktop-menu-hover" aria-label=Why&#32;Go aria-describedby="dropdown-description">
+              Why Go <i class="material-icons" aria-hidden="true">arrow_drop_down</i>
+            </a>
+            <div class="screen-reader-only" id="dropdown-description" hidden>
+              Press Enter to activate/deactivate dropdown
+            </div>
+              <ul class="Header-submenu js-desktop-submenu-hover" aria-label="submenu">
+                  <li class="Header-submenuItem">
+                    <div>
+                        <a href="/solutions/case-studies">
+                          Case Studies
+
+                        </a>
+                    </div>
+                    <p>Common problems companies solve with Go</p>
+                  </li>
+                  <li class="Header-submenuItem">
+                    <div>
+                        <a href="/solutions/use-cases">
+                          Use Cases
+
+                        </a>
+                    </div>
+                    <p>Stories about how and why companies use Go</p>
+                  </li>
+                  <li class="Header-submenuItem">
+                    <div>
+                        <a href="/security/">
+                          Security
+
+                        </a>
+                    </div>
+                    <p>How Go can help keep you secure by default</p>
+                  </li>
+              </ul>
+          </li>
+          <li class="Header-menuItem ">
+            <a href="/learn/"  aria-label=Learn aria-describedby="dropdown-description">
+              Learn
+            </a>
+            <div class="screen-reader-only" id="dropdown-description" hidden>
+              Press Enter to activate/deactivate dropdown
+            </div>
+          </li>
+          <li class="Header-menuItem ">
+            <a href="#"  class="js-desktop-menu-hover" aria-label=Docs aria-describedby="dropdown-description">
+              Docs <i class="material-icons" aria-hidden="true">arrow_drop_down</i>
+            </a>
+            <div class="screen-reader-only" id="dropdown-description" hidden>
+              Press Enter to activate/deactivate dropdown
+            </div>
+              <ul class="Header-submenu js-desktop-submenu-hover" aria-label="submenu">
+                  <li class="Header-submenuItem">
+                    <div>
+                        <a href="/doc/effective_go">
+                          Effective Go
+
+                        </a>
+                    </div>
+                    <p>Tips for writing clear, performant, and idiomatic Go code</p>
+                  </li>
+                  <li class="Header-submenuItem">
+                    <div>
+                        <a href="/doc">
+                          Go User Manual
+
+                        </a>
+                    </div>
+                    <p>A complete introduction to building software with Go</p>
+                  </li>
+                  <li class="Header-submenuItem">
+                    <div>
+                        <a href="https://pkg.go.dev/std">
+                          Standard library
+
+                        </a>
+                    </div>
+                    <p>Reference documentation for Go&#39;s standard library</p>
+                  </li>
+                  <li class="Header-submenuItem">
+                    <div>
+                        <a href="/doc/devel/release">
+                          Release Notes
+
+                        </a>
+                    </div>
+                    <p>Learn what&#39;s new in each Go release</p>
+                  </li>
+              </ul>
+          </li>
+          <li class="Header-menuItem ">
+            <a href="https://pkg.go.dev"  aria-label=Packages aria-describedby="dropdown-description">
+              Packages
+            </a>
+            <div class="screen-reader-only" id="dropdown-description" hidden>
+              Press Enter to activate/deactivate dropdown
+            </div>
+          </li>
+          <li class="Header-menuItem ">
+            <a href="#"  class="js-desktop-menu-hover" aria-label=Community aria-describedby="dropdown-description">
+              Community <i class="material-icons" aria-hidden="true">arrow_drop_down</i>
+            </a>
+            <div class="screen-reader-only" id="dropdown-description" hidden>
+              Press Enter to activate/deactivate dropdown
+            </div>
+              <ul class="Header-submenu js-desktop-submenu-hover" aria-label="submenu">
+                  <li class="Header-submenuItem">
+                    <div>
+                        <a href="/talks/">
+                          Recorded Talks
+
+                        </a>
+                    </div>
+                    <p>Videos from prior events</p>
+                  </li>
+                  <li class="Header-submenuItem">
+                    <div>
+                        <a href="https://www.meetup.com/pro/go">
+                          Meetups
+                           <i class="material-icons">open_in_new</i>
+                        </a>
+                    </div>
+                    <p>Meet other local Go developers</p>
+                  </li>
+                  <li class="Header-submenuItem">
+                    <div>
+                        <a href="/wiki/Conferences">
+                          Conferences
+                           <i class="material-icons">open_in_new</i>
+                        </a>
+                    </div>
+                    <p>Learn and network with Go developers from around the world</p>
+                  </li>
+                  <li class="Header-submenuItem">
+                    <div>
+                        <a href="/blog">
+                          Go blog
+
+                        </a>
+                    </div>
+                    <p>The Go project&#39;s official blog.</p>
+                  </li>
+                  <li class="Header-submenuItem">
+                    <div>
+                        <a href="/help">
+                          Go project
+
+                        </a>
+                    </div>
+                    <p>Get help and stay informed from Go</p>
+                  </li>
+                  <li class="Header-submenuItem">
+                    <div>
+                        Get connected
+                    </div>
+                    <p></p>
+                      <div class="Header-socialIcons">
+
+                        <a class="Header-socialIcon" aria-label="Get connected with google-groups (Opens in new window)" href="https://groups.google.com/g/golang-nuts"><img src="/images/logos/social/google-groups.svg" /></a>
+                        <a class="Header-socialIcon" aria-label="Get connected with github (Opens in new window)" href="https://github.com/golang"><img src="/images/logos/social/github.svg" /></a>
+                        <a class="Header-socialIcon" aria-label="Get connected with twitter (Opens in new window)" href="https://twitter.com/golang"><img src="/images/logos/social/twitter.svg" /></a>
+                        <a class="Header-socialIcon" aria-label="Get connected with reddit (Opens in new window)" href="https://www.reddit.com/r/golang/"><img src="/images/logos/social/reddit.svg" /></a>
+                        <a class="Header-socialIcon" aria-label="Get connected with slack (Opens in new window)" href="https://invite.slack.golangbridge.org/"><img src="/images/logos/social/slack.svg" /></a>
+                        <a class="Header-socialIcon" aria-label="Get connected with stack-overflow (Opens in new window)" href="https://stackoverflow.com/tags/go"><img src="/images/logos/social/stack-overflow.svg" /></a>
+                      </div>
+                  </li>
+              </ul>
+          </li>
+        </ul>
+        <button class="Header-navOpen js-headerMenuButton Header-navOpen--white" aria-label="Open navigation.">
+        </button>
+      </div>
+    </nav>
+
+  </div>
+</header>
+<aside class="NavigationDrawer js-header">
+  <nav class="NavigationDrawer-nav">
+    <div class="NavigationDrawer-header">
+      <a href="/">
+        <img class="NavigationDrawer-logo" src="/images/go-logo-blue.svg" alt="Go.">
+      </a>
+    </div>
+    <ul class="NavigationDrawer-list">
+
+          <li class="NavigationDrawer-listItem js-mobile-subnav-trigger  NavigationDrawer-hasSubnav">
+            <a href="#"><span>Why Go</span> <i class="material-icons">navigate_next</i></a>
+
+            <div class="NavigationDrawer NavigationDrawer-submenuItem">
+              <nav class="NavigationDrawer-nav">
+                <div class="NavigationDrawer-header">
+                  <a href="#"><i class="material-icons">navigate_before</i>Why Go</a>
+                </div>
+                <ul class="NavigationDrawer-list">
+                    <li class="NavigationDrawer-listItem">
+                        <a href="/solutions/case-studies">
+                          Case Studies
+
+                        </a>
+
+                    </li>
+                    <li class="NavigationDrawer-listItem">
+                        <a href="/solutions/use-cases">
+                          Use Cases
+
+                        </a>
+
+                    </li>
+                    <li class="NavigationDrawer-listItem">
+                        <a href="/security/">
+                          Security
+
+                        </a>
+
+                    </li>
+                </ul>
+              </div>
+            </div>
+          </li>
+
+
+
+          <li class="NavigationDrawer-listItem ">
+            <a href="/learn/">Learn</a>
+          </li>
+
+
+          <li class="NavigationDrawer-listItem js-mobile-subnav-trigger  NavigationDrawer-hasSubnav">
+            <a href="#"><span>Docs</span> <i class="material-icons">navigate_next</i></a>
+
+            <div class="NavigationDrawer NavigationDrawer-submenuItem">
+              <nav class="NavigationDrawer-nav">
+                <div class="NavigationDrawer-header">
+                  <a href="#"><i class="material-icons">navigate_before</i>Docs</a>
+                </div>
+                <ul class="NavigationDrawer-list">
+                    <li class="NavigationDrawer-listItem">
+                        <a href="/doc/effective_go">
+                          Effective Go
+
+                        </a>
+
+                    </li>
+                    <li class="NavigationDrawer-listItem">
+                        <a href="/doc">
+                          Go User Manual
+
+                        </a>
+
+                    </li>
+                    <li class="NavigationDrawer-listItem">
+                        <a href="https://pkg.go.dev/std">
+                          Standard library
+
+                        </a>
+
+                    </li>
+                    <li class="NavigationDrawer-listItem">
+                        <a href="/doc/devel/release">
+                          Release Notes
+
+                        </a>
+
+                    </li>
+                </ul>
+              </div>
+            </div>
+          </li>
+
+
+
+          <li class="NavigationDrawer-listItem ">
+            <a href="https://pkg.go.dev">Packages</a>
+          </li>
+
+
+          <li class="NavigationDrawer-listItem js-mobile-subnav-trigger  NavigationDrawer-hasSubnav">
+            <a href="#"><span>Community</span> <i class="material-icons">navigate_next</i></a>
+
+            <div class="NavigationDrawer NavigationDrawer-submenuItem">
+              <nav class="NavigationDrawer-nav">
+                <div class="NavigationDrawer-header">
+                  <a href="#"><i class="material-icons">navigate_before</i>Community</a>
+                </div>
+                <ul class="NavigationDrawer-list">
+                    <li class="NavigationDrawer-listItem">
+                        <a href="/talks/">
+                          Recorded Talks
+
+                        </a>
+
+                    </li>
+                    <li class="NavigationDrawer-listItem">
+                        <a href="https://www.meetup.com/pro/go">
+                          Meetups
+                           <i class="material-icons">open_in_new</i>
+                        </a>
+
+                    </li>
+                    <li class="NavigationDrawer-listItem">
+                        <a href="/wiki/Conferences">
+                          Conferences
+                           <i class="material-icons">open_in_new</i>
+                        </a>
+
+                    </li>
+                    <li class="NavigationDrawer-listItem">
+                        <a href="/blog">
+                          Go blog
+
+                        </a>
+
+                    </li>
+                    <li class="NavigationDrawer-listItem">
+                        <a href="/help">
+                          Go project
+
+                        </a>
+
+                    </li>
+                    <li class="NavigationDrawer-listItem">
+                        <div>Get connected</div>
+                        <div class="Header-socialIcons">
+
+                            <a class="Header-socialIcon" href="https://groups.google.com/g/golang-nuts"><img src="/images/logos/social/google-groups.svg" /></a>
+                            <a class="Header-socialIcon" href="https://github.com/golang"><img src="/images/logos/social/github.svg" /></a>
+                            <a class="Header-socialIcon" href="https://twitter.com/golang"><img src="/images/logos/social/twitter.svg" /></a>
+                            <a class="Header-socialIcon" href="https://www.reddit.com/r/golang/"><img src="/images/logos/social/reddit.svg" /></a>
+                            <a class="Header-socialIcon" href="https://invite.slack.golangbridge.org/"><img src="/images/logos/social/slack.svg" /></a>
+                            <a class="Header-socialIcon" href="https://stackoverflow.com/tags/go"><img src="/images/logos/social/stack-overflow.svg" /></a>
+                        </div>
+                    </li>
+                </ul>
+              </div>
+            </div>
+          </li>
+
+
+    </ul>
+  </nav>
+</aside>
+<div class="NavigationDrawer-scrim js-scrim" role="presentation"></div>
+<main class="SiteContent SiteContent--default" id="main-content">
+
+
+
+<article class="Doc Article">
+
+
+
+
+
+<h1>Go Wiki: Go-Release-Cycle</h1>
+
+
+
+
+
+
+<div id="nav" class="TOC"></div>
+
+
+
+<p>This wiki page is maintained by the Go team. Please
+<a href="https://groups.google.com/group/golang-dev" rel="noreferrer" target="_blank">send comments to golang-dev</a> or
+<a href="https://go.dev/issue" rel="noreferrer" target="_blank">file issues</a> instead of making changes directly.</p>
+<p>Short link: <a href="https://go.dev/s/release" rel="noreferrer" target="_blank">https://go.dev/s/release</a>.</p>
+<h2 id="overview">Overview</h2>
+<p>Go is released every six months. Each release cycle is broken down into a
+development phase lasting about 4 months, followed by a 3-month period of
+testing and polishing called the release freeze. If everything goes well, work
+on the next release begins before the previous release has shipped, resulting in
+an overlap of about a month.</p>
+<p>After the initial release of a version, it is supported with minor releases that
+fix severe bugs and security issues.</p>
+<h2 id="timeline">Timeline</h2>
+<p>The current release cycle is aligned to start in mid-January and mid-July of
+each year. The target milestones for a release cycle are as described below. We
+try to hit the targets as closely as possible, while still delivering a quality
+release.</p>
+<p>To give the team time to prepare, and to address unexpected problems, we prefer
+to do release work early or mid-week. That means that exact dates will vary year
+to year, so milestones are specified as weeks in a particular month. Week 1 is
+the week starting on the first Monday of the month. All dates are subject to
+change based on the year&rsquo;s holiday timings.</p>
+<p><img src="images/release-cycle.svg" alt="release"></p>
+<h4 id="january--july-week-1-planning-for-release-begins">January / July week 1: Planning for release begins.</h4>
+<p>Planning of major work for upcoming release cycle is announced on
+<a href="https://groups.google.com/group/golang-dev" rel="noreferrer" target="_blank">golang-dev</a>.</p>
+<p>Example: <a href="https://groups.google.com/g/golang-dev/c/V8ez4YunkeE" rel="noreferrer" target="_blank">Go 1.20</a></p>
+<h4 id="january--july-week-3-release-work-begins">January / July week 3: Release work begins.</h4>
+<p>Once the prior release has entered its final stabilization period, the tree
+opens for general development. All kinds of development are welcome during this
+period. It&rsquo;s preferable for large or particularly risky changes to land well
+before the end of the development window, so that there&rsquo;s time to fix any
+problems that arise with them.</p>
+<h4 id="may--november-week-4-release-freeze-begins">May / November week 4: Release freeze begins.</h4>
+<p>This milestone begins the second part of the release cycle, the release freeze.
+The release freeze applies to the entire main repository as well as to the code
+in subrepositories that is needed to build the binaries included in the release,
+particularly vet and all its dependencies in the tools subrepository.</p>
+<p>During the freeze, only bug fixes, test-only changes, and doc updates
+are accepted. On occasion new work may be done during the freeze, but
+only in exceptional circumstances and typically only if the work was
+proposed and approved before the cutoff. Such changes must be low
+risk. See <a href="#freeze-exceptions">freeze exceptions</a> below.</p>
+<p>This part of the release cycle is focused on improving the quality of the
+release, by testing it and fixing bugs that are found. However, every fix must
+be evaluated to balance the benefit of a possible fix against the cost of now
+having not as well tested code (the fix) in the release. Early in the release
+cycle, the balance tends toward accepting a fix. Late in the release cycle, the
+balance tends toward rejecting a fix, unless a case can be made that the fix is
+both low risk and high reward.</p>
+<p>Examples of low risk changes appropriate late in the cycle include changes to
+documentation and fixes to new features being introduced in the current release
+(since there is no chance of introducing a regression compared to an earlier
+release).</p>
+<p>Shortly after the freeze begins, nearly all known bugs should have been fixed or
+explicitly postponed (either to the next release or indefinitely). The remainder
+should usually be tracked as release blockers and worked on urgently.</p>
+<h4 id="june--december-week-2-release-candidate-1-issued">June / December week 2: Release candidate 1 issued.</h4>
+<p>A release candidate is meant to be as close as possible to the actual release
+bits. Issuing a release candidate is an indication that the Go team has high
+confidence that the tree is free of critical bugs. In particular, because Google
+continuously tracks the development version of Go, by the time a release
+candidate is issued, a close approximation of it will have been running in
+production at Google for at least a week or two.</p>
+<p>Once a release candidate is issued, only documentation changes and changes to
+address critical bugs should be made. In general the bar for bug fixes at this
+point is even slightly higher than the bar for bug fixes in a minor release. We
+may prefer to issue a release with a known but very rare crash than to issue a
+release with a new but not production-tested fix.</p>
+<p>If critical bugs are reported and fixed, additional release candidates may be
+issued, but typically not more than one every two weeks.</p>
+<p>Again, a release candidate is meant to be bug-free, as much as possible.
+Organizations are encouraged to deploy it in production settings after
+appropriate organization-specific testing.</p>
+<p>The calm period between a release candidate and the final release is a good time
+for additional testing or for discussing the next release (see the planning
+milestone above).</p>
+<h4 id="july--january-week-3-work-on-the-next-release-begins">July / January week 3: Work on the next release begins</h4>
+<p>While the current release is being stabilized, the tree reopens for work on the
+next. During this period, fixes intended for the current release need to be
+<a href="https://go.dev/wiki/MinorReleases#making-cherry-pick-cls" rel="noreferrer" target="_blank">cherry-picked onto the release branch</a>.
+Unlike cherry-picks for minor releases, these changes don&rsquo;t need a backport
+issue and don&rsquo;t need to be approved by the release team. As long as they&rsquo;re
+permitted by the <a href="#may--november-week-4-release-freeze-begins">freeze policy</a>,
+they can be reviewed and submitted like any other CL.</p>
+<h4 id="august--february-week-2-release-issued">August / February week 2: Release issued.</h4>
+<p>Finally, the release itself!</p>
+<p>A release should not contain significant changes since the last release
+candidate: it is important that all code in the release has been well tested.
+Issuing a release is an indication that release testing has confirmed the
+release candidate&rsquo;s high confidence that the tree is free of critical bugs.</p>
+<p>Even if a release goes smoothly and there&rsquo;s spare time, we prefer to stay on
+schedule. Extra testing can only improve the stability of a release, and it also
+gives developers working on the Go release more time to think about and plan the
+next release before code changes start pouring in again.</p>
+<p>By the time of the final release, Google will have been using this version of Go
+for nearly two months. While Google&rsquo;s successful use does not guarantee the
+absence of problems, our experience has been that it certainly helps improve the
+quality of the release. We strongly encourage other organizations to test
+release candidates as aggressively as they are able and to report problems that
+they find.</p>
+<p>Once a release is stabilized, work on the next release, including code reviews
+and submission of new code, can begin, and the cycle repeats. Note that if a
+release is delayed, work on the next release may be delayed as well.</p>
+<h2 id="release-maintenance">Release Maintenance</h2>
+<p>A minor release is issued to address one or more critical problems for which
+there is no workaround (typically related to stability or security). The only
+code changes included in the release are the fixes for the specific critical
+problems. Important documentation-only changes and safe test updates (such as
+disabling tests), may also be included as well, but nothing more. Minor releases
+preserve backwards compatibility as much as possible, and don&rsquo;t introduce new
+APIs.</p>
+<p>Minor releases to address problems (including security issues) for Go 1.x stop
+once Go 1.x+2 is released. For more about security updates, see the
+<a href="https://go.dev/security" rel="noreferrer" target="_blank">security policy</a>.</p>
+<p>See also the <a href="https://go.dev/wiki/MinorReleases" rel="noreferrer" target="_blank">MinorReleases</a> wiki page.</p>
+<h2 id="freeze-exceptions">Freeze Exceptions</h2>
+<p>Fix CLs that are
+<a href="#may--november-week-4-release-freeze-begins">permitted by the freeze policy</a> do
+not need a freeze exception.</p>
+<p>Any exceptions to the freeze must be communicated to and explicitly approved by
+the Go Release Team before the freeze. If you’d like to request an exception,
+please file an issue in the issue tracker with &ldquo;[freeze exception]&rdquo; as a suffix
+and include &ldquo;CC @golang/release&rdquo; (<a href="https://go.dev/issue/42747" rel="noreferrer" target="_blank">example</a>). We
+will address any requests on a case-by-case basis with a strong preference for
+not permitting changes after the freeze.</p>
+<h2 id="historical-note">Historical note</h2>
+<p>A version of this schedule, with a shorter development window, was originally
+adopted for the Go 1.7 release in 2016. After years of difficult releases,
+testing and process improvements in 2022 and 2023 led to a timely 1.19 release.
+For 1.20, the development window was expanded with a late freeze and early thaw.
+These changes were formalized for the 1.21 release. We anticipate continuing to
+ship on time.</p>
+
+
+
+
+
+<hr>
+<p>
+<i>This content is part of the <a href="/wiki/">Go Wiki</a>.</i>
+</p>
+
+</article>
+
+
+
+</main>
+<footer class="Site-footer">
+  <div class="Footer">
+    <div class="Container">
+      <div class="Footer-links">
+          <div class="Footer-linkColumn">
+            <a href="/solutions/" class="Footer-link Footer-link--primary" aria-describedby="footer-description">
+              Why Go
+            </a>
+              <a href="/solutions/use-cases" class="Footer-link" aria-describedby="footer-description">
+                Use Cases
+              </a>
+              <a href="/solutions/case-studies" class="Footer-link" aria-describedby="footer-description">
+                Case Studies
+              </a>
+          </div>
+          <div class="Footer-linkColumn">
+            <a href="/learn/" class="Footer-link Footer-link--primary" aria-describedby="footer-description">
+              Get Started
+            </a>
+              <a href="/play" class="Footer-link" aria-describedby="footer-description">
+                Playground
+              </a>
+              <a href="/tour/" class="Footer-link" aria-describedby="footer-description">
+                Tour
+              </a>
+              <a href="https://stackoverflow.com/questions/tagged/go?tab=Newest" class="Footer-link" aria-describedby="footer-description">
+                Stack Overflow
+              </a>
+              <a href="/help/" class="Footer-link" aria-describedby="footer-description">
+                Help
+              </a>
+          </div>
+          <div class="Footer-linkColumn">
+            <a href="https://pkg.go.dev" class="Footer-link Footer-link--primary" aria-describedby="footer-description">
+              Packages
+            </a>
+              <a href="/pkg/" class="Footer-link" aria-describedby="footer-description">
+                Standard Library
+              </a>
+              <a href="https://pkg.go.dev/about" class="Footer-link" aria-describedby="footer-description">
+                About Go Packages
+              </a>
+          </div>
+          <div class="Footer-linkColumn">
+            <a href="/project" class="Footer-link Footer-link--primary" aria-describedby="footer-description">
+              About
+            </a>
+              <a href="/dl/" class="Footer-link" aria-describedby="footer-description">
+                Download
+              </a>
+              <a href="/blog/" class="Footer-link" aria-describedby="footer-description">
+                Blog
+              </a>
+              <a href="https://github.com/golang/go/issues" class="Footer-link" aria-describedby="footer-description">
+                Issue Tracker
+              </a>
+              <a href="/doc/devel/release" class="Footer-link" aria-describedby="footer-description">
+                Release Notes
+              </a>
+              <a href="/brand" class="Footer-link" aria-describedby="footer-description">
+                Brand Guidelines
+              </a>
+              <a href="/conduct" class="Footer-link" aria-describedby="footer-description">
+                Code of Conduct
+              </a>
+          </div>
+          <div class="Footer-linkColumn">
+            <a href="https://www.twitter.com/golang" class="Footer-link Footer-link--primary" aria-describedby="footer-description">
+              Connect
+            </a>
+              <a href="https://www.twitter.com/golang" class="Footer-link" aria-describedby="footer-description">
+                Twitter
+              </a>
+              <a href="https://github.com/golang" class="Footer-link" aria-describedby="footer-description">
+                GitHub
+              </a>
+              <a href="https://invite.slack.golangbridge.org/" class="Footer-link" aria-describedby="footer-description">
+                Slack
+              </a>
+              <a href="https://reddit.com/r/golang" class="Footer-link" aria-describedby="footer-description">
+                r/golang
+              </a>
+              <a href="https://www.meetup.com/pro/go" class="Footer-link" aria-describedby="footer-description">
+                Meetup
+              </a>
+              <a href="https://golangweekly.com/" class="Footer-link" aria-describedby="footer-description">
+                Golang Weekly
+              </a>
+          </div>
+      </div>
+    </div>
+  </div>
+  <div class="screen-reader-only" id="footer-description" hidden>
+          Opens in new window.
+  </div>
+  <div class="Footer">
+    <div class="Container Container--fullBleed">
+      <div class="Footer-bottom">
+        <img class="Footer-gopher" src="/images/gophers/pilot-bust.svg" alt="The Go Gopher">
+        <ul class="Footer-listRow">
+          <li class="Footer-listItem">
+            <a href="/copyright" aria-describedby="footer-description">Copyright</a>
+          </li>
+          <li class="Footer-listItem">
+            <a href="/tos" aria-describedby="footer-description">Terms of Service</a>
+          </li>
+          <li class="Footer-listItem">
+            <a href="http://www.google.com/intl/en/policies/privacy/" aria-describedby="footer-description"
+              target="_blank"
+              rel="noopener">
+              Privacy Policy
+            </a>
+            </li>
+          <li class="Footer-listItem">
+            <a
+              href="/s/website-issue" aria-describedby="footer-description"
+              target="_blank"
+              rel="noopener"
+              >
+              Report an Issue
+            </a>
+          </li>
+          <li class="Footer-listItem go-Footer-listItem">
+            <button class="go-Button go-Button--text go-Footer-toggleTheme js-toggleTheme" aria-label="Toggle theme">
+              <img
+                data-value="auto"
+                class="go-Icon go-Icon--inverted"
+                height="24"
+                width="24"
+                src="/images/icons/brightness_6_gm_grey_24dp.svg"
+                alt="System theme">
+              <img
+                data-value="dark"
+                class="go-Icon go-Icon--inverted"
+                height="24"
+                width="24"
+                src="/images/icons/brightness_2_gm_grey_24dp.svg"
+                alt="Dark theme">
+              <img
+                data-value="light"
+                class="go-Icon go-Icon--inverted"
+                height="24"
+                width="24"
+                src="/images/icons/light_mode_gm_grey_24dp.svg"
+                alt="Light theme">
+            </button>
+          </li>
+        </ul>
+        <a class="Footer-googleLogo" target="_blank" href="https://google.com" rel="noopener">
+          <img class="Footer-googleLogoImg" src="/images/google-white.png" alt="Google logo">
+        </a>
+      </div>
+    </div>
+  </div>
+  <script src="/js/jquery.js"></script>
+  <script src="/js/carousels.js"></script>
+  <script src="/js/searchBox.js"></script>
+  <script src="/js/misc.js"></script>
+  <script src="/js/hats.js"></script>
+  <script src="/js/playground.js"></script>
+  <script src="/js/godocs.js"></script>
+  <script async src="/js/copypaste.js"></script>
+</footer>
+<section class="Cookie-notice js-cookieNotice">
+  <div>go.dev uses cookies from Google to deliver and enhance the quality of its services and to
+  analyze traffic. <a target=_blank href="https://policies.google.com/technologies/cookies">Learn more.</a></div>
+  <div><button class="go-Button">Okay</button></div>
+</section>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

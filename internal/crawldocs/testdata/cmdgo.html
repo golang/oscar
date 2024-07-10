@@ -1,0 +1,3472 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="auto">
+<head>
+
+<link rel="preconnect" href="https://www.googletagmanager.com">
+<script >(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  })(window,document,'script','dataLayer','GTM-W8MVQXG');</script>
+  
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#00add8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Material+Icons">
+<link rel="stylesheet" href="/css/styles.css">
+<link rel="icon" href="/images/favicon-gopher.png" sizes="any">
+<link rel="apple-touch-icon" href="/images/favicon-gopher-plain.png"/>
+<link rel="icon" href="/images/favicon-gopher.svg" type="image/svg+xml">
+<link rel="me" href="https://hachyderm.io/@golang">
+
+  
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  })(window,document,'script','dataLayer','GTM-W8MVQXG');</script>
+  
+<script src="/js/site.js"></script>
+<meta name="og:url" content="https://go.dev/cmd/go/">
+<meta name="og:title" content="Command go - The Go Programming Language">
+<title>Command go - The Go Programming Language</title>
+
+<meta name="og:image" content="https://go.dev/doc/gopher/gopher5logo.jpg">
+<meta name="twitter:image" content="https://go.dev/doc/gopher/gopherbelly300.jpg">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:site" content="@golang">
+</head>
+<body class="Site">
+  
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-W8MVQXG"
+  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  
+
+
+<header class="Site-header js-siteHeader">
+  <div class="Header Header--dark">
+    <nav class="Header-nav">
+      <a href="/">
+        <img
+          class="js-headerLogo Header-logo"
+          src="/images/go-logo-white.svg"
+          alt="Go">
+      </a>
+      <div class="skip-navigation-wrapper">
+        <a class="skip-to-content-link" aria-label="Skip to main content" href="#main-content"> Skip to Main Content </a>
+      </div>
+      <div class="Header-rightContent">
+        <ul class="Header-menu">
+          <li class="Header-menuItem ">
+            <a href="#"  class="js-desktop-menu-hover" aria-label=Why&#32;Go aria-describedby="dropdown-description">
+              Why Go <i class="material-icons" aria-hidden="true">arrow_drop_down</i>
+            </a>
+            <div class="screen-reader-only" id="dropdown-description" hidden>
+              Press Enter to activate/deactivate dropdown
+            </div>
+              <ul class="Header-submenu js-desktop-submenu-hover" aria-label="submenu">
+                  <li class="Header-submenuItem">
+                    <div>
+                        <a href="/solutions/case-studies">
+                          Case Studies
+                          
+                        </a>
+                    </div>
+                    <p>Common problems companies solve with Go</p>
+                  </li>
+                  <li class="Header-submenuItem">
+                    <div>
+                        <a href="/solutions/use-cases">
+                          Use Cases
+                          
+                        </a>
+                    </div>
+                    <p>Stories about how and why companies use Go</p>
+                  </li>
+                  <li class="Header-submenuItem">
+                    <div>
+                        <a href="/security/">
+                          Security
+                          
+                        </a>
+                    </div>
+                    <p>How Go can help keep you secure by default</p>
+                  </li>
+              </ul>
+          </li>
+          <li class="Header-menuItem ">
+            <a href="/learn/"  aria-label=Learn aria-describedby="dropdown-description">
+              Learn 
+            </a>
+            <div class="screen-reader-only" id="dropdown-description" hidden>
+              Press Enter to activate/deactivate dropdown
+            </div>
+          </li>
+          <li class="Header-menuItem ">
+            <a href="#"  class="js-desktop-menu-hover" aria-label=Docs aria-describedby="dropdown-description">
+              Docs <i class="material-icons" aria-hidden="true">arrow_drop_down</i>
+            </a>
+            <div class="screen-reader-only" id="dropdown-description" hidden>
+              Press Enter to activate/deactivate dropdown
+            </div>
+              <ul class="Header-submenu js-desktop-submenu-hover" aria-label="submenu">
+                  <li class="Header-submenuItem">
+                    <div>
+                        <a href="/doc/effective_go">
+                          Effective Go
+                          
+                        </a>
+                    </div>
+                    <p>Tips for writing clear, performant, and idiomatic Go code</p>
+                  </li>
+                  <li class="Header-submenuItem">
+                    <div>
+                        <a href="/doc">
+                          Go User Manual
+                          
+                        </a>
+                    </div>
+                    <p>A complete introduction to building software with Go</p>
+                  </li>
+                  <li class="Header-submenuItem">
+                    <div>
+                        <a href="https://pkg.go.dev/std">
+                          Standard library
+                          
+                        </a>
+                    </div>
+                    <p>Reference documentation for Go&#39;s standard library</p>
+                  </li>
+                  <li class="Header-submenuItem">
+                    <div>
+                        <a href="/doc/devel/release">
+                          Release Notes
+                          
+                        </a>
+                    </div>
+                    <p>Learn what&#39;s new in each Go release</p>
+                  </li>
+              </ul>
+          </li>
+          <li class="Header-menuItem ">
+            <a href="https://pkg.go.dev"  aria-label=Packages aria-describedby="dropdown-description">
+              Packages 
+            </a>
+            <div class="screen-reader-only" id="dropdown-description" hidden>
+              Press Enter to activate/deactivate dropdown
+            </div>
+          </li>
+          <li class="Header-menuItem ">
+            <a href="#"  class="js-desktop-menu-hover" aria-label=Community aria-describedby="dropdown-description">
+              Community <i class="material-icons" aria-hidden="true">arrow_drop_down</i>
+            </a>
+            <div class="screen-reader-only" id="dropdown-description" hidden>
+              Press Enter to activate/deactivate dropdown
+            </div>
+              <ul class="Header-submenu js-desktop-submenu-hover" aria-label="submenu">
+                  <li class="Header-submenuItem">
+                    <div>
+                        <a href="/talks/">
+                          Recorded Talks
+                          
+                        </a>
+                    </div>
+                    <p>Videos from prior events</p>
+                  </li>
+                  <li class="Header-submenuItem">
+                    <div>
+                        <a href="https://www.meetup.com/pro/go">
+                          Meetups
+                           <i class="material-icons">open_in_new</i>
+                        </a>
+                    </div>
+                    <p>Meet other local Go developers</p>
+                  </li>
+                  <li class="Header-submenuItem">
+                    <div>
+                        <a href="/wiki/Conferences">
+                          Conferences
+                           <i class="material-icons">open_in_new</i>
+                        </a>
+                    </div>
+                    <p>Learn and network with Go developers from around the world</p>
+                  </li>
+                  <li class="Header-submenuItem">
+                    <div>
+                        <a href="/blog">
+                          Go blog
+                          
+                        </a>
+                    </div>
+                    <p>The Go project&#39;s official blog.</p>
+                  </li>
+                  <li class="Header-submenuItem">
+                    <div>
+                        <a href="/help">
+                          Go project
+                          
+                        </a>
+                    </div>
+                    <p>Get help and stay informed from Go</p>
+                  </li>
+                  <li class="Header-submenuItem">
+                    <div>
+                        Get connected
+                    </div>
+                    <p></p>
+                      <div class="Header-socialIcons">
+                        
+                        <a class="Header-socialIcon" aria-label="Get connected with google-groups (Opens in new window)" href="https://groups.google.com/g/golang-nuts"><img src="/images/logos/social/google-groups.svg" /></a>
+                        <a class="Header-socialIcon" aria-label="Get connected with github (Opens in new window)" href="https://github.com/golang"><img src="/images/logos/social/github.svg" /></a>
+                        <a class="Header-socialIcon" aria-label="Get connected with twitter (Opens in new window)" href="https://twitter.com/golang"><img src="/images/logos/social/twitter.svg" /></a>
+                        <a class="Header-socialIcon" aria-label="Get connected with reddit (Opens in new window)" href="https://www.reddit.com/r/golang/"><img src="/images/logos/social/reddit.svg" /></a>
+                        <a class="Header-socialIcon" aria-label="Get connected with slack (Opens in new window)" href="https://invite.slack.golangbridge.org/"><img src="/images/logos/social/slack.svg" /></a>
+                        <a class="Header-socialIcon" aria-label="Get connected with stack-overflow (Opens in new window)" href="https://stackoverflow.com/tags/go"><img src="/images/logos/social/stack-overflow.svg" /></a>
+                      </div>
+                  </li>
+              </ul>
+          </li>
+        </ul>
+        <button class="Header-navOpen js-headerMenuButton Header-navOpen--white" aria-label="Open navigation.">
+        </button>
+      </div>
+    </nav>
+    
+  </div>
+</header>
+<aside class="NavigationDrawer js-header">
+  <nav class="NavigationDrawer-nav">
+    <div class="NavigationDrawer-header">
+      <a href="/">
+        <img class="NavigationDrawer-logo" src="/images/go-logo-blue.svg" alt="Go.">
+      </a>
+    </div>
+    <ul class="NavigationDrawer-list">
+        
+          <li class="NavigationDrawer-listItem js-mobile-subnav-trigger  NavigationDrawer-hasSubnav">
+            <a href="#"><span>Why Go</span> <i class="material-icons">navigate_next</i></a>
+
+            <div class="NavigationDrawer NavigationDrawer-submenuItem">
+              <nav class="NavigationDrawer-nav">
+                <div class="NavigationDrawer-header">
+                  <a href="#"><i class="material-icons">navigate_before</i>Why Go</a>
+                </div>
+                <ul class="NavigationDrawer-list">
+                    <li class="NavigationDrawer-listItem">
+                        <a href="/solutions/case-studies">
+                          Case Studies
+                          
+                        </a>
+                      
+                    </li>
+                    <li class="NavigationDrawer-listItem">
+                        <a href="/solutions/use-cases">
+                          Use Cases
+                          
+                        </a>
+                      
+                    </li>
+                    <li class="NavigationDrawer-listItem">
+                        <a href="/security/">
+                          Security
+                          
+                        </a>
+                      
+                    </li>
+                </ul>
+              </div>
+            </div>
+          </li>
+
+        
+        
+          <li class="NavigationDrawer-listItem ">
+            <a href="/learn/">Learn</a>
+          </li>
+        
+        
+          <li class="NavigationDrawer-listItem js-mobile-subnav-trigger  NavigationDrawer-hasSubnav">
+            <a href="#"><span>Docs</span> <i class="material-icons">navigate_next</i></a>
+
+            <div class="NavigationDrawer NavigationDrawer-submenuItem">
+              <nav class="NavigationDrawer-nav">
+                <div class="NavigationDrawer-header">
+                  <a href="#"><i class="material-icons">navigate_before</i>Docs</a>
+                </div>
+                <ul class="NavigationDrawer-list">
+                    <li class="NavigationDrawer-listItem">
+                        <a href="/doc/effective_go">
+                          Effective Go
+                          
+                        </a>
+                      
+                    </li>
+                    <li class="NavigationDrawer-listItem">
+                        <a href="/doc">
+                          Go User Manual
+                          
+                        </a>
+                      
+                    </li>
+                    <li class="NavigationDrawer-listItem">
+                        <a href="https://pkg.go.dev/std">
+                          Standard library
+                          
+                        </a>
+                      
+                    </li>
+                    <li class="NavigationDrawer-listItem">
+                        <a href="/doc/devel/release">
+                          Release Notes
+                          
+                        </a>
+                      
+                    </li>
+                </ul>
+              </div>
+            </div>
+          </li>
+
+        
+        
+          <li class="NavigationDrawer-listItem ">
+            <a href="https://pkg.go.dev">Packages</a>
+          </li>
+        
+        
+          <li class="NavigationDrawer-listItem js-mobile-subnav-trigger  NavigationDrawer-hasSubnav">
+            <a href="#"><span>Community</span> <i class="material-icons">navigate_next</i></a>
+
+            <div class="NavigationDrawer NavigationDrawer-submenuItem">
+              <nav class="NavigationDrawer-nav">
+                <div class="NavigationDrawer-header">
+                  <a href="#"><i class="material-icons">navigate_before</i>Community</a>
+                </div>
+                <ul class="NavigationDrawer-list">
+                    <li class="NavigationDrawer-listItem">
+                        <a href="/talks/">
+                          Recorded Talks
+                          
+                        </a>
+                      
+                    </li>
+                    <li class="NavigationDrawer-listItem">
+                        <a href="https://www.meetup.com/pro/go">
+                          Meetups
+                           <i class="material-icons">open_in_new</i>
+                        </a>
+                      
+                    </li>
+                    <li class="NavigationDrawer-listItem">
+                        <a href="/wiki/Conferences">
+                          Conferences
+                           <i class="material-icons">open_in_new</i>
+                        </a>
+                      
+                    </li>
+                    <li class="NavigationDrawer-listItem">
+                        <a href="/blog">
+                          Go blog
+                          
+                        </a>
+                      
+                    </li>
+                    <li class="NavigationDrawer-listItem">
+                        <a href="/help">
+                          Go project
+                          
+                        </a>
+                      
+                    </li>
+                    <li class="NavigationDrawer-listItem">
+                        <div>Get connected</div>
+                        <div class="Header-socialIcons">
+                          
+                            <a class="Header-socialIcon" href="https://groups.google.com/g/golang-nuts"><img src="/images/logos/social/google-groups.svg" /></a>
+                            <a class="Header-socialIcon" href="https://github.com/golang"><img src="/images/logos/social/github.svg" /></a>
+                            <a class="Header-socialIcon" href="https://twitter.com/golang"><img src="/images/logos/social/twitter.svg" /></a>
+                            <a class="Header-socialIcon" href="https://www.reddit.com/r/golang/"><img src="/images/logos/social/reddit.svg" /></a>
+                            <a class="Header-socialIcon" href="https://invite.slack.golangbridge.org/"><img src="/images/logos/social/slack.svg" /></a>
+                            <a class="Header-socialIcon" href="https://stackoverflow.com/tags/go"><img src="/images/logos/social/stack-overflow.svg" /></a>
+                        </div>
+                    </li>
+                </ul>
+              </div>
+            </div>
+          </li>
+
+        
+    </ul>
+  </nav>
+</aside>
+<div class="NavigationDrawer-scrim js-scrim" role="presentation"></div>
+<main class="SiteContent SiteContent--default" id="main-content">
+  
+
+<article class="Pkg Article">
+
+<h1>Command go</h1>
+
+
+
+
+	
+		
+		<p>Go is a tool for managing Go source code.
+<p>Usage:
+<pre>go &lt;command&gt; [arguments]
+</pre>
+<p>The commands are:
+<pre>bug         start a bug report
+build       compile packages and dependencies
+clean       remove object files and cached files
+doc         show documentation for package or symbol
+env         print Go environment information
+fix         update packages to use new APIs
+fmt         gofmt (reformat) package sources
+generate    generate Go files by processing source
+get         add dependencies to current module and install them
+install     compile and install packages and dependencies
+list        list packages or modules
+mod         module maintenance
+work        workspace maintenance
+run         compile and run Go program
+telemetry   manage telemetry data and settings
+test        test packages
+tool        run specified go tool
+version     print Go version
+vet         report likely mistakes in packages
+</pre>
+<p>Use &quot;go help &lt;command&gt;&quot; for more information about a command.
+<p>Additional help topics:
+<pre>buildconstraint build constraints
+buildmode       build modes
+c               calling between Go and C
+cache           build and test caching
+environment     environment variables
+filetype        file types
+go.mod          the go.mod file
+gopath          GOPATH environment variable
+goproxy         module proxy protocol
+importpath      import path syntax
+modules         modules, module versions, and more
+module-auth     module authentication using go.sum
+packages        package lists and patterns
+private         configuration for downloading non-public code
+testflag        testing flags
+testfunc        testing functions
+vcs             controlling version control with GOVCS
+</pre>
+<p>Use &quot;go help &lt;topic&gt;&quot; for more information about that topic.
+<h3 id="hdr-Start_a_bug_report">Start a bug report</h3>
+<p>Usage:
+<pre>go bug
+</pre>
+<p>Bug opens the default browser and starts a new bug report.
+The report includes useful system information.
+<h3 id="hdr-Compile_packages_and_dependencies">Compile packages and dependencies</h3>
+<p>Usage:
+<pre>go build [-o output] [build flags] [packages]
+</pre>
+<p>Build compiles the packages named by the import paths,
+along with their dependencies, but it does not install the results.
+<p>If the arguments to build are a list of .go files from a single directory,
+build treats them as a list of source files specifying a single package.
+<p>When compiling packages, build ignores files that end in &apos;_test.go&apos;.
+<p>When compiling a single main package, build writes the resulting
+executable to an output file named after the last non-major-version
+component of the package import path. The &apos;.exe&apos; suffix is added
+when writing a Windows executable.
+So &apos;go build example/sam&apos; writes &apos;sam&apos; or &apos;sam.exe&apos;.
+&apos;go build example.com/foo/v2&apos; writes &apos;foo&apos; or &apos;foo.exe&apos;, not &apos;v2.exe&apos;.
+<p>When compiling a package from a list of .go files, the executable
+is named after the first source file.
+&apos;go build ed.go rx.go&apos; writes &apos;ed&apos; or &apos;ed.exe&apos;.
+<p>When compiling multiple packages or a single non-main package,
+build compiles the packages but discards the resulting object,
+serving only as a check that the packages can be built.
+<p>The -o flag forces build to write the resulting executable or object
+to the named output file or directory, instead of the default behavior described
+in the last two paragraphs. If the named output is an existing directory or
+ends with a slash or backslash, then any resulting executables
+will be written to that directory.
+<p>The build flags are shared by the build, clean, get, install, list, run,
+and test commands:
+<pre>-C dir
+	Change to dir before running the command.
+	Any files named on the command line are interpreted after
+	changing directories.
+	If used, this flag must be the first one in the command line.
+-a
+	force rebuilding of packages that are already up-to-date.
+-n
+	print the commands but do not run them.
+-p n
+	the number of programs, such as build commands or
+	test binaries, that can be run in parallel.
+	The default is GOMAXPROCS, normally the number of CPUs available.
+-race
+	enable data race detection.
+	Supported only on linux/amd64, freebsd/amd64, darwin/amd64, darwin/arm64, windows/amd64,
+	linux/ppc64le and linux/arm64 (only for 48-bit VMA).
+-msan
+	enable interoperation with memory sanitizer.
+	Supported only on linux/amd64, linux/arm64, linux/loong64, freebsd/amd64
+	and only with Clang/LLVM as the host C compiler.
+	PIE build mode will be used on all platforms except linux/amd64.
+-asan
+	enable interoperation with address sanitizer.
+	Supported only on linux/arm64, linux/amd64, linux/loong64.
+	Supported on linux/amd64 or linux/arm64 and only with GCC 7 and higher
+	or Clang/LLVM 9 and higher.
+	And supported on linux/loong64 only with Clang/LLVM 16 and higher.
+-cover
+	enable code coverage instrumentation.
+-covermode set,count,atomic
+	set the mode for coverage analysis.
+	The default is &quot;set&quot; unless -race is enabled,
+	in which case it is &quot;atomic&quot;.
+	The values:
+	set: bool: does this statement run?
+	count: int: how many times does this statement run?
+	atomic: int: count, but correct in multithreaded tests;
+		significantly more expensive.
+	Sets -cover.
+-coverpkg pattern1,pattern2,pattern3
+	For a build that targets package &apos;main&apos; (e.g. building a Go
+	executable), apply coverage analysis to each package matching
+	the patterns. The default is to apply coverage analysis to
+	packages in the main Go module. See &apos;go help packages&apos; for a
+	description of package patterns.  Sets -cover.
+-v
+	print the names of packages as they are compiled.
+-work
+	print the name of the temporary work directory and
+	do not delete it when exiting.
+-x
+	print the commands.
+-asmflags &apos;[pattern=]arg list&apos;
+	arguments to pass on each go tool asm invocation.
+-buildmode mode
+	build mode to use. See &apos;go help buildmode&apos; for more.
+-buildvcs
+	Whether to stamp binaries with version control information
+	(&quot;true&quot;, &quot;false&quot;, or &quot;auto&quot;). By default (&quot;auto&quot;), version control
+	information is stamped into a binary if the main package, the main module
+	containing it, and the current directory are all in the same repository.
+	Use -buildvcs=false to always omit version control information, or
+	-buildvcs=true to error out if version control information is available but
+	cannot be included due to a missing tool or ambiguous directory structure.
+-compiler name
+	name of compiler to use, as in runtime.Compiler (gccgo or gc).
+-gccgoflags &apos;[pattern=]arg list&apos;
+	arguments to pass on each gccgo compiler/linker invocation.
+-gcflags &apos;[pattern=]arg list&apos;
+	arguments to pass on each go tool compile invocation.
+-installsuffix suffix
+	a suffix to use in the name of the package installation directory,
+	in order to keep output separate from default builds.
+	If using the -race flag, the install suffix is automatically set to race
+	or, if set explicitly, has _race appended to it. Likewise for the -msan
+	and -asan flags. Using a -buildmode option that requires non-default compile
+	flags has a similar effect.
+-ldflags &apos;[pattern=]arg list&apos;
+	arguments to pass on each go tool link invocation.
+-linkshared
+	build code that will be linked against shared libraries previously
+	created with -buildmode=shared.
+-mod mode
+	module download mode to use: readonly, vendor, or mod.
+	By default, if a vendor directory is present and the go version in go.mod
+	is 1.14 or higher, the go command acts as if -mod=vendor were set.
+	Otherwise, the go command acts as if -mod=readonly were set.
+	See https://golang.org/ref/mod#build-commands for details.
+-modcacherw
+	leave newly-created directories in the module cache read-write
+	instead of making them read-only.
+-modfile file
+	in module aware mode, read (and possibly write) an alternate go.mod
+	file instead of the one in the module root directory. A file named
+	&quot;go.mod&quot; must still be present in order to determine the module root
+	directory, but it is not accessed. When -modfile is specified, an
+	alternate go.sum file is also used: its path is derived from the
+	-modfile flag by trimming the &quot;.mod&quot; extension and appending &quot;.sum&quot;.
+-overlay file
+	read a JSON config file that provides an overlay for build operations.
+	The file is a JSON struct with a single field, named &apos;Replace&apos;, that
+	maps each disk file path (a string) to its backing file path, so that
+	a build will run as if the disk file path exists with the contents
+	given by the backing file paths, or as if the disk file path does not
+	exist if its backing file path is empty. Support for the -overlay flag
+	has some limitations: importantly, cgo files included from outside the
+	include path must be in the same directory as the Go package they are
+	included from, and overlays will not appear when binaries and tests are
+	run through go run and go test respectively.
+-pgo file
+	specify the file path of a profile for profile-guided optimization (PGO).
+	When the special name &quot;auto&quot; is specified, for each main package in the
+	build, the go command selects a file named &quot;default.pgo&quot; in the package&apos;s
+	directory if that file exists, and applies it to the (transitive)
+	dependencies of the main package (other packages are not affected).
+	Special name &quot;off&quot; turns off PGO. The default is &quot;auto&quot;.
+-pkgdir dir
+	install and load all packages from dir instead of the usual locations.
+	For example, when building with a non-standard configuration,
+	use -pkgdir to keep generated packages in a separate location.
+-tags tag,list
+	a comma-separated list of additional build tags to consider satisfied
+	during the build. For more information about build tags, see
+	&apos;go help buildconstraint&apos;. (Earlier versions of Go used a
+	space-separated list, and that form is deprecated but still recognized.)
+-trimpath
+	remove all file system paths from the resulting executable.
+	Instead of absolute file system paths, the recorded file names
+	will begin either a module path@version (when using modules),
+	or a plain import path (when using the standard library, or GOPATH).
+-toolexec &apos;cmd args&apos;
+	a program to use to invoke toolchain programs like vet and asm.
+	For example, instead of running asm, the go command will run
+	&apos;cmd args /path/to/asm &lt;arguments for asm&gt;&apos;.
+	The TOOLEXEC_IMPORTPATH environment variable will be set,
+	matching &apos;go list -f {{.ImportPath}}&apos; for the package being built.
+</pre>
+<p>The -asmflags, -gccgoflags, -gcflags, and -ldflags flags accept a
+space-separated list of arguments to pass to an underlying tool
+during the build. To embed spaces in an element in the list, surround
+it with either single or double quotes. The argument list may be
+preceded by a package pattern and an equal sign, which restricts
+the use of that argument list to the building of packages matching
+that pattern (see &apos;go help packages&apos; for a description of package
+patterns). Without a pattern, the argument list applies only to the
+packages named on the command line. The flags may be repeated
+with different patterns in order to specify different arguments for
+different sets of packages. If a package matches patterns given in
+multiple flags, the latest match on the command line wins.
+For example, &apos;go build -gcflags=-S fmt&apos; prints the disassembly
+only for package fmt, while &apos;go build -gcflags=all=-S fmt&apos;
+prints the disassembly for fmt and all its dependencies.
+<p>For more about specifying packages, see &apos;go help packages&apos;.
+For more about where packages and binaries are installed,
+run &apos;go help gopath&apos;.
+For more about calling between Go and C/C++, run &apos;go help c&apos;.
+<p>Note: Build adheres to certain conventions such as those described
+by &apos;go help gopath&apos;. Not all projects can follow these conventions,
+however. Installations that have their own conventions or that use
+a separate software build system may choose to use lower-level
+invocations such as &apos;go tool compile&apos; and &apos;go tool link&apos; to avoid
+some of the overheads and design decisions of the build tool.
+<p>See also: go install, go get, go clean.
+<h3 id="hdr-Remove_object_files_and_cached_files">Remove object files and cached files</h3>
+<p>Usage:
+<pre>go clean [-i] [-r] [-cache] [-testcache] [-modcache] [-fuzzcache] [build flags] [packages]
+</pre>
+<p>Clean removes object files from package source directories.
+The go command builds most objects in a temporary directory,
+so go clean is mainly concerned with object files left by other
+tools or by manual invocations of go build.
+<p>If a package argument is given or the -i or -r flag is set,
+clean removes the following files from each of the
+source directories corresponding to the import paths:
+<pre>_obj/            old object directory, left from Makefiles
+_test/           old test directory, left from Makefiles
+_testmain.go     old gotest file, left from Makefiles
+test.out         old test log, left from Makefiles
+build.out        old test log, left from Makefiles
+*.[568ao]        object files, left from Makefiles
+
+DIR(.exe)        from go build
+DIR.test(.exe)   from go test -c
+MAINFILE(.exe)   from go build MAINFILE.go
+*.so             from SWIG
+</pre>
+<p>In the list, DIR represents the final path element of the
+directory, and MAINFILE is the base name of any Go source
+file in the directory that is not included when building
+the package.
+<p>The -i flag causes clean to remove the corresponding installed
+archive or binary (what &apos;go install&apos; would create).
+<p>The -n flag causes clean to print the remove commands it would execute,
+but not run them.
+<p>The -r flag causes clean to be applied recursively to all the
+dependencies of the packages named by the import paths.
+<p>The -x flag causes clean to print remove commands as it executes them.
+<p>The -cache flag causes clean to remove the entire go build cache.
+<p>The -testcache flag causes clean to expire all test results in the
+go build cache.
+<p>The -modcache flag causes clean to remove the entire module
+download cache, including unpacked source code of versioned
+dependencies.
+<p>The -fuzzcache flag causes clean to remove files stored in the Go build
+cache for fuzz testing. The fuzzing engine caches files that expand
+code coverage, so removing them may make fuzzing less effective until
+new inputs are found that provide the same coverage. These files are
+distinct from those stored in testdata directory; clean does not remove
+those files.
+<p>For more about build flags, see &apos;go help build&apos;.
+<p>For more about specifying packages, see &apos;go help packages&apos;.
+<h3 id="hdr-Show_documentation_for_package_or_symbol">Show documentation for package or symbol</h3>
+<p>Usage:
+<pre>go doc [doc flags] [package|[package.]symbol[.methodOrField]]
+</pre>
+<p>Doc prints the documentation comments associated with the item identified by its
+arguments (a package, const, func, type, var, method, or struct field)
+followed by a one-line summary of each of the first-level items &quot;under&quot;
+that item (package-level declarations for a package, methods for a type,
+etc.).
+<p>Doc accepts zero, one, or two arguments.
+<p>Given no arguments, that is, when run as
+<pre>go doc
+</pre>
+<p>it prints the package documentation for the package in the current directory.
+If the package is a command (package main), the exported symbols of the package
+are elided from the presentation unless the -cmd flag is provided.
+<p>When run with one argument, the argument is treated as a Go-syntax-like
+representation of the item to be documented. What the argument selects depends
+on what is installed in GOROOT and GOPATH, as well as the form of the argument,
+which is schematically one of these:
+<pre>go doc &lt;pkg&gt;
+go doc &lt;sym&gt;[.&lt;methodOrField&gt;]
+go doc [&lt;pkg&gt;.]&lt;sym&gt;[.&lt;methodOrField&gt;]
+go doc [&lt;pkg&gt;.][&lt;sym&gt;.]&lt;methodOrField&gt;
+</pre>
+<p>The first item in this list matched by the argument is the one whose documentation
+is printed. (See the examples below.) However, if the argument starts with a capital
+letter it is assumed to identify a symbol or method in the current directory.
+<p>For packages, the order of scanning is determined lexically in breadth-first order.
+That is, the package presented is the one that matches the search and is nearest
+the root and lexically first at its level of the hierarchy. The GOROOT tree is
+always scanned in its entirety before GOPATH.
+<p>If there is no package specified or matched, the package in the current
+directory is selected, so &quot;go doc Foo&quot; shows the documentation for symbol Foo in
+the current package.
+<p>The package path must be either a qualified path or a proper suffix of a
+path. The go tool&apos;s usual package mechanism does not apply: package path
+elements like . and ... are not implemented by go doc.
+<p>When run with two arguments, the first is a package path (full path or suffix),
+and the second is a symbol, or symbol with method or struct field:
+<pre>go doc &lt;pkg&gt; &lt;sym&gt;[.&lt;methodOrField&gt;]
+</pre>
+<p>In all forms, when matching symbols, lower-case letters in the argument match
+either case but upper-case letters match exactly. This means that there may be
+multiple matches of a lower-case argument in a package if different symbols have
+different cases. If this occurs, documentation for all matches is printed.
+<p>Examples:
+<pre>go doc
+	Show documentation for current package.
+go doc Foo
+	Show documentation for Foo in the current package.
+	(Foo starts with a capital letter so it cannot match
+	a package path.)
+go doc encoding/json
+	Show documentation for the encoding/json package.
+go doc json
+	Shorthand for encoding/json.
+go doc json.Number (or go doc json.number)
+	Show documentation and method summary for json.Number.
+go doc json.Number.Int64 (or go doc json.number.int64)
+	Show documentation for json.Number&apos;s Int64 method.
+go doc cmd/doc
+	Show package docs for the doc command.
+go doc -cmd cmd/doc
+	Show package docs and exported symbols within the doc command.
+go doc template.new
+	Show documentation for html/template&apos;s New function.
+	(html/template is lexically before text/template)
+go doc text/template.new # One argument
+	Show documentation for text/template&apos;s New function.
+go doc text/template new # Two arguments
+	Show documentation for text/template&apos;s New function.
+
+At least in the current tree, these invocations all print the
+documentation for json.Decoder&apos;s Decode method:
+
+go doc json.Decoder.Decode
+go doc json.decoder.decode
+go doc json.decode
+cd go/src/encoding/json; go doc decode
+</pre>
+<p>Flags:
+<pre>-all
+	Show all the documentation for the package.
+-c
+	Respect case when matching symbols.
+-cmd
+	Treat a command (package main) like a regular package.
+	Otherwise package main&apos;s exported symbols are hidden
+	when showing the package&apos;s top-level documentation.
+-short
+	One-line representation for each symbol.
+-src
+	Show the full source code for the symbol. This will
+	display the full Go source of its declaration and
+	definition, such as a function definition (including
+	the body), type declaration or enclosing const
+	block. The output may therefore include unexported
+	details.
+-u
+	Show documentation for unexported as well as exported
+	symbols, methods, and fields.
+</pre>
+<h3 id="hdr-Print_Go_environment_information">Print Go environment information</h3>
+<p>Usage:
+<pre>go env [-json] [-changed] [-u] [-w] [var ...]
+</pre>
+<p>Env prints Go environment information.
+<p>By default env prints information as a shell script
+(on Windows, a batch file). If one or more variable
+names is given as arguments, env prints the value of
+each named variable on its own line.
+<p>The -json flag prints the environment in JSON format
+instead of as a shell script.
+<p>The -u flag requires one or more arguments and unsets
+the default setting for the named environment variables,
+if one has been set with &apos;go env -w&apos;.
+<p>The -w flag requires one or more arguments of the
+form NAME=VALUE and changes the default settings
+of the named environment variables to the given values.
+<p>The -changed flag prints only those settings whose effective
+value differs from the default value that would be obtained in
+an empty environment with no prior uses of the -w flag.
+<p>For more about environment variables, see &apos;go help environment&apos;.
+<h3 id="hdr-Update_packages_to_use_new_APIs">Update packages to use new APIs</h3>
+<p>Usage:
+<pre>go fix [-fix list] [packages]
+</pre>
+<p>Fix runs the Go fix command on the packages named by the import paths.
+<p>The -fix flag sets a comma-separated list of fixes to run.
+The default is all known fixes.
+(Its value is passed to &apos;go tool fix -r&apos;.)
+<p>For more about fix, see &apos;go doc cmd/fix&apos;.
+For more about specifying packages, see &apos;go help packages&apos;.
+<p>To run fix with other options, run &apos;go tool fix&apos;.
+<p>See also: go fmt, go vet.
+<h3 id="hdr-Gofmt__reformat__package_sources">Gofmt (reformat) package sources</h3>
+<p>Usage:
+<pre>go fmt [-n] [-x] [packages]
+</pre>
+<p>Fmt runs the command &apos;gofmt -l -w&apos; on the packages named
+by the import paths. It prints the names of the files that are modified.
+<p>For more about gofmt, see &apos;go doc cmd/gofmt&apos;.
+For more about specifying packages, see &apos;go help packages&apos;.
+<p>The -n flag prints commands that would be executed.
+The -x flag prints commands as they are executed.
+<p>The -mod flag&apos;s value sets which module download mode
+to use: readonly or vendor. See &apos;go help modules&apos; for more.
+<p>To run gofmt with specific options, run gofmt itself.
+<p>See also: go fix, go vet.
+<h3 id="hdr-Generate_Go_files_by_processing_source">Generate Go files by processing source</h3>
+<p>Usage:
+<pre>go generate [-run regexp] [-n] [-v] [-x] [build flags] [file.go... | packages]
+</pre>
+<p>Generate runs commands described by directives within existing
+files. Those commands can run any process but the intent is to
+create or update Go source files.
+<p>Go generate is never run automatically by go build, go test,
+and so on. It must be run explicitly.
+<p>Go generate scans the file for directives, which are lines of
+the form,
+<pre>//go:generate command argument...
+</pre>
+<p>(note: no leading spaces and no space in &quot;//go&quot;) where command
+is the generator to be run, corresponding to an executable file
+that can be run locally. It must either be in the shell path
+(gofmt), a fully qualified path (/usr/you/bin/mytool), or a
+command alias, described below.
+<p>Note that go generate does not parse the file, so lines that look
+like directives in comments or multiline strings will be treated
+as directives.
+<p>The arguments to the directive are space-separated tokens or
+double-quoted strings passed to the generator as individual
+arguments when it is run.
+<p>Quoted strings use Go syntax and are evaluated before execution; a
+quoted string appears as a single argument to the generator.
+<p>To convey to humans and machine tools that code is generated,
+generated source should have a line that matches the following
+regular expression (in Go syntax):
+<pre>^// Code generated .* DO NOT EDIT\.$
+</pre>
+<p>This line must appear before the first non-comment, non-blank
+text in the file.
+<p>Go generate sets several variables when it runs the generator:
+<pre>$GOARCH
+	The execution architecture (arm, amd64, etc.)
+$GOOS
+	The execution operating system (linux, windows, etc.)
+$GOFILE
+	The base name of the file.
+$GOLINE
+	The line number of the directive in the source file.
+$GOPACKAGE
+	The name of the package of the file containing the directive.
+$GOROOT
+	The GOROOT directory for the &apos;go&apos; command that invoked the
+	generator, containing the Go toolchain and standard library.
+$DOLLAR
+	A dollar sign.
+$PATH
+	The $PATH of the parent process, with $GOROOT/bin
+	placed at the beginning. This causes generators
+	that execute &apos;go&apos; commands to use the same &apos;go&apos;
+	as the parent &apos;go generate&apos; command.
+</pre>
+<p>Other than variable substitution and quoted-string evaluation, no
+special processing such as &quot;globbing&quot; is performed on the command
+line.
+<p>As a last step before running the command, any invocations of any
+environment variables with alphanumeric names, such as $GOFILE or
+$HOME, are expanded throughout the command line. The syntax for
+variable expansion is $NAME on all operating systems. Due to the
+order of evaluation, variables are expanded even inside quoted
+strings. If the variable NAME is not set, $NAME expands to the
+empty string.
+<p>A directive of the form,
+<pre>//go:generate -command xxx args...
+</pre>
+<p>specifies, for the remainder of this source file only, that the
+string xxx represents the command identified by the arguments. This
+can be used to create aliases or to handle multiword generators.
+For example,
+<pre>//go:generate -command foo go tool foo
+</pre>
+<p>specifies that the command &quot;foo&quot; represents the generator
+&quot;go tool foo&quot;.
+<p>Generate processes packages in the order given on the command line,
+one at a time. If the command line lists .go files from a single directory,
+they are treated as a single package. Within a package, generate processes the
+source files in a package in file name order, one at a time. Within
+a source file, generate runs generators in the order they appear
+in the file, one at a time. The go generate tool also sets the build
+tag &quot;generate&quot; so that files may be examined by go generate but ignored
+during build.
+<p>For packages with invalid code, generate processes only source files with a
+valid package clause.
+<p>If any generator returns an error exit status, &quot;go generate&quot; skips
+all further processing for that package.
+<p>The generator is run in the package&apos;s source directory.
+<p>Go generate accepts two specific flags:
+<pre>-run=&quot;&quot;
+	if non-empty, specifies a regular expression to select
+	directives whose full original source text (excluding
+	any trailing spaces and final newline) matches the
+	expression.
+
+-skip=&quot;&quot;
+	if non-empty, specifies a regular expression to suppress
+	directives whose full original source text (excluding
+	any trailing spaces and final newline) matches the
+	expression. If a directive matches both the -run and
+	the -skip arguments, it is skipped.
+</pre>
+<p>It also accepts the standard build flags including -v, -n, and -x.
+The -v flag prints the names of packages and files as they are
+processed.
+The -n flag prints commands that would be executed.
+The -x flag prints commands as they are executed.
+<p>For more about build flags, see &apos;go help build&apos;.
+<p>For more about specifying packages, see &apos;go help packages&apos;.
+<h3 id="hdr-Add_dependencies_to_current_module_and_install_them">Add dependencies to current module and install them</h3>
+<p>Usage:
+<pre>go get [-t] [-u] [-v] [build flags] [packages]
+</pre>
+<p>Get resolves its command-line arguments to packages at specific module versions,
+updates go.mod to require those versions, and downloads source code into the
+module cache.
+<p>To add a dependency for a package or upgrade it to its latest version:
+<pre>go get example.com/pkg
+</pre>
+<p>To upgrade or downgrade a package to a specific version:
+<pre>go get example.com/pkg@v1.2.3
+</pre>
+<p>To remove a dependency on a module and downgrade modules that require it:
+<pre>go get example.com/mod@none
+</pre>
+<p>To upgrade the minimum required Go version to the latest released Go version:
+<pre>go get go@latest
+</pre>
+<p>To upgrade the Go toolchain to the latest patch release of the current Go toolchain:
+<pre>go get toolchain@patch
+</pre>
+<p>See <a href="https://golang.org/ref/mod#go-get">https://golang.org/ref/mod#go-get</a> for details.
+<p>In earlier versions of Go, &apos;go get&apos; was used to build and install packages.
+Now, &apos;go get&apos; is dedicated to adjusting dependencies in go.mod. &apos;go install&apos;
+may be used to build and install commands instead. When a version is specified,
+&apos;go install&apos; runs in module-aware mode and ignores the go.mod file in the
+current directory. For example:
+<pre>go install example.com/pkg@v1.2.3
+go install example.com/pkg@latest
+</pre>
+<p>See &apos;go help install&apos; or <a href="https://golang.org/ref/mod#go-install">https://golang.org/ref/mod#go-install</a> for details.
+<p>&apos;go get&apos; accepts the following flags.
+<p>The -t flag instructs get to consider modules needed to build tests of
+packages specified on the command line.
+<p>The -u flag instructs get to update modules providing dependencies
+of packages named on the command line to use newer minor or patch
+releases when available.
+<p>The -u=patch flag (not -u patch) also instructs get to update dependencies,
+but changes the default to select patch releases.
+<p>When the -t and -u flags are used together, get will update
+test dependencies as well.
+<p>The -x flag prints commands as they are executed. This is useful for
+debugging version control commands when a module is downloaded directly
+from a repository.
+<p>For more about build flags, see &apos;go help build&apos;.
+<p>For more about modules, see <a href="https://golang.org/ref/mod">https://golang.org/ref/mod</a>.
+<p>For more about using &apos;go get&apos; to update the minimum Go version and
+suggested Go toolchain, see <a href="https://go.dev/doc/toolchain">https://go.dev/doc/toolchain</a>.
+<p>For more about specifying packages, see &apos;go help packages&apos;.
+<p>This text describes the behavior of get using modules to manage source
+code and dependencies. If instead the go command is running in GOPATH
+mode, the details of get&apos;s flags and effects change, as does &apos;go help get&apos;.
+See &apos;go help gopath-get&apos;.
+<p>See also: go build, go install, go clean, go mod.
+<h3 id="hdr-Compile_and_install_packages_and_dependencies">Compile and install packages and dependencies</h3>
+<p>Usage:
+<pre>go install [build flags] [packages]
+</pre>
+<p>Install compiles and installs the packages named by the import paths.
+<p>Executables are installed in the directory named by the GOBIN environment
+variable, which defaults to $GOPATH/bin or $HOME/go/bin if the GOPATH
+environment variable is not set. Executables in $GOROOT
+are installed in $GOROOT/bin or $GOTOOLDIR instead of $GOBIN.
+<p>If the arguments have version suffixes (like @latest or @v1.0.0), &quot;go install&quot;
+builds packages in module-aware mode, ignoring the go.mod file in the current
+directory or any parent directory, if there is one. This is useful for
+installing executables without affecting the dependencies of the main module.
+To eliminate ambiguity about which module versions are used in the build, the
+arguments must satisfy the following constraints:
+<p>- Arguments must be package paths or package patterns (with &quot;...&quot; wildcards).
+They must not be standard packages (like fmt), meta-patterns (std, cmd,
+all), or relative or absolute file paths.
+<p>- All arguments must have the same version suffix. Different queries are not
+allowed, even if they refer to the same version.
+<p>- All arguments must refer to packages in the same module at the same version.
+<p>- Package path arguments must refer to main packages. Pattern arguments
+will only match main packages.
+<p>- No module is considered the &quot;main&quot; module. If the module containing
+packages named on the command line has a go.mod file, it must not contain
+directives (replace and exclude) that would cause it to be interpreted
+differently than if it were the main module. The module must not require
+a higher version of itself.
+<p>- Vendor directories are not used in any module. (Vendor directories are not
+included in the module zip files downloaded by &apos;go install&apos;.)
+<p>If the arguments don&apos;t have version suffixes, &quot;go install&quot; may run in
+module-aware mode or GOPATH mode, depending on the GO111MODULE environment
+variable and the presence of a go.mod file. See &apos;go help modules&apos; for details.
+If module-aware mode is enabled, &quot;go install&quot; runs in the context of the main
+module.
+<p>When module-aware mode is disabled, non-main packages are installed in the
+directory $GOPATH/pkg/$GOOS_$GOARCH. When module-aware mode is enabled,
+non-main packages are built and cached but not installed.
+<p>Before Go 1.20, the standard library was installed to
+$GOROOT/pkg/$GOOS_$GOARCH.
+Starting in Go 1.20, the standard library is built and cached but not installed.
+Setting GODEBUG=installgoroot=all restores the use of
+$GOROOT/pkg/$GOOS_$GOARCH.
+<p>For more about build flags, see &apos;go help build&apos;.
+<p>For more about specifying packages, see &apos;go help packages&apos;.
+<p>See also: go build, go get, go clean.
+<h3 id="hdr-List_packages_or_modules">List packages or modules</h3>
+<p>Usage:
+<pre>go list [-f format] [-json] [-m] [list flags] [build flags] [packages]
+</pre>
+<p>List lists the named packages, one per line.
+The most commonly-used flags are -f and -json, which control the form
+of the output printed for each package. Other list flags, documented below,
+control more specific details.
+<p>The default output shows the package import path:
+<pre>bytes
+encoding/json
+github.com/gorilla/mux
+golang.org/x/net/html
+</pre>
+<p>The -f flag specifies an alternate format for the list, using the
+syntax of package template. The default output is equivalent
+to -f &apos;{{.ImportPath}}&apos;. The struct being passed to the template is:
+<pre>type Package struct {
+    Dir            string   // directory containing package sources
+    ImportPath     string   // import path of package in dir
+    ImportComment  string   // path in import comment on package statement
+    Name           string   // package name
+    Doc            string   // package documentation string
+    Target         string   // install path
+    Shlib          string   // the shared library that contains this package (only set when -linkshared)
+    Goroot         bool     // is this package in the Go root?
+    Standard       bool     // is this package part of the standard Go library?
+    Stale          bool     // would &apos;go install&apos; do anything for this package?
+    StaleReason    string   // explanation for Stale==true
+    Root           string   // Go root or Go path dir containing this package
+    ConflictDir    string   // this directory shadows Dir in $GOPATH
+    BinaryOnly     bool     // binary-only package (no longer supported)
+    ForTest        string   // package is only for use in named test
+    Export         string   // file containing export data (when using -export)
+    BuildID        string   // build ID of the compiled package (when using -export)
+    Module         *Module  // info about package&apos;s containing module, if any (can be nil)
+    Match          []string // command-line patterns matching this package
+    DepOnly        bool     // package is only a dependency, not explicitly listed
+    DefaultGODEBUG string  // default GODEBUG setting, for main packages
+
+    // Source files
+    GoFiles           []string   // .go source files (excluding CgoFiles, TestGoFiles, XTestGoFiles)
+    CgoFiles          []string   // .go source files that import &quot;C&quot;
+    CompiledGoFiles   []string   // .go files presented to compiler (when using -compiled)
+    IgnoredGoFiles    []string   // .go source files ignored due to build constraints
+    IgnoredOtherFiles []string // non-.go source files ignored due to build constraints
+    CFiles            []string   // .c source files
+    CXXFiles          []string   // .cc, .cxx and .cpp source files
+    MFiles            []string   // .m source files
+    HFiles            []string   // .h, .hh, .hpp and .hxx source files
+    FFiles            []string   // .f, .F, .for and .f90 Fortran source files
+    SFiles            []string   // .s source files
+    SwigFiles         []string   // .swig files
+    SwigCXXFiles      []string   // .swigcxx files
+    SysoFiles         []string   // .syso object files to add to archive
+    TestGoFiles       []string   // _test.go files in package
+    XTestGoFiles      []string   // _test.go files outside package
+
+    // Embedded files
+    EmbedPatterns      []string // //go:embed patterns
+    EmbedFiles         []string // files matched by EmbedPatterns
+    TestEmbedPatterns  []string // //go:embed patterns in TestGoFiles
+    TestEmbedFiles     []string // files matched by TestEmbedPatterns
+    XTestEmbedPatterns []string // //go:embed patterns in XTestGoFiles
+    XTestEmbedFiles    []string // files matched by XTestEmbedPatterns
+
+    // Cgo directives
+    CgoCFLAGS    []string // cgo: flags for C compiler
+    CgoCPPFLAGS  []string // cgo: flags for C preprocessor
+    CgoCXXFLAGS  []string // cgo: flags for C++ compiler
+    CgoFFLAGS    []string // cgo: flags for Fortran compiler
+    CgoLDFLAGS   []string // cgo: flags for linker
+    CgoPkgConfig []string // cgo: pkg-config names
+
+    // Dependency information
+    Imports      []string          // import paths used by this package
+    ImportMap    map[string]string // map from source import to ImportPath (identity entries omitted)
+    Deps         []string          // all (recursively) imported dependencies
+    TestImports  []string          // imports from TestGoFiles
+    XTestImports []string          // imports from XTestGoFiles
+
+    // Error information
+    Incomplete bool            // this package or a dependency has an error
+    Error      *PackageError   // error loading package
+    DepsErrors []*PackageError // errors loading dependencies
+}
+</pre>
+<p>Packages stored in vendor directories report an ImportPath that includes the
+path to the vendor directory (for example, &quot;d/vendor/p&quot; instead of &quot;p&quot;),
+so that the ImportPath uniquely identifies a given copy of a package.
+The Imports, Deps, TestImports, and XTestImports lists also contain these
+expanded import paths. See golang.org/s/go15vendor for more about vendoring.
+<p>The error information, if any, is
+<pre>type PackageError struct {
+    ImportStack   []string // shortest path from package named on command line to this one
+    Pos           string   // position of error (if present, file:line:col)
+    Err           string   // the error itself
+}
+</pre>
+<p>The module information is a Module struct, defined in the discussion
+of list -m below.
+<p>The template function &quot;join&quot; calls strings.Join.
+<p>The template function &quot;context&quot; returns the build context, defined as:
+<pre>type Context struct {
+    GOARCH        string   // target architecture
+    GOOS          string   // target operating system
+    GOROOT        string   // Go root
+    GOPATH        string   // Go path
+    CgoEnabled    bool     // whether cgo can be used
+    UseAllFiles   bool     // use files regardless of //go:build lines, file names
+    Compiler      string   // compiler to assume when computing target paths
+    BuildTags     []string // build constraints to match in //go:build lines
+    ToolTags      []string // toolchain-specific build constraints
+    ReleaseTags   []string // releases the current release is compatible with
+    InstallSuffix string   // suffix to use in the name of the install dir
+}
+</pre>
+<p>For more information about the meaning of these fields see the documentation
+for the go/build package&apos;s Context type.
+<p>The -json flag causes the package data to be printed in JSON format
+instead of using the template format. The JSON flag can optionally be
+provided with a set of comma-separated required field names to be output.
+If so, those required fields will always appear in JSON output, but
+others may be omitted to save work in computing the JSON struct.
+<p>The -compiled flag causes list to set CompiledGoFiles to the Go source
+files presented to the compiler. Typically this means that it repeats
+the files listed in GoFiles and then also adds the Go code generated
+by processing CgoFiles and SwigFiles. The Imports list contains the
+union of all imports from both GoFiles and CompiledGoFiles.
+<p>The -deps flag causes list to iterate over not just the named packages
+but also all their dependencies. It visits them in a depth-first post-order
+traversal, so that a package is listed only after all its dependencies.
+Packages not explicitly listed on the command line will have the DepOnly
+field set to true.
+<p>The -e flag changes the handling of erroneous packages, those that
+cannot be found or are malformed. By default, the list command
+prints an error to standard error for each erroneous package and
+omits the packages from consideration during the usual printing.
+With the -e flag, the list command never prints errors to standard
+error and instead processes the erroneous packages with the usual
+printing. Erroneous packages will have a non-empty ImportPath and
+a non-nil Error field; other information may or may not be missing
+(zeroed).
+<p>The -export flag causes list to set the Export field to the name of a
+file containing up-to-date export information for the given package,
+and the BuildID field to the build ID of the compiled package.
+<p>The -find flag causes list to identify the named packages but not
+resolve their dependencies: the Imports and Deps lists will be empty.
+With the -find flag, the -deps, -test and -export commands cannot be
+used.
+<p>The -test flag causes list to report not only the named packages
+but also their test binaries (for packages with tests), to convey to
+source code analysis tools exactly how test binaries are constructed.
+The reported import path for a test binary is the import path of
+the package followed by a &quot;.test&quot; suffix, as in &quot;math/rand.test&quot;.
+When building a test, it is sometimes necessary to rebuild certain
+dependencies specially for that test (most commonly the tested
+package itself). The reported import path of a package recompiled
+for a particular test binary is followed by a space and the name of
+the test binary in brackets, as in &quot;math/rand <a href="/pkg/math/rand.test/?m=old">math/rand.test</a>&quot;
+or &quot;regexp [sort.test]&quot;. The ForTest field is also set to the name
+of the package being tested (&quot;math/rand&quot; or &quot;sort&quot; in the previous
+examples).
+<p>The Dir, Target, Shlib, Root, ConflictDir, and Export file paths
+are all absolute paths.
+<p>By default, the lists GoFiles, CgoFiles, and so on hold names of files in Dir
+(that is, paths relative to Dir, not absolute paths).
+The generated files added when using the -compiled and -test flags
+are absolute paths referring to cached copies of generated Go source files.
+Although they are Go source files, the paths may not end in &quot;.go&quot;.
+<p>The -m flag causes list to list modules instead of packages.
+<p>When listing modules, the -f flag still specifies a format template
+applied to a Go struct, but now a Module struct:
+<pre>type Module struct {
+    Path       string        // module path
+    Query      string        // version query corresponding to this version
+    Version    string        // module version
+    Versions   []string      // available module versions
+    Replace    *Module       // replaced by this module
+    Time       *time.Time    // time version was created
+    Update     *Module       // available update (with -u)
+    Main       bool          // is this the main module?
+    Indirect   bool          // module is only indirectly needed by main module
+    Dir        string        // directory holding local copy of files, if any
+    GoMod      string        // path to go.mod file describing module, if any
+    GoVersion  string        // go version used in module
+    Retracted  []string      // retraction information, if any (with -retracted or -u)
+    Deprecated string        // deprecation message, if any (with -u)
+    Error      *ModuleError  // error loading module
+    Sum        string        // checksum for path, version (as in go.sum)
+    GoModSum   string        // checksum for go.mod (as in go.sum)
+    Origin     any           // provenance of module
+    Reuse      bool          // reuse of old module info is safe
+}
+
+type ModuleError struct {
+    Err string // the error itself
+}
+</pre>
+<p>The file GoMod refers to may be outside the module directory if the
+module is in the module cache or if the -modfile flag is used.
+<p>The default output is to print the module path and then
+information about the version and replacement if any.
+For example, &apos;go list -m all&apos; might print:
+<pre>my/main/module
+golang.org/x/text v0.3.0 =&gt; /tmp/text
+rsc.io/pdf v0.1.1
+</pre>
+<p>The Module struct has a String method that formats this
+line of output, so that the default format is equivalent
+to -f &apos;{{.String}}&apos;.
+<p>Note that when a module has been replaced, its Replace field
+describes the replacement module, and its Dir field is set to
+the replacement&apos;s source code, if present. (That is, if Replace
+is non-nil, then Dir is set to Replace.Dir, with no access to
+the replaced source code.)
+<p>The -u flag adds information about available upgrades.
+When the latest version of a given module is newer than
+the current one, list -u sets the Module&apos;s Update field
+to information about the newer module. list -u will also set
+the module&apos;s Retracted field if the current version is retracted.
+The Module&apos;s String method indicates an available upgrade by
+formatting the newer version in brackets after the current version.
+If a version is retracted, the string &quot;(retracted)&quot; will follow it.
+For example, &apos;go list -m -u all&apos; might print:
+<pre>my/main/module
+golang.org/x/text v0.3.0 [v0.4.0] =&gt; /tmp/text
+rsc.io/pdf v0.1.1 (retracted) [v0.1.2]
+</pre>
+<p>(For tools, &apos;go list -m -u -json all&apos; may be more convenient to parse.)
+<p>The -versions flag causes list to set the Module&apos;s Versions field
+to a list of all known versions of that module, ordered according
+to semantic versioning, earliest to latest. The flag also changes
+the default output format to display the module path followed by the
+space-separated version list.
+<p>The -retracted flag causes list to report information about retracted
+module versions. When -retracted is used with -f or -json, the Retracted
+field will be set to a string explaining why the version was retracted.
+The string is taken from comments on the retract directive in the
+module&apos;s go.mod file. When -retracted is used with -versions, retracted
+versions are listed together with unretracted versions. The -retracted
+flag may be used with or without -m.
+<p>The arguments to list -m are interpreted as a list of modules, not packages.
+The main module is the module containing the current directory.
+The active modules are the main module and its dependencies.
+With no arguments, list -m shows the main module.
+With arguments, list -m shows the modules specified by the arguments.
+Any of the active modules can be specified by its module path.
+The special pattern &quot;all&quot; specifies all the active modules, first the main
+module and then dependencies sorted by module path.
+A pattern containing &quot;...&quot; specifies the active modules whose
+module paths match the pattern.
+A query of the form path@version specifies the result of that query,
+which is not limited to active modules.
+See &apos;go help modules&apos; for more about module queries.
+<p>The template function &quot;module&quot; takes a single string argument
+that must be a module path or query and returns the specified
+module as a Module struct. If an error occurs, the result will
+be a Module struct with a non-nil Error field.
+<p>When using -m, the -reuse=old.json flag accepts the name of file containing
+the JSON output of a previous &apos;go list -m -json&apos; invocation with the
+same set of modifier flags (such as -u, -retracted, and -versions).
+The go command may use this file to determine that a module is unchanged
+since the previous invocation and avoid redownloading information about it.
+Modules that are not redownloaded will be marked in the new output by
+setting the Reuse field to true. Normally the module cache provides this
+kind of reuse automatically; the -reuse flag can be useful on systems that
+do not preserve the module cache.
+<p>For more about build flags, see &apos;go help build&apos;.
+<p>For more about specifying packages, see &apos;go help packages&apos;.
+<p>For more about modules, see <a href="https://golang.org/ref/mod">https://golang.org/ref/mod</a>.
+<h3 id="hdr-Module_maintenance">Module maintenance</h3>
+<p>Go mod provides access to operations on modules.
+<p>Note that support for modules is built into all the go commands,
+not just &apos;go mod&apos;. For example, day-to-day adding, removing, upgrading,
+and downgrading of dependencies should be done using &apos;go get&apos;.
+See &apos;go help modules&apos; for an overview of module functionality.
+<p>Usage:
+<pre>go mod &lt;command&gt; [arguments]
+</pre>
+<p>The commands are:
+<pre>download    download modules to local cache
+edit        edit go.mod from tools or scripts
+graph       print module requirement graph
+init        initialize new module in current directory
+tidy        add missing and remove unused modules
+vendor      make vendored copy of dependencies
+verify      verify dependencies have expected content
+why         explain why packages or modules are needed
+</pre>
+<p>Use &quot;go help mod &lt;command&gt;&quot; for more information about a command.
+<h3 id="hdr-Download_modules_to_local_cache">Download modules to local cache</h3>
+<p>Usage:
+<pre>go mod download [-x] [-json] [-reuse=old.json] [modules]
+</pre>
+<p>Download downloads the named modules, which can be module patterns selecting
+dependencies of the main module or module queries of the form path@version.
+<p>With no arguments, download applies to the modules needed to build and test
+the packages in the main module: the modules explicitly required by the main
+module if it is at &apos;go 1.17&apos; or higher, or all transitively-required modules
+if at &apos;go 1.16&apos; or lower.
+<p>The go command will automatically download modules as needed during ordinary
+execution. The &quot;go mod download&quot; command is useful mainly for pre-filling
+the local cache or to compute the answers for a Go module proxy.
+<p>By default, download writes nothing to standard output. It may print progress
+messages and errors to standard error.
+<p>The -json flag causes download to print a sequence of JSON objects
+to standard output, describing each downloaded module (or failure),
+corresponding to this Go struct:
+<pre>type Module struct {
+    Path     string // module path
+    Query    string // version query corresponding to this version
+    Version  string // module version
+    Error    string // error loading module
+    Info     string // absolute path to cached .info file
+    GoMod    string // absolute path to cached .mod file
+    Zip      string // absolute path to cached .zip file
+    Dir      string // absolute path to cached source root directory
+    Sum      string // checksum for path, version (as in go.sum)
+    GoModSum string // checksum for go.mod (as in go.sum)
+    Origin   any    // provenance of module
+    Reuse    bool   // reuse of old module info is safe
+}
+</pre>
+<p>The -reuse flag accepts the name of file containing the JSON output of a
+previous &apos;go mod download -json&apos; invocation. The go command may use this
+file to determine that a module is unchanged since the previous invocation
+and avoid redownloading it. Modules that are not redownloaded will be marked
+in the new output by setting the Reuse field to true. Normally the module
+cache provides this kind of reuse automatically; the -reuse flag can be
+useful on systems that do not preserve the module cache.
+<p>The -x flag causes download to print the commands download executes.
+<p>See <a href="https://golang.org/ref/mod#go-mod-download">https://golang.org/ref/mod#go-mod-download</a> for more about &apos;go mod download&apos;.
+<p>See <a href="https://golang.org/ref/mod#version-queries">https://golang.org/ref/mod#version-queries</a> for more about version queries.
+<h3 id="hdr-Edit_go_mod_from_tools_or_scripts">Edit go.mod from tools or scripts</h3>
+<p>Usage:
+<pre>go mod edit [editing flags] [-fmt|-print|-json] [go.mod]
+</pre>
+<p>Edit provides a command-line interface for editing go.mod,
+for use primarily by tools or scripts. It reads only go.mod;
+it does not look up information about the modules involved.
+By default, edit reads and writes the go.mod file of the main module,
+but a different target file can be specified after the editing flags.
+<p>The editing flags specify a sequence of editing operations.
+<p>The -fmt flag reformats the go.mod file without making other changes.
+This reformatting is also implied by any other modifications that use or
+rewrite the go.mod file. The only time this flag is needed is if no other
+flags are specified, as in &apos;go mod edit -fmt&apos;.
+<p>The -module flag changes the module&apos;s path (the go.mod file&apos;s module line).
+<p>The -godebug=key=value flag adds a godebug key=value line,
+replacing any existing godebug lines with the given key.
+<p>The -dropgodebug=key flag drops any existing godebug lines
+with the given key.
+<p>The -require=path@version and -droprequire=path flags
+add and drop a requirement on the given module path and version.
+Note that -require overrides any existing requirements on path.
+These flags are mainly for tools that understand the module graph.
+Users should prefer &apos;go get path@version&apos; or &apos;go get path@none&apos;,
+which make other go.mod adjustments as needed to satisfy
+constraints imposed by other modules.
+<p>The -go=version flag sets the expected Go language version.
+This flag is mainly for tools that understand Go version dependencies.
+Users should prefer &apos;go get go@version&apos;.
+<p>The -toolchain=version flag sets the Go toolchain to use.
+This flag is mainly for tools that understand Go version dependencies.
+Users should prefer &apos;go get toolchain@version&apos;.
+<p>The -exclude=path@version and -dropexclude=path@version flags
+add and drop an exclusion for the given module path and version.
+Note that -exclude=path@version is a no-op if that exclusion already exists.
+<p>The -replace=old[@v]=new[@v] flag adds a replacement of the given
+module path and version pair. If the @v in old@v is omitted, a
+replacement without a version on the left side is added, which applies
+to all versions of the old module path. If the @v in new@v is omitted,
+the new path should be a local module root directory, not a module
+path. Note that -replace overrides any redundant replacements for old[@v],
+so omitting @v will drop existing replacements for specific versions.
+<p>The -dropreplace=old[@v] flag drops a replacement of the given
+module path and version pair. If the @v is omitted, a replacement without
+a version on the left side is dropped.
+<p>The -retract=version and -dropretract=version flags add and drop a
+retraction on the given version. The version may be a single version
+like &quot;v1.2.3&quot; or a closed interval like &quot;[v1.1.0,v1.1.9]&quot;. Note that
+-retract=version is a no-op if that retraction already exists.
+<p>The -godebug, -dropgodebug, -require, -droprequire, -exclude, -dropexclude,
+-replace, -dropreplace, -retract, and -dropretract editing flags may be
+repeated, and the changes are applied in the order given.
+<p>The -print flag prints the final go.mod in its text format instead of
+writing it back to go.mod.
+<p>The -json flag prints the final go.mod file in JSON format instead of
+writing it back to go.mod. The JSON output corresponds to these Go types:
+<pre>type Module struct {
+	Path    string
+	Version string
+}
+
+type GoMod struct {
+	Module    ModPath
+	Go        string
+	Toolchain string
+	Godebug   []Godebug
+	Require   []Require
+	Exclude   []Module
+	Replace   []Replace
+	Retract   []Retract
+}
+
+type ModPath struct {
+	Path       string
+	Deprecated string
+}
+
+type Godebug struct {
+	Key   string
+	Value string
+}
+
+type Require struct {
+	Path     string
+	Version  string
+	Indirect bool
+}
+
+type Replace struct {
+	Old Module
+	New Module
+}
+
+type Retract struct {
+	Low       string
+	High      string
+	Rationale string
+}
+</pre>
+<p>Retract entries representing a single version (not an interval) will have
+the &quot;Low&quot; and &quot;High&quot; fields set to the same value.
+<p>Note that this only describes the go.mod file itself, not other modules
+referred to indirectly. For the full set of modules available to a build,
+use &apos;go list -m -json all&apos;.
+<p>Edit also provides the -C, -n, and -x build flags.
+<p>See <a href="https://golang.org/ref/mod#go-mod-edit">https://golang.org/ref/mod#go-mod-edit</a> for more about &apos;go mod edit&apos;.
+<h3 id="hdr-Print_module_requirement_graph">Print module requirement graph</h3>
+<p>Usage:
+<pre>go mod graph [-go=version] [-x]
+</pre>
+<p>Graph prints the module requirement graph (with replacements applied)
+in text form. Each line in the output has two space-separated fields: a module
+and one of its requirements. Each module is identified as a string of the form
+path@version, except for the main module, which has no @version suffix.
+<p>The -go flag causes graph to report the module graph as loaded by the
+given Go version, instead of the version indicated by the &apos;go&apos; directive
+in the go.mod file.
+<p>The -x flag causes graph to print the commands graph executes.
+<p>See <a href="https://golang.org/ref/mod#go-mod-graph">https://golang.org/ref/mod#go-mod-graph</a> for more about &apos;go mod graph&apos;.
+<h3 id="hdr-Initialize_new_module_in_current_directory">Initialize new module in current directory</h3>
+<p>Usage:
+<pre>go mod init [module-path]
+</pre>
+<p>Init initializes and writes a new go.mod file in the current directory, in
+effect creating a new module rooted at the current directory. The go.mod file
+must not already exist.
+<p>Init accepts one optional argument, the module path for the new module. If the
+module path argument is omitted, init will attempt to infer the module path
+using import comments in .go files, vendoring tool configuration files (like
+Gopkg.lock), and the current directory (if in GOPATH).
+<p>See <a href="https://golang.org/ref/mod#go-mod-init">https://golang.org/ref/mod#go-mod-init</a> for more about &apos;go mod init&apos;.
+<h3 id="hdr-Add_missing_and_remove_unused_modules">Add missing and remove unused modules</h3>
+<p>Usage:
+<pre>go mod tidy [-e] [-v] [-x] [-diff] [-go=version] [-compat=version]
+</pre>
+<p>Tidy makes sure go.mod matches the source code in the module.
+It adds any missing modules necessary to build the current module&apos;s
+packages and dependencies, and it removes unused modules that
+don&apos;t provide any relevant packages. It also adds any missing entries
+to go.sum and removes any unnecessary ones.
+<p>The -v flag causes tidy to print information about removed modules
+to standard error.
+<p>The -e flag causes tidy to attempt to proceed despite errors
+encountered while loading packages.
+<p>The -diff flag causes tidy not to modify go.mod or go.sum but
+instead print the necessary changes as a unified diff. It exits
+with a non-zero code if the diff is not empty.
+<p>The -go flag causes tidy to update the &apos;go&apos; directive in the go.mod
+file to the given version, which may change which module dependencies
+are retained as explicit requirements in the go.mod file.
+(Go versions 1.17 and higher retain more requirements in order to
+support lazy module loading.)
+<p>The -compat flag preserves any additional checksums needed for the
+&apos;go&apos; command from the indicated major Go release to successfully load
+the module graph, and causes tidy to error out if that version of the
+&apos;go&apos; command would load any imported package from a different module
+version. By default, tidy acts as if the -compat flag were set to the
+version prior to the one indicated by the &apos;go&apos; directive in the go.mod
+file.
+<p>The -x flag causes tidy to print the commands download executes.
+<p>See <a href="https://golang.org/ref/mod#go-mod-tidy">https://golang.org/ref/mod#go-mod-tidy</a> for more about &apos;go mod tidy&apos;.
+<h3 id="hdr-Make_vendored_copy_of_dependencies">Make vendored copy of dependencies</h3>
+<p>Usage:
+<pre>go mod vendor [-e] [-v] [-o outdir]
+</pre>
+<p>Vendor resets the main module&apos;s vendor directory to include all packages
+needed to build and test all the main module&apos;s packages.
+It does not include test code for vendored packages.
+<p>The -v flag causes vendor to print the names of vendored
+modules and packages to standard error.
+<p>The -e flag causes vendor to attempt to proceed despite errors
+encountered while loading packages.
+<p>The -o flag causes vendor to create the vendor directory at the given
+path instead of &quot;vendor&quot;. The go command can only use a vendor directory
+named &quot;vendor&quot; within the module root directory, so this flag is
+primarily useful for other tools.
+<p>See <a href="https://golang.org/ref/mod#go-mod-vendor">https://golang.org/ref/mod#go-mod-vendor</a> for more about &apos;go mod vendor&apos;.
+<h3 id="hdr-Verify_dependencies_have_expected_content">Verify dependencies have expected content</h3>
+<p>Usage:
+<pre>go mod verify
+</pre>
+<p>Verify checks that the dependencies of the current module,
+which are stored in a local downloaded source cache, have not been
+modified since being downloaded. If all the modules are unmodified,
+verify prints &quot;all modules verified.&quot; Otherwise it reports which
+modules have been changed and causes &apos;go mod&apos; to exit with a
+non-zero status.
+<p>See <a href="https://golang.org/ref/mod#go-mod-verify">https://golang.org/ref/mod#go-mod-verify</a> for more about &apos;go mod verify&apos;.
+<h3 id="hdr-Explain_why_packages_or_modules_are_needed">Explain why packages or modules are needed</h3>
+<p>Usage:
+<pre>go mod why [-m] [-vendor] packages...
+</pre>
+<p>Why shows a shortest path in the import graph from the main module to
+each of the listed packages. If the -m flag is given, why treats the
+arguments as a list of modules and finds a path to any package in each
+of the modules.
+<p>By default, why queries the graph of packages matched by &quot;go list all&quot;,
+which includes tests for reachable packages. The -vendor flag causes why
+to exclude tests of dependencies.
+<p>The output is a sequence of stanzas, one for each package or module
+name on the command line, separated by blank lines. Each stanza begins
+with a comment line &quot;# package&quot; or &quot;# module&quot; giving the target
+package or module. Subsequent lines give a path through the import
+graph, one package per line. If the package or module is not
+referenced from the main module, the stanza will display a single
+parenthesized note indicating that fact.
+<p>For example:
+<pre>$ go mod why golang.org/x/text/language golang.org/x/text/encoding
+# golang.org/x/text/language
+rsc.io/quote
+rsc.io/sampler
+golang.org/x/text/language
+
+# golang.org/x/text/encoding
+(main module does not need package golang.org/x/text/encoding)
+$
+</pre>
+<p>See <a href="https://golang.org/ref/mod#go-mod-why">https://golang.org/ref/mod#go-mod-why</a> for more about &apos;go mod why&apos;.
+<h3 id="hdr-Workspace_maintenance">Workspace maintenance</h3>
+<p>Work provides access to operations on workspaces.
+<p>Note that support for workspaces is built into many other commands, not
+just &apos;go work&apos;.
+<p>See &apos;go help modules&apos; for information about Go&apos;s module system of which
+workspaces are a part.
+<p>See <a href="https://go.dev/ref/mod#workspaces">https://go.dev/ref/mod#workspaces</a> for an in-depth reference on
+workspaces.
+<p>See <a href="https://go.dev/doc/tutorial/workspaces">https://go.dev/doc/tutorial/workspaces</a> for an introductory
+tutorial on workspaces.
+<p>A workspace is specified by a go.work file that specifies a set of
+module directories with the &quot;use&quot; directive. These modules are used as
+root modules by the go command for builds and related operations.  A
+workspace that does not specify modules to be used cannot be used to do
+builds from local modules.
+<p>go.work files are line-oriented. Each line holds a single directive,
+made up of a keyword followed by arguments. For example:
+<pre>go 1.18
+
+use ../foo/bar
+use ./baz
+
+replace example.com/foo v1.2.3 =&gt; example.com/bar v1.4.5
+</pre>
+<p>The leading keyword can be factored out of adjacent lines to create a block,
+like in Go imports.
+<pre>use (
+  ../foo/bar
+  ./baz
+)
+</pre>
+<p>The use directive specifies a module to be included in the workspace&apos;s
+set of main modules. The argument to the use directive is the directory
+containing the module&apos;s go.mod file.
+<p>The go directive specifies the version of Go the file was written at. It
+is possible there may be future changes in the semantics of workspaces
+that could be controlled by this version, but for now the version
+specified has no effect.
+<p>The replace directive has the same syntax as the replace directive in a
+go.mod file and takes precedence over replaces in go.mod files.  It is
+primarily intended to override conflicting replaces in different workspace
+modules.
+<p>To determine whether the go command is operating in workspace mode, use
+the &quot;go env GOWORK&quot; command. This will specify the workspace file being
+used.
+<p>Usage:
+<pre>go work &lt;command&gt; [arguments]
+</pre>
+<p>The commands are:
+<pre>edit        edit go.work from tools or scripts
+init        initialize workspace file
+sync        sync workspace build list to modules
+use         add modules to workspace file
+vendor      make vendored copy of dependencies
+</pre>
+<p>Use &quot;go help work &lt;command&gt;&quot; for more information about a command.
+<h3 id="hdr-Edit_go_work_from_tools_or_scripts">Edit go.work from tools or scripts</h3>
+<p>Usage:
+<pre>go work edit [editing flags] [go.work]
+</pre>
+<p>Edit provides a command-line interface for editing go.work,
+for use primarily by tools or scripts. It only reads go.work;
+it does not look up information about the modules involved.
+If no file is specified, Edit looks for a go.work file in the current
+directory and its parent directories
+<p>The editing flags specify a sequence of editing operations.
+<p>The -fmt flag reformats the go.work file without making other changes.
+This reformatting is also implied by any other modifications that use or
+rewrite the go.mod file. The only time this flag is needed is if no other
+flags are specified, as in &apos;go work edit -fmt&apos;.
+<p>The -godebug=key=value flag adds a godebug key=value line,
+replacing any existing godebug lines with the given key.
+<p>The -dropgodebug=key flag drops any existing godebug lines
+with the given key.
+<p>The -use=path and -dropuse=path flags
+add and drop a use directive from the go.work file&apos;s set of module directories.
+<p>The -replace=old[@v]=new[@v] flag adds a replacement of the given
+module path and version pair. If the @v in old@v is omitted, a
+replacement without a version on the left side is added, which applies
+to all versions of the old module path. If the @v in new@v is omitted,
+the new path should be a local module root directory, not a module
+path. Note that -replace overrides any redundant replacements for old[@v],
+so omitting @v will drop existing replacements for specific versions.
+<p>The -dropreplace=old[@v] flag drops a replacement of the given
+module path and version pair. If the @v is omitted, a replacement without
+a version on the left side is dropped.
+<p>The -use, -dropuse, -replace, and -dropreplace,
+editing flags may be repeated, and the changes are applied in the order given.
+<p>The -go=version flag sets the expected Go language version.
+<p>The -toolchain=name flag sets the Go toolchain to use.
+<p>The -print flag prints the final go.work in its text format instead of
+writing it back to go.mod.
+<p>The -json flag prints the final go.work file in JSON format instead of
+writing it back to go.mod. The JSON output corresponds to these Go types:
+<pre>type GoWork struct {
+	Go        string
+	Toolchain string
+	Godebug   []Godebug
+	Use       []Use
+	Replace   []Replace
+}
+
+type Godebug struct {
+	Key   string
+	Value string
+}
+
+type Use struct {
+	DiskPath   string
+	ModulePath string
+}
+
+type Replace struct {
+	Old Module
+	New Module
+}
+
+type Module struct {
+	Path    string
+	Version string
+}
+</pre>
+<p>See the workspaces reference at <a href="https://go.dev/ref/mod#workspaces">https://go.dev/ref/mod#workspaces</a>
+for more information.
+<h3 id="hdr-Initialize_workspace_file">Initialize workspace file</h3>
+<p>Usage:
+<pre>go work init [moddirs]
+</pre>
+<p>Init initializes and writes a new go.work file in the
+current directory, in effect creating a new workspace at the current
+directory.
+<p>go work init optionally accepts paths to the workspace modules as
+arguments. If the argument is omitted, an empty workspace with no
+modules will be created.
+<p>Each argument path is added to a use directive in the go.work file. The
+current go version will also be listed in the go.work file.
+<p>See the workspaces reference at <a href="https://go.dev/ref/mod#workspaces">https://go.dev/ref/mod#workspaces</a>
+for more information.
+<h3 id="hdr-Sync_workspace_build_list_to_modules">Sync workspace build list to modules</h3>
+<p>Usage:
+<pre>go work sync
+</pre>
+<p>Sync syncs the workspace&apos;s build list back to the
+workspace&apos;s modules
+<p>The workspace&apos;s build list is the set of versions of all the
+(transitive) dependency modules used to do builds in the workspace. go
+work sync generates that build list using the Minimal Version Selection
+algorithm, and then syncs those versions back to each of modules
+specified in the workspace (with use directives).
+<p>The syncing is done by sequentially upgrading each of the dependency
+modules specified in a workspace module to the version in the build list
+if the dependency module&apos;s version is not already the same as the build
+list&apos;s version. Note that Minimal Version Selection guarantees that the
+build list&apos;s version of each module is always the same or higher than
+that in each workspace module.
+<p>See the workspaces reference at <a href="https://go.dev/ref/mod#workspaces">https://go.dev/ref/mod#workspaces</a>
+for more information.
+<h3 id="hdr-Add_modules_to_workspace_file">Add modules to workspace file</h3>
+<p>Usage:
+<pre>go work use [-r] [moddirs]
+</pre>
+<p>Use provides a command-line interface for adding
+directories, optionally recursively, to a go.work file.
+<p>A use directive will be added to the go.work file for each argument
+directory listed on the command line go.work file, if it exists,
+or removed from the go.work file if it does not exist.
+Use fails if any remaining use directives refer to modules that
+do not exist.
+<p>Use updates the go line in go.work to specify a version at least as
+new as all the go lines in the used modules, both preexisting ones
+and newly added ones. With no arguments, this update is the only
+thing that go work use does.
+<p>The -r flag searches recursively for modules in the argument
+directories, and the use command operates as if each of the directories
+were specified as arguments.
+<p>See the workspaces reference at <a href="https://go.dev/ref/mod#workspaces">https://go.dev/ref/mod#workspaces</a>
+for more information.
+<h3 id="hdr-Make_vendored_copy_of_dependencies">Make vendored copy of dependencies</h3>
+<p>Usage:
+<pre>go work vendor [-e] [-v] [-o outdir]
+</pre>
+<p>Vendor resets the workspace&apos;s vendor directory to include all packages
+needed to build and test all the workspace&apos;s packages.
+It does not include test code for vendored packages.
+<p>The -v flag causes vendor to print the names of vendored
+modules and packages to standard error.
+<p>The -e flag causes vendor to attempt to proceed despite errors
+encountered while loading packages.
+<p>The -o flag causes vendor to create the vendor directory at the given
+path instead of &quot;vendor&quot;. The go command can only use a vendor directory
+named &quot;vendor&quot; within the module root directory, so this flag is
+primarily useful for other tools.
+<h3 id="hdr-Compile_and_run_Go_program">Compile and run Go program</h3>
+<p>Usage:
+<pre>go run [build flags] [-exec xprog] package [arguments...]
+</pre>
+<p>Run compiles and runs the named main Go package.
+Typically the package is specified as a list of .go source files from a single
+directory, but it may also be an import path, file system path, or pattern
+matching a single known package, as in &apos;go run .&apos; or &apos;go run my/cmd&apos;.
+<p>If the package argument has a version suffix (like @latest or @v1.0.0),
+&quot;go run&quot; builds the program in module-aware mode, ignoring the go.mod file in
+the current directory or any parent directory, if there is one. This is useful
+for running programs without affecting the dependencies of the main module.
+<p>If the package argument doesn&apos;t have a version suffix, &quot;go run&quot; may run in
+module-aware mode or GOPATH mode, depending on the GO111MODULE environment
+variable and the presence of a go.mod file. See &apos;go help modules&apos; for details.
+If module-aware mode is enabled, &quot;go run&quot; runs in the context of the main
+module.
+<p>By default, &apos;go run&apos; runs the compiled binary directly: &apos;a.out arguments...&apos;.
+If the -exec flag is given, &apos;go run&apos; invokes the binary using xprog:
+<pre>&apos;xprog a.out arguments...&apos;.
+</pre>
+<p>If the -exec flag is not given, GOOS or GOARCH is different from the system
+default, and a program named go_$GOOS_$GOARCH_exec can be found
+on the current search path, &apos;go run&apos; invokes the binary using that program,
+for example &apos;go_js_wasm_exec a.out arguments...&apos;. This allows execution of
+cross-compiled programs when a simulator or other execution method is
+available.
+<p>By default, &apos;go run&apos; compiles the binary without generating the information
+used by debuggers, to reduce build time. To include debugger information in
+the binary, use &apos;go build&apos;.
+<p>The exit status of Run is not the exit status of the compiled binary.
+<p>For more about build flags, see &apos;go help build&apos;.
+For more about specifying packages, see &apos;go help packages&apos;.
+<p>See also: go build.
+<h3 id="hdr-Manage_telemetry_data_and_settings">Manage telemetry data and settings</h3>
+<p>Usage:
+<pre>go telemetry [off|local|on]
+</pre>
+<p>Telemetry is used to manage Go telemetry data and settings.
+<p>Telemetry can be in one of three modes: off, local, or on.
+<p>When telemetry is in local mode, counter data is written to the local file
+system, but will not be uploaded to remote servers.
+<p>When telemetry is off, local counter data is neither collected nor uploaded.
+<p>When telemetry is on, telemetry data is written to the local file system
+and periodically sent to <a href="https://telemetry.go.dev/">https://telemetry.go.dev/</a>. Uploaded data is used to
+help improve the Go toolchain and related tools, and it will be published as
+part of a public dataset.
+<p>For more details, see <a href="https://telemetry.go.dev/privacy">https://telemetry.go.dev/privacy</a>.
+This data is collected in accordance with the Google Privacy Policy
+(<a href="https://policies.google.com/privacy">https://policies.google.com/privacy</a>).
+<p>To view the current telemetry mode, run &quot;go telemetry&quot;.
+To disable telemetry uploading, but keep local data collection, run
+&quot;go telemetry local&quot;.
+To enable both collection and uploading, run “go telemetry on”.
+To disable both collection and uploading, run &quot;go telemetry off&quot;.
+<p>See <a href="https://go.dev/doc/telemetry">https://go.dev/doc/telemetry</a> for more information on telemetry.
+<h3 id="hdr-Test_packages">Test packages</h3>
+<p>Usage:
+<pre>go test [build/test flags] [packages] [build/test flags &amp; test binary flags]
+</pre>
+<p>&apos;Go test&apos; automates testing the packages named by the import paths.
+It prints a summary of the test results in the format:
+<pre>ok   archive/tar   0.011s
+FAIL archive/zip   0.022s
+ok   compress/gzip 0.033s
+...
+</pre>
+<p>followed by detailed output for each failed package.
+<p>&apos;Go test&apos; recompiles each package along with any files with names matching
+the file pattern &quot;*_test.go&quot;.
+These additional files can contain test functions, benchmark functions, fuzz
+tests and example functions. See &apos;go help testfunc&apos; for more.
+Each listed package causes the execution of a separate test binary.
+Files whose names begin with &quot;_&quot; (including &quot;_test.go&quot;) or &quot;.&quot; are ignored.
+<p>Test files that declare a package with the suffix &quot;_test&quot; will be compiled as a
+separate package, and then linked and run with the main test binary.
+<p>The go tool will ignore a directory named &quot;testdata&quot;, making it available
+to hold ancillary data needed by the tests.
+<p>As part of building a test binary, go test runs go vet on the package
+and its test source files to identify significant problems. If go vet
+finds any problems, go test reports those and does not run the test
+binary. Only a high-confidence subset of the default go vet checks are
+used. That subset is: atomic, bool, buildtags, directive, errorsas,
+ifaceassert, nilfunc, printf, and stringintconv. You can see
+the documentation for these and other vet tests via &quot;go doc cmd/vet&quot;.
+To disable the running of go vet, use the -vet=off flag. To run all
+checks, use the -vet=all flag.
+<p>All test output and summary lines are printed to the go command&apos;s
+standard output, even if the test printed them to its own standard
+error. (The go command&apos;s standard error is reserved for printing
+errors building the tests.)
+<p>The go command places $GOROOT/bin at the beginning of $PATH
+in the test&apos;s environment, so that tests that execute
+&apos;go&apos; commands use the same &apos;go&apos; as the parent &apos;go test&apos; command.
+<p>Go test runs in two different modes:
+<p>The first, called local directory mode, occurs when go test is
+invoked with no package arguments (for example, &apos;go test&apos; or &apos;go
+test -v&apos;). In this mode, go test compiles the package sources and
+tests found in the current directory and then runs the resulting
+test binary. In this mode, caching (discussed below) is disabled.
+After the package test finishes, go test prints a summary line
+showing the test status (&apos;ok&apos; or &apos;FAIL&apos;), package name, and elapsed
+time.
+<p>The second, called package list mode, occurs when go test is invoked
+with explicit package arguments (for example &apos;go test math&apos;, &apos;go
+test ./...&apos;, and even &apos;go test .&apos;). In this mode, go test compiles
+and tests each of the packages listed on the command line. If a
+package test passes, go test prints only the final &apos;ok&apos; summary
+line. If a package test fails, go test prints the full test output.
+If invoked with the -bench or -v flag, go test prints the full
+output even for passing package tests, in order to display the
+requested benchmark results or verbose logging. After the package
+tests for all of the listed packages finish, and their output is
+printed, go test prints a final &apos;FAIL&apos; status if any package test
+has failed.
+<p>In package list mode only, go test caches successful package test
+results to avoid unnecessary repeated running of tests. When the
+result of a test can be recovered from the cache, go test will
+redisplay the previous output instead of running the test binary
+again. When this happens, go test prints &apos;(cached)&apos; in place of the
+elapsed time in the summary line.
+<p>The rule for a match in the cache is that the run involves the same
+test binary and the flags on the command line come entirely from a
+restricted set of &apos;cacheable&apos; test flags, defined as -benchtime, -cpu,
+-list, -parallel, -run, -short, -timeout, -failfast, -fullpath and -v.
+If a run of go test has any test or non-test flags outside this set,
+the result is not cached. To disable test caching, use any test flag
+or argument other than the cacheable flags. The idiomatic way to disable
+test caching explicitly is to use -count=1. Tests that open files within
+the package&apos;s source root (usually $GOPATH) or that consult environment
+variables only match future runs in which the files and environment
+variables are unchanged. A cached test result is treated as executing
+in no time at all, so a successful package test result will be cached and
+reused regardless of -timeout setting.
+<p>In addition to the build flags, the flags handled by &apos;go test&apos; itself are:
+<pre>-args
+    Pass the remainder of the command line (everything after -args)
+    to the test binary, uninterpreted and unchanged.
+    Because this flag consumes the remainder of the command line,
+    the package list (if present) must appear before this flag.
+
+-c
+    Compile the test binary to pkg.test in the current directory but do not run it
+    (where pkg is the last element of the package&apos;s import path).
+    The file name or target directory can be changed with the -o flag.
+
+-exec xprog
+    Run the test binary using xprog. The behavior is the same as
+    in &apos;go run&apos;. See &apos;go help run&apos; for details.
+
+-json
+    Convert test output to JSON suitable for automated processing.
+    See &apos;go doc test2json&apos; for the encoding details.
+
+-o file
+    Compile the test binary to the named file.
+    The test still runs (unless -c or -i is specified).
+    If file ends in a slash or names an existing directory,
+    the test is written to pkg.test in that directory.
+</pre>
+<p>The test binary also accepts flags that control execution of the test; these
+flags are also accessible by &apos;go test&apos;. See &apos;go help testflag&apos; for details.
+<p>For more about build flags, see &apos;go help build&apos;.
+For more about specifying packages, see &apos;go help packages&apos;.
+<p>See also: go build, go vet.
+<h3 id="hdr-Run_specified_go_tool">Run specified go tool</h3>
+<p>Usage:
+<pre>go tool [-n] command [args...]
+</pre>
+<p>Tool runs the go tool command identified by the arguments.
+With no arguments it prints the list of known tools.
+<p>The -n flag causes tool to print the command that would be
+executed but not execute it.
+<p>For more about each tool command, see &apos;go doc cmd/&lt;command&gt;&apos;.
+<h3 id="hdr-Print_Go_version">Print Go version</h3>
+<p>Usage:
+<pre>go version [-m] [-v] [file ...]
+</pre>
+<p>Version prints the build information for Go binary files.
+<p>Go version reports the Go version used to build each of the named files.
+<p>If no files are named on the command line, go version prints its own
+version information.
+<p>If a directory is named, go version walks that directory, recursively,
+looking for recognized Go binaries and reporting their versions.
+By default, go version does not report unrecognized files found
+during a directory scan. The -v flag causes it to report unrecognized files.
+<p>The -m flag causes go version to print each file&apos;s embedded
+module version information, when available. In the output, the module
+information consists of multiple lines following the version line, each
+indented by a leading tab character.
+<p>See also: go doc runtime/debug.BuildInfo.
+<h3 id="hdr-Report_likely_mistakes_in_packages">Report likely mistakes in packages</h3>
+<p>Usage:
+<pre>go vet [build flags] [-vettool prog] [vet flags] [packages]
+</pre>
+<p>Vet runs the Go vet command on the packages named by the import paths.
+<p>For more about vet and its flags, see &apos;go doc cmd/vet&apos;.
+For more about specifying packages, see &apos;go help packages&apos;.
+For a list of checkers and their flags, see &apos;go tool vet help&apos;.
+For details of a specific checker such as &apos;printf&apos;, see &apos;go tool vet help printf&apos;.
+<p>The -vettool=prog flag selects a different analysis tool with alternative
+or additional checks.
+For example, the &apos;shadow&apos; analyzer can be built and run using these commands:
+<pre>go install golang.org/x/tools/go/analysis/passes/shadow/cmd/shadow@latest
+go vet -vettool=$(which shadow)
+</pre>
+<p>The build flags supported by go vet are those that control package resolution
+and execution, such as -C, -n, -x, -v, -tags, and -toolexec.
+For more about these flags, see &apos;go help build&apos;.
+<p>See also: go fmt, go fix.
+<h3 id="hdr-Build_constraints">Build constraints</h3>
+<p>A build constraint, also known as a build tag, is a condition under which a
+file should be included in the package. Build constraints are given by a
+line comment that begins
+<pre>//go:build
+</pre>
+<p>Build constraints can also be used to downgrade the language version
+used to compile a file.
+<p>Constraints may appear in any kind of source file (not just Go), but
+they must appear near the top of the file, preceded
+only by blank lines and other comments. These rules mean that in Go
+files a build constraint must appear before the package clause.
+<p>To distinguish build constraints from package documentation,
+a build constraint should be followed by a blank line.
+<p>A build constraint comment is evaluated as an expression containing
+build tags combined by ||, &amp;&amp;, and ! operators and parentheses.
+Operators have the same meaning as in Go.
+<p>For example, the following build constraint constrains a file to
+build when the &quot;linux&quot; and &quot;386&quot; constraints are satisfied, or when
+&quot;darwin&quot; is satisfied and &quot;cgo&quot; is not:
+<pre>//go:build (linux &amp;&amp; 386) || (darwin &amp;&amp; !cgo)
+</pre>
+<p>It is an error for a file to have more than one //go:build line.
+<p>During a particular build, the following build tags are satisfied:
+<ul>
+<li>the target operating system, as spelled by runtime.GOOS, set with the
+GOOS environment variable.
+<li>the target architecture, as spelled by runtime.GOARCH, set with the
+GOARCH environment variable.
+<li>any architecture features, in the form GOARCH.feature
+(for example, &quot;amd64.v2&quot;), as detailed below.
+<li>&quot;unix&quot;, if GOOS is a Unix or Unix-like system.
+<li>the compiler being used, either &quot;gc&quot; or &quot;gccgo&quot;
+<li>&quot;cgo&quot;, if the cgo command is supported (see CGO_ENABLED in
+&apos;go help environment&apos;).
+<li>a term for each Go major release, through the current version:
+&quot;go1.1&quot; from Go version 1.1 onward, &quot;go1.12&quot; from Go 1.12, and so on.
+<li>any additional tags given by the -tags flag (see &apos;go help build&apos;).
+</ul>
+<p>There are no separate build tags for beta or minor releases.
+<p>If a file&apos;s name, after stripping the extension and a possible _test suffix,
+matches any of the following patterns:
+<pre>*_GOOS
+*_GOARCH
+*_GOOS_GOARCH
+</pre>
+<p>(example: source_windows_amd64.go) where GOOS and GOARCH represent
+any known operating system and architecture values respectively, then
+the file is considered to have an implicit build constraint requiring
+those terms (in addition to any explicit constraints in the file).
+<p>Using GOOS=android matches build tags and files as for GOOS=linux
+in addition to android tags and files.
+<p>Using GOOS=illumos matches build tags and files as for GOOS=solaris
+in addition to illumos tags and files.
+<p>Using GOOS=ios matches build tags and files as for GOOS=darwin
+in addition to ios tags and files.
+<p>The defined architecture feature build tags are:
+<ul>
+<li>For GOARCH=386, GO386=387 and GO386=sse2
+set the 386.387 and 386.sse2 build tags, respectively.
+<li>For GOARCH=amd64, GOAMD64=v1, v2, and v3
+correspond to the amd64.v1, amd64.v2, and amd64.v3 feature build tags.
+<li>For GOARCH=arm, GOARM=5, 6, and 7
+correspond to the arm.5, arm.6, and arm.7 feature build tags.
+<li>For GOARCH=arm64, GOARM64=v8.{0-9} and v9.{0-5}
+correspond to the arm64.v8.{0-9} and arm64.v9.{0-5} feature build tags.
+<li>For GOARCH=mips or mipsle,
+GOMIPS=hardfloat and softfloat
+correspond to the mips.hardfloat and mips.softfloat
+(or mipsle.hardfloat and mipsle.softfloat) feature build tags.
+<li>For GOARCH=mips64 or mips64le,
+GOMIPS64=hardfloat and softfloat
+correspond to the mips64.hardfloat and mips64.softfloat
+(or mips64le.hardfloat and mips64le.softfloat) feature build tags.
+<li>For GOARCH=ppc64 or ppc64le,
+GOPPC64=power8, power9, and power10 correspond to the
+ppc64.power8, ppc64.power9, and ppc64.power10
+(or ppc64le.power8, ppc64le.power9, and ppc64le.power10)
+feature build tags.
+<li>For GOARCH=riscv64,
+GORISCV64=rva20u64 and rva22u64 correspond to the riscv64.rva20u64
+and riscv64.rva22u64 build tags.
+<li>For GOARCH=wasm, GOWASM=satconv and signext
+correspond to the wasm.satconv and wasm.signext feature build tags.
+</ul>
+<p>For GOARCH=amd64, arm, ppc64, ppc64le, and riscv64, a particular feature level
+sets the feature build tags for all previous levels as well.
+For example, GOAMD64=v2 sets the amd64.v1 and amd64.v2 feature flags.
+This ensures that code making use of v2 features continues to compile
+when, say, GOAMD64=v4 is introduced.
+Code handling the absence of a particular feature level
+should use a negation:
+<pre>//go:build !amd64.v2
+</pre>
+<p>To keep a file from being considered for any build:
+<pre>//go:build ignore
+</pre>
+<p>(Any other unsatisfied word will work as well, but &quot;ignore&quot; is conventional.)
+<p>To build a file only when using cgo, and only on Linux and OS X:
+<pre>//go:build cgo &amp;&amp; (linux || darwin)
+</pre>
+<p>Such a file is usually paired with another file implementing the
+default functionality for other systems, which in this case would
+carry the constraint:
+<pre>//go:build !(cgo &amp;&amp; (linux || darwin))
+</pre>
+<p>Naming a file dns_windows.go will cause it to be included only when
+building the package for Windows; similarly, math_386.s will be included
+only when building the package for 32-bit x86.
+<p>Go versions 1.16 and earlier used a different syntax for build constraints,
+with a &quot;// +build&quot; prefix. The gofmt command will add an equivalent //go:build
+constraint when encountering the older syntax.
+<p>In modules with a Go version of 1.21 or later, if a file&apos;s build constraint
+has a term for a Go major release, the language version used when compiling
+the file will be the minimum version implied by the build constraint.
+<h3 id="hdr-Build_modes">Build modes</h3>
+<p>The &apos;go build&apos; and &apos;go install&apos; commands take a -buildmode argument which
+indicates which kind of object file is to be built. Currently supported values
+are:
+<pre>-buildmode=archive
+	Build the listed non-main packages into .a files. Packages named
+	main are ignored.
+
+-buildmode=c-archive
+	Build the listed main package, plus all packages it imports,
+	into a C archive file. The only callable symbols will be those
+	functions exported using a cgo //export comment. Requires
+	exactly one main package to be listed.
+
+-buildmode=c-shared
+	Build the listed main package, plus all packages it imports,
+	into a C shared library. The only callable symbols will
+	be those functions exported using a cgo //export comment.
+	Requires exactly one main package to be listed.
+
+-buildmode=default
+	Listed main packages are built into executables and listed
+	non-main packages are built into .a files (the default
+	behavior).
+
+-buildmode=shared
+	Combine all the listed non-main packages into a single shared
+	library that will be used when building with the -linkshared
+	option. Packages named main are ignored.
+
+-buildmode=exe
+	Build the listed main packages and everything they import into
+	executables. Packages not named main are ignored.
+
+-buildmode=pie
+	Build the listed main packages and everything they import into
+	position independent executables (PIE). Packages not named
+	main are ignored.
+
+-buildmode=plugin
+	Build the listed main packages, plus all packages that they
+	import, into a Go plugin. Packages not named main are ignored.
+</pre>
+<p>On AIX, when linking a C program that uses a Go archive built with
+-buildmode=c-archive, you must pass -Wl,-bnoobjreorder to the C compiler.
+<h3 id="hdr-Calling_between_Go_and_C">Calling between Go and C</h3>
+<p>There are two different ways to call between Go and C/C++ code.
+<p>The first is the cgo tool, which is part of the Go distribution. For
+information on how to use it see the cgo documentation (go doc cmd/cgo).
+<p>The second is the SWIG program, which is a general tool for
+interfacing between languages. For information on SWIG see
+<a href="http://swig.org/">http://swig.org/</a>. When running go build, any file with a .swig
+extension will be passed to SWIG. Any file with a .swigcxx extension
+will be passed to SWIG with the -c++ option.
+<p>When either cgo or SWIG is used, go build will pass any .c, .m, .s, .S
+or .sx files to the C compiler, and any .cc, .cpp, .cxx files to the C++
+compiler. The CC or CXX environment variables may be set to determine
+the C or C++ compiler, respectively, to use.
+<h3 id="hdr-Build_and_test_caching">Build and test caching</h3>
+<p>The go command caches build outputs for reuse in future builds.
+The default location for cache data is a subdirectory named go-build
+in the standard user cache directory for the current operating system.
+Setting the GOCACHE environment variable overrides this default,
+and running &apos;go env GOCACHE&apos; prints the current cache directory.
+<p>The go command periodically deletes cached data that has not been
+used recently. Running &apos;go clean -cache&apos; deletes all cached data.
+<p>The build cache correctly accounts for changes to Go source files,
+compilers, compiler options, and so on: cleaning the cache explicitly
+should not be necessary in typical use. However, the build cache
+does not detect changes to C libraries imported with cgo.
+If you have made changes to the C libraries on your system, you
+will need to clean the cache explicitly or else use the -a build flag
+(see &apos;go help build&apos;) to force rebuilding of packages that
+depend on the updated C libraries.
+<p>The go command also caches successful package test results.
+See &apos;go help test&apos; for details. Running &apos;go clean -testcache&apos; removes
+all cached test results (but not cached build results).
+<p>The go command also caches values used in fuzzing with &apos;go test -fuzz&apos;,
+specifically, values that expanded code coverage when passed to a
+fuzz function. These values are not used for regular building and
+testing, but they&apos;re stored in a subdirectory of the build cache.
+Running &apos;go clean -fuzzcache&apos; removes all cached fuzzing values.
+This may make fuzzing less effective, temporarily.
+<p>The GODEBUG environment variable can enable printing of debugging
+information about the state of the cache:
+<p>GODEBUG=gocacheverify=1 causes the go command to bypass the
+use of any cache entries and instead rebuild everything and check
+that the results match existing cache entries.
+<p>GODEBUG=gocachehash=1 causes the go command to print the inputs
+for all of the content hashes it uses to construct cache lookup keys.
+The output is voluminous but can be useful for debugging the cache.
+<p>GODEBUG=gocachetest=1 causes the go command to print details of its
+decisions about whether to reuse a cached test result.
+<h3 id="hdr-Environment_variables">Environment variables</h3>
+<p>The go command and the tools it invokes consult environment variables
+for configuration. If an environment variable is unset or empty, the go
+command uses a sensible default setting. To see the effective setting of
+the variable &lt;NAME&gt;, run &apos;go env &lt;NAME&gt;&apos;. To change the default setting,
+run &apos;go env -w &lt;NAME&gt;=&lt;VALUE&gt;&apos;. Defaults changed using &apos;go env -w&apos;
+are recorded in a Go environment configuration file stored in the
+per-user configuration directory, as reported by os.UserConfigDir.
+The location of the configuration file can be changed by setting
+the environment variable GOENV, and &apos;go env GOENV&apos; prints the
+effective location, but &apos;go env -w&apos; cannot change the default location.
+See &apos;go help env&apos; for details.
+<p>General-purpose environment variables:
+<pre>GO111MODULE
+	Controls whether the go command runs in module-aware mode or GOPATH mode.
+	May be &quot;off&quot;, &quot;on&quot;, or &quot;auto&quot;.
+	See https://golang.org/ref/mod#mod-commands.
+GCCGO
+	The gccgo command to run for &apos;go build -compiler=gccgo&apos;.
+GOARCH
+	The architecture, or processor, for which to compile code.
+	Examples are amd64, 386, arm, ppc64.
+GOBIN
+	The directory where &apos;go install&apos; will install a command.
+GOCACHE
+	The directory where the go command will store cached
+	information for reuse in future builds.
+GOMODCACHE
+	The directory where the go command will store downloaded modules.
+GODEBUG
+	Enable various debugging facilities. See https://go.dev/doc/godebug
+	for details.
+GOENV
+	The location of the Go environment configuration file.
+	Cannot be set using &apos;go env -w&apos;.
+	Setting GOENV=off in the environment disables the use of the
+	default configuration file.
+GOFLAGS
+	A space-separated list of -flag=value settings to apply
+	to go commands by default, when the given flag is known by
+	the current command. Each entry must be a standalone flag.
+	Because the entries are space-separated, flag values must
+	not contain spaces. Flags listed on the command line
+	are applied after this list and therefore override it.
+GOINSECURE
+	Comma-separated list of glob patterns (in the syntax of Go&apos;s path.Match)
+	of module path prefixes that should always be fetched in an insecure
+	manner. Only applies to dependencies that are being fetched directly.
+	GOINSECURE does not disable checksum database validation. GOPRIVATE or
+	GONOSUMDB may be used to achieve that.
+GOOS
+	The operating system for which to compile code.
+	Examples are linux, darwin, windows, netbsd.
+GOPATH
+	Controls where various files are stored. See: &apos;go help gopath&apos;.
+GOPROXY
+	URL of Go module proxy. See https://golang.org/ref/mod#environment-variables
+	and https://golang.org/ref/mod#module-proxy for details.
+GOPRIVATE, GONOPROXY, GONOSUMDB
+	Comma-separated list of glob patterns (in the syntax of Go&apos;s path.Match)
+	of module path prefixes that should always be fetched directly
+	or that should not be compared against the checksum database.
+	See https://golang.org/ref/mod#private-modules.
+GOROOT
+	The root of the go tree.
+GOSUMDB
+	The name of checksum database to use and optionally its public key and
+	URL. See https://golang.org/ref/mod#authenticating.
+GOTOOLCHAIN
+	Controls which Go toolchain is used. See https://go.dev/doc/toolchain.
+GOTMPDIR
+	The directory where the go command will write
+	temporary source files, packages, and binaries.
+GOVCS
+	Lists version control commands that may be used with matching servers.
+	See &apos;go help vcs&apos;.
+GOWORK
+	In module aware mode, use the given go.work file as a workspace file.
+	By default or when GOWORK is &quot;auto&quot;, the go command searches for a
+	file named go.work in the current directory and then containing directories
+	until one is found. If a valid go.work file is found, the modules
+	specified will collectively be used as the main modules. If GOWORK
+	is &quot;off&quot;, or a go.work file is not found in &quot;auto&quot; mode, workspace
+	mode is disabled.
+</pre>
+<p>Environment variables for use with cgo:
+<pre>AR
+	The command to use to manipulate library archives when
+	building with the gccgo compiler.
+	The default is &apos;ar&apos;.
+CC
+	The command to use to compile C code.
+CGO_ENABLED
+	Whether the cgo command is supported. Either 0 or 1.
+CGO_CFLAGS
+	Flags that cgo will pass to the compiler when compiling
+	C code.
+CGO_CFLAGS_ALLOW
+	A regular expression specifying additional flags to allow
+	to appear in #cgo CFLAGS source code directives.
+	Does not apply to the CGO_CFLAGS environment variable.
+CGO_CFLAGS_DISALLOW
+	A regular expression specifying flags that must be disallowed
+	from appearing in #cgo CFLAGS source code directives.
+	Does not apply to the CGO_CFLAGS environment variable.
+CGO_CPPFLAGS, CGO_CPPFLAGS_ALLOW, CGO_CPPFLAGS_DISALLOW
+	Like CGO_CFLAGS, CGO_CFLAGS_ALLOW, and CGO_CFLAGS_DISALLOW,
+	but for the C preprocessor.
+CGO_CXXFLAGS, CGO_CXXFLAGS_ALLOW, CGO_CXXFLAGS_DISALLOW
+	Like CGO_CFLAGS, CGO_CFLAGS_ALLOW, and CGO_CFLAGS_DISALLOW,
+	but for the C++ compiler.
+CGO_FFLAGS, CGO_FFLAGS_ALLOW, CGO_FFLAGS_DISALLOW
+	Like CGO_CFLAGS, CGO_CFLAGS_ALLOW, and CGO_CFLAGS_DISALLOW,
+	but for the Fortran compiler.
+CGO_LDFLAGS, CGO_LDFLAGS_ALLOW, CGO_LDFLAGS_DISALLOW
+	Like CGO_CFLAGS, CGO_CFLAGS_ALLOW, and CGO_CFLAGS_DISALLOW,
+	but for the linker.
+CXX
+	The command to use to compile C++ code.
+FC
+	The command to use to compile Fortran code.
+PKG_CONFIG
+	Path to pkg-config tool.
+</pre>
+<p>Architecture-specific environment variables:
+<pre>GOARM
+	For GOARCH=arm, the ARM architecture for which to compile.
+	Valid values are 5, 6, 7.
+	The value can be followed by an option specifying how to implement floating point instructions.
+	Valid options are ,softfloat (default for 5) and ,hardfloat (default for 6 and 7).
+GOARM64
+	For GOARCH=arm64, the ARM64 architecture for which to compile.
+	Valid values are v8.0 (default), v8.{1-9}, v9.{0-5}.
+	The value can be followed by an option specifying extensions implemented by target hardware.
+	Valid options are ,lse and ,crypto.
+	Note that some extensions are enabled by default starting from a certain GOARM64 version;
+	for example, lse is enabled by default starting from v8.1.
+GO386
+	For GOARCH=386, how to implement floating point instructions.
+	Valid values are sse2 (default), softfloat.
+GOAMD64
+	For GOARCH=amd64, the microarchitecture level for which to compile.
+	Valid values are v1 (default), v2, v3, v4.
+	See https://golang.org/wiki/MinimumRequirements#amd64
+GOMIPS
+	For GOARCH=mips{,le}, whether to use floating point instructions.
+	Valid values are hardfloat (default), softfloat.
+GOMIPS64
+	For GOARCH=mips64{,le}, whether to use floating point instructions.
+	Valid values are hardfloat (default), softfloat.
+GOPPC64
+	For GOARCH=ppc64{,le}, the target ISA (Instruction Set Architecture).
+	Valid values are power8 (default), power9, power10.
+GORISCV64
+	For GOARCH=riscv64, the RISC-V user-mode application profile for which
+	to compile. Valid values are rva20u64 (default), rva22u64.
+	See https://github.com/riscv/riscv-profiles/blob/main/src/profiles.adoc
+GOWASM
+	For GOARCH=wasm, comma-separated list of experimental WebAssembly features to use.
+	Valid values are satconv, signext.
+</pre>
+<p>Environment variables for use with code coverage:
+<pre>GOCOVERDIR
+	Directory into which to write code coverage data files
+	generated by running a &quot;go build -cover&quot; binary.
+	Requires that GOEXPERIMENT=coverageredesign is enabled.
+</pre>
+<p>Special-purpose environment variables:
+<pre>GCCGOTOOLDIR
+	If set, where to find gccgo tools, such as cgo.
+	The default is based on how gccgo was configured.
+GOEXPERIMENT
+	Comma-separated list of toolchain experiments to enable or disable.
+	The list of available experiments may change arbitrarily over time.
+	See src/internal/goexperiment/flags.go for currently valid values.
+	Warning: This variable is provided for the development and testing
+	of the Go toolchain itself. Use beyond that purpose is unsupported.
+GO_EXTLINK_ENABLED
+	Whether the linker should use external linking mode
+	when using -linkmode=auto with code that uses cgo.
+	Set to 0 to disable external linking mode, 1 to enable it.
+GIT_ALLOW_PROTOCOL
+	Defined by Git. A colon-separated list of schemes that are allowed
+	to be used with git fetch/clone. If set, any scheme not explicitly
+	mentioned will be considered insecure by &apos;go get&apos;.
+	Because the variable is defined by Git, the default value cannot
+	be set using &apos;go env -w&apos;.
+</pre>
+<p>Additional information available from &apos;go env&apos; but not read from the environment:
+<pre>GOEXE
+	The executable file name suffix (&quot;.exe&quot; on Windows, &quot;&quot; on other systems).
+GOGCCFLAGS
+	A space-separated list of arguments supplied to the CC command.
+GOHOSTARCH
+	The architecture (GOARCH) of the Go toolchain binaries.
+GOHOSTOS
+	The operating system (GOOS) of the Go toolchain binaries.
+GOMOD
+	The absolute path to the go.mod of the main module.
+	If module-aware mode is enabled, but there is no go.mod, GOMOD will be
+	os.DevNull (&quot;/dev/null&quot; on Unix-like systems, &quot;NUL&quot; on Windows).
+	If module-aware mode is disabled, GOMOD will be the empty string.
+GOTOOLDIR
+	The directory where the go tools (compile, cover, doc, etc...) are installed.
+GOVERSION
+	The version of the installed Go tree, as reported by runtime.Version.
+</pre>
+<h3 id="hdr-File_types">File types</h3>
+<p>The go command examines the contents of a restricted set of files
+in each directory. It identifies which files to examine based on
+the extension of the file name. These extensions are:
+<pre>.go
+	Go source files.
+.c, .h
+	C source files.
+	If the package uses cgo or SWIG, these will be compiled with the
+	OS-native compiler (typically gcc); otherwise they will
+	trigger an error.
+.cc, .cpp, .cxx, .hh, .hpp, .hxx
+	C++ source files. Only useful with cgo or SWIG, and always
+	compiled with the OS-native compiler.
+.m
+	Objective-C source files. Only useful with cgo, and always
+	compiled with the OS-native compiler.
+.s, .S, .sx
+	Assembler source files.
+	If the package uses cgo or SWIG, these will be assembled with the
+	OS-native assembler (typically gcc (sic)); otherwise they
+	will be assembled with the Go assembler.
+.swig, .swigcxx
+	SWIG definition files.
+.syso
+	System object files.
+</pre>
+<p>Files of each of these types except .syso may contain build
+constraints, but the go command stops scanning for build constraints
+at the first item in the file that is not a blank line or //-style
+line comment. See the go/build package documentation for
+more details.
+<h3 id="hdr-The_go_mod_file">The go.mod file</h3>
+<p>A module version is defined by a tree of source files, with a go.mod
+file in its root. When the go command is run, it looks in the current
+directory and then successive parent directories to find the go.mod
+marking the root of the main (current) module.
+<p>The go.mod file format is described in detail at
+<a href="https://golang.org/ref/mod#go-mod-file">https://golang.org/ref/mod#go-mod-file</a>.
+<p>To create a new go.mod file, use &apos;go mod init&apos;. For details see
+&apos;go help mod init&apos; or <a href="https://golang.org/ref/mod#go-mod-init">https://golang.org/ref/mod#go-mod-init</a>.
+<p>To add missing module requirements or remove unneeded requirements,
+use &apos;go mod tidy&apos;. For details, see &apos;go help mod tidy&apos; or
+<a href="https://golang.org/ref/mod#go-mod-tidy">https://golang.org/ref/mod#go-mod-tidy</a>.
+<p>To add, upgrade, downgrade, or remove a specific module requirement, use
+&apos;go get&apos;. For details, see &apos;go help module-get&apos; or
+<a href="https://golang.org/ref/mod#go-get">https://golang.org/ref/mod#go-get</a>.
+<p>To make other changes or to parse go.mod as JSON for use by other tools,
+use &apos;go mod edit&apos;. See &apos;go help mod edit&apos; or
+<a href="https://golang.org/ref/mod#go-mod-edit">https://golang.org/ref/mod#go-mod-edit</a>.
+<h3 id="hdr-GOPATH_environment_variable">GOPATH environment variable</h3>
+<p>The Go path is used to resolve import statements.
+It is implemented by and documented in the go/build package.
+<p>The GOPATH environment variable lists places to look for Go code.
+On Unix, the value is a colon-separated string.
+On Windows, the value is a semicolon-separated string.
+On Plan 9, the value is a list.
+<p>If the environment variable is unset, GOPATH defaults
+to a subdirectory named &quot;go&quot; in the user&apos;s home directory
+($HOME/go on Unix, %USERPROFILE%\go on Windows),
+unless that directory holds a Go distribution.
+Run &quot;go env GOPATH&quot; to see the current GOPATH.
+<p>See <a href="https://golang.org/wiki/SettingGOPATH">https://golang.org/wiki/SettingGOPATH</a> to set a custom GOPATH.
+<p>Each directory listed in GOPATH must have a prescribed structure:
+<p>The src directory holds source code. The path below src
+determines the import path or executable name.
+<p>The pkg directory holds installed package objects.
+As in the Go tree, each target operating system and
+architecture pair has its own subdirectory of pkg
+(pkg/GOOS_GOARCH).
+<p>If DIR is a directory listed in the GOPATH, a package with
+source in DIR/src/foo/bar can be imported as &quot;foo/bar&quot; and
+has its compiled form installed to &quot;DIR/pkg/GOOS_GOARCH/foo/bar.a&quot;.
+<p>The bin directory holds compiled commands.
+Each command is named for its source directory, but only
+the final element, not the entire path. That is, the
+command with source in DIR/src/foo/quux is installed into
+DIR/bin/quux, not DIR/bin/foo/quux. The &quot;foo/&quot; prefix is stripped
+so that you can add DIR/bin to your PATH to get at the
+installed commands. If the GOBIN environment variable is
+set, commands are installed to the directory it names instead
+of DIR/bin. GOBIN must be an absolute path.
+<p>Here&apos;s an example directory layout:
+<pre>GOPATH=/home/user/go
+
+/home/user/go/
+    src/
+        foo/
+            bar/               (go code in package bar)
+                x.go
+            quux/              (go code in package main)
+                y.go
+    bin/
+        quux                   (installed command)
+    pkg/
+        linux_amd64/
+            foo/
+                bar.a          (installed package object)
+</pre>
+<p>Go searches each directory listed in GOPATH to find source code,
+but new packages are always downloaded into the first directory
+in the list.
+<p>See <a href="https://golang.org/doc/code.html">https://golang.org/doc/code.html</a> for an example.
+<h3 id="hdr-GOPATH_and_Modules">GOPATH and Modules</h3>
+<p>When using modules, GOPATH is no longer used for resolving imports.
+However, it is still used to store downloaded source code (in GOPATH/pkg/mod)
+and compiled commands (in GOPATH/bin).
+<h3 id="hdr-Internal_Directories">Internal Directories</h3>
+<p>Code in or below a directory named &quot;internal&quot; is importable only
+by code in the directory tree rooted at the parent of &quot;internal&quot;.
+Here&apos;s an extended version of the directory layout above:
+<pre>/home/user/go/
+    src/
+        crash/
+            bang/              (go code in package bang)
+                b.go
+        foo/                   (go code in package foo)
+            f.go
+            bar/               (go code in package bar)
+                x.go
+            internal/
+                baz/           (go code in package baz)
+                    z.go
+            quux/              (go code in package main)
+                y.go
+</pre>
+<p>The code in z.go is imported as &quot;foo/internal/baz&quot;, but that
+import statement can only appear in source files in the subtree
+rooted at foo. The source files foo/f.go, foo/bar/x.go, and
+foo/quux/y.go can all import &quot;foo/internal/baz&quot;, but the source file
+crash/bang/b.go cannot.
+<p>See <a href="https://golang.org/s/go14internal">https://golang.org/s/go14internal</a> for details.
+<h3 id="hdr-Vendor_Directories">Vendor Directories</h3>
+<p>Go 1.6 includes support for using local copies of external dependencies
+to satisfy imports of those dependencies, often referred to as vendoring.
+<p>Code below a directory named &quot;vendor&quot; is importable only
+by code in the directory tree rooted at the parent of &quot;vendor&quot;,
+and only using an import path that omits the prefix up to and
+including the vendor element.
+<p>Here&apos;s the example from the previous section,
+but with the &quot;internal&quot; directory renamed to &quot;vendor&quot;
+and a new foo/vendor/crash/bang directory added:
+<pre>/home/user/go/
+    src/
+        crash/
+            bang/              (go code in package bang)
+                b.go
+        foo/                   (go code in package foo)
+            f.go
+            bar/               (go code in package bar)
+                x.go
+            vendor/
+                crash/
+                    bang/      (go code in package bang)
+                        b.go
+                baz/           (go code in package baz)
+                    z.go
+            quux/              (go code in package main)
+                y.go
+</pre>
+<p>The same visibility rules apply as for internal, but the code
+in z.go is imported as &quot;baz&quot;, not as &quot;foo/vendor/baz&quot;.
+<p>Code in vendor directories deeper in the source tree shadows
+code in higher directories. Within the subtree rooted at foo, an import
+of &quot;crash/bang&quot; resolves to &quot;foo/vendor/crash/bang&quot;, not the
+top-level &quot;crash/bang&quot;.
+<p>Code in vendor directories is not subject to import path
+checking (see &apos;go help importpath&apos;).
+<p>When &apos;go get&apos; checks out or updates a git repository, it now also
+updates submodules.
+<p>Vendor directories do not affect the placement of new repositories
+being checked out for the first time by &apos;go get&apos;: those are always
+placed in the main GOPATH, never in a vendor subtree.
+<p>See <a href="https://golang.org/s/go15vendor">https://golang.org/s/go15vendor</a> for details.
+<h3 id="hdr-Module_proxy_protocol">Module proxy protocol</h3>
+<p>A Go module proxy is any web server that can respond to GET requests for
+URLs of a specified form. The requests have no query parameters, so even
+a site serving from a fixed file system (including a file:/// URL)
+can be a module proxy.
+<p>For details on the GOPROXY protocol, see
+<a href="https://golang.org/ref/mod#goproxy-protocol">https://golang.org/ref/mod#goproxy-protocol</a>.
+<h3 id="hdr-Import_path_syntax">Import path syntax</h3>
+<p>An import path (see &apos;go help packages&apos;) denotes a package stored in the local
+file system. In general, an import path denotes either a standard package (such
+as &quot;unicode/utf8&quot;) or a package found in one of the work spaces (For more
+details see: &apos;go help gopath&apos;).
+<h3 id="hdr-Relative_import_paths">Relative import paths</h3>
+<p>An import path beginning with ./ or ../ is called a relative path.
+The toolchain supports relative import paths as a shortcut in two ways.
+<p>First, a relative path can be used as a shorthand on the command line.
+If you are working in the directory containing the code imported as
+&quot;unicode&quot; and want to run the tests for &quot;unicode/utf8&quot;, you can type
+&quot;go test ./utf8&quot; instead of needing to specify the full path.
+Similarly, in the reverse situation, &quot;go test ..&quot; will test &quot;unicode&quot; from
+the &quot;unicode/utf8&quot; directory. Relative patterns are also allowed, like
+&quot;go test ./...&quot; to test all subdirectories. See &apos;go help packages&apos; for details
+on the pattern syntax.
+<p>Second, if you are compiling a Go program not in a work space,
+you can use a relative path in an import statement in that program
+to refer to nearby code also not in a work space.
+This makes it easy to experiment with small multipackage programs
+outside of the usual work spaces, but such programs cannot be
+installed with &quot;go install&quot; (there is no work space in which to install them),
+so they are rebuilt from scratch each time they are built.
+To avoid ambiguity, Go programs cannot use relative import paths
+within a work space.
+<h3 id="hdr-Remote_import_paths">Remote import paths</h3>
+<p>Certain import paths also
+describe how to obtain the source code for the package using
+a revision control system.
+<p>A few common code hosting sites have special syntax:
+<pre>Bitbucket (Git, Mercurial)
+
+	import &quot;bitbucket.org/user/project&quot;
+	import &quot;bitbucket.org/user/project/sub/directory&quot;
+
+GitHub (Git)
+
+	import &quot;github.com/user/project&quot;
+	import &quot;github.com/user/project/sub/directory&quot;
+
+Launchpad (Bazaar)
+
+	import &quot;launchpad.net/project&quot;
+	import &quot;launchpad.net/project/series&quot;
+	import &quot;launchpad.net/project/series/sub/directory&quot;
+
+	import &quot;launchpad.net/~user/project/branch&quot;
+	import &quot;launchpad.net/~user/project/branch/sub/directory&quot;
+
+IBM DevOps Services (Git)
+
+	import &quot;hub.jazz.net/git/user/project&quot;
+	import &quot;hub.jazz.net/git/user/project/sub/directory&quot;
+</pre>
+<p>For code hosted on other servers, import paths may either be qualified
+with the version control type, or the go tool can dynamically fetch
+the import path over https/http and discover where the code resides
+from a &lt;meta&gt; tag in the HTML.
+<p>To declare the code location, an import path of the form
+<pre>repository.vcs/path
+</pre>
+<p>specifies the given repository, with or without the .vcs suffix,
+using the named version control system, and then the path inside
+that repository. The supported version control systems are:
+<pre>Bazaar      .bzr
+Fossil      .fossil
+Git         .git
+Mercurial   .hg
+Subversion  .svn
+</pre>
+<p>For example,
+<pre>import &quot;example.org/user/foo.hg&quot;
+</pre>
+<p>denotes the root directory of the Mercurial repository at
+example.org/user/foo or foo.hg, and
+<pre>import &quot;example.org/repo.git/foo/bar&quot;
+</pre>
+<p>denotes the foo/bar directory of the Git repository at
+example.org/repo or repo.git.
+<p>When a version control system supports multiple protocols,
+each is tried in turn when downloading. For example, a Git
+download tries https://, then git+ssh://.
+<p>By default, downloads are restricted to known secure protocols
+(e.g. https, ssh). To override this setting for Git downloads, the
+GIT_ALLOW_PROTOCOL environment variable can be set (For more details see:
+&apos;go help environment&apos;).
+<p>If the import path is not a known code hosting site and also lacks a
+version control qualifier, the go tool attempts to fetch the import
+over https/http and looks for a &lt;meta&gt; tag in the document&apos;s HTML
+&lt;head&gt;.
+<p>The meta tag has the form:
+<pre>&lt;meta name=&quot;go-import&quot; content=&quot;import-prefix vcs repo-root&quot;&gt;
+</pre>
+<p>The import-prefix is the import path corresponding to the repository
+root. It must be a prefix or an exact match of the package being
+fetched with &quot;go get&quot;. If it&apos;s not an exact match, another http
+request is made at the prefix to verify the &lt;meta&gt; tags match.
+<p>The meta tag should appear as early in the file as possible.
+In particular, it should appear before any raw JavaScript or CSS,
+to avoid confusing the go command&apos;s restricted parser.
+<p>The vcs is one of &quot;bzr&quot;, &quot;fossil&quot;, &quot;git&quot;, &quot;hg&quot;, &quot;svn&quot;.
+<p>The repo-root is the root of the version control system
+containing a scheme and not containing a .vcs qualifier.
+<p>For example,
+<pre>import &quot;example.org/pkg/foo&quot;
+</pre>
+<p>will result in the following requests:
+<pre>https://example.org/pkg/foo?go-get=1 (preferred)
+http://example.org/pkg/foo?go-get=1  (fallback, only with use of correctly set GOINSECURE)
+</pre>
+<p>If that page contains the meta tag
+<pre>&lt;meta name=&quot;go-import&quot; content=&quot;example.org git https://code.org/r/p/exproj&quot;&gt;
+</pre>
+<p>the go tool will verify that <a href="https://example.org/?go-get=1">https://example.org/?go-get=1</a> contains the
+same meta tag and then git clone <a href="https://code.org/r/p/exproj">https://code.org/r/p/exproj</a> into
+GOPATH/src/example.org.
+<p>When using GOPATH, downloaded packages are written to the first directory
+listed in the GOPATH environment variable.
+(See &apos;go help gopath-get&apos; and &apos;go help gopath&apos;.)
+<p>When using modules, downloaded packages are stored in the module cache.
+See <a href="https://golang.org/ref/mod#module-cache">https://golang.org/ref/mod#module-cache</a>.
+<p>When using modules, an additional variant of the go-import meta tag is
+recognized and is preferred over those listing version control systems.
+That variant uses &quot;mod&quot; as the vcs in the content value, as in:
+<pre>&lt;meta name=&quot;go-import&quot; content=&quot;example.org mod https://code.org/moduleproxy&quot;&gt;
+</pre>
+<p>This tag means to fetch modules with paths beginning with example.org
+from the module proxy available at the URL <a href="https://code.org/moduleproxy">https://code.org/moduleproxy</a>.
+See <a href="https://golang.org/ref/mod#goproxy-protocol">https://golang.org/ref/mod#goproxy-protocol</a> for details about the
+proxy protocol.
+<h3 id="hdr-Import_path_checking">Import path checking</h3>
+<p>When the custom import path feature described above redirects to a
+known code hosting site, each of the resulting packages has two possible
+import paths, using the custom domain or the known hosting site.
+<p>A package statement is said to have an &quot;import comment&quot; if it is immediately
+followed (before the next newline) by a comment of one of these two forms:
+<pre>package math // import &quot;path&quot;
+package math /* import &quot;path&quot; */
+</pre>
+<p>The go command will refuse to install a package with an import comment
+unless it is being referred to by that import path. In this way, import comments
+let package authors make sure the custom import path is used and not a
+direct path to the underlying code hosting site.
+<p>Import path checking is disabled for code found within vendor trees.
+This makes it possible to copy code into alternate locations in vendor trees
+without needing to update import comments.
+<p>Import path checking is also disabled when using modules.
+Import path comments are obsoleted by the go.mod file&apos;s module statement.
+<p>See <a href="https://golang.org/s/go14customimport">https://golang.org/s/go14customimport</a> for details.
+<h3 id="hdr-Modules__module_versions__and_more">Modules, module versions, and more</h3>
+<p>Modules are how Go manages dependencies.
+<p>A module is a collection of packages that are released, versioned, and
+distributed together. Modules may be downloaded directly from version control
+repositories or from module proxy servers.
+<p>For a series of tutorials on modules, see
+<a href="https://golang.org/doc/tutorial/create-module">https://golang.org/doc/tutorial/create-module</a>.
+<p>For a detailed reference on modules, see <a href="https://golang.org/ref/mod">https://golang.org/ref/mod</a>.
+<p>By default, the go command may download modules from <a href="https://proxy.golang.org">https://proxy.golang.org</a>.
+It may authenticate modules using the checksum database at
+<a href="https://sum.golang.org">https://sum.golang.org</a>. Both services are operated by the Go team at Google.
+The privacy policies for these services are available at
+<a href="https://proxy.golang.org/privacy">https://proxy.golang.org/privacy</a> and <a href="https://sum.golang.org/privacy">https://sum.golang.org/privacy</a>,
+respectively.
+<p>The go command&apos;s download behavior may be configured using GOPROXY, GOSUMDB,
+GOPRIVATE, and other environment variables. See &apos;go help environment&apos;
+and <a href="https://golang.org/ref/mod#private-module-privacy">https://golang.org/ref/mod#private-module-privacy</a> for more information.
+<h3 id="hdr-Module_authentication_using_go_sum">Module authentication using go.sum</h3>
+<p>When the go command downloads a module zip file or go.mod file into the
+module cache, it computes a cryptographic hash and compares it with a known
+value to verify the file hasn&apos;t changed since it was first downloaded. Known
+hashes are stored in a file in the module root directory named go.sum. Hashes
+may also be downloaded from the checksum database depending on the values of
+GOSUMDB, GOPRIVATE, and GONOSUMDB.
+<p>For details, see <a href="https://golang.org/ref/mod#authenticating">https://golang.org/ref/mod#authenticating</a>.
+<h3 id="hdr-Package_lists_and_patterns">Package lists and patterns</h3>
+<p>Many commands apply to a set of packages:
+<pre>go &lt;action&gt; [packages]
+</pre>
+<p>Usually, [packages] is a list of import paths.
+<p>An import path that is a rooted path or that begins with
+a . or .. element is interpreted as a file system path and
+denotes the package in that directory.
+<p>Otherwise, the import path P denotes the package found in
+the directory DIR/src/P for some DIR listed in the GOPATH
+environment variable (For more details see: &apos;go help gopath&apos;).
+<p>If no import paths are given, the action applies to the
+package in the current directory.
+<p>There are four reserved names for paths that should not be used
+for packages to be built with the go tool:
+<p>- &quot;main&quot; denotes the top-level package in a stand-alone executable.
+<p>- &quot;all&quot; expands to all packages found in all the GOPATH
+trees. For example, &apos;go list all&apos; lists all the packages on the local
+system. When using modules, &quot;all&quot; expands to all packages in
+the main module and their dependencies, including dependencies
+needed by tests of any of those.
+<p>- &quot;std&quot; is like all but expands to just the packages in the standard
+Go library.
+<p>- &quot;cmd&quot; expands to the Go repository&apos;s commands and their
+internal libraries.
+<p>Import paths beginning with &quot;cmd/&quot; only match source code in
+the Go repository.
+<p>An import path is a pattern if it includes one or more &quot;...&quot; wildcards,
+each of which can match any string, including the empty string and
+strings containing slashes. Such a pattern expands to all package
+directories found in the GOPATH trees with names matching the
+patterns.
+<p>To make common patterns more convenient, there are two special cases.
+First, /... at the end of the pattern can match an empty string,
+so that net/... matches both net and packages in its subdirectories, like net/http.
+Second, any slash-separated pattern element containing a wildcard never
+participates in a match of the &quot;vendor&quot; element in the path of a vendored
+package, so that ./... does not match packages in subdirectories of
+./vendor or ./mycode/vendor, but ./vendor/... and ./mycode/vendor/... do.
+Note, however, that a directory named vendor that itself contains code
+is not a vendored package: cmd/vendor would be a command named vendor,
+and the pattern cmd/... matches it.
+See golang.org/s/go15vendor for more about vendoring.
+<p>An import path can also name a package to be downloaded from
+a remote repository. Run &apos;go help importpath&apos; for details.
+<p>Every package in a program must have a unique import path.
+By convention, this is arranged by starting each path with a
+unique prefix that belongs to you. For example, paths used
+internally at Google all begin with &apos;google&apos;, and paths
+denoting remote repositories begin with the path to the code,
+such as &apos;github.com/user/repo&apos;.
+<p>Packages in a program need not have unique package names,
+but there are two reserved package names with special meaning.
+The name main indicates a command, not a library.
+Commands are built into binaries and cannot be imported.
+The name documentation indicates documentation for
+a non-Go program in the directory. Files in package documentation
+are ignored by the go command.
+<p>As a special case, if the package list is a list of .go files from a
+single directory, the command is applied to a single synthesized
+package made up of exactly those files, ignoring any build constraints
+in those files and ignoring any other files in the directory.
+<p>Directory and file names that begin with &quot;.&quot; or &quot;_&quot; are ignored
+by the go tool, as are directories named &quot;testdata&quot;.
+<h3 id="hdr-Configuration_for_downloading_non_public_code">Configuration for downloading non-public code</h3>
+<p>The go command defaults to downloading modules from the public Go module
+mirror at proxy.golang.org. It also defaults to validating downloaded modules,
+regardless of source, against the public Go checksum database at sum.golang.org.
+These defaults work well for publicly available source code.
+<p>The GOPRIVATE environment variable controls which modules the go command
+considers to be private (not available publicly) and should therefore not use
+the proxy or checksum database. The variable is a comma-separated list of
+glob patterns (in the syntax of Go&apos;s path.Match) of module path prefixes.
+For example,
+<pre>GOPRIVATE=*.corp.example.com,rsc.io/private
+</pre>
+<p>causes the go command to treat as private any module with a path prefix
+matching either pattern, including git.corp.example.com/xyzzy, rsc.io/private,
+and rsc.io/private/quux.
+<p>For fine-grained control over module download and validation, the GONOPROXY
+and GONOSUMDB environment variables accept the same kind of glob list
+and override GOPRIVATE for the specific decision of whether to use the proxy
+and checksum database, respectively.
+<p>For example, if a company ran a module proxy serving private modules,
+users would configure go using:
+<pre>GOPRIVATE=*.corp.example.com
+GOPROXY=proxy.example.com
+GONOPROXY=none
+</pre>
+<p>The GOPRIVATE variable is also used to define the &quot;public&quot; and &quot;private&quot;
+patterns for the GOVCS variable; see &apos;go help vcs&apos;. For that usage,
+GOPRIVATE applies even in GOPATH mode. In that case, it matches import paths
+instead of module paths.
+<p>The &apos;go env -w&apos; command (see &apos;go help env&apos;) can be used to set these variables
+for future go command invocations.
+<p>For more details, see <a href="https://golang.org/ref/mod#private-modules">https://golang.org/ref/mod#private-modules</a>.
+<h3 id="hdr-Testing_flags">Testing flags</h3>
+<p>The &apos;go test&apos; command takes both flags that apply to &apos;go test&apos; itself
+and flags that apply to the resulting test binary.
+<p>Several of the flags control profiling and write an execution profile
+suitable for &quot;go tool pprof&quot;; run &quot;go tool pprof -h&quot; for more
+information. The --alloc_space, --alloc_objects, and --show_bytes
+options of pprof control how the information is presented.
+<p>The following flags are recognized by the &apos;go test&apos; command and
+control the execution of any test:
+<pre>-bench regexp
+    Run only those benchmarks matching a regular expression.
+    By default, no benchmarks are run.
+    To run all benchmarks, use &apos;-bench .&apos; or &apos;-bench=.&apos;.
+    The regular expression is split by unbracketed slash (/)
+    characters into a sequence of regular expressions, and each
+    part of a benchmark&apos;s identifier must match the corresponding
+    element in the sequence, if any. Possible parents of matches
+    are run with b.N=1 to identify sub-benchmarks. For example,
+    given -bench=X/Y, top-level benchmarks matching X are run
+    with b.N=1 to find any sub-benchmarks matching Y, which are
+    then run in full.
+
+-benchtime t
+    Run enough iterations of each benchmark to take t, specified
+    as a time.Duration (for example, -benchtime 1h30s).
+    The default is 1 second (1s).
+    The special syntax Nx means to run the benchmark N times
+    (for example, -benchtime 100x).
+
+-count n
+    Run each test, benchmark, and fuzz seed n times (default 1).
+    If -cpu is set, run n times for each GOMAXPROCS value.
+    Examples are always run once. -count does not apply to
+    fuzz tests matched by -fuzz.
+
+-cover
+    Enable coverage analysis.
+    Note that because coverage works by annotating the source
+    code before compilation, compilation and test failures with
+    coverage enabled may report line numbers that don&apos;t correspond
+    to the original sources.
+
+-covermode set,count,atomic
+    Set the mode for coverage analysis for the package[s]
+    being tested. The default is &quot;set&quot; unless -race is enabled,
+    in which case it is &quot;atomic&quot;.
+    The values:
+	set: bool: does this statement run?
+	count: int: how many times does this statement run?
+	atomic: int: count, but correct in multithreaded tests;
+		significantly more expensive.
+    Sets -cover.
+
+-coverpkg pattern1,pattern2,pattern3
+    Apply coverage analysis in each test to packages matching the patterns.
+    The default is for each test to analyze only the package being tested.
+    See &apos;go help packages&apos; for a description of package patterns.
+    Sets -cover.
+
+-cpu 1,2,4
+    Specify a list of GOMAXPROCS values for which the tests, benchmarks or
+    fuzz tests should be executed. The default is the current value
+    of GOMAXPROCS. -cpu does not apply to fuzz tests matched by -fuzz.
+
+-failfast
+    Do not start new tests after the first test failure.
+
+-fullpath
+    Show full file names in the error messages.
+
+-fuzz regexp
+    Run the fuzz test matching the regular expression. When specified,
+    the command line argument must match exactly one package within the
+    main module, and regexp must match exactly one fuzz test within
+    that package. Fuzzing will occur after tests, benchmarks, seed corpora
+    of other fuzz tests, and examples have completed. See the Fuzzing
+    section of the testing package documentation for details.
+
+-fuzztime t
+    Run enough iterations of the fuzz target during fuzzing to take t,
+    specified as a time.Duration (for example, -fuzztime 1h30s).
+	The default is to run forever.
+    The special syntax Nx means to run the fuzz target N times
+    (for example, -fuzztime 1000x).
+
+-fuzzminimizetime t
+    Run enough iterations of the fuzz target during each minimization
+    attempt to take t, as specified as a time.Duration (for example,
+    -fuzzminimizetime 30s).
+	The default is 60s.
+    The special syntax Nx means to run the fuzz target N times
+    (for example, -fuzzminimizetime 100x).
+
+-json
+    Log verbose output and test results in JSON. This presents the
+    same information as the -v flag in a machine-readable format.
+
+-list regexp
+    List tests, benchmarks, fuzz tests, or examples matching the regular
+    expression. No tests, benchmarks, fuzz tests, or examples will be run.
+    This will only list top-level tests. No subtest or subbenchmarks will be
+    shown.
+
+-parallel n
+    Allow parallel execution of test functions that call t.Parallel, and
+    fuzz targets that call t.Parallel when running the seed corpus.
+    The value of this flag is the maximum number of tests to run
+    simultaneously.
+    While fuzzing, the value of this flag is the maximum number of
+    subprocesses that may call the fuzz function simultaneously, regardless of
+    whether T.Parallel is called.
+    By default, -parallel is set to the value of GOMAXPROCS.
+    Setting -parallel to values higher than GOMAXPROCS may cause degraded
+    performance due to CPU contention, especially when fuzzing.
+    Note that -parallel only applies within a single test binary.
+    The &apos;go test&apos; command may run tests for different packages
+    in parallel as well, according to the setting of the -p flag
+    (see &apos;go help build&apos;).
+
+-run regexp
+    Run only those tests, examples, and fuzz tests matching the regular
+    expression. For tests, the regular expression is split by unbracketed
+    slash (/) characters into a sequence of regular expressions, and each
+    part of a test&apos;s identifier must match the corresponding element in
+    the sequence, if any. Note that possible parents of matches are
+    run too, so that -run=X/Y matches and runs and reports the result
+    of all tests matching X, even those without sub-tests matching Y,
+    because it must run them to look for those sub-tests.
+    See also -skip.
+
+-short
+    Tell long-running tests to shorten their run time.
+    It is off by default but set during all.bash so that installing
+    the Go tree can run a sanity check but not spend time running
+    exhaustive tests.
+
+-shuffle off,on,N
+    Randomize the execution order of tests and benchmarks.
+    It is off by default. If -shuffle is set to on, then it will seed
+    the randomizer using the system clock. If -shuffle is set to an
+    integer N, then N will be used as the seed value. In both cases,
+    the seed will be reported for reproducibility.
+
+-skip regexp
+    Run only those tests, examples, fuzz tests, and benchmarks that
+    do not match the regular expression. Like for -run and -bench,
+    for tests and benchmarks, the regular expression is split by unbracketed
+    slash (/) characters into a sequence of regular expressions, and each
+    part of a test&apos;s identifier must match the corresponding element in
+    the sequence, if any.
+
+-timeout d
+    If a test binary runs longer than duration d, panic.
+    If d is 0, the timeout is disabled.
+    The default is 10 minutes (10m).
+
+-v
+    Verbose output: log all tests as they are run. Also print all
+    text from Log and Logf calls even if the test succeeds.
+
+-vet list
+    Configure the invocation of &quot;go vet&quot; during &quot;go test&quot;
+    to use the comma-separated list of vet checks.
+    If list is empty, &quot;go test&quot; runs &quot;go vet&quot; with a curated list of
+    checks believed to be always worth addressing.
+    If list is &quot;off&quot;, &quot;go test&quot; does not run &quot;go vet&quot; at all.
+</pre>
+<p>The following flags are also recognized by &apos;go test&apos; and can be used to
+profile the tests during execution:
+<pre>-benchmem
+    Print memory allocation statistics for benchmarks.
+    Allocations made in C or using C.malloc are not counted.
+
+-blockprofile block.out
+    Write a goroutine blocking profile to the specified file
+    when all tests are complete.
+    Writes test binary as -c would.
+
+-blockprofilerate n
+    Control the detail provided in goroutine blocking profiles by
+    calling runtime.SetBlockProfileRate with n.
+    See &apos;go doc runtime.SetBlockProfileRate&apos;.
+    The profiler aims to sample, on average, one blocking event every
+    n nanoseconds the program spends blocked. By default,
+    if -test.blockprofile is set without this flag, all blocking events
+    are recorded, equivalent to -test.blockprofilerate=1.
+
+-coverprofile cover.out
+    Write a coverage profile to the file after all tests have passed.
+    Sets -cover.
+
+-cpuprofile cpu.out
+    Write a CPU profile to the specified file before exiting.
+    Writes test binary as -c would.
+
+-memprofile mem.out
+    Write an allocation profile to the file after all tests have passed.
+    Writes test binary as -c would.
+
+-memprofilerate n
+    Enable more precise (and expensive) memory allocation profiles by
+    setting runtime.MemProfileRate. See &apos;go doc runtime.MemProfileRate&apos;.
+    To profile all memory allocations, use -test.memprofilerate=1.
+
+-mutexprofile mutex.out
+    Write a mutex contention profile to the specified file
+    when all tests are complete.
+    Writes test binary as -c would.
+
+-mutexprofilefraction n
+    Sample 1 in n stack traces of goroutines holding a
+    contended mutex.
+
+-outputdir directory
+    Place output files from profiling in the specified directory,
+    by default the directory in which &quot;go test&quot; is running.
+
+-trace trace.out
+    Write an execution trace to the specified file before exiting.
+</pre>
+<p>Each of these flags is also recognized with an optional &apos;test.&apos; prefix,
+as in -test.v. When invoking the generated test binary (the result of
+&apos;go test -c&apos;) directly, however, the prefix is mandatory.
+<p>The &apos;go test&apos; command rewrites or removes recognized flags,
+as appropriate, both before and after the optional package list,
+before invoking the test binary.
+<p>For instance, the command
+<pre>go test -v -myflag testdata -cpuprofile=prof.out -x
+</pre>
+<p>will compile the test binary and then run it as
+<pre>pkg.test -test.v -myflag testdata -test.cpuprofile=prof.out
+</pre>
+<p>(The -x flag is removed because it applies only to the go command&apos;s
+execution, not to the test itself.)
+<p>The test flags that generate profiles (other than for coverage) also
+leave the test binary in pkg.test for use when analyzing the profiles.
+<p>When &apos;go test&apos; runs a test binary, it does so from within the
+corresponding package&apos;s source code directory. Depending on the test,
+it may be necessary to do the same when invoking a generated test
+binary directly. Because that directory may be located within the
+module cache, which may be read-only and is verified by checksums, the
+test must not write to it or any other directory within the module
+unless explicitly requested by the user (such as with the -fuzz flag,
+which writes failures to testdata/fuzz).
+<p>The command-line package list, if present, must appear before any
+flag not known to the go test command. Continuing the example above,
+the package list would have to appear before -myflag, but could appear
+on either side of -v.
+<p>When &apos;go test&apos; runs in package list mode, &apos;go test&apos; caches successful
+package test results to avoid unnecessary repeated running of tests. To
+disable test caching, use any test flag or argument other than the
+cacheable flags. The idiomatic way to disable test caching explicitly
+is to use -count=1.
+<p>To keep an argument for a test binary from being interpreted as a
+known flag or a package name, use -args (see &apos;go help test&apos;) which
+passes the remainder of the command line through to the test binary
+uninterpreted and unaltered.
+<p>For instance, the command
+<pre>go test -v -args -x -v
+</pre>
+<p>will compile the test binary and then run it as
+<pre>pkg.test -test.v -x -v
+</pre>
+<p>Similarly,
+<pre>go test -args math
+</pre>
+<p>will compile the test binary and then run it as
+<pre>pkg.test math
+</pre>
+<p>In the first example, the -x and the second -v are passed through to the
+test binary unchanged and with no effect on the go command itself.
+In the second example, the argument math is passed through to the test
+binary, instead of being interpreted as the package list.
+<h3 id="hdr-Testing_functions">Testing functions</h3>
+<p>The &apos;go test&apos; command expects to find test, benchmark, and example functions
+in the &quot;*_test.go&quot; files corresponding to the package under test.
+<p>A test function is one named TestXxx (where Xxx does not start with a
+lower case letter) and should have the signature,
+<pre>func TestXxx(t *testing.T) { ... }
+</pre>
+<p>A benchmark function is one named BenchmarkXxx and should have the signature,
+<pre>func BenchmarkXxx(b *testing.B) { ... }
+</pre>
+<p>A fuzz test is one named FuzzXxx and should have the signature,
+<pre>func FuzzXxx(f *testing.F) { ... }
+</pre>
+<p>An example function is similar to a test function but, instead of using
+*testing.T to report success or failure, prints output to os.Stdout.
+If the last comment in the function starts with &quot;Output:&quot; then the output
+is compared exactly against the comment (see examples below). If the last
+comment begins with &quot;Unordered output:&quot; then the output is compared to the
+comment, however the order of the lines is ignored. An example with no such
+comment is compiled but not executed. An example with no text after
+&quot;Output:&quot; is compiled, executed, and expected to produce no output.
+<p>Godoc displays the body of ExampleXxx to demonstrate the use
+of the function, constant, or variable Xxx. An example of a method M with
+receiver type T or *T is named ExampleT_M. There may be multiple examples
+for a given function, constant, or variable, distinguished by a trailing _xxx,
+where xxx is a suffix not beginning with an upper case letter.
+<p>Here is an example of an example:
+<pre>func ExamplePrintln() {
+	Println(&quot;The output of\nthis example.&quot;)
+	// Output: The output of
+	// this example.
+}
+</pre>
+<p>Here is another example where the ordering of the output is ignored:
+<pre>func ExamplePerm() {
+	for _, value := range Perm(4) {
+		fmt.Println(value)
+	}
+
+	// Unordered output: 4
+	// 2
+	// 1
+	// 3
+	// 0
+}
+</pre>
+<p>The entire test file is presented as the example when it contains a single
+example function, at least one other function, type, variable, or constant
+declaration, and no tests, benchmarks, or fuzz tests.
+<p>See the documentation of the testing package for more information.
+<h3 id="hdr-Controlling_version_control_with_GOVCS">Controlling version control with GOVCS</h3>
+<p>The &apos;go get&apos; command can run version control commands like git
+to download imported code. This functionality is critical to the decentralized
+Go package ecosystem, in which code can be imported from any server,
+but it is also a potential security problem, if a malicious server finds a
+way to cause the invoked version control command to run unintended code.
+<p>To balance the functionality and security concerns, the &apos;go get&apos; command
+by default will only use git and hg to download code from public servers.
+But it will use any known version control system (bzr, fossil, git, hg, svn)
+to download code from private servers, defined as those hosting packages
+matching the GOPRIVATE variable (see &apos;go help private&apos;). The rationale behind
+allowing only Git and Mercurial is that these two systems have had the most
+attention to issues of being run as clients of untrusted servers. In contrast,
+Bazaar, Fossil, and Subversion have primarily been used in trusted,
+authenticated environments and are not as well scrutinized as attack surfaces.
+<p>The version control command restrictions only apply when using direct version
+control access to download code. When downloading modules from a proxy,
+&apos;go get&apos; uses the proxy protocol instead, which is always permitted.
+By default, the &apos;go get&apos; command uses the Go module mirror (proxy.golang.org)
+for public packages and only falls back to version control for private
+packages or when the mirror refuses to serve a public package (typically for
+legal reasons). Therefore, clients can still access public code served from
+Bazaar, Fossil, or Subversion repositories by default, because those downloads
+use the Go module mirror, which takes on the security risk of running the
+version control commands using a custom sandbox.
+<p>The GOVCS variable can be used to change the allowed version control systems
+for specific packages (identified by a module or import path).
+The GOVCS variable applies when building package in both module-aware mode
+and GOPATH mode. When using modules, the patterns match against the module path.
+When using GOPATH, the patterns match against the import path corresponding to
+the root of the version control repository.
+<p>The general form of the GOVCS setting is a comma-separated list of
+pattern:vcslist rules. The pattern is a glob pattern that must match
+one or more leading elements of the module or import path. The vcslist
+is a pipe-separated list of allowed version control commands, or &quot;all&quot;
+to allow use of any known command, or &quot;off&quot; to disallow all commands.
+Note that if a module matches a pattern with vcslist &quot;off&quot;, it may still be
+downloaded if the origin server uses the &quot;mod&quot; scheme, which instructs the
+go command to download the module using the GOPROXY protocol.
+The earliest matching pattern in the list applies, even if later patterns
+might also match.
+<p>For example, consider:
+<pre>GOVCS=github.com:git,evil.com:off,*:git|hg
+</pre>
+<p>With this setting, code with a module or import path beginning with
+github.com/ can only use git; paths on evil.com cannot use any version
+control command, and all other paths (* matches everything) can use
+only git or hg.
+<p>The special patterns &quot;public&quot; and &quot;private&quot; match public and private
+module or import paths. A path is private if it matches the GOPRIVATE
+variable; otherwise it is public.
+<p>If no rules in the GOVCS variable match a particular module or import path,
+the &apos;go get&apos; command applies its default rule, which can now be summarized
+in GOVCS notation as &apos;public:git|hg,private:all&apos;.
+<p>To allow unfettered use of any version control system for any package, use:
+<pre>GOVCS=*:all
+</pre>
+<p>To disable all use of version control, use:
+<pre>GOVCS=*:off
+</pre>
+<p>The &apos;go env -w&apos; command (see &apos;go help env&apos;) can be used to set the GOVCS
+variable for future go command invocations.
+
+	
+
+	
+
+
+
+
+</article>
+
+
+</main>
+<footer class="Site-footer">
+  <div class="Footer">
+    <div class="Container">
+      <div class="Footer-links">
+          <div class="Footer-linkColumn">
+            <a href="/solutions/" class="Footer-link Footer-link--primary" aria-describedby="footer-description">
+              Why Go
+            </a>
+              <a href="/solutions/use-cases" class="Footer-link" aria-describedby="footer-description">
+                Use Cases
+              </a>
+              <a href="/solutions/case-studies" class="Footer-link" aria-describedby="footer-description">
+                Case Studies
+              </a>
+          </div>
+          <div class="Footer-linkColumn">
+            <a href="/learn/" class="Footer-link Footer-link--primary" aria-describedby="footer-description">
+              Get Started
+            </a>
+              <a href="/play" class="Footer-link" aria-describedby="footer-description">
+                Playground
+              </a>
+              <a href="/tour/" class="Footer-link" aria-describedby="footer-description">
+                Tour
+              </a>
+              <a href="https://stackoverflow.com/questions/tagged/go?tab=Newest" class="Footer-link" aria-describedby="footer-description">
+                Stack Overflow
+              </a>
+              <a href="/help/" class="Footer-link" aria-describedby="footer-description">
+                Help
+              </a>
+          </div>
+          <div class="Footer-linkColumn">
+            <a href="https://pkg.go.dev" class="Footer-link Footer-link--primary" aria-describedby="footer-description">
+              Packages
+            </a>
+              <a href="/pkg/" class="Footer-link" aria-describedby="footer-description">
+                Standard Library
+              </a>
+              <a href="https://pkg.go.dev/about" class="Footer-link" aria-describedby="footer-description">
+                About Go Packages
+              </a>
+          </div>
+          <div class="Footer-linkColumn">
+            <a href="/project" class="Footer-link Footer-link--primary" aria-describedby="footer-description">
+              About
+            </a>
+              <a href="/dl/" class="Footer-link" aria-describedby="footer-description">
+                Download
+              </a>
+              <a href="/blog/" class="Footer-link" aria-describedby="footer-description">
+                Blog
+              </a>
+              <a href="https://github.com/golang/go/issues" class="Footer-link" aria-describedby="footer-description">
+                Issue Tracker
+              </a>
+              <a href="/doc/devel/release" class="Footer-link" aria-describedby="footer-description">
+                Release Notes
+              </a>
+              <a href="/brand" class="Footer-link" aria-describedby="footer-description">
+                Brand Guidelines
+              </a>
+              <a href="/conduct" class="Footer-link" aria-describedby="footer-description">
+                Code of Conduct
+              </a>
+          </div>
+          <div class="Footer-linkColumn">
+            <a href="https://www.twitter.com/golang" class="Footer-link Footer-link--primary" aria-describedby="footer-description">
+              Connect
+            </a>
+              <a href="https://www.twitter.com/golang" class="Footer-link" aria-describedby="footer-description">
+                Twitter
+              </a>
+              <a href="https://github.com/golang" class="Footer-link" aria-describedby="footer-description">
+                GitHub
+              </a>
+              <a href="https://invite.slack.golangbridge.org/" class="Footer-link" aria-describedby="footer-description">
+                Slack
+              </a>
+              <a href="https://reddit.com/r/golang" class="Footer-link" aria-describedby="footer-description">
+                r/golang
+              </a>
+              <a href="https://www.meetup.com/pro/go" class="Footer-link" aria-describedby="footer-description">
+                Meetup
+              </a>
+              <a href="https://golangweekly.com/" class="Footer-link" aria-describedby="footer-description">
+                Golang Weekly
+              </a>
+          </div>
+      </div>
+    </div>
+  </div>
+  <div class="screen-reader-only" id="footer-description" hidden>
+          Opens in new window.
+  </div>
+  <div class="Footer">
+    <div class="Container Container--fullBleed">
+      <div class="Footer-bottom">
+        <img class="Footer-gopher" src="/images/gophers/pilot-bust.svg" alt="The Go Gopher">
+        <ul class="Footer-listRow">
+          <li class="Footer-listItem">
+            <a href="/copyright" aria-describedby="footer-description">Copyright</a>
+          </li>
+          <li class="Footer-listItem">
+            <a href="/tos" aria-describedby="footer-description">Terms of Service</a>
+          </li>
+          <li class="Footer-listItem">
+            <a href="http://www.google.com/intl/en/policies/privacy/" aria-describedby="footer-description"
+              target="_blank"
+              rel="noopener">
+              Privacy Policy
+            </a>
+            </li>
+          <li class="Footer-listItem">
+            <a
+              href="/s/website-issue" aria-describedby="footer-description"
+              target="_blank"
+              rel="noopener"
+              >
+              Report an Issue
+            </a>
+          </li>
+          <li class="Footer-listItem go-Footer-listItem">
+            <button class="go-Button go-Button--text go-Footer-toggleTheme js-toggleTheme" aria-label="Toggle theme">
+              <img
+                data-value="auto"
+                class="go-Icon go-Icon--inverted"
+                height="24"
+                width="24"
+                src="/images/icons/brightness_6_gm_grey_24dp.svg"
+                alt="System theme">
+              <img
+                data-value="dark"
+                class="go-Icon go-Icon--inverted"
+                height="24"
+                width="24"
+                src="/images/icons/brightness_2_gm_grey_24dp.svg"
+                alt="Dark theme">
+              <img
+                data-value="light"
+                class="go-Icon go-Icon--inverted"
+                height="24"
+                width="24"
+                src="/images/icons/light_mode_gm_grey_24dp.svg"
+                alt="Light theme">
+            </button>
+          </li>
+        </ul>
+        <a class="Footer-googleLogo" target="_blank" href="https://google.com" rel="noopener">
+          <img class="Footer-googleLogoImg" src="/images/google-white.png" alt="Google logo">
+        </a>
+      </div>
+    </div>
+  </div>
+  <script src="/js/jquery.js"></script>
+  <script src="/js/carousels.js"></script>
+  <script src="/js/searchBox.js"></script>
+  <script src="/js/misc.js"></script>
+  <script src="/js/hats.js"></script>
+  <script src="/js/playground.js"></script>
+  <script src="/js/godocs.js"></script>
+  <script async src="/js/copypaste.js"></script>
+</footer>
+<section class="Cookie-notice js-cookieNotice">
+  <div>go.dev uses cookies from Google to deliver and enhance the quality of its services and to
+  analyze traffic. <a target=_blank href="https://policies.google.com/technologies/cookies">Learn more.</a></div>
+  <div><button class="go-Button">Okay</button></div>
+</section>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
