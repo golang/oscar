@@ -13,11 +13,15 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/compute/metadata"
 	"golang.org/x/oscar/internal/commentfix"
+	"golang.org/x/oscar/internal/crawl"
+	"golang.org/x/oscar/internal/crawldocs"
 	"golang.org/x/oscar/internal/docs"
 	"golang.org/x/oscar/internal/embeddocs"
 	"golang.org/x/oscar/internal/gcp/firestore"
@@ -100,6 +104,14 @@ func main() {
 	}
 	g.embed = ai
 	syncs = append(syncs, func(ctx context.Context) { embeddocs.Sync(ctx, g.slog, g.vector, g.embed, g.docs) })
+
+	cr := crawl.New(g.slog, g.db, g.http)
+	cr.Add("https://go.dev/")
+	cr.Allow(godevAllow...)
+	cr.Deny(godevDeny...)
+	cr.Clean(godevClean)
+	syncs = append(syncs, cr.Run)
+	syncs = append(syncs, func(ctx context.Context) { crawldocs.Sync(ctx, g.slog, g.docs, cr) })
 
 	if flags.search {
 		g.searchLoop()
@@ -272,4 +284,37 @@ func onCloudRun() bool {
 	// There is no definitive test, so look for some environment variables specified in
 	// https://cloud.google.com/run/docs/container-contract#services-env-vars.
 	return os.Getenv("K_SERVICE") != "" && os.Getenv("K_REVISION") != ""
+}
+
+// Crawling parameters
+
+var godevAllow = []string{
+	"https://go.dev/",
+}
+
+var godevDeny = []string{
+	"https://go.dev/api/",
+	"https://go.dev/change/",
+	"https://go.dev/cl/",
+	"https://go.dev/design/",
+	"https://go.dev/dl/",
+	"https://go.dev/issue/",
+	"https://go.dev/lib/",
+	"https://go.dev/misc/",
+	"https://go.dev/play",
+	"https://go.dev/s/",
+	"https://go.dev/src/",
+	"https://go.dev/test/",
+}
+
+func godevClean(u *url.URL) error {
+	if u.Host == "go.dev" {
+		u.Fragment = ""
+		u.RawQuery = ""
+		u.ForceQuery = false
+		if strings.HasPrefix(u.Path, "/pkg") || strings.HasPrefix(u.Path, "/cmd") {
+			u.RawQuery = "m=old"
+		}
+	}
+	return nil
 }
