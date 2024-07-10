@@ -214,7 +214,7 @@ Watcher:
 			continue
 		}
 		var comment strings.Builder
-		fmt.Fprintf(&comment, "**Related Issues**\n\n")
+		fmt.Fprintf(&comment, "**Related Issues and Documentation**\n\n")
 		for _, r := range results {
 			title := r.ID
 			if d, ok := p.docs.Get(r.ID); ok {

@@ -144,7 +144,7 @@ func checkEdits(t *testing.T, edits []*github.TestingEdit, want map[int64]string
 	}
 }
 
-var post13 = unQUOT(`**Related Issues**
+var post13 = unQUOT(`**Related Issues and Documentation**
 
  - [goldmark and markdown diff with h1 inside p #6 (closed)](https://github.com/rsc/markdown/issues/6) <!-- score=0.92657 -->
  - [Support escaped \QUOT|\QUOT in table cells #9 (closed)](https://github.com/rsc/markdown/issues/9) <!-- score=0.91858 -->
@@ -160,7 +160,7 @@ var post13 = unQUOT(`**Related Issues**
 <sub>(Emoji vote if this was helpful or unhelpful; more detailed feedback welcome in [this discussion](https://github.com/golang/go/discussions/67901).)</sub>
 `)
 
-var post19 = unQUOT(`**Related Issues**
+var post19 = unQUOT(`**Related Issues and Documentation**
 
  - [allow capital X in task list items #2 (closed)](https://github.com/rsc/markdown/issues/2) <!-- score=0.92943 -->
  - [Support escaped \QUOT|\QUOT in table cells #9 (closed)](https://github.com/rsc/markdown/issues/9) <!-- score=0.91994 -->
