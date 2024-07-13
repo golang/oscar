@@ -1,3 +1,7 @@
+// Copyright 2024 The Go Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 // Gaby is an experimental new bot running in the Go issue tracker as [@gabyhelp],
 // to try to help automate various mundane things that a machine can do reasonably well,
 // as well as to try to discover new things that a machine can do reasonably well.
