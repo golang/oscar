@@ -140,7 +140,7 @@ func (c *Client) Sync(ctx context.Context) error {
 	var errs []error
 	for key, _ := range c.db.Scan(o(syncProjectKind), o(syncProjectKind, ordered.Inf)) {
 		var project string
-		if err := ordered.Decode(key, new(string), &project); err != nil {
+		if err := ordered.Decode(key, nil, &project); err != nil {
 			c.db.Panic("github client sync decode", "key", storage.Fmt(key), "err", err)
 		}
 		if err := c.SyncProject(ctx, project); err != nil {
