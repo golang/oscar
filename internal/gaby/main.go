@@ -213,7 +213,7 @@
 //
 // # Document Storage
 //
-// Various package take care of downloading state from issue trackers and the like,
+// Various packages take care of downloading state from issue trackers and the like,
 // but then all that state needs to be unified into a common document format that
 // can be indexed and searched. That document format is defined by
 // [golang.org/x/oscar/internal/docs]. A document consists of an ID (conventionally a URL),
@@ -365,6 +365,7 @@
 // [LevelDB]: https://github.com/google/leveldb
 // [CockroachDB]: https://github.com/cockroachdb/cockroach
 // [Google Cloud Firestore]: https://cloud.google.com/firestore
+// [Go Testing talk]: https://research.swtch.com/testing
 package main
 
 import (
