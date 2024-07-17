@@ -21,7 +21,7 @@ matching questions to existing documentation, and so on.
 
 Oscar is very much an experiment. We don't know yet where it will go or what
 we will learn. Even so, our first prototype,
-the [@gabyhelp](https://github.com/golang/gabyhelp) bot, has already had many
+the [@gabyhelp](https://github.com/gabyhelp) bot, has already had many
 [successful interactions in the Go issue tracker](https://github.com/golang/go/issues?q=label%3Agabywins).
 
 For now, Oscar is being developed under the auspices of the Go project.
@@ -328,7 +328,7 @@ by re-building @gopherbot as an Oscar agent.
 We are excited about the opportunities here, but we recognize
 that we may be missing important concerns as well as
 important opportunities to reduce open-source maintainer toil.
-We have created [this GitHub discussion](TODO) to discuss
+We have created [this GitHub discussion](https://github.com/golang/go/discussions/68490) to discuss
 both concerns and new ideas for ways that Oscar-based agent can
 help improve open-source maintenance.
 Feedback there is much appreciated.
