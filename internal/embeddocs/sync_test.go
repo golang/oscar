@@ -34,6 +34,8 @@ func checker(t *testing.T) func(error) {
 	}
 }
 
+var ctx = context.Background()
+
 func TestSync(t *testing.T) {
 	lg := testutil.Slogger(t)
 	db := storage.MemDB()
@@ -43,7 +45,7 @@ func TestSync(t *testing.T) {
 		dc.Add(fmt.Sprintf("URL%d", i), "", text)
 	}
 
-	Sync(lg, vdb, llm.QuoteEmbedder(), dc)
+	Sync(ctx, lg, vdb, llm.QuoteEmbedder(), dc)
 	for i, text := range texts {
 		vec, ok := vdb.Get(fmt.Sprintf("URL%d", i))
 		if !ok {
@@ -60,7 +62,7 @@ func TestSync(t *testing.T) {
 		dc.Add(fmt.Sprintf("rot13%d", i), "", rot13(text))
 	}
 	vdb2 := storage.MemVectorDB(db, lg, "step2")
-	Sync(lg, vdb2, llm.QuoteEmbedder(), dc)
+	Sync(ctx, lg, vdb2, llm.QuoteEmbedder(), dc)
 	for i, text := range texts {
 		vec, ok := vdb2.Get(fmt.Sprintf("URL%d", i))
 		if ok {
@@ -87,7 +89,7 @@ func TestBigSync(t *testing.T) {
 		dc.Add(fmt.Sprintf("URL%d", i), "", fmt.Sprintf("Text%d", i))
 	}
 
-	Sync(lg, vdb, llm.QuoteEmbedder(), dc)
+	Sync(ctx, lg, vdb, llm.QuoteEmbedder(), dc)
 	for i := range N {
 		vec, ok := vdb.Get(fmt.Sprintf("URL%d", i))
 		if !ok {
@@ -113,7 +115,7 @@ func TestBadEmbedders(t *testing.T) {
 	lg, out := testutil.SlogBuffer()
 	db = storage.MemDB()
 	vdb := storage.MemVectorDB(db, lg, "vdb")
-	Sync(lg, vdb, tooManyEmbed{}, dc)
+	Sync(ctx, lg, vdb, tooManyEmbed{}, dc)
 	if !strings.Contains(out.String(), "embeddocs length mismatch") {
 		t.Errorf("tooManyEmbed did not report error:\n%s", out)
 	}
@@ -121,7 +123,7 @@ func TestBadEmbedders(t *testing.T) {
 	lg, out = testutil.SlogBuffer()
 	db = storage.MemDB()
 	vdb = storage.MemVectorDB(db, lg, "vdb")
-	Sync(lg, vdb, embedErr{}, dc)
+	Sync(ctx, lg, vdb, embedErr{}, dc)
 	if !strings.Contains(out.String(), "EMBED ERROR") {
 		t.Errorf("embedErr did not report error:\n%s", out)
 	}
@@ -132,7 +134,7 @@ func TestBadEmbedders(t *testing.T) {
 	lg, out = testutil.SlogBuffer()
 	db = storage.MemDB()
 	vdb = storage.MemVectorDB(db, lg, "vdb")
-	Sync(lg, vdb, embedHalf{}, dc)
+	Sync(ctx, lg, vdb, embedHalf{}, dc)
 	if !strings.Contains(out.String(), "length mismatch") {
 		t.Errorf("embedHalf did not report error:\n%s", out)
 	}

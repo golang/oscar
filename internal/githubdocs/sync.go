@@ -7,6 +7,7 @@
 package githubdocs
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 
@@ -22,7 +23,7 @@ import (
 // Only the issue body (what looks like the top comment in the UI)
 // is saved as a document.
 // The document ID for each issue is its GitHub URL: "https://github.com/<org>/<repo>/issues/<n>".
-func Sync(lg *slog.Logger, dc *docs.Corpus, gh *github.Client) {
+func Sync(ctx context.Context, lg *slog.Logger, dc *docs.Corpus, gh *github.Client) {
 	w := gh.EventWatcher("githubdocs")
 	for e := range w.Recent() {
 		if e.API != "/issues" {

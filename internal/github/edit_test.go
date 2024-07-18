@@ -5,6 +5,7 @@
 package github
 
 import (
+	"context"
 	"net/http"
 	"slices"
 	"testing"
@@ -14,6 +15,8 @@ import (
 	"golang.org/x/oscar/internal/storage"
 	"golang.org/x/oscar/internal/testutil"
 )
+
+var ctx = context.Background()
 
 func TestMarkdownEditing(t *testing.T) {
 	check := testutil.Checker(t)
@@ -30,7 +33,7 @@ func TestMarkdownEditing(t *testing.T) {
 	}
 	c := New(lg, db, sdb, rr.Client())
 	check(c.Add("rsc/tmp"))
-	check(c.Sync())
+	check(c.Sync(ctx))
 
 	var ei, ec *Event
 	for e := range c.Events("rsc/tmp", 5, 5) {
@@ -49,23 +52,23 @@ func TestMarkdownEditing(t *testing.T) {
 	}
 
 	issue := ei.Typed.(*Issue)
-	issue1, err := c.DownloadIssue(issue.URL)
+	issue1, err := c.DownloadIssue(ctx, issue.URL)
 	check(err)
 	if issue1.Title != issue.Title {
 		t.Errorf("DownloadIssue: Title=%q, want %q", issue1.Title, issue.Title)
 	}
 
 	comment := ec.Typed.(*IssueComment)
-	comment1, err := c.DownloadIssueComment(comment.URL)
+	comment1, err := c.DownloadIssueComment(ctx, comment.URL)
 	check(err)
 	if comment1.Body != comment.Body {
 		t.Errorf("DownloadIssueComment: Body=%q, want %q", comment1.Body, comment.Body)
 	}
 
 	c.testing = false // edit github directly (except for the httprr in the way)
-	check(c.EditIssueComment(comment, &IssueCommentChanges{Body: rot13(comment.Body)}))
-	check(c.PostIssueComment(issue, &IssueCommentChanges{Body: "testing. rot13 is the best."}))
-	check(c.EditIssue(issue, &IssueChanges{Title: rot13(issue.Title)}))
+	check(c.EditIssueComment(ctx, comment, &IssueCommentChanges{Body: rot13(comment.Body)}))
+	check(c.PostIssueComment(ctx, issue, &IssueCommentChanges{Body: "testing. rot13 is the best."}))
+	check(c.EditIssue(ctx, issue, &IssueChanges{Title: rot13(issue.Title)}))
 }
 
 func TestMarkdownDivertEdit(t *testing.T) {
@@ -93,22 +96,22 @@ func TestMarkdownDivertEdit(t *testing.T) {
 	}
 
 	issue := ei.Typed.(*Issue)
-	issue1, err := c.DownloadIssue(issue.URL)
+	issue1, err := c.DownloadIssue(ctx, issue.URL)
 	check(err)
 	if issue1.Title != issue.Title {
 		t.Errorf("DownloadIssue: Title=%q, want %q", issue1.Title, issue.Title)
 	}
 
 	comment := ec.Typed.(*IssueComment)
-	comment1, err := c.DownloadIssueComment(comment.URL)
+	comment1, err := c.DownloadIssueComment(ctx, comment.URL)
 	check(err)
 	if comment1.Body != comment.Body {
 		t.Errorf("DownloadIssueComment: Body=%q, want %q", comment1.Body, comment.Body)
 	}
 
-	check(c.EditIssueComment(comment, &IssueCommentChanges{Body: rot13(comment.Body)}))
-	check(c.PostIssueComment(issue, &IssueCommentChanges{Body: "testing. rot13 is the best."}))
-	check(c.EditIssue(issue, &IssueChanges{Title: rot13(issue.Title), Labels: &[]string{"ebg13"}}))
+	check(c.EditIssueComment(ctx, comment, &IssueCommentChanges{Body: rot13(comment.Body)}))
+	check(c.PostIssueComment(ctx, issue, &IssueCommentChanges{Body: "testing. rot13 is the best."}))
+	check(c.EditIssue(ctx, issue, &IssueChanges{Title: rot13(issue.Title), Labels: &[]string{"ebg13"}}))
 
 	var edits []string
 	for _, e := range c.Testing().Edits() {

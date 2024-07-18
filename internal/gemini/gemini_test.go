@@ -38,6 +38,8 @@ func init() {
 	}
 }
 
+var ctx = context.Background()
+
 func newTestClient(t *testing.T, rrfile string) *Client {
 	check := testutil.Checker(t)
 	lg := testutil.Slogger(t)
@@ -47,7 +49,7 @@ func newTestClient(t *testing.T, rrfile string) *Client {
 	rr.Scrub(Scrub)
 	sdb := secret.ReadOnlyMap{"ai.google.dev": "nokey"}
 
-	c, err := NewClient(lg, sdb, rr.Client())
+	c, err := NewClient(ctx, lg, sdb, rr.Client())
 	check(err)
 
 	return c

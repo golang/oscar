@@ -5,6 +5,7 @@
 package githubdocs
 
 import (
+	"context"
 	"testing"
 
 	"golang.org/x/oscar/internal/docs"
@@ -12,6 +13,8 @@ import (
 	"golang.org/x/oscar/internal/storage"
 	"golang.org/x/oscar/internal/testutil"
 )
+
+var ctx = context.Background()
 
 func TestMarkdown(t *testing.T) {
 	check := testutil.Checker(t)
@@ -21,7 +24,7 @@ func TestMarkdown(t *testing.T) {
 	check(gh.Testing().LoadTxtar("../testdata/markdown.txt"))
 
 	dc := docs.New(db)
-	Sync(lg, dc, gh)
+	Sync(ctx, lg, dc, gh)
 
 	var want = []string{
 		"https://github.com/rsc/markdown/issues/1",
@@ -66,14 +69,14 @@ func TestMarkdown(t *testing.T) {
 	}
 
 	dc.Add("https://github.com/rsc/markdown/issues/1", "OLD TITLE", "OLD TEXT")
-	Sync(lg, dc, gh)
+	Sync(ctx, lg, dc, gh)
 	d, _ := dc.Get(md1)
 	if d.Title != "OLD TITLE" || d.Text != "OLD TEXT" {
 		t.Errorf("Sync rewrote #1: Title=%q Text=%q, want OLD TITLE, OLD TEXT", d.Title, d.Text)
 	}
 
 	Restart(lg, gh)
-	Sync(lg, dc, gh)
+	Sync(ctx, lg, dc, gh)
 	d, _ = dc.Get(md1)
 	if d.Title == "OLD TITLE" || d.Text == "OLD TEXT" {
 		t.Errorf("Restart+Sync did not rewrite #1: Title=%q Text=%q", d.Title, d.Text)

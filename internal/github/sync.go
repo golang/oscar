@@ -9,6 +9,7 @@
 package github
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -135,14 +136,14 @@ func (c *Client) Add(project string) error {
 }
 
 // Sync syncs all projects.
-func (c *Client) Sync() error {
+func (c *Client) Sync(ctx context.Context) error {
 	var errs []error
 	for key, _ := range c.db.Scan(o(syncProjectKind), o(syncProjectKind, ordered.Inf)) {
 		var project string
 		if err := ordered.Decode(key, new(string), &project); err != nil {
 			c.db.Panic("github client sync decode", "key", storage.Fmt(key), "err", err)
 		}
-		if err := c.SyncProject(project); err != nil {
+		if err := c.SyncProject(ctx, project); err != nil {
 			errs = append(errs, err)
 		}
 	}
@@ -155,7 +156,7 @@ func (c *Client) Sync() error {
 var testFullSyncStop error
 
 // SyncProject syncs a single project.
-func (c *Client) SyncProject(project string) (err error) {
+func (c *Client) SyncProject(ctx context.Context, project string) (err error) {
 	c.slog.Debug("github.SyncProject", "project", project)
 	defer func() {
 		if err != nil {
@@ -180,10 +181,10 @@ func (c *Client) SyncProject(project string) (err error) {
 	}
 
 	// Sync issues, comments, events.
-	if err := c.syncIssues(&proj); err != nil {
+	if err := c.syncIssues(ctx, &proj); err != nil {
 		return err
 	}
-	if err := c.syncIssueComments(&proj); err != nil {
+	if err := c.syncIssueComments(ctx, &proj); err != nil {
 		return err
 	}
 
@@ -198,11 +199,11 @@ func (c *Client) SyncProject(project string) (err error) {
 			proj.FullSyncActive = true
 			proj.FullSyncIssue = 0
 			proj.store(c.db)
-			if err := c.syncIssueEvents(&proj, 0, true); err != nil {
+			if err := c.syncIssueEvents(ctx, &proj, 0, true); err != nil {
 				return err
 			}
 		}
-		if err := c.syncIssues(&proj); err != nil {
+		if err := c.syncIssues(ctx, &proj); err != nil {
 			return err
 		}
 		for key, _ := range c.db.Scan(o(eventKind, project), o(eventKind, project, ordered.Inf)) {
@@ -213,7 +214,7 @@ func (c *Client) SyncProject(project string) (err error) {
 			if issue <= proj.FullSyncIssue {
 				continue
 			}
-			if err := c.syncIssueEvents(&proj, issue, false); err != nil {
+			if err := c.syncIssueEvents(ctx, &proj, issue, false); err != nil {
 				return err
 			}
 			proj.FullSyncIssue = issue
@@ -228,7 +229,7 @@ func (c *Client) SyncProject(project string) (err error) {
 	}
 
 	// Incremental scan.
-	if err := c.syncIssueEvents(&proj, 0, false); err != nil {
+	if err := c.syncIssueEvents(ctx, &proj, 0, false); err != nil {
 		return err
 	}
 	return nil
@@ -237,15 +238,15 @@ func (c *Client) SyncProject(project string) (err error) {
 // syncIssues syncs the issues for a given project.
 // It records all new issues since proj.IssueDate.
 // If successful, it updates proj.IssueDate to the latest issue date seen.
-func (c *Client) syncIssues(proj *projectSync) error {
-	return c.syncByDate(proj, "/issues")
+func (c *Client) syncIssues(ctx context.Context, proj *projectSync) error {
+	return c.syncByDate(ctx, proj, "/issues")
 }
 
 // syncIssueComments sync the issue comments for a given project.
 // It records all new issue comments since proj.CommentDate.
 // If successful, it updates proj.CommentDate to the latest comment date seen.
-func (c *Client) syncIssueComments(proj *projectSync) error {
-	return c.syncByDate(proj, "/issues/comments")
+func (c *Client) syncIssueComments(ctx context.Context, proj *projectSync) error {
+	return c.syncByDate(ctx, proj, "/issues/comments")
 }
 
 // syncByDate downloads and saves issues or issue comments since
@@ -253,7 +254,7 @@ func (c *Client) syncIssueComments(proj *projectSync) error {
 // api is "/issues" for issues or "/issues/comments" for issue comments.
 // syncByDate updates the proj date with the new latest date seen
 // before any error.
-func (c *Client) syncByDate(proj *projectSync, api string) error {
+func (c *Client) syncByDate(ctx context.Context, proj *projectSync, api string) error {
 Restart:
 	// For these APIs, we can ask GitHub for the event stream in increasing time order,
 	// so we can iterate through all the events, saving the latest time we have seen,
@@ -284,7 +285,7 @@ Restart:
 	urlStr := "https://api.github.com/repos/" + proj.Name + api + "?" + values.Encode()
 	npage := 0
 	defer proj.store(c.db)
-	for pg, err := range c.pages(urlStr, "") {
+	for pg, err := range c.pages(ctx, urlStr, "") {
 		if err != nil {
 			return err
 		}
@@ -380,7 +381,7 @@ Restart:
 //   - c.syncIssueEvents(proj, 0, false) to read any events since the beginning of the sync.
 //
 //     Now the database should contain all events up to the new proj.EventID.
-func (c *Client) syncIssueEvents(proj *projectSync, issue int64, onlySetLatest bool) error {
+func (c *Client) syncIssueEvents(ctx context.Context, proj *projectSync, issue int64, onlySetLatest bool) error {
 	if issue > 0 && onlySetLatest {
 		panic("syncIssueEvents misuse")
 	}
@@ -406,7 +407,7 @@ func (c *Client) syncIssueEvents(proj *projectSync, issue int64, onlySetLatest b
 	defer b.Apply()
 
 Pages:
-	for pg, err := range c.pages(urlStr, proj.EventETag) {
+	for pg, err := range c.pages(ctx, urlStr, proj.EventETag) {
 		if err == errNotModified {
 			return nil
 		}
@@ -477,7 +478,7 @@ var errNotModified = errors.New("304 not modified")
 //
 // get uses the api.github.com secret if available.
 // Otherwise it makes an unauthenticated request.
-func (c *Client) get(url, etag string, obj any) (*http.Response, error) {
+func (c *Client) get(ctx context.Context, url, etag string, obj any) (*http.Response, error) {
 	if c.divertEdits() {
 		c.testMu.Lock()
 		js := c.testEvents[url]
@@ -500,7 +501,7 @@ func (c *Client) get(url, etag string, obj any) (*http.Response, error) {
 	nrate := 0
 	nfail := 0
 Redo:
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -548,11 +549,11 @@ type page struct {
 
 // pages returns a paginated result starting at url and using etag.
 // If pages encounters an error, it yields nil, err.
-func (c *Client) pages(url, etag string) iter.Seq2[*page, error] {
+func (c *Client) pages(ctx context.Context, url, etag string) iter.Seq2[*page, error] {
 	return func(yield func(*page, error) bool) {
 		for url != "" {
 			var body []json.RawMessage
-			resp, err := c.get(url, etag, &body)
+			resp, err := c.get(ctx, url, etag, &body)
 			if err != nil {
 				yield(nil, err)
 				return

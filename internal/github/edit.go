@@ -6,6 +6,7 @@ package github
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -23,7 +24,7 @@ import (
 // as high in the stack as possible, and the GitHub client is not.
 
 // PostIssueComment posts a new comment with the given body (written in Markdown) on issue.
-func (c *Client) PostIssueComment(issue *Issue, changes *IssueCommentChanges) error {
+func (c *Client) PostIssueComment(ctx context.Context, issue *Issue, changes *IssueCommentChanges) error {
 	if c.divertEdits() {
 		c.testMu.Lock()
 		defer c.testMu.Unlock()
@@ -36,15 +37,15 @@ func (c *Client) PostIssueComment(issue *Issue, changes *IssueCommentChanges) er
 		return nil
 	}
 
-	return c.post(issue.URL+"/comments", changes)
+	return c.post(ctx, issue.URL+"/comments", changes)
 }
 
 // DownloadIssue downloads the current issue JSON from the given URL
 // and decodes it into an issue.
 // Given an issue, c.DownloadIssue(issue.URL) fetches the very latest state for the issue.
-func (c *Client) DownloadIssue(url string) (*Issue, error) {
+func (c *Client) DownloadIssue(ctx context.Context, url string) (*Issue, error) {
 	x := new(Issue)
-	_, err := c.get(url, "", x)
+	_, err := c.get(ctx, url, "", x)
 	if err != nil {
 		return nil, err
 	}
@@ -54,9 +55,9 @@ func (c *Client) DownloadIssue(url string) (*Issue, error) {
 // DownloadIssueComment downloads the current comment JSON from the given URL
 // and decodes it into an IssueComment.
 // Given a comment, c.DownloadIssueComment(comment.URL) fetches the very latest state for the comment.
-func (c *Client) DownloadIssueComment(url string) (*IssueComment, error) {
+func (c *Client) DownloadIssueComment(ctx context.Context, url string) (*IssueComment, error) {
 	x := new(IssueComment)
-	_, err := c.get(url, "", x)
+	_, err := c.get(ctx, url, "", x)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +78,7 @@ func (ch *IssueCommentChanges) clone() *IssueCommentChanges {
 // It is typically a good idea to use c.DownloadIssueComment first and check
 // that the live comment body matches the one obtained from the database,
 // to minimize race windows.
-func (c *Client) EditIssueComment(comment *IssueComment, changes *IssueCommentChanges) error {
+func (c *Client) EditIssueComment(ctx context.Context, comment *IssueComment, changes *IssueCommentChanges) error {
 	if c.divertEdits() {
 		c.testMu.Lock()
 		defer c.testMu.Unlock()
@@ -91,7 +92,7 @@ func (c *Client) EditIssueComment(comment *IssueComment, changes *IssueCommentCh
 		return nil
 	}
 
-	return c.patch(comment.URL, changes)
+	return c.patch(ctx, comment.URL, changes)
 }
 
 // An IssueChanges specifies changes to make to an issue.
@@ -120,7 +121,7 @@ func (ch *IssueChanges) clone() *IssueChanges {
 }
 
 // EditIssue applies the changes to issue on GitHub.
-func (c *Client) EditIssue(issue *Issue, changes *IssueChanges) error {
+func (c *Client) EditIssue(ctx context.Context, issue *Issue, changes *IssueChanges) error {
 	if c.divertEdits() {
 		c.testMu.Lock()
 		defer c.testMu.Unlock()
@@ -133,23 +134,23 @@ func (c *Client) EditIssue(issue *Issue, changes *IssueChanges) error {
 		return nil
 	}
 
-	return c.patch(issue.URL, changes)
+	return c.patch(ctx, issue.URL, changes)
 }
 
 // patch is like c.get but makes a PATCH request.
 // Unlike c.get, it requires authentication.
-func (c *Client) patch(url string, changes any) error {
-	return c.json("PATCH", url, changes)
+func (c *Client) patch(ctx context.Context, url string, changes any) error {
+	return c.json(ctx, "PATCH", url, changes)
 }
 
 // post is like c.get but makes a POST request.
 // Unlike c.get, it requires authentication.
-func (c *Client) post(url string, body any) error {
-	return c.json("POST", url, body)
+func (c *Client) post(ctx context.Context, url string, body any) error {
+	return c.json(ctx, "POST", url, body)
 }
 
 // json is the general PATCH/POST implementation.
-func (c *Client) json(method, url string, body any) error {
+func (c *Client) json(ctx context.Context, method, url string, body any) error {
 	js, err := json.Marshal(body)
 	if err != nil {
 		return err
@@ -162,7 +163,7 @@ func (c *Client) json(method, url string, body any) error {
 	user, pass, _ := strings.Cut(auth, ":")
 
 Redo:
-	req, err := http.NewRequest(method, url, bytes.NewReader(js))
+	req, err := http.NewRequestWithContext(ctx, method, url, bytes.NewReader(js))
 	if err != nil {
 		return err
 	}

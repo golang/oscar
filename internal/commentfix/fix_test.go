@@ -6,6 +6,7 @@ package commentfix
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"path/filepath"
 	"strings"
@@ -19,6 +20,8 @@ import (
 	"golang.org/x/oscar/internal/testutil"
 	"golang.org/x/tools/txtar"
 )
+
+var ctx = context.Background()
 
 func TestTestdata(t *testing.T) {
 	files, err := filepath.Glob("testdata/*.txt")
@@ -73,7 +76,7 @@ func TestPanics(t *testing.T) {
 	func() {
 		defer callRecover()
 		var f Fixer
-		f.Run()
+		f.Run(ctx)
 		t.Errorf("Run on zero Fixer did not panic")
 	}()
 }
@@ -135,7 +138,7 @@ func TestGitHub(t *testing.T) {
 	f.EnableProject("rsc/tmp")
 	f.SetTimeLimit(time.Date(2222, 1, 1, 1, 1, 1, 1, time.UTC))
 	f.ReplaceText("cancelled", "canceled")
-	f.Run()
+	f.Run(ctx)
 	// t.Logf("output:\n%s", buf)
 	if bytes.Contains(buf.Bytes(), []byte("commentfix rewrite")) {
 		t.Fatalf("logs mention rewrite of old comment:\n%s", buf.Bytes())
@@ -148,7 +151,7 @@ func TestGitHub(t *testing.T) {
 	f.EnableProject("rsc/tmp")
 	f.SetTimeLimit(time.Time{})
 	f.ReplaceText("cancelled", "canceled")
-	f.Run()
+	f.Run(ctx)
 	// t.Logf("output:\n%s", buf)
 	if !bytes.Contains(buf.Bytes(), []byte("commentfix rewrite")) {
 		t.Fatalf("logs do not mention rewrite of comment:\n%s", buf.Bytes())
@@ -161,14 +164,14 @@ func TestGitHub(t *testing.T) {
 	buf.Truncate(0)
 	f.SetTimeLimit(time.Date(2222, 1, 1, 1, 1, 1, 1, time.UTC))
 	f.EnableEdits()
-	f.Run()
+	f.Run(ctx)
 	// t.Logf("output:\n%s", buf)
 	if bytes.Contains(buf.Bytes(), []byte("commentfix rewrite")) {
 		t.Fatalf("logs incorrectly mention rewrite of comment:\n%s", buf.Bytes())
 	}
 
 	f.SetTimeLimit(time.Time{})
-	f.Run()
+	f.Run(ctx)
 	// t.Logf("output:\n%s", buf)
 	if bytes.Contains(buf.Bytes(), []byte("commentfix rewrite")) {
 		t.Fatalf("logs incorrectly mention rewrite of comment:\n%s", buf.Bytes())
@@ -182,7 +185,7 @@ func TestGitHub(t *testing.T) {
 	f.ReplaceText("cancelled", "canceled")
 	f.SetTimeLimit(time.Time{})
 	f.EnableEdits()
-	f.Run()
+	f.Run(ctx)
 	// t.Logf("output:\n%s", buf)
 	if !bytes.Contains(buf.Bytes(), []byte("commentfix rewrite")) {
 		t.Fatalf("logs do not mention rewrite of comment:\n%s", buf.Bytes())
@@ -211,7 +214,7 @@ func TestGitHub(t *testing.T) {
 	f.ReplaceText("cancelled", "canceled")
 	f.EnableEdits()
 	f.SetTimeLimit(time.Time{})
-	f.Run()
+	f.Run(ctx)
 	// t.Logf("output:\n%s", buf)
 	if bytes.Contains(buf.Bytes(), []byte("commentfix rewrite")) {
 		t.Fatalf("logs incorrectly mention rewrite of comment:\n%s", buf.Bytes())
@@ -225,7 +228,7 @@ func TestGitHub(t *testing.T) {
 	f.ReplaceText("cancelled", "canceled")
 	f.EnableEdits()
 	f.SetTimeLimit(time.Time{})
-	f.Run()
+	f.Run(ctx)
 	// t.Logf("output:\n%s", buf)
 	if bytes.Contains(buf.Bytes(), []byte("commentfix rewrite")) {
 		t.Fatalf("logs incorrectly mention rewrite of comment:\n%s", buf.Bytes())

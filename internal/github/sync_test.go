@@ -34,7 +34,7 @@ func TestMarkdown(t *testing.T) {
 	}
 	c := New(lg, db, sdb, rr.Client())
 	check(c.Add("rsc/markdown"))
-	check(c.Sync())
+	check(c.Sync(ctx))
 
 	w := c.EventWatcher("test1")
 	for e := range w.Recent() {
@@ -50,7 +50,7 @@ func TestMarkdown(t *testing.T) {
 		sdb = secret.Netrc()
 	}
 	c = New(lg, db, sdb, rr.Client())
-	check(c.Sync())
+	check(c.Sync(ctx))
 
 	// Test that EventWatcher sees the updates.
 	diffEvents(t,
@@ -71,7 +71,7 @@ func TestMarkdown(t *testing.T) {
 		sdb = secret.Netrc()
 	}
 	c = New(lg, db, sdb, rr.Client())
-	check(c.Sync())
+	check(c.Sync(ctx))
 
 	testMarkdownEvents(t, c)
 }
@@ -97,7 +97,7 @@ func TestMarkdownIncrementalSync(t *testing.T) {
 		testFullSyncStop = nil
 	}()
 	for {
-		err := c.Sync()
+		err := c.Sync(ctx)
 		if err == nil {
 			break
 		}
@@ -204,7 +204,7 @@ func TestIvy(t *testing.T) {
 	}
 	c := New(lg, db, sdb, rr.Client())
 	check(c.Add("robpike/ivy"))
-	check(c.Sync())
+	check(c.Sync(ctx))
 }
 
 func TestOmap(t *testing.T) {
@@ -220,7 +220,7 @@ func TestOmap(t *testing.T) {
 	}
 	c := New(lg, db, sdb, rr.Client())
 	check(c.Add("rsc/omap"))
-	check(c.Sync())
+	check(c.Sync(ctx))
 }
 
 var markdownEarlyEvents = [][]byte{

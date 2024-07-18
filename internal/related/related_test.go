@@ -5,6 +5,7 @@
 package related
 
 import (
+	"context"
 	"fmt"
 	"maps"
 	"slices"
@@ -22,6 +23,8 @@ import (
 	"golang.org/x/oscar/internal/testutil"
 )
 
+var ctx = context.Background()
+
 func Test(t *testing.T) {
 	lg := testutil.Slogger(t)
 	db := storage.MemDB()
@@ -30,21 +33,21 @@ func Test(t *testing.T) {
 	gh.Testing().LoadTxtar("../testdata/rsctmp.txt")
 
 	dc := docs.New(db)
-	githubdocs.Sync(lg, dc, gh)
+	githubdocs.Sync(ctx, lg, dc, gh)
 
 	vdb := storage.MemVectorDB(db, lg, "vecs")
-	embeddocs.Sync(lg, vdb, llm.QuoteEmbedder(), dc)
+	embeddocs.Sync(ctx, lg, vdb, llm.QuoteEmbedder(), dc)
 
 	vdb = storage.MemVectorDB(db, lg, "vecs")
 	p := New(lg, db, gh, vdb, dc, "postname")
 	p.EnableProject("rsc/markdown")
 	p.SetTimeLimit(time.Time{})
-	p.Run()
+	p.Run(ctx)
 	checkEdits(t, gh.Testing().Edits(), nil)
 	gh.Testing().ClearEdits()
 
 	p.EnablePosts()
-	p.Run()
+	p.Run(ctx)
 	checkEdits(t, gh.Testing().Edits(), map[int64]string{13: post13, 19: post19})
 	gh.Testing().ClearEdits()
 
@@ -52,7 +55,7 @@ func Test(t *testing.T) {
 	p.EnableProject("rsc/markdown")
 	p.SetTimeLimit(time.Time{})
 	p.EnablePosts()
-	p.Run()
+	p.Run(ctx)
 	checkEdits(t, gh.Testing().Edits(), nil)
 	gh.Testing().ClearEdits()
 
@@ -73,7 +76,7 @@ func Test(t *testing.T) {
 		}
 		p.EnablePosts()
 		p.deletePosted()
-		p.Run()
+		p.Run(ctx)
 		checkEdits(t, gh.Testing().Edits(), map[int64]string{13: post13})
 		gh.Testing().ClearEdits()
 	}
@@ -84,7 +87,7 @@ func Test(t *testing.T) {
 	p.SetTimeLimit(time.Time{})
 	p.EnablePosts()
 	p.deletePosted()
-	p.Run()
+	p.Run(ctx)
 	checkEdits(t, gh.Testing().Edits(), nil)
 	gh.Testing().ClearEdits()
 
@@ -94,7 +97,7 @@ func Test(t *testing.T) {
 	p.SetTimeLimit(time.Date(2222, 1, 1, 1, 1, 1, 1, time.UTC))
 	p.EnablePosts()
 	p.deletePosted()
-	p.Run()
+	p.Run(ctx)
 	checkEdits(t, gh.Testing().Edits(), nil)
 	gh.Testing().ClearEdits()
 
@@ -105,7 +108,7 @@ func Test(t *testing.T) {
 	p.SetTimeLimit(time.Time{})
 	p.EnablePosts()
 	p.deletePosted()
-	p.Run()
+	p.Run(ctx)
 	checkEdits(t, gh.Testing().Edits(), nil)
 	gh.Testing().ClearEdits()
 

@@ -56,7 +56,7 @@ type Client struct {
 // NewClient returns a connection to Gemini, using the given logger and HTTP client.
 // It expects to find a secret of the form "AIza..." or "user:AIza..." in sdb
 // under the name "ai.google.dev".
-func NewClient(lg *slog.Logger, sdb secret.DB, hc *http.Client) (*Client, error) {
+func NewClient(ctx context.Context, lg *slog.Logger, sdb secret.DB, hc *http.Client) (*Client, error) {
 	key, ok := sdb.Get("ai.google.dev")
 	if !ok {
 		return nil, fmt.Errorf("missing api key for ai.google.dev")
@@ -73,7 +73,7 @@ func NewClient(lg *slog.Logger, sdb secret.DB, hc *http.Client) (*Client, error)
 	// otherwise NewClient complains that we haven't passed in a key.
 	// (If we pass in the key, it ignores it, but if we don't pass it in,
 	// it complains that we didn't give it a key.)
-	ai, err := genai.NewClient(context.Background(),
+	ai, err := genai.NewClient(ctx,
 		option.WithAPIKey("ignored"),
 		option.WithHTTPClient(withKey(hc, key)))
 	if err != nil {

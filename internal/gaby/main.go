@@ -396,6 +396,7 @@ var searchMode = flag.Bool("search", false, "run in interactive search mode")
 
 func main() {
 	flag.Parse()
+	ctx := context.Background()
 
 	lg := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 
@@ -412,7 +413,7 @@ func main() {
 	// Ran during setup: gh.Add("golang/go")
 
 	dc := docs.New(db)
-	ai, err := gemini.NewClient(lg, sdb, http.DefaultClient)
+	ai, err := gemini.NewClient(ctx, lg, sdb, http.DefaultClient)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -438,9 +439,9 @@ func main() {
 		return
 	}
 
-	gh.Sync()
-	githubdocs.Sync(lg, dc, gh)
-	embeddocs.Sync(lg, vdb, ai, dc)
+	gh.Sync(ctx)
+	githubdocs.Sync(ctx, lg, dc, gh)
+	embeddocs.Sync(ctx, lg, vdb, ai, dc)
 
 	cf := commentfix.New(lg, gh, "gerritlinks")
 	cf.EnableProject("golang/go")
@@ -455,12 +456,11 @@ func main() {
 	rp.SkipTitlePrefix("x/tools/gopls: release version v")
 	rp.SkipTitleSuffix(" backport]")
 	for {
-		gh.Sync()
-		githubdocs.Sync(lg, dc, gh)
-		embeddocs.Sync(lg, vdb, ai, dc)
-		cf.Run()
-		rp.Run()
+		gh.Sync(ctx)
+		githubdocs.Sync(ctx, lg, dc, gh)
+		embeddocs.Sync(ctx, lg, vdb, ai, dc)
+		cf.Run(ctx)
+		rp.Run(ctx)
 		time.Sleep(2 * time.Minute)
 	}
-	return
 }

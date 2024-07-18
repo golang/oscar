@@ -6,6 +6,7 @@
 package commentfix
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log/slog"
@@ -273,7 +274,7 @@ func (f *Fixer) ReplaceURL(pattern, repl string) error {
 //
 // Run panics if the Fixer was not constructed by calling [New]
 // with a non-nil [github.Client].
-func (f *Fixer) Run() {
+func (f *Fixer) Run(ctx context.Context) {
 	if f.watcher == nil {
 		panic("commentfix.Fixer: Run missing GitHub client")
 	}
@@ -306,7 +307,7 @@ func (f *Fixer) Run() {
 		if !updated {
 			continue
 		}
-		live, err := ic.download(f.github)
+		live, err := ic.download(ctx, f.github)
 		if err != nil {
 			// unreachable unless github error
 			f.slog.Error("commentfix download error", "project", e.Project, "issue", e.Issue, "url", ic.url(), "err", err)
@@ -320,7 +321,7 @@ func (f *Fixer) Run() {
 		fmt.Fprintf(f.stderr(), "Fix %s:\n%s\n", ic.url(), bodyDiff(ic.body(), body))
 		if f.edit {
 			f.slog.Info("commentfix editing github", "url", ic.url())
-			if err := ic.editBody(f.github, body); err != nil {
+			if err := ic.editBody(ctx, f.github, body); err != nil {
 				// unreachable unless github error
 				f.slog.Error("commentfix edit", "project", e.Project, "issue", e.Issue, "err", err)
 				continue
@@ -354,12 +355,12 @@ func (ic *issueOrComment) body() string {
 	return ic.comment.Body
 }
 
-func (ic *issueOrComment) download(gh *github.Client) (*issueOrComment, error) {
+func (ic *issueOrComment) download(ctx context.Context, gh *github.Client) (*issueOrComment, error) {
 	if ic.issue != nil {
-		live, err := gh.DownloadIssue(ic.issue.URL)
+		live, err := gh.DownloadIssue(ctx, ic.issue.URL)
 		return &issueOrComment{issue: live}, err
 	}
-	live, err := gh.DownloadIssueComment(ic.comment.URL)
+	live, err := gh.DownloadIssueComment(ctx, ic.comment.URL)
 	return &issueOrComment{comment: live}, err
 }
 
@@ -370,11 +371,11 @@ func (ic *issueOrComment) url() string {
 	return ic.comment.URL
 }
 
-func (ic *issueOrComment) editBody(gh *github.Client, body string) error {
+func (ic *issueOrComment) editBody(ctx context.Context, gh *github.Client, body string) error {
 	if ic.issue != nil {
-		return gh.EditIssue(ic.issue, &github.IssueChanges{Body: body})
+		return gh.EditIssue(ctx, ic.issue, &github.IssueChanges{Body: body})
 	}
-	return gh.EditIssueComment(ic.comment, &github.IssueCommentChanges{Body: body})
+	return gh.EditIssueComment(ctx, ic.comment, &github.IssueCommentChanges{Body: body})
 }
 
 // Fix applies the configured rewrites to the markdown text.

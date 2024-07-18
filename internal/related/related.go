@@ -6,6 +6,7 @@
 package related
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -150,7 +151,7 @@ func (p *Poster) deletePosted() {
 //
 // When [Poster.EnablePosts] has not been called, Run only logs the comments it would post.
 // Future calls to Run will reprocess the same issues and re-log the same comments.
-func (p *Poster) Run() {
+func (p *Poster) Run(ctx context.Context) {
 	p.slog.Info("related.Poster start", "name", p.name)
 	defer p.slog.Info("related.Poster end", "name", p.name)
 
@@ -236,7 +237,7 @@ Watcher:
 			continue
 		}
 
-		if err := p.github.PostIssueComment(issue, &github.IssueCommentChanges{Body: comment.String()}); err != nil {
+		if err := p.github.PostIssueComment(ctx, issue, &github.IssueCommentChanges{Body: comment.String()}); err != nil {
 			p.slog.Error("PostIssueComment", "issue", e.Issue, "err", err)
 			continue
 		}

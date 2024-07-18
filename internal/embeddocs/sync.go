@@ -22,7 +22,7 @@ import (
 // save its position across multiple calls.
 //
 // Sync logs status and unexpected problems to lg.
-func Sync(lg *slog.Logger, vdb storage.VectorDB, embed llm.Embedder, dc *docs.Corpus) {
+func Sync(ctx context.Context, lg *slog.Logger, vdb storage.VectorDB, embed llm.Embedder, dc *docs.Corpus) {
 	lg.Info("embeddocs sync")
 
 	const batchSize = 100
@@ -34,7 +34,7 @@ func Sync(lg *slog.Logger, vdb storage.VectorDB, embed llm.Embedder, dc *docs.Co
 	w := dc.DocWatcher("embeddocs")
 
 	flush := func() bool {
-		vecs, err := embed.EmbedDocs(context.Background(), batch)
+		vecs, err := embed.EmbedDocs(ctx, batch)
 		if len(vecs) > len(ids) {
 			lg.Error("embeddocs length mismatch", "batch", len(batch), "vecs", len(vecs), "ids", len(ids))
 			return false
