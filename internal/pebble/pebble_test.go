@@ -50,6 +50,7 @@ func TestDB(t *testing.T) {
 	defer db.Close()
 
 	storage.TestDB(t, db)
+	storage.TestDBLock(t, db)
 
 	if testing.Short() {
 		return

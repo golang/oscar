@@ -63,5 +63,5 @@ func TestFmt(t *testing.T) {
 func TestMemLocker(t *testing.T) {
 	m := new(MemLocker)
 
-	testDBLock(t, m)
+	TestDBLock(t, m)
 }

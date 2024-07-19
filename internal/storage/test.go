@@ -9,12 +9,14 @@ import (
 	"slices"
 	"sync"
 	"testing"
+	"time"
 
 	"rsc.io/ordered"
 )
 
 // TestDB runs basic tests on db.
 // It should be empty when TestDB is called.
+// To run tests on Lock and Unlock, also call [TestDBLock].
 func TestDB(t *testing.T, db DB) {
 	db.Set([]byte("key"), []byte("value"))
 	if val, ok := db.Get([]byte("key")); string(val) != "value" || ok != true {
@@ -90,8 +92,6 @@ func TestDB(t *testing.T, db DB) {
 
 	// Can't test much, but check that it doesn't crash.
 	db.Flush()
-
-	testDBLock(t, db)
 }
 
 type locker interface {
@@ -99,21 +99,34 @@ type locker interface {
 	Unlock(string)
 }
 
-func testDBLock(t *testing.T, db locker) {
-	var x int
+// TestDBLock verifies that Lock behaves correctly.
+// It is separate from [TestDB] because it can't be used
+// with a recorder/replayer, thanks to its sensitivity
+// to time.
+func TestDBLock(t *testing.T, db locker) {
 	db.Lock("abc")
+	c := make(chan struct{})
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
 		db.Lock("abc")
-		x = 2 // cause race if not synchronized
+		close(c)
 		db.Unlock("abc")
 		wg.Done()
 	}()
-	x = 1 // cause race if not synchronized
+
+	// The db.Lock in the goroutine should block, since the lock is already held.
+	select {
+	case <-c:
+		t.Fatal("Lock did not wait")
+	case <-time.After(1 * time.Second):
+	}
+
 	db.Unlock("abc")
+
+	// Now the db.Lock in the goroutine should return.
+	<-c
 	wg.Wait()
-	_ = x
 
 	func() {
 		defer func() {

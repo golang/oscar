@@ -11,7 +11,9 @@ import (
 )
 
 func TestMemDB(t *testing.T) {
-	TestDB(t, MemDB())
+	db := MemDB()
+	TestDB(t, db)
+	TestDBLock(t, db)
 }
 
 func TestMemVectorDB(t *testing.T) {
