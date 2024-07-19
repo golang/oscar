@@ -1,0 +1,1424 @@
+RPCReTxt1
+"go-discovery-exp,"
+443
+kind: REQUEST
+method: "/google.firestore.v1.Firestore/Commit"
+message: {
+  [type.googleapis.com/google.firestore.v1.CommitRequest]: {
+    database: "projects/go-discovery-exp/databases/(default)"
+    writes: {
+      update: {
+        name: "projects/go-discovery-exp/databases/(default)/documents/values/6b6579"
+        fields: {
+          key: "v"
+          value: {
+            bytes_value: "value"
+          }
+        }
+      }
+    }
+  }
+}
+290
+kind: RESPONSE
+message: {
+  [type.googleapis.com/google.firestore.v1.CommitResponse]: {
+    write_results: {
+      update_time: {
+        seconds: 1721655326
+        nanos: 448583000
+      }
+    }
+    commit_time: {
+      seconds: 1721655326
+      nanos: 448583000
+    }
+  }
+}
+ref_index: 1
+79
+kind: CREATE_STREAM
+method: "/google.firestore.v1.Firestore/BatchGetDocuments"
+262
+kind: SEND
+message: {
+  [type.googleapis.com/google.firestore.v1.BatchGetDocumentsRequest]: {
+    database: "projects/go-discovery-exp/databases/(default)"
+    documents: "projects/go-discovery-exp/databases/(default)/documents/values/6b6579"
+  }
+}
+ref_index: 3
+552
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.BatchGetDocumentsResponse]: {
+    found: {
+      name: "projects/go-discovery-exp/databases/(default)/documents/values/6b6579"
+      fields: {
+        key: "v"
+        value: {
+          bytes_value: "value"
+        }
+      }
+      create_time: {
+        seconds: 1721655326
+        nanos: 448583000
+      }
+      update_time: {
+        seconds: 1721655326
+        nanos: 448583000
+      }
+    }
+    read_time: {
+      seconds: 1721655326
+      nanos: 448583000
+    }
+  }
+}
+ref_index: 3
+39
+kind: RECV
+is_error: true
+ref_index: 3
+79
+kind: CREATE_STREAM
+method: "/google.firestore.v1.Firestore/BatchGetDocuments"
+270
+kind: SEND
+message: {
+  [type.googleapis.com/google.firestore.v1.BatchGetDocumentsRequest]: {
+    database: "projects/go-discovery-exp/databases/(default)"
+    documents: "projects/go-discovery-exp/databases/(default)/documents/values/6d697373696e67"
+  }
+}
+ref_index: 7
+279
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.BatchGetDocumentsResponse]: {
+    missing: "projects/go-discovery-exp/databases/(default)/documents/values/6d697373696e67"
+    read_time: {
+      seconds: 1721655326
+      nanos: 756828000
+    }
+  }
+}
+ref_index: 7
+39
+kind: RECV
+is_error: true
+ref_index: 7
+308
+kind: REQUEST
+method: "/google.firestore.v1.Firestore/Commit"
+message: {
+  [type.googleapis.com/google.firestore.v1.CommitRequest]: {
+    database: "projects/go-discovery-exp/databases/(default)"
+    writes: {
+      delete: "projects/go-discovery-exp/databases/(default)/documents/values/6b6579"
+    }
+  }
+}
+204
+kind: RESPONSE
+message: {
+  [type.googleapis.com/google.firestore.v1.CommitResponse]: {
+    write_results: {}
+    commit_time: {
+      seconds: 1721655326
+      nanos: 859376000
+    }
+  }
+}
+ref_index: 11
+79
+kind: CREATE_STREAM
+method: "/google.firestore.v1.Firestore/BatchGetDocuments"
+263
+kind: SEND
+message: {
+  [type.googleapis.com/google.firestore.v1.BatchGetDocumentsRequest]: {
+    database: "projects/go-discovery-exp/databases/(default)"
+    documents: "projects/go-discovery-exp/databases/(default)/documents/values/6b6579"
+  }
+}
+ref_index: 13
+272
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.BatchGetDocumentsResponse]: {
+    missing: "projects/go-discovery-exp/databases/(default)/documents/values/6b6579"
+    read_time: {
+      seconds: 1721655326
+      nanos: 944912000
+    }
+  }
+}
+ref_index: 13
+40
+kind: RECV
+is_error: true
+ref_index: 13
+222
+kind: REQUEST
+method: "/google.firestore.v1.Firestore/BeginTransaction"
+message: {
+  [type.googleapis.com/google.firestore.v1.BeginTransactionRequest]: {
+    database: "projects/go-discovery-exp/databases/(default)"
+  }
+}
+414
+kind: RESPONSE
+message: {
+  [type.googleapis.com/google.firestore.v1.BeginTransactionResponse]: {
+    transaction: "\x11\xc7b\xd1~RZ5\xd4\"Y\x00\xd4u\xc8\xcdJ\xaf7\xa7\x8b\x0f`\xc7\x12!sG\xae\xacC\xab\x9dh\x92\x94\x87]\xc7\xfe\x15\x07jb\x00l\x8d\x19'2\xfd\x88S\x85\xf9\x13\x84{\x12\xc6\xd5\x18\x80\xc4\"\xa7d\xf8z\xae\xf1\xfe$'V\x15m\xc6ia\x07V\x07 \x8e<\xf3\xba*\xb0*\xeb\x83Yr\x85\xa5Ab\xc9"
+  }
+}
+ref_index: 17
+2848
+kind: REQUEST
+method: "/google.firestore.v1.Firestore/Commit"
+message: {
+  [type.googleapis.com/google.firestore.v1.CommitRequest]: {
+    database: "projects/go-discovery-exp/databases/(default)"
+    writes: {
+      update: {
+        name: "projects/go-discovery-exp/databases/(default)/documents/values/3000"
+        fields: {
+          key: "v"
+          value: {
+            bytes_value: "0"
+          }
+        }
+      }
+    }
+    writes: {
+      update: {
+        name: "projects/go-discovery-exp/databases/(default)/documents/values/3001"
+        fields: {
+          key: "v"
+          value: {
+            bytes_value: "1"
+          }
+        }
+      }
+    }
+    writes: {
+      update: {
+        name: "projects/go-discovery-exp/databases/(default)/documents/values/3002"
+        fields: {
+          key: "v"
+          value: {
+            bytes_value: "2"
+          }
+        }
+      }
+    }
+    writes: {
+      update: {
+        name: "projects/go-discovery-exp/databases/(default)/documents/values/3003"
+        fields: {
+          key: "v"
+          value: {
+            bytes_value: "3"
+          }
+        }
+      }
+    }
+    writes: {
+      update: {
+        name: "projects/go-discovery-exp/databases/(default)/documents/values/3004"
+        fields: {
+          key: "v"
+          value: {
+            bytes_value: "4"
+          }
+        }
+      }
+    }
+    writes: {
+      update: {
+        name: "projects/go-discovery-exp/databases/(default)/documents/values/3005"
+        fields: {
+          key: "v"
+          value: {
+            bytes_value: "5"
+          }
+        }
+      }
+    }
+    writes: {
+      update: {
+        name: "projects/go-discovery-exp/databases/(default)/documents/values/3006"
+        fields: {
+          key: "v"
+          value: {
+            bytes_value: "6"
+          }
+        }
+      }
+    }
+    writes: {
+      update: {
+        name: "projects/go-discovery-exp/databases/(default)/documents/values/3007"
+        fields: {
+          key: "v"
+          value: {
+            bytes_value: "7"
+          }
+        }
+      }
+    }
+    writes: {
+      update: {
+        name: "projects/go-discovery-exp/databases/(default)/documents/values/3008"
+        fields: {
+          key: "v"
+          value: {
+            bytes_value: "8"
+          }
+        }
+      }
+    }
+    writes: {
+      update: {
+        name: "projects/go-discovery-exp/databases/(default)/documents/values/3009"
+        fields: {
+          key: "v"
+          value: {
+            bytes_value: "9"
+          }
+        }
+      }
+    }
+    transaction: "\x11\xc7b\xd1~RZ5\xd4\"Y\x00\xd4u\xc8\xcdJ\xaf7\xa7\x8b\x0f`\xc7\x12!sG\xae\xacC\xab\x9dh\x92\x94\x87]\xc7\xfe\x15\x07jb\x00l\x8d\x19'2\xfd\x88S\x85\xf9\x13\x84{\x12\xc6\xd5\x18\x80\xc4\"\xa7d\xf8z\xae\xf1\xfe$'V\x15m\xc6ia\x07V\x07 \x8e<\xf3\xba*\xb0*\xeb\x83Yr\x85\xa5Ab\xc9"
+  }
+}
+1271
+kind: RESPONSE
+message: {
+  [type.googleapis.com/google.firestore.v1.CommitResponse]: {
+    write_results: {
+      update_time: {
+        seconds: 1721655327
+        nanos: 222942000
+      }
+    }
+    write_results: {
+      update_time: {
+        seconds: 1721655327
+        nanos: 222942000
+      }
+    }
+    write_results: {
+      update_time: {
+        seconds: 1721655327
+        nanos: 222942000
+      }
+    }
+    write_results: {
+      update_time: {
+        seconds: 1721655327
+        nanos: 222942000
+      }
+    }
+    write_results: {
+      update_time: {
+        seconds: 1721655327
+        nanos: 222942000
+      }
+    }
+    write_results: {
+      update_time: {
+        seconds: 1721655327
+        nanos: 222942000
+      }
+    }
+    write_results: {
+      update_time: {
+        seconds: 1721655264
+        nanos: 64308000
+      }
+    }
+    write_results: {
+      update_time: {
+        seconds: 1721655327
+        nanos: 222942000
+      }
+    }
+    write_results: {
+      update_time: {
+        seconds: 1721171630
+        nanos: 112889000
+      }
+    }
+    write_results: {
+      update_time: {
+        seconds: 1721171630
+        nanos: 112889000
+      }
+    }
+    commit_time: {
+      seconds: 1721655327
+      nanos: 222942000
+    }
+  }
+}
+ref_index: 19
+70
+kind: CREATE_STREAM
+method: "/google.firestore.v1.Firestore/RunQuery"
+695
+kind: SEND
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryRequest]: {
+    parent: "projects/go-discovery-exp/databases/(default)/documents"
+    structured_query: {
+      from: {
+        collection_id: "values"
+      }
+      order_by: {
+        field: {
+          field_path: "__name__"
+        }
+        direction: ASCENDING
+      }
+      start_at: {
+        values: {
+          reference_value: "projects/go-discovery-exp/databases/(default)/documents/values/3003"
+        }
+        before: true
+      }
+      end_at: {
+        values: {
+          reference_value: "projects/go-discovery-exp/databases/(default)/documents/values/3006"
+        }
+      }
+    }
+  }
+}
+ref_index: 21
+541
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
+    document: {
+      name: "projects/go-discovery-exp/databases/(default)/documents/values/3003"
+      fields: {
+        key: "v"
+        value: {
+          bytes_value: "3"
+        }
+      }
+      create_time: {
+        seconds: 1721655327
+        nanos: 222942000
+      }
+      update_time: {
+        seconds: 1721655327
+        nanos: 222942000
+      }
+    }
+    read_time: {
+      seconds: 1721655327
+      nanos: 322624000
+    }
+  }
+}
+ref_index: 21
+541
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
+    document: {
+      name: "projects/go-discovery-exp/databases/(default)/documents/values/3004"
+      fields: {
+        key: "v"
+        value: {
+          bytes_value: "4"
+        }
+      }
+      create_time: {
+        seconds: 1721655327
+        nanos: 222942000
+      }
+      update_time: {
+        seconds: 1721655327
+        nanos: 222942000
+      }
+    }
+    read_time: {
+      seconds: 1721655327
+      nanos: 322624000
+    }
+  }
+}
+ref_index: 21
+541
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
+    document: {
+      name: "projects/go-discovery-exp/databases/(default)/documents/values/3005"
+      fields: {
+        key: "v"
+        value: {
+          bytes_value: "5"
+        }
+      }
+      create_time: {
+        seconds: 1721655327
+        nanos: 222942000
+      }
+      update_time: {
+        seconds: 1721655327
+        nanos: 222942000
+      }
+    }
+    read_time: {
+      seconds: 1721655327
+      nanos: 322624000
+    }
+  }
+}
+ref_index: 21
+539
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
+    document: {
+      name: "projects/go-discovery-exp/databases/(default)/documents/values/3006"
+      fields: {
+        key: "v"
+        value: {
+          bytes_value: "6"
+        }
+      }
+      create_time: {
+        seconds: 1721655264
+        nanos: 64308000
+      }
+      update_time: {
+        seconds: 1721655264
+        nanos: 64308000
+      }
+    }
+    read_time: {
+      seconds: 1721655327
+      nanos: 322624000
+    }
+  }
+}
+ref_index: 21
+40
+kind: RECV
+is_error: true
+ref_index: 21
+70
+kind: CREATE_STREAM
+method: "/google.firestore.v1.Firestore/RunQuery"
+695
+kind: SEND
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryRequest]: {
+    parent: "projects/go-discovery-exp/databases/(default)/documents"
+    structured_query: {
+      from: {
+        collection_id: "values"
+      }
+      order_by: {
+        field: {
+          field_path: "__name__"
+        }
+        direction: ASCENDING
+      }
+      start_at: {
+        values: {
+          reference_value: "projects/go-discovery-exp/databases/(default)/documents/values/3003"
+        }
+        before: true
+      }
+      end_at: {
+        values: {
+          reference_value: "projects/go-discovery-exp/databases/(default)/documents/values/3006"
+        }
+      }
+    }
+  }
+}
+ref_index: 28
+541
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
+    document: {
+      name: "projects/go-discovery-exp/databases/(default)/documents/values/3003"
+      fields: {
+        key: "v"
+        value: {
+          bytes_value: "3"
+        }
+      }
+      create_time: {
+        seconds: 1721655327
+        nanos: 222942000
+      }
+      update_time: {
+        seconds: 1721655327
+        nanos: 222942000
+      }
+    }
+    read_time: {
+      seconds: 1721655327
+      nanos: 565710000
+    }
+  }
+}
+ref_index: 28
+541
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
+    document: {
+      name: "projects/go-discovery-exp/databases/(default)/documents/values/3004"
+      fields: {
+        key: "v"
+        value: {
+          bytes_value: "4"
+        }
+      }
+      create_time: {
+        seconds: 1721655327
+        nanos: 222942000
+      }
+      update_time: {
+        seconds: 1721655327
+        nanos: 222942000
+      }
+    }
+    read_time: {
+      seconds: 1721655327
+      nanos: 565710000
+    }
+  }
+}
+ref_index: 28
+541
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
+    document: {
+      name: "projects/go-discovery-exp/databases/(default)/documents/values/3005"
+      fields: {
+        key: "v"
+        value: {
+          bytes_value: "5"
+        }
+      }
+      create_time: {
+        seconds: 1721655327
+        nanos: 222942000
+      }
+      update_time: {
+        seconds: 1721655327
+        nanos: 222942000
+      }
+    }
+    read_time: {
+      seconds: 1721655327
+      nanos: 565710000
+    }
+  }
+}
+ref_index: 28
+70
+kind: CREATE_STREAM
+method: "/google.firestore.v1.Firestore/RunQuery"
+695
+kind: SEND
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryRequest]: {
+    parent: "projects/go-discovery-exp/databases/(default)/documents"
+    structured_query: {
+      from: {
+        collection_id: "values"
+      }
+      order_by: {
+        field: {
+          field_path: "__name__"
+        }
+        direction: ASCENDING
+      }
+      start_at: {
+        values: {
+          reference_value: "projects/go-discovery-exp/databases/(default)/documents/values/3004"
+        }
+        before: true
+      }
+      end_at: {
+        values: {
+          reference_value: "projects/go-discovery-exp/databases/(default)/documents/values/3007"
+        }
+      }
+    }
+  }
+}
+ref_index: 33
+541
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
+    document: {
+      name: "projects/go-discovery-exp/databases/(default)/documents/values/3004"
+      fields: {
+        key: "v"
+        value: {
+          bytes_value: "4"
+        }
+      }
+      create_time: {
+        seconds: 1721655327
+        nanos: 222942000
+      }
+      update_time: {
+        seconds: 1721655327
+        nanos: 222942000
+      }
+    }
+    read_time: {
+      seconds: 1721655327
+      nanos: 657343000
+    }
+  }
+}
+ref_index: 33
+541
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
+    document: {
+      name: "projects/go-discovery-exp/databases/(default)/documents/values/3005"
+      fields: {
+        key: "v"
+        value: {
+          bytes_value: "5"
+        }
+      }
+      create_time: {
+        seconds: 1721655327
+        nanos: 222942000
+      }
+      update_time: {
+        seconds: 1721655327
+        nanos: 222942000
+      }
+    }
+    read_time: {
+      seconds: 1721655327
+      nanos: 657343000
+    }
+  }
+}
+ref_index: 33
+539
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
+    document: {
+      name: "projects/go-discovery-exp/databases/(default)/documents/values/3006"
+      fields: {
+        key: "v"
+        value: {
+          bytes_value: "6"
+        }
+      }
+      create_time: {
+        seconds: 1721655264
+        nanos: 64308000
+      }
+      update_time: {
+        seconds: 1721655264
+        nanos: 64308000
+      }
+    }
+    read_time: {
+      seconds: 1721655327
+      nanos: 657343000
+    }
+  }
+}
+ref_index: 33
+541
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
+    document: {
+      name: "projects/go-discovery-exp/databases/(default)/documents/values/3007"
+      fields: {
+        key: "v"
+        value: {
+          bytes_value: "7"
+        }
+      }
+      create_time: {
+        seconds: 1721655327
+        nanos: 222942000
+      }
+      update_time: {
+        seconds: 1721655327
+        nanos: 222942000
+      }
+    }
+    read_time: {
+      seconds: 1721655327
+      nanos: 657343000
+    }
+  }
+}
+ref_index: 33
+40
+kind: RECV
+is_error: true
+ref_index: 33
+626
+kind: REQUEST
+method: "/google.firestore.v1.Firestore/BatchWrite"
+message: {
+  [type.googleapis.com/google.firestore.v1.BatchWriteRequest]: {
+    database: "projects/go-discovery-exp/databases/(default)"
+    writes: {
+      delete: "projects/go-discovery-exp/databases/(default)/documents/values/3004"
+    }
+    writes: {
+      delete: "projects/go-discovery-exp/databases/(default)/documents/values/3005"
+    }
+    writes: {
+      delete: "projects/go-discovery-exp/databases/(default)/documents/values/3006"
+    }
+    writes: {
+      delete: "projects/go-discovery-exp/databases/(default)/documents/values/3007"
+    }
+  }
+}
+260
+kind: RESPONSE
+message: {
+  [type.googleapis.com/google.firestore.v1.BatchWriteResponse]: {
+    write_results: {}
+    write_results: {}
+    write_results: {}
+    write_results: {}
+    status: {}
+    status: {}
+    status: {}
+    status: {}
+  }
+}
+ref_index: 40
+70
+kind: CREATE_STREAM
+method: "/google.firestore.v1.Firestore/RunQuery"
+695
+kind: SEND
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryRequest]: {
+    parent: "projects/go-discovery-exp/databases/(default)/documents"
+    structured_query: {
+      from: {
+        collection_id: "values"
+      }
+      order_by: {
+        field: {
+          field_path: "__name__"
+        }
+        direction: ASCENDING
+      }
+      start_at: {
+        values: {
+          reference_value: "projects/go-discovery-exp/databases/(default)/documents/values/2fff"
+        }
+        before: true
+      }
+      end_at: {
+        values: {
+          reference_value: "projects/go-discovery-exp/databases/(default)/documents/values/300b"
+        }
+      }
+    }
+  }
+}
+ref_index: 42
+541
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
+    document: {
+      name: "projects/go-discovery-exp/databases/(default)/documents/values/3000"
+      fields: {
+        key: "v"
+        value: {
+          bytes_value: "0"
+        }
+      }
+      create_time: {
+        seconds: 1721655327
+        nanos: 222942000
+      }
+      update_time: {
+        seconds: 1721655327
+        nanos: 222942000
+      }
+    }
+    read_time: {
+      seconds: 1721655327
+      nanos: 903250000
+    }
+  }
+}
+ref_index: 42
+541
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
+    document: {
+      name: "projects/go-discovery-exp/databases/(default)/documents/values/3001"
+      fields: {
+        key: "v"
+        value: {
+          bytes_value: "1"
+        }
+      }
+      create_time: {
+        seconds: 1721655327
+        nanos: 222942000
+      }
+      update_time: {
+        seconds: 1721655327
+        nanos: 222942000
+      }
+    }
+    read_time: {
+      seconds: 1721655327
+      nanos: 903250000
+    }
+  }
+}
+ref_index: 42
+541
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
+    document: {
+      name: "projects/go-discovery-exp/databases/(default)/documents/values/3002"
+      fields: {
+        key: "v"
+        value: {
+          bytes_value: "2"
+        }
+      }
+      create_time: {
+        seconds: 1721655327
+        nanos: 222942000
+      }
+      update_time: {
+        seconds: 1721655327
+        nanos: 222942000
+      }
+    }
+    read_time: {
+      seconds: 1721655327
+      nanos: 903250000
+    }
+  }
+}
+ref_index: 42
+541
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
+    document: {
+      name: "projects/go-discovery-exp/databases/(default)/documents/values/3003"
+      fields: {
+        key: "v"
+        value: {
+          bytes_value: "3"
+        }
+      }
+      create_time: {
+        seconds: 1721655327
+        nanos: 222942000
+      }
+      update_time: {
+        seconds: 1721655327
+        nanos: 222942000
+      }
+    }
+    read_time: {
+      seconds: 1721655327
+      nanos: 903250000
+    }
+  }
+}
+ref_index: 42
+541
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
+    document: {
+      name: "projects/go-discovery-exp/databases/(default)/documents/values/3008"
+      fields: {
+        key: "v"
+        value: {
+          bytes_value: "8"
+        }
+      }
+      create_time: {
+        seconds: 1721171630
+        nanos: 112889000
+      }
+      update_time: {
+        seconds: 1721171630
+        nanos: 112889000
+      }
+    }
+    read_time: {
+      seconds: 1721655327
+      nanos: 903250000
+    }
+  }
+}
+ref_index: 42
+541
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
+    document: {
+      name: "projects/go-discovery-exp/databases/(default)/documents/values/3009"
+      fields: {
+        key: "v"
+        value: {
+          bytes_value: "9"
+        }
+      }
+      create_time: {
+        seconds: 1721171630
+        nanos: 112889000
+      }
+      update_time: {
+        seconds: 1721171630
+        nanos: 112889000
+      }
+    }
+    read_time: {
+      seconds: 1721655327
+      nanos: 903250000
+    }
+  }
+}
+ref_index: 42
+40
+kind: RECV
+is_error: true
+ref_index: 42
+222
+kind: REQUEST
+method: "/google.firestore.v1.Firestore/BeginTransaction"
+message: {
+  [type.googleapis.com/google.firestore.v1.BeginTransactionRequest]: {
+    database: "projects/go-discovery-exp/databases/(default)"
+  }
+}
+410
+kind: RESPONSE
+message: {
+  [type.googleapis.com/google.firestore.v1.BeginTransactionResponse]: {
+    transaction: "\x11s\xa5\xdd0k\xd2\x04\x0f\"Y\x00\xd4u\xc8\xcd\x1d\xe5\xd31\xeb\xc1i\x01l+~M\xe6\xeb\xc3\xe1\xf22\xa5\xcc\x01G1\xe3i\xc4u\xf0\xa4Lt!\x07\x97\xeb\xaeൃX \xac\x1f\x7f\xf2\x8b\xa9\x7f;\x1e\xd6\xf7\x8f\x11RSi\xfaME\x82\xa1c\x85\xf8^\xf0'\xcfX\xbfN{e\xef\xeb\xa6XRς\x19\x055"
+  }
+}
+ref_index: 51
+70
+kind: CREATE_STREAM
+method: "/google.firestore.v1.Firestore/RunQuery"
+987
+kind: SEND
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryRequest]: {
+    parent: "projects/go-discovery-exp/databases/(default)/documents"
+    structured_query: {
+      from: {
+        collection_id: "values"
+      }
+      order_by: {
+        field: {
+          field_path: "__name__"
+        }
+        direction: ASCENDING
+      }
+      start_at: {
+        values: {
+          reference_value: "projects/go-discovery-exp/databases/(default)/documents/values/3000"
+        }
+        before: true
+      }
+      end_at: {
+        values: {
+          reference_value: "projects/go-discovery-exp/databases/(default)/documents/values/3000"
+        }
+      }
+    }
+    transaction: "\x11s\xa5\xdd0k\xd2\x04\x0f\"Y\x00\xd4u\xc8\xcd\x1d\xe5\xd31\xeb\xc1i\x01l+~M\xe6\xeb\xc3\xe1\xf22\xa5\xcc\x01G1\xe3i\xc4u\xf0\xa4Lt!\x07\x97\xeb\xaeൃX \xac\x1f\x7f\xf2\x8b\xa9\x7f;\x1e\xd6\xf7\x8f\x11RSi\xfaME\x82\xa1c\x85\xf8^\xf0'\xcfX\xbfN{e\xef\xeb\xa6XRς\x19\x055"
+  }
+}
+ref_index: 53
+541
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
+    document: {
+      name: "projects/go-discovery-exp/databases/(default)/documents/values/3000"
+      fields: {
+        key: "v"
+        value: {
+          bytes_value: "0"
+        }
+      }
+      create_time: {
+        seconds: 1721655327
+        nanos: 222942000
+      }
+      update_time: {
+        seconds: 1721655327
+        nanos: 222942000
+      }
+    }
+    read_time: {
+      seconds: 1721655327
+      nanos: 907076000
+    }
+  }
+}
+ref_index: 53
+40
+kind: RECV
+is_error: true
+ref_index: 53
+2293
+kind: REQUEST
+method: "/google.firestore.v1.Firestore/Commit"
+message: {
+  [type.googleapis.com/google.firestore.v1.CommitRequest]: {
+    database: "projects/go-discovery-exp/databases/(default)"
+    writes: {
+      delete: "projects/go-discovery-exp/databases/(default)/documents/values/3000"
+    }
+    writes: {
+      update: {
+        name: "projects/go-discovery-exp/databases/(default)/documents/values/3000"
+        fields: {
+          key: "v"
+          value: {
+            bytes_value: "0"
+          }
+        }
+      }
+    }
+    writes: {
+      delete: "projects/go-discovery-exp/databases/(default)/documents/values/3001"
+    }
+    writes: {
+      update: {
+        name: "projects/go-discovery-exp/databases/(default)/documents/values/3002"
+        fields: {
+          key: "v"
+          value: {
+            bytes_value: "2"
+          }
+        }
+      }
+    }
+    writes: {
+      delete: "projects/go-discovery-exp/databases/(default)/documents/values/3002"
+    }
+    writes: {
+      update: {
+        name: "projects/go-discovery-exp/databases/(default)/documents/values/3004"
+        fields: {
+          key: "v"
+          value: {
+            bytes_value: "4"
+          }
+        }
+      }
+    }
+    writes: {
+      delete: "projects/go-discovery-exp/databases/(default)/documents/values/3003"
+    }
+    writes: {
+      update: {
+        name: "projects/go-discovery-exp/databases/(default)/documents/values/3006"
+        fields: {
+          key: "v"
+          value: {
+            bytes_value: "6"
+          }
+        }
+      }
+    }
+    writes: {
+      delete: "projects/go-discovery-exp/databases/(default)/documents/values/3004"
+    }
+    writes: {
+      update: {
+        name: "projects/go-discovery-exp/databases/(default)/documents/values/3008"
+        fields: {
+          key: "v"
+          value: {
+            bytes_value: "8"
+          }
+        }
+      }
+    }
+    writes: {
+      delete: "projects/go-discovery-exp/databases/(default)/documents/values/3000"
+    }
+    transaction: "\x11s\xa5\xdd0k\xd2\x04\x0f\"Y\x00\xd4u\xc8\xcd\x1d\xe5\xd31\xeb\xc1i\x01l+~M\xe6\xeb\xc3\xe1\xf22\xa5\xcc\x01G1\xe3i\xc4u\xf0\xa4Lt!\x07\x97\xeb\xaeൃX \xac\x1f\x7f\xf2\x8b\xa9\x7f;\x1e\xd6\xf7\x8f\x11RSi\xfaME\x82\xa1c\x85\xf8^\xf0'\xcfX\xbfN{e\xef\xeb\xa6XRς\x19\x055"
+  }
+}
+598
+kind: RESPONSE
+message: {
+  [type.googleapis.com/google.firestore.v1.CommitResponse]: {
+    write_results: {}
+    write_results: {}
+    write_results: {}
+    write_results: {}
+    write_results: {}
+    write_results: {}
+    write_results: {}
+    write_results: {
+      update_time: {
+        seconds: 1721655328
+        nanos: 296191000
+      }
+    }
+    write_results: {}
+    write_results: {
+      update_time: {
+        seconds: 1721171630
+        nanos: 112889000
+      }
+    }
+    write_results: {}
+    commit_time: {
+      seconds: 1721655328
+      nanos: 296191000
+    }
+  }
+}
+ref_index: 57
+70
+kind: CREATE_STREAM
+method: "/google.firestore.v1.Firestore/RunQuery"
+695
+kind: SEND
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryRequest]: {
+    parent: "projects/go-discovery-exp/databases/(default)/documents"
+    structured_query: {
+      from: {
+        collection_id: "values"
+      }
+      order_by: {
+        field: {
+          field_path: "__name__"
+        }
+        direction: ASCENDING
+      }
+      start_at: {
+        values: {
+          reference_value: "projects/go-discovery-exp/databases/(default)/documents/values/2fff"
+        }
+        before: true
+      }
+      end_at: {
+        values: {
+          reference_value: "projects/go-discovery-exp/databases/(default)/documents/values/300b"
+        }
+      }
+    }
+  }
+}
+ref_index: 59
+541
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
+    document: {
+      name: "projects/go-discovery-exp/databases/(default)/documents/values/3006"
+      fields: {
+        key: "v"
+        value: {
+          bytes_value: "6"
+        }
+      }
+      create_time: {
+        seconds: 1721655328
+        nanos: 296191000
+      }
+      update_time: {
+        seconds: 1721655328
+        nanos: 296191000
+      }
+    }
+    read_time: {
+      seconds: 1721655328
+      nanos: 389515000
+    }
+  }
+}
+ref_index: 59
+541
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
+    document: {
+      name: "projects/go-discovery-exp/databases/(default)/documents/values/3008"
+      fields: {
+        key: "v"
+        value: {
+          bytes_value: "8"
+        }
+      }
+      create_time: {
+        seconds: 1721171630
+        nanos: 112889000
+      }
+      update_time: {
+        seconds: 1721171630
+        nanos: 112889000
+      }
+    }
+    read_time: {
+      seconds: 1721655328
+      nanos: 389515000
+    }
+  }
+}
+ref_index: 59
+541
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
+    document: {
+      name: "projects/go-discovery-exp/databases/(default)/documents/values/3009"
+      fields: {
+        key: "v"
+        value: {
+          bytes_value: "9"
+        }
+      }
+      create_time: {
+        seconds: 1721171630
+        nanos: 112889000
+      }
+      update_time: {
+        seconds: 1721171630
+        nanos: 112889000
+      }
+    }
+    read_time: {
+      seconds: 1721655328
+      nanos: 389515000
+    }
+  }
+}
+ref_index: 59
+40
+kind: RECV
+is_error: true
+ref_index: 59
+222
+kind: REQUEST
+method: "/google.firestore.v1.Firestore/BeginTransaction"
+message: {
+  [type.googleapis.com/google.firestore.v1.BeginTransactionRequest]: {
+    database: "projects/go-discovery-exp/databases/(default)"
+  }
+}
+408
+kind: RESPONSE
+message: {
+  [type.googleapis.com/google.firestore.v1.BeginTransactionResponse]: {
+    transaction: "\x11\x11 \x8b\x8cX\xe5\x84\xdc\"Y\x00\xd4u\xc8͎\xeb=\xcc\x18ב\x02\x1fu\xed\xaaj\xc0\xf4zZ+\xb8\xb3E\xb9N\xc6\x14\xe2\xbdk\xac\xa8\x1bj\xd7\x0e\x97R<\x7fR\xd3\x0f\x84\xc3\x1d\x14\xb0\xf0\r<G\xf2I\xdf\xee*\xc2x1h.$\xa2X\x12dyY\x10\x95I\xb3w\x99\xdf\xcd\xcefy\xa1V\xe5n4?"
+  }
+}
+ref_index: 65
+70
+kind: CREATE_STREAM
+method: "/google.firestore.v1.Firestore/RunQuery"
+981
+kind: SEND
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryRequest]: {
+    parent: "projects/go-discovery-exp/databases/(default)/documents"
+    structured_query: {
+      from: {
+        collection_id: "values"
+      }
+      order_by: {
+        field: {
+          field_path: "__name__"
+        }
+        direction: ASCENDING
+      }
+      start_at: {
+        values: {
+          reference_value: "projects/go-discovery-exp/databases/(default)/documents/values/61"
+        }
+        before: true
+      }
+      end_at: {
+        values: {
+          reference_value: "projects/go-discovery-exp/databases/(default)/documents/values/62"
+        }
+      }
+    }
+    transaction: "\x11\x11 \x8b\x8cX\xe5\x84\xdc\"Y\x00\xd4u\xc8͎\xeb=\xcc\x18ב\x02\x1fu\xed\xaaj\xc0\xf4zZ+\xb8\xb3E\xb9N\xc6\x14\xe2\xbdk\xac\xa8\x1bj\xd7\x0e\x97R<\x7fR\xd3\x0f\x84\xc3\x1d\x14\xb0\xf0\r<G\xf2I\xdf\xee*\xc2x1h.$\xa2X\x12dyY\x10\x95I\xb3w\x99\xdf\xcd\xcefy\xa1V\xe5n4?"
+  }
+}
+ref_index: 67
+178
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
+    read_time: {
+      seconds: 1721655328
+      nanos: 585255000
+    }
+  }
+}
+ref_index: 67
+40
+kind: RECV
+is_error: true
+ref_index: 67
+492
+kind: REQUEST
+method: "/google.firestore.v1.Firestore/Commit"
+message: {
+  [type.googleapis.com/google.firestore.v1.CommitRequest]: {
+    database: "projects/go-discovery-exp/databases/(default)"
+    transaction: "\x11\x11 \x8b\x8cX\xe5\x84\xdc\"Y\x00\xd4u\xc8͎\xeb=\xcc\x18ב\x02\x1fu\xed\xaaj\xc0\xf4zZ+\xb8\xb3E\xb9N\xc6\x14\xe2\xbdk\xac\xa8\x1bj\xd7\x0e\x97R<\x7fR\xd3\x0f\x84\xc3\x1d\x14\xb0\xf0\r<G\xf2I\xdf\xee*\xc2x1h.$\xa2X\x12dyY\x10\x95I\xb3w\x99\xdf\xcd\xcefy\xa1V\xe5n4?"
+  }
+}
+182
+kind: RESPONSE
+message: {
+  [type.googleapis.com/google.firestore.v1.CommitResponse]: {
+    commit_time: {
+      seconds: 1721655328
+      nanos: 585255000
+    }
+  }
+}
+ref_index: 71

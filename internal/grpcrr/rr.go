@@ -76,6 +76,24 @@ func Open(file string) (*RecordReplay, error) {
 	return &RecordReplay{replayer: rep}, nil
 }
 
+// SetInitial provides data to be stored at the beginning of the file in record mode.
+// It panics in replay mode.
+func (r *RecordReplay) SetInitial(initial []byte) {
+	if r.recorder == nil {
+		panic("SetInitial called in replay mode")
+	}
+	r.recorder.SetInitial(initial)
+}
+
+// Initial returns the data stored with SetInitial.
+// It panics in record mode.
+func (r *RecordReplay) Initial() []byte {
+	if r.replayer == nil {
+		panic("Initial called in record mode")
+	}
+	return r.replayer.Initial()
+}
+
 // ClientOptions returns options to pass to a gRPC client
 // that accepts them.
 func (r *RecordReplay) ClientOptions() []option.ClientOption {
