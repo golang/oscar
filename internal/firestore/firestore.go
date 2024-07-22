@@ -115,6 +115,9 @@ func (f *fstore) get(tx *firestore.Transaction, coll, id string) *firestore.Docu
 // If tx is non-nil, the set happens inside the transaction.
 func (f *fstore) set(tx *firestore.Transaction, coll, key string, value any) {
 	dr := f.client.Collection(coll).Doc(key)
+	if dr == nil {
+		f.Panic("firestore set bad doc ref args", "collection", coll, "key", key)
+	}
 	var err error
 	if tx == nil {
 		_, err = dr.Set(context.TODO(), value)
@@ -248,7 +251,7 @@ const (
 // estimate the size of val.
 func (b *batch) set(id string, val any, valSize int) {
 	if val == nil {
-		panic("firestore batch set: nil value")
+		b.f.Panic("firestore batch set: nil value")
 	}
 	b.ops = append(b.ops, &op{id: id, value: val})
 	b.size += perWriteSize + len(id) + valSize

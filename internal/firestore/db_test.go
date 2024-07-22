@@ -9,6 +9,7 @@ import (
 	"flag"
 	"fmt"
 	"math/rand/v2"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -23,34 +24,13 @@ var (
 )
 
 func TestDB(t *testing.T) {
-	ctx := context.Background()
-	rr, err := grpcrr.Open("testdata/db.grpcrr")
-	if err != nil {
-		t.Fatalf("grpcrr.Open: %v", err)
-	}
+	rr, fsProject, fsDatabase := openRR(t, "testdata/db.grpcrr")
 	defer func() {
 		if err := rr.Close(); err != nil {
 			t.Fatal(err)
 		}
 	}()
-
-	var fsProject, fsDatabase string
-	if rr.Recording() {
-		if *project == "" {
-			t.Fatal("recording requires -project")
-		}
-		// The -database flag can be omitted. We'll use the default one.
-		rr.SetInitial([]byte(*project + "," + *database))
-		fsProject = *project
-		fsDatabase = *database
-	} else {
-		// Allow -project and -database on replay because other tests might need them.
-		var found bool
-		fsProject, fsDatabase, found = strings.Cut(string(rr.Initial()), ",")
-		if !found {
-			t.Fatal("bad initial state")
-		}
-	}
+	ctx := context.Background()
 
 	db, err := NewDB(ctx, &DBOptions{ProjectID: fsProject, Database: fsDatabase, ClientOptions: rr.ClientOptions()})
 	if err != nil {
@@ -143,6 +123,28 @@ func TestErrors(t *testing.T) {
 	}) {
 		t.Error("batch.set does not panic on nil value")
 	}
+}
+
+func openRR(t *testing.T, file string) (_ *grpcrr.RecordReplay, fsProject, fsDatabase string) {
+	rr, err := grpcrr.Open(filepath.FromSlash(file))
+	if err != nil {
+		t.Fatalf("grpcrr.Open: %v", err)
+	}
+	if rr.Recording() {
+		if *project == "" {
+			t.Fatal("recording requires -project")
+		}
+		// The -database flag can be omitted. We'll use the default one.
+		rr.SetInitial([]byte(*project + "," + *database))
+		return rr, *project, *database
+	}
+	// Allow -project and -database on replay because other tests might need them.
+	var found bool
+	fsProject, fsDatabase, found = strings.Cut(string(rr.Initial()), ",")
+	if !found {
+		t.Fatalf("%s: bad initial state", file)
+	}
+	return rr, fsProject, fsDatabase
 }
 
 func panics(f func()) (b bool) {
