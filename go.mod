@@ -4,6 +4,7 @@ go 1.23
 
 require (
 	cloud.google.com/go/firestore v1.16.0
+	cloud.google.com/go/secretmanager v1.13.3
 	github.com/cockroachdb/pebble v1.1.1
 	github.com/google/generative-ai-go v0.16.0
 	github.com/google/go-replayers/grpcreplay v1.3.0
@@ -22,6 +23,7 @@ require (
 	cloud.google.com/go/auth v0.7.2 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.3 // indirect
 	cloud.google.com/go/compute/metadata v0.5.0 // indirect
+	cloud.google.com/go/iam v1.1.10 // indirect
 	cloud.google.com/go/longrunning v0.5.9 // indirect
 	github.com/DataDog/zstd v1.4.5 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
