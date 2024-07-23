@@ -170,22 +170,34 @@ var badResponseTrace = []byte("httprr trace v1\n" +
 	"\r\n")
 
 func TestErrors(t *testing.T) {
+	dir := t.TempDir()
+
+	makeTmpFile := func() string {
+		f, err := os.CreateTemp(dir, "TestErrors")
+		if err != nil {
+			t.Fatalf("failed to create tmp file for test: %v", err)
+		}
+		name := f.Name()
+		f.Close()
+		return name
+	}
+
 	// -httprecord regexp parsing
 	*record = "+"
-	if _, err := Open(os.DevNull, nil); err == nil || !strings.Contains(err.Error(), "invalid -httprecord flag") {
+	if _, err := Open(makeTmpFile(), nil); err == nil || !strings.Contains(err.Error(), "invalid -httprecord flag") {
 		t.Errorf("did not diagnose bad -httprecord: err = %v", err)
 	}
 	*record = ""
 
 	// invalid httprr trace
-	if _, err := Open(os.DevNull, nil); err == nil || !strings.Contains(err.Error(), "not an httprr trace") {
+	if _, err := Open(makeTmpFile(), nil); err == nil || !strings.Contains(err.Error(), "not an httprr trace") {
 		t.Errorf("did not diagnose invalid httprr trace: err = %v", err)
 	}
 
 	// corrupt httprr trace
-	dir := t.TempDir()
-	os.WriteFile(dir+"/rr", []byte("httprr trace v1\ngarbage\n"), 0666)
-	if _, err := Open(dir+"/rr", nil); err == nil || !strings.Contains(err.Error(), "corrupt httprr trace") {
+	corruptTraceFile := makeTmpFile()
+	os.WriteFile(corruptTraceFile, []byte("httprr trace v1\ngarbage\n"), 0666)
+	if _, err := Open(corruptTraceFile, nil); err == nil || !strings.Contains(err.Error(), "corrupt httprr trace") {
 		t.Errorf("did not diagnose invalid httprr trace: err = %v", err)
 	}
 
@@ -200,7 +212,7 @@ func TestErrors(t *testing.T) {
 	}
 
 	// error reading body
-	rr, err := create(os.DevNull, nil)
+	rr, err := create(makeTmpFile(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -216,7 +228,7 @@ func TestErrors(t *testing.T) {
 	rr.Close()
 
 	// error during rkey.WriteProxy
-	rr, err = create(os.DevNull, nil)
+	rr, err = create(makeTmpFile(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -231,7 +243,7 @@ func TestErrors(t *testing.T) {
 	rr.Close()
 
 	// error during resp.Write
-	rr, err = create(os.DevNull, badRespTransport{})
+	rr, err = create(makeTmpFile(), badRespTransport{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -243,7 +255,7 @@ func TestErrors(t *testing.T) {
 	// error during Write logging request
 	srv := httptest.NewServer(http.HandlerFunc(always555))
 	defer srv.Close()
-	rr, err = create(os.DevNull, http.DefaultTransport)
+	rr, err = create(makeTmpFile(), http.DefaultTransport)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -261,25 +273,28 @@ func TestErrors(t *testing.T) {
 	}
 
 	// error during RoundTrip
-	rr, err = create(os.DevNull, errTransport{errors.New("TRANSPORT ERROR")})
+	rr, err = create(makeTmpFile(), errTransport{errors.New("TRANSPORT ERROR")})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err := rr.Client().Get(srv.URL); err == nil || !strings.Contains(err.Error(), "TRANSPORT ERROR") {
 		t.Errorf("did not report failure from transport: err = %v", err)
 	}
+	rr.Close()
 
 	// error during http.ReadResponse: trace is structurally okay but has malformed response inside
-	if err := os.WriteFile(dir+"/rr", badResponseTrace, 0666); err != nil {
+	tmpFile := makeTmpFile()
+	if err := os.WriteFile(tmpFile, badResponseTrace, 0666); err != nil {
 		t.Fatal(err)
 	}
-	rr, err = Open(dir+"/rr", nil)
+	rr, err = Open(tmpFile, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err := rr.Client().Get("http://127.0.0.1/myrequest"); err == nil || !strings.Contains(err.Error(), "corrupt httprr trace:") {
 		t.Errorf("did not diagnose invalid httprr trace: err = %v", err)
 	}
+	rr.Close()
 }
 
 type errTransport struct{ err error }
