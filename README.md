@@ -291,8 +291,7 @@ Right now, it runs on a local workstation, using Google's Gemini LLM,
 and an in-memory vector database.
 
 We plan to add support for a variety of other options, including
-[Ollama](https://ollama.com/) for local LLMs
-and [Google Cloud Firestore](https://firebase.google.com/docs/firestore)
+[Google Cloud Firestore](https://firebase.google.com/docs/firestore)
 for key-value storage and vector database.
 Firestore in particular will make it easy to run Gaby on hosted platforms
 like [Cloud Run](https://cloud.google.com/run).

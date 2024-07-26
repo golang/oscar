@@ -112,8 +112,8 @@
 //
 // The [llm.Embedder] interface abstracts an LLM that can take a collection
 // of documents and return their vector embeddings, each of type [llm.Vector].
-// The only real implementation to date is [golang.org/x/oscar/internal/gemini].
-// It would be good to add an offline implementation using Ollama as well.
+// The two implementations to date are [golang.org/x/oscar/internal/gemini]
+// and [golang.org/x/oscar/internal/ollama].
 //
 // For tests that need an embedder but don't care about the quality of
 // the embeddings, [llm.QuoteEmbedder] copies a prefix of the text
