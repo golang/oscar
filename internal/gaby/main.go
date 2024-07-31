@@ -379,9 +379,12 @@ import (
 	"os"
 	"time"
 
+	"cloud.google.com/go/compute/metadata"
 	"golang.org/x/oscar/internal/commentfix"
 	"golang.org/x/oscar/internal/docs"
 	"golang.org/x/oscar/internal/embeddocs"
+	"golang.org/x/oscar/internal/gcp/firestore"
+	"golang.org/x/oscar/internal/gcp/gcphandler"
 	"golang.org/x/oscar/internal/gemini"
 	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/githubdocs"
@@ -397,7 +400,14 @@ var searchMode = flag.Bool("search", false, "run in interactive search mode")
 func main() {
 	flag.Parse()
 	ctx := context.Background()
+	if onCloudRun() {
+		runOnCloudRun(ctx)
+	} else {
+		runLocally(ctx)
+	}
+}
 
+func runLocally(ctx context.Context) {
 	lg := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 
 	sdb := secret.Netrc()
@@ -463,4 +473,44 @@ func main() {
 		rp.Run(ctx)
 		time.Sleep(2 * time.Minute)
 	}
+}
+
+func runOnCloudRun(ctx context.Context) {
+	var logLevel slog.LevelVar // defaults to Info
+	slog.SetDefault(slog.New(gcphandler.New(&logLevel)))
+
+	projectID, err := metadata.ProjectIDWithContext(ctx)
+	if err != nil {
+		log.Fatalf("metadata project ID: %v", err)
+	}
+	if projectID == "" {
+		log.Fatal("project ID from metadata is empty")
+	}
+
+	firestoreDB := os.Getenv("OSCAR_FIRESTORE_DB")
+	if firestoreDB == "" {
+		log.Fatal("empty OSCAR_FIRESTORE_DB env var")
+	}
+
+	slog.Info("Oscar starting",
+		"project", projectID,
+		"FirestoreDB", firestoreDB,
+		"Cloud Run service", os.Getenv("K_SERVICE"))
+
+	db, err := firestore.NewDB(ctx, slog.Default(), projectID, firestoreDB)
+
+	// TODO(jba): remaining setup with the db.
+	_ = db
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "Oscar\n")
+		fmt.Fprintf(w, "project %s, firestore DB %s\n", projectID, firestoreDB)
+	})
+	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), nil))
+}
+
+// onCloudRun reports whether the current process is running on Cloud Run.
+func onCloudRun() bool {
+	// There is no definitive test, so look for some environment variables specified in
+	// https://cloud.google.com/run/docs/container-contract#services-env-vars.
+	return os.Getenv("K_SERVICE") != "" && os.Getenv("K_REVISION") != ""
 }
