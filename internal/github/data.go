@@ -139,7 +139,7 @@ func (c *Client) decodeEvent(t *timed.Entry) *Event {
 	return &e
 }
 
-// EventWatcher returns a new [storage.Watcher] with the given name.
+// EventWatcher returns a new [timed.Watcher] with the given name.
 // It picks up where any previous Watcher of the same name left off.
 func (c *Client) EventWatcher(name string) *timed.Watcher[*Event] {
 	return timed.NewWatcher(c.db, name, eventKind, c.decodeEvent)
