@@ -16,18 +16,18 @@ import (
 
 	"cloud.google.com/go/firestore"
 	"golang.org/x/oscar/internal/storage"
-	"google.golang.org/api/option"
 )
 
-// DB implements [storage.DB].
+// DB is a connection to a Firestore database.
+// It implements [storage.DB].
 type DB struct {
 	*fstore
 	uid int64 // unique ID, to identify lock owners
 }
 
-// NewDB constructs a [DB].
-func NewDB(ctx context.Context, dbopts *DBOptions, copts ...option.ClientOption) (*DB, error) {
-	fs, err := newFstore(ctx, dbopts, copts)
+// NewDB constructs a [DB] with the given [DBOptions].
+func NewDB(ctx context.Context, dbopts *DBOptions) (*DB, error) {
+	fs, err := newFstore(ctx, dbopts)
 	if err != nil {
 		return nil, err
 	}
@@ -48,6 +48,13 @@ var (
 )
 
 // Lock implements [storage.DB.Lock].
+// Locks are stored as documents in the "locks" collection of the database.
+// If the document exists its content is the UID of the [DB] that holds it,
+// as set in [NewDB].
+// It is an error for a DB to unlock a lock that it doesn't own.
+// To avoid deadlock due to failed processes, locks time out after a reasonable
+// period of time.
+// There is no way to change the timeout value, and no way to renew a lease on a lock.
 func (db *DB) Lock(name string) {
 	// Wait for the lock in a separate function to avoid defers inside a loop, consuming
 	// memory on each iteration.
@@ -146,7 +153,7 @@ func (db *DB) deleteLock(tx *firestore.Transaction, name string) {
 
 // Set implements [storage.DB.Set].
 func (db *DB) Set(key, val []byte) {
-	db.set(nil, valueCollection, encodeKey(key), encodeValue(val))
+	db.set(nil, valueCollection, encodeKey(key), value{val})
 }
 
 // Get implements [storage.DB.Get].
@@ -156,7 +163,7 @@ func (db *DB) Get(key []byte) ([]byte, bool) {
 	if ds == nil {
 		return nil, false
 	}
-	return decodeValue(ds.Data()), true
+	return dataTo[value](db.fstore, ds).V, true
 }
 
 // Delete implements [storage.DB.Delete].
@@ -173,7 +180,7 @@ func (db *DB) DeleteRange(start, end []byte) {
 func (db *DB) Scan(start, end []byte) iter.Seq2[[]byte, func() []byte] {
 	return func(yield func(key []byte, valf func() []byte) bool) {
 		for ds := range db.scan(nil, valueCollection, encodeKey(start), encodeKey(end)) {
-			if !yield(decodeKey(ds.Ref.ID), func() []byte { return decodeValue(ds.Data()) }) {
+			if !yield(decodeKey(ds.Ref.ID), func() []byte { return dataTo[value](db.fstore, ds).V }) {
 				return
 			}
 		}
@@ -201,8 +208,8 @@ func (b *dbBatch) DeleteRange(start, end []byte) {
 
 // Set implements [storage.Batch.Set].
 func (b *dbBatch) Set(key, val []byte) {
-	// TODO(jba): account for size of encoded map.
-	b.b.set(encodeKey(key), encodeValue(slices.Clone(val)), len(val))
+	// TODO(jba): account for size of encoded struct.
+	b.b.set(encodeKey(key), value{slices.Clone(val)}, len(val))
 }
 
 // MaybeApply implements [storage.Batch.MaybeApply].
@@ -229,12 +236,8 @@ func decodeKey(s string) []byte {
 	return b
 }
 
-// encodeValue encodes v in a format acceptable to Firestore.
+// A value is a [DB] value as a Firestore document.
 // (Firestore values must be maps or structs.)
-func encodeValue(v []byte) any {
-	return map[string][]byte{"v": v}
-}
-
-func decodeValue(m map[string]any) []byte {
-	return m["v"].([]byte)
+type value struct {
+	V []byte
 }

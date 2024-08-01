@@ -52,7 +52,7 @@ func TestDB(t *testing.T) {
 		}
 	}
 
-	db, err := NewDB(ctx, &DBOptions{ProjectID: fsProject, Database: fsDatabase}, rr.ClientOptions()...)
+	db, err := NewDB(ctx, &DBOptions{ProjectID: fsProject, Database: fsDatabase, ClientOptions: rr.ClientOptions()})
 	if err != nil {
 		t.Fatal(err)
 	}

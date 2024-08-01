@@ -7,10 +7,16 @@
 //
 // A brief introduction to Firestore: it is a document DB with hierarchical keys.
 // A key is a string of the form "coll1/id1/coll2/id2/.../collN/idN",
-// where the colls are called "collections". The values are called "documents".
+// where the colls are called "collections" and the values are called "documents".
 // Each document is a set of key-value pairs. In Go, a document is represented
-// by a map[string]any. The Go Firestore client provides convenience functions for
-// converting documents to and from structs.
+// by a map[string]any, or a struct with exported fields:
+// the Go Firestore client provides convenience functions for converting documents to and from structs.
+//
+// The two database implementations in this package use three collections:
+//   - The "locks" collection holds documents representing the locks used by [DB.Lock] and [DB.Unlock].
+//   - The "values" collection holds the key-value pairs for [DB]. Keys are byte slices but document
+//     names are strings. We hex-encode the keys to obtain strings with the same ordering.
+//   - The "vectors" collection holds embeddding vectors for [VectorDB].
 //
 // [Firestore]: https://cloud.google.com/firestore
 package firestore
@@ -31,9 +37,10 @@ import (
 
 // DBOptions is the configuration for a [DB] or [VectorDB].
 type DBOptions struct {
-	ProjectID string
-	Database  string
-	Logger    *slog.Logger
+	ProjectID     string // if empty, attempt to detect the project
+	Database      string // if empty, use the default database
+	Logger        *slog.Logger
+	ClientOptions []option.ClientOption // options to the Firestore client
 }
 
 // fstore implements operations common to both [storage.DB] and [storage.VectorDB].
@@ -42,7 +49,7 @@ type fstore struct {
 	slog   *slog.Logger
 }
 
-func newFstore(ctx context.Context, dbopts *DBOptions, copts []option.ClientOption) (*fstore, error) {
+func newFstore(ctx context.Context, dbopts *DBOptions) (*fstore, error) {
 	if dbopts == nil {
 		dbopts = &DBOptions{}
 	}
@@ -55,8 +62,13 @@ func newFstore(ctx context.Context, dbopts *DBOptions, copts []option.ClientOpti
 	if dbopts.Logger == nil {
 		dbopts.Logger = slog.Default()
 	}
-	client, err := firestore.NewClientWithDatabase(ctx, dbopts.ProjectID, dbopts.Database, copts...)
+	client, err := firestore.NewClientWithDatabase(ctx, dbopts.ProjectID, dbopts.Database, dbopts.ClientOptions...)
 	if err != nil {
+		return nil, err
+	}
+	// The client doesn't actually connect until something is done, so get a document
+	// to see if there's a problem.
+	if _, err := client.Doc("c/d").Get(ctx); err != nil && !isNotFound(err) {
 		return nil, err
 	}
 	return &fstore{client: client, slog: dbopts.Logger}, nil

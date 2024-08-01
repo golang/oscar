@@ -1,5 +1,33 @@
 RPCReTxt1
 "go-discovery-exp,"
+79
+kind: CREATE_STREAM
+method: "/google.firestore.v1.Firestore/BatchGetDocuments"
+252
+kind: SEND
+message: {
+  [type.googleapis.com/google.firestore.v1.BatchGetDocumentsRequest]: {
+    database: "projects/go-discovery-exp/databases/(default)"
+    documents: "projects/go-discovery-exp/databases/(default)/documents/c/d"
+  }
+}
+ref_index: 1
+261
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.BatchGetDocumentsResponse]: {
+    missing: "projects/go-discovery-exp/databases/(default)/documents/c/d"
+    read_time: {
+      seconds: 1722471840
+      nanos: 129116000
+    }
+  }
+}
+ref_index: 1
+39
+kind: RECV
+is_error: true
+ref_index: 1
 443
 kind: REQUEST
 method: "/google.firestore.v1.Firestore/Commit"
@@ -10,7 +38,7 @@ message: {
       update: {
         name: "projects/go-discovery-exp/databases/(default)/documents/values/6b6579"
         fields: {
-          key: "v"
+          key: "V"
           value: {
             bytes_value: "value"
           }
@@ -25,17 +53,17 @@ message: {
   [type.googleapis.com/google.firestore.v1.CommitResponse]: {
     write_results: {
       update_time: {
-        seconds: 1721655326
-        nanos: 448583000
+        seconds: 1722471840
+        nanos: 437072000
       }
     }
     commit_time: {
-      seconds: 1721655326
-      nanos: 448583000
+      seconds: 1722471840
+      nanos: 437072000
     }
   }
 }
-ref_index: 1
+ref_index: 5
 79
 kind: CREATE_STREAM
 method: "/google.firestore.v1.Firestore/BatchGetDocuments"
@@ -47,7 +75,7 @@ message: {
     documents: "projects/go-discovery-exp/databases/(default)/documents/values/6b6579"
   }
 }
-ref_index: 3
+ref_index: 7
 552
 kind: RECV
 message: {
@@ -55,35 +83,35 @@ message: {
     found: {
       name: "projects/go-discovery-exp/databases/(default)/documents/values/6b6579"
       fields: {
-        key: "v"
+        key: "V"
         value: {
           bytes_value: "value"
         }
       }
       create_time: {
-        seconds: 1721655326
-        nanos: 448583000
+        seconds: 1722471840
+        nanos: 437072000
       }
       update_time: {
-        seconds: 1721655326
-        nanos: 448583000
+        seconds: 1722471840
+        nanos: 437072000
       }
     }
     read_time: {
-      seconds: 1721655326
-      nanos: 448583000
+      seconds: 1722471840
+      nanos: 437072000
     }
   }
 }
-ref_index: 3
+ref_index: 7
 39
 kind: RECV
 is_error: true
-ref_index: 3
+ref_index: 7
 79
 kind: CREATE_STREAM
 method: "/google.firestore.v1.Firestore/BatchGetDocuments"
-270
+271
 kind: SEND
 message: {
   [type.googleapis.com/google.firestore.v1.BatchGetDocumentsRequest]: {
@@ -91,23 +119,23 @@ message: {
     documents: "projects/go-discovery-exp/databases/(default)/documents/values/6d697373696e67"
   }
 }
-ref_index: 7
-279
+ref_index: 11
+280
 kind: RECV
 message: {
   [type.googleapis.com/google.firestore.v1.BatchGetDocumentsResponse]: {
     missing: "projects/go-discovery-exp/databases/(default)/documents/values/6d697373696e67"
     read_time: {
-      seconds: 1721655326
-      nanos: 756828000
+      seconds: 1722471840
+      nanos: 721386000
     }
   }
 }
-ref_index: 7
-39
+ref_index: 11
+40
 kind: RECV
 is_error: true
-ref_index: 7
+ref_index: 11
 308
 kind: REQUEST
 method: "/google.firestore.v1.Firestore/Commit"
@@ -125,12 +153,12 @@ message: {
   [type.googleapis.com/google.firestore.v1.CommitResponse]: {
     write_results: {}
     commit_time: {
-      seconds: 1721655326
-      nanos: 859376000
+      seconds: 1722471840
+      nanos: 852230000
     }
   }
 }
-ref_index: 11
+ref_index: 15
 79
 kind: CREATE_STREAM
 method: "/google.firestore.v1.Firestore/BatchGetDocuments"
@@ -142,23 +170,23 @@ message: {
     documents: "projects/go-discovery-exp/databases/(default)/documents/values/6b6579"
   }
 }
-ref_index: 13
+ref_index: 17
 272
 kind: RECV
 message: {
   [type.googleapis.com/google.firestore.v1.BatchGetDocumentsResponse]: {
     missing: "projects/go-discovery-exp/databases/(default)/documents/values/6b6579"
     read_time: {
-      seconds: 1721655326
-      nanos: 944912000
+      seconds: 1722471840
+      nanos: 852230000
     }
   }
 }
-ref_index: 13
+ref_index: 17
 40
 kind: RECV
 is_error: true
-ref_index: 13
+ref_index: 17
 222
 kind: REQUEST
 method: "/google.firestore.v1.Firestore/BeginTransaction"
@@ -167,15 +195,15 @@ message: {
     database: "projects/go-discovery-exp/databases/(default)"
   }
 }
-414
+398
 kind: RESPONSE
 message: {
   [type.googleapis.com/google.firestore.v1.BeginTransactionResponse]: {
-    transaction: "\x11\xc7b\xd1~RZ5\xd4\"Y\x00\xd4u\xc8\xcdJ\xaf7\xa7\x8b\x0f`\xc7\x12!sG\xae\xacC\xab\x9dh\x92\x94\x87]\xc7\xfe\x15\x07jb\x00l\x8d\x19'2\xfd\x88S\x85\xf9\x13\x84{\x12\xc6\xd5\x18\x80\xc4\"\xa7d\xf8z\xae\xf1\xfe$'V\x15m\xc6ia\x07V\x07 \x8e<\xf3\xba*\xb0*\xeb\x83Yr\x85\xa5Ab\xc9"
+    transaction: "\x11\x8e\xe1\xc8\xebD\x8d\xb6\x87\"Y\x00\xd4u\xc8͊\x0b\xe4A\x0f\xd8сj\xdbY\xac\xa0\xc1LiA]\xf0Pp\xb2\x10\x96\x193$\x9av\xfc\x84\xb92G-b\x87\xf5_\x8b\x11n\xbb\xcf\xff6\xdc Q\x96\xe3W\xb7_u\xd5U\xd8ӽ\x15\x04\x92?66ҷ\xbbz\xf08\xe4\xde\x1d\xdd\xcazO\xc8~\x0fj:"
   }
 }
-ref_index: 17
-2848
+ref_index: 21
+2832
 kind: REQUEST
 method: "/google.firestore.v1.Firestore/Commit"
 message: {
@@ -185,7 +213,7 @@ message: {
       update: {
         name: "projects/go-discovery-exp/databases/(default)/documents/values/3000"
         fields: {
-          key: "v"
+          key: "V"
           value: {
             bytes_value: "0"
           }
@@ -196,7 +224,7 @@ message: {
       update: {
         name: "projects/go-discovery-exp/databases/(default)/documents/values/3001"
         fields: {
-          key: "v"
+          key: "V"
           value: {
             bytes_value: "1"
           }
@@ -207,7 +235,7 @@ message: {
       update: {
         name: "projects/go-discovery-exp/databases/(default)/documents/values/3002"
         fields: {
-          key: "v"
+          key: "V"
           value: {
             bytes_value: "2"
           }
@@ -218,7 +246,7 @@ message: {
       update: {
         name: "projects/go-discovery-exp/databases/(default)/documents/values/3003"
         fields: {
-          key: "v"
+          key: "V"
           value: {
             bytes_value: "3"
           }
@@ -229,7 +257,7 @@ message: {
       update: {
         name: "projects/go-discovery-exp/databases/(default)/documents/values/3004"
         fields: {
-          key: "v"
+          key: "V"
           value: {
             bytes_value: "4"
           }
@@ -240,7 +268,7 @@ message: {
       update: {
         name: "projects/go-discovery-exp/databases/(default)/documents/values/3005"
         fields: {
-          key: "v"
+          key: "V"
           value: {
             bytes_value: "5"
           }
@@ -251,7 +279,7 @@ message: {
       update: {
         name: "projects/go-discovery-exp/databases/(default)/documents/values/3006"
         fields: {
-          key: "v"
+          key: "V"
           value: {
             bytes_value: "6"
           }
@@ -262,7 +290,7 @@ message: {
       update: {
         name: "projects/go-discovery-exp/databases/(default)/documents/values/3007"
         fields: {
-          key: "v"
+          key: "V"
           value: {
             bytes_value: "7"
           }
@@ -273,7 +301,7 @@ message: {
       update: {
         name: "projects/go-discovery-exp/databases/(default)/documents/values/3008"
         fields: {
-          key: "v"
+          key: "V"
           value: {
             bytes_value: "8"
           }
@@ -284,87 +312,87 @@ message: {
       update: {
         name: "projects/go-discovery-exp/databases/(default)/documents/values/3009"
         fields: {
-          key: "v"
+          key: "V"
           value: {
             bytes_value: "9"
           }
         }
       }
     }
-    transaction: "\x11\xc7b\xd1~RZ5\xd4\"Y\x00\xd4u\xc8\xcdJ\xaf7\xa7\x8b\x0f`\xc7\x12!sG\xae\xacC\xab\x9dh\x92\x94\x87]\xc7\xfe\x15\x07jb\x00l\x8d\x19'2\xfd\x88S\x85\xf9\x13\x84{\x12\xc6\xd5\x18\x80\xc4\"\xa7d\xf8z\xae\xf1\xfe$'V\x15m\xc6ia\x07V\x07 \x8e<\xf3\xba*\xb0*\xeb\x83Yr\x85\xa5Ab\xc9"
+    transaction: "\x11\x8e\xe1\xc8\xebD\x8d\xb6\x87\"Y\x00\xd4u\xc8͊\x0b\xe4A\x0f\xd8сj\xdbY\xac\xa0\xc1LiA]\xf0Pp\xb2\x10\x96\x193$\x9av\xfc\x84\xb92G-b\x87\xf5_\x8b\x11n\xbb\xcf\xff6\xdc Q\x96\xe3W\xb7_u\xd5U\xd8ӽ\x15\x04\x92?66ҷ\xbbz\xf08\xe4\xde\x1d\xdd\xcazO\xc8~\x0fj:"
   }
 }
-1271
+1272
 kind: RESPONSE
 message: {
   [type.googleapis.com/google.firestore.v1.CommitResponse]: {
     write_results: {
       update_time: {
-        seconds: 1721655327
-        nanos: 222942000
+        seconds: 1722471841
+        nanos: 255428000
       }
     }
     write_results: {
       update_time: {
-        seconds: 1721655327
-        nanos: 222942000
+        seconds: 1722471841
+        nanos: 255428000
       }
     }
     write_results: {
       update_time: {
-        seconds: 1721655327
-        nanos: 222942000
+        seconds: 1722471841
+        nanos: 255428000
       }
     }
     write_results: {
       update_time: {
-        seconds: 1721655327
-        nanos: 222942000
+        seconds: 1722471841
+        nanos: 255428000
       }
     }
     write_results: {
       update_time: {
-        seconds: 1721655327
-        nanos: 222942000
+        seconds: 1722471841
+        nanos: 255428000
       }
     }
     write_results: {
       update_time: {
-        seconds: 1721655327
-        nanos: 222942000
+        seconds: 1722471841
+        nanos: 255428000
       }
     }
     write_results: {
       update_time: {
-        seconds: 1721655264
-        nanos: 64308000
+        seconds: 1722471841
+        nanos: 255428000
       }
     }
     write_results: {
       update_time: {
-        seconds: 1721655327
-        nanos: 222942000
+        seconds: 1722471841
+        nanos: 255428000
       }
     }
     write_results: {
       update_time: {
-        seconds: 1721171630
-        nanos: 112889000
+        seconds: 1722471841
+        nanos: 255428000
       }
     }
     write_results: {
       update_time: {
-        seconds: 1721171630
-        nanos: 112889000
+        seconds: 1722471841
+        nanos: 255428000
       }
     }
     commit_time: {
-      seconds: 1721655327
-      nanos: 222942000
+      seconds: 1722471841
+      nanos: 255428000
     }
   }
 }
-ref_index: 19
+ref_index: 23
 70
 kind: CREATE_STREAM
 method: "/google.firestore.v1.Firestore/RunQuery"
@@ -397,7 +425,7 @@ message: {
     }
   }
 }
-ref_index: 21
+ref_index: 25
 541
 kind: RECV
 message: {
@@ -405,27 +433,27 @@ message: {
     document: {
       name: "projects/go-discovery-exp/databases/(default)/documents/values/3003"
       fields: {
-        key: "v"
+        key: "V"
         value: {
           bytes_value: "3"
         }
       }
       create_time: {
-        seconds: 1721655327
-        nanos: 222942000
+        seconds: 1722471841
+        nanos: 255428000
       }
       update_time: {
-        seconds: 1721655327
-        nanos: 222942000
+        seconds: 1722471841
+        nanos: 255428000
       }
     }
     read_time: {
-      seconds: 1721655327
-      nanos: 322624000
+      seconds: 1722471841
+      nanos: 386438000
     }
   }
 }
-ref_index: 21
+ref_index: 25
 541
 kind: RECV
 message: {
@@ -433,27 +461,27 @@ message: {
     document: {
       name: "projects/go-discovery-exp/databases/(default)/documents/values/3004"
       fields: {
-        key: "v"
+        key: "V"
         value: {
           bytes_value: "4"
         }
       }
       create_time: {
-        seconds: 1721655327
-        nanos: 222942000
+        seconds: 1722471841
+        nanos: 255428000
       }
       update_time: {
-        seconds: 1721655327
-        nanos: 222942000
+        seconds: 1722471841
+        nanos: 255428000
       }
     }
     read_time: {
-      seconds: 1721655327
-      nanos: 322624000
+      seconds: 1722471841
+      nanos: 386438000
     }
   }
 }
-ref_index: 21
+ref_index: 25
 541
 kind: RECV
 message: {
@@ -461,59 +489,59 @@ message: {
     document: {
       name: "projects/go-discovery-exp/databases/(default)/documents/values/3005"
       fields: {
-        key: "v"
+        key: "V"
         value: {
           bytes_value: "5"
         }
       }
       create_time: {
-        seconds: 1721655327
-        nanos: 222942000
+        seconds: 1722471841
+        nanos: 255428000
       }
       update_time: {
-        seconds: 1721655327
-        nanos: 222942000
+        seconds: 1722471841
+        nanos: 255428000
       }
     }
     read_time: {
-      seconds: 1721655327
-      nanos: 322624000
+      seconds: 1722471841
+      nanos: 386438000
     }
   }
 }
-ref_index: 21
-539
+ref_index: 25
+541
 kind: RECV
 message: {
   [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
     document: {
       name: "projects/go-discovery-exp/databases/(default)/documents/values/3006"
       fields: {
-        key: "v"
+        key: "V"
         value: {
           bytes_value: "6"
         }
       }
       create_time: {
-        seconds: 1721655264
-        nanos: 64308000
+        seconds: 1721939400
+        nanos: 535835000
       }
       update_time: {
-        seconds: 1721655264
-        nanos: 64308000
+        seconds: 1722471841
+        nanos: 255428000
       }
     }
     read_time: {
-      seconds: 1721655327
-      nanos: 322624000
+      seconds: 1722471841
+      nanos: 386438000
     }
   }
 }
-ref_index: 21
+ref_index: 25
 40
 kind: RECV
 is_error: true
-ref_index: 21
+ref_index: 25
 70
 kind: CREATE_STREAM
 method: "/google.firestore.v1.Firestore/RunQuery"
@@ -546,7 +574,7 @@ message: {
     }
   }
 }
-ref_index: 28
+ref_index: 32
 541
 kind: RECV
 message: {
@@ -554,27 +582,27 @@ message: {
     document: {
       name: "projects/go-discovery-exp/databases/(default)/documents/values/3003"
       fields: {
-        key: "v"
+        key: "V"
         value: {
           bytes_value: "3"
         }
       }
       create_time: {
-        seconds: 1721655327
-        nanos: 222942000
+        seconds: 1722471841
+        nanos: 255428000
       }
       update_time: {
-        seconds: 1721655327
-        nanos: 222942000
+        seconds: 1722471841
+        nanos: 255428000
       }
     }
     read_time: {
-      seconds: 1721655327
-      nanos: 565710000
+      seconds: 1722471841
+      nanos: 519729000
     }
   }
 }
-ref_index: 28
+ref_index: 32
 541
 kind: RECV
 message: {
@@ -582,27 +610,27 @@ message: {
     document: {
       name: "projects/go-discovery-exp/databases/(default)/documents/values/3004"
       fields: {
-        key: "v"
+        key: "V"
         value: {
           bytes_value: "4"
         }
       }
       create_time: {
-        seconds: 1721655327
-        nanos: 222942000
+        seconds: 1722471841
+        nanos: 255428000
       }
       update_time: {
-        seconds: 1721655327
-        nanos: 222942000
+        seconds: 1722471841
+        nanos: 255428000
       }
     }
     read_time: {
-      seconds: 1721655327
-      nanos: 565710000
+      seconds: 1722471841
+      nanos: 519729000
     }
   }
 }
-ref_index: 28
+ref_index: 32
 541
 kind: RECV
 message: {
@@ -610,27 +638,27 @@ message: {
     document: {
       name: "projects/go-discovery-exp/databases/(default)/documents/values/3005"
       fields: {
-        key: "v"
+        key: "V"
         value: {
           bytes_value: "5"
         }
       }
       create_time: {
-        seconds: 1721655327
-        nanos: 222942000
+        seconds: 1722471841
+        nanos: 255428000
       }
       update_time: {
-        seconds: 1721655327
-        nanos: 222942000
+        seconds: 1722471841
+        nanos: 255428000
       }
     }
     read_time: {
-      seconds: 1721655327
-      nanos: 565710000
+      seconds: 1722471841
+      nanos: 519729000
     }
   }
 }
-ref_index: 28
+ref_index: 32
 70
 kind: CREATE_STREAM
 method: "/google.firestore.v1.Firestore/RunQuery"
@@ -663,7 +691,7 @@ message: {
     }
   }
 }
-ref_index: 33
+ref_index: 37
 541
 kind: RECV
 message: {
@@ -671,27 +699,27 @@ message: {
     document: {
       name: "projects/go-discovery-exp/databases/(default)/documents/values/3004"
       fields: {
-        key: "v"
+        key: "V"
         value: {
           bytes_value: "4"
         }
       }
       create_time: {
-        seconds: 1721655327
-        nanos: 222942000
+        seconds: 1722471841
+        nanos: 255428000
       }
       update_time: {
-        seconds: 1721655327
-        nanos: 222942000
+        seconds: 1722471841
+        nanos: 255428000
       }
     }
     read_time: {
-      seconds: 1721655327
-      nanos: 657343000
+      seconds: 1722471841
+      nanos: 684584000
     }
   }
 }
-ref_index: 33
+ref_index: 37
 541
 kind: RECV
 message: {
@@ -699,55 +727,55 @@ message: {
     document: {
       name: "projects/go-discovery-exp/databases/(default)/documents/values/3005"
       fields: {
-        key: "v"
+        key: "V"
         value: {
           bytes_value: "5"
         }
       }
       create_time: {
-        seconds: 1721655327
-        nanos: 222942000
+        seconds: 1722471841
+        nanos: 255428000
       }
       update_time: {
-        seconds: 1721655327
-        nanos: 222942000
+        seconds: 1722471841
+        nanos: 255428000
       }
     }
     read_time: {
-      seconds: 1721655327
-      nanos: 657343000
+      seconds: 1722471841
+      nanos: 684584000
     }
   }
 }
-ref_index: 33
-539
+ref_index: 37
+541
 kind: RECV
 message: {
   [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
     document: {
       name: "projects/go-discovery-exp/databases/(default)/documents/values/3006"
       fields: {
-        key: "v"
+        key: "V"
         value: {
           bytes_value: "6"
         }
       }
       create_time: {
-        seconds: 1721655264
-        nanos: 64308000
+        seconds: 1721939400
+        nanos: 535835000
       }
       update_time: {
-        seconds: 1721655264
-        nanos: 64308000
+        seconds: 1722471841
+        nanos: 255428000
       }
     }
     read_time: {
-      seconds: 1721655327
-      nanos: 657343000
+      seconds: 1722471841
+      nanos: 684584000
     }
   }
 }
-ref_index: 33
+ref_index: 37
 541
 kind: RECV
 message: {
@@ -755,31 +783,31 @@ message: {
     document: {
       name: "projects/go-discovery-exp/databases/(default)/documents/values/3007"
       fields: {
-        key: "v"
+        key: "V"
         value: {
           bytes_value: "7"
         }
       }
       create_time: {
-        seconds: 1721655327
-        nanos: 222942000
+        seconds: 1722471841
+        nanos: 255428000
       }
       update_time: {
-        seconds: 1721655327
-        nanos: 222942000
+        seconds: 1722471841
+        nanos: 255428000
       }
     }
     read_time: {
-      seconds: 1721655327
-      nanos: 657343000
+      seconds: 1722471841
+      nanos: 684584000
     }
   }
 }
-ref_index: 33
+ref_index: 37
 40
 kind: RECV
 is_error: true
-ref_index: 33
+ref_index: 37
 626
 kind: REQUEST
 method: "/google.firestore.v1.Firestore/BatchWrite"
@@ -814,7 +842,7 @@ message: {
     status: {}
   }
 }
-ref_index: 40
+ref_index: 44
 70
 kind: CREATE_STREAM
 method: "/google.firestore.v1.Firestore/RunQuery"
@@ -847,7 +875,7 @@ message: {
     }
   }
 }
-ref_index: 42
+ref_index: 46
 541
 kind: RECV
 message: {
@@ -855,27 +883,27 @@ message: {
     document: {
       name: "projects/go-discovery-exp/databases/(default)/documents/values/3000"
       fields: {
-        key: "v"
+        key: "V"
         value: {
           bytes_value: "0"
         }
       }
       create_time: {
-        seconds: 1721655327
-        nanos: 222942000
+        seconds: 1722471841
+        nanos: 255428000
       }
       update_time: {
-        seconds: 1721655327
-        nanos: 222942000
+        seconds: 1722471841
+        nanos: 255428000
       }
     }
     read_time: {
-      seconds: 1721655327
-      nanos: 903250000
+      seconds: 1722471841
+      nanos: 944215000
     }
   }
 }
-ref_index: 42
+ref_index: 46
 541
 kind: RECV
 message: {
@@ -883,27 +911,27 @@ message: {
     document: {
       name: "projects/go-discovery-exp/databases/(default)/documents/values/3001"
       fields: {
-        key: "v"
+        key: "V"
         value: {
           bytes_value: "1"
         }
       }
       create_time: {
-        seconds: 1721655327
-        nanos: 222942000
+        seconds: 1722471841
+        nanos: 255428000
       }
       update_time: {
-        seconds: 1721655327
-        nanos: 222942000
+        seconds: 1722471841
+        nanos: 255428000
       }
     }
     read_time: {
-      seconds: 1721655327
-      nanos: 903250000
+      seconds: 1722471841
+      nanos: 944215000
     }
   }
 }
-ref_index: 42
+ref_index: 46
 541
 kind: RECV
 message: {
@@ -911,27 +939,27 @@ message: {
     document: {
       name: "projects/go-discovery-exp/databases/(default)/documents/values/3002"
       fields: {
-        key: "v"
+        key: "V"
         value: {
           bytes_value: "2"
         }
       }
       create_time: {
-        seconds: 1721655327
-        nanos: 222942000
+        seconds: 1722471841
+        nanos: 255428000
       }
       update_time: {
-        seconds: 1721655327
-        nanos: 222942000
+        seconds: 1722471841
+        nanos: 255428000
       }
     }
     read_time: {
-      seconds: 1721655327
-      nanos: 903250000
+      seconds: 1722471841
+      nanos: 944215000
     }
   }
 }
-ref_index: 42
+ref_index: 46
 541
 kind: RECV
 message: {
@@ -939,27 +967,27 @@ message: {
     document: {
       name: "projects/go-discovery-exp/databases/(default)/documents/values/3003"
       fields: {
-        key: "v"
+        key: "V"
         value: {
           bytes_value: "3"
         }
       }
       create_time: {
-        seconds: 1721655327
-        nanos: 222942000
+        seconds: 1722471841
+        nanos: 255428000
       }
       update_time: {
-        seconds: 1721655327
-        nanos: 222942000
+        seconds: 1722471841
+        nanos: 255428000
       }
     }
     read_time: {
-      seconds: 1721655327
-      nanos: 903250000
+      seconds: 1722471841
+      nanos: 944215000
     }
   }
 }
-ref_index: 42
+ref_index: 46
 541
 kind: RECV
 message: {
@@ -967,7 +995,7 @@ message: {
     document: {
       name: "projects/go-discovery-exp/databases/(default)/documents/values/3008"
       fields: {
-        key: "v"
+        key: "V"
         value: {
           bytes_value: "8"
         }
@@ -977,17 +1005,17 @@ message: {
         nanos: 112889000
       }
       update_time: {
-        seconds: 1721171630
-        nanos: 112889000
+        seconds: 1722471841
+        nanos: 255428000
       }
     }
     read_time: {
-      seconds: 1721655327
-      nanos: 903250000
+      seconds: 1722471841
+      nanos: 944215000
     }
   }
 }
-ref_index: 42
+ref_index: 46
 541
 kind: RECV
 message: {
@@ -995,7 +1023,7 @@ message: {
     document: {
       name: "projects/go-discovery-exp/databases/(default)/documents/values/3009"
       fields: {
-        key: "v"
+        key: "V"
         value: {
           bytes_value: "9"
         }
@@ -1005,21 +1033,21 @@ message: {
         nanos: 112889000
       }
       update_time: {
-        seconds: 1721171630
-        nanos: 112889000
+        seconds: 1722471841
+        nanos: 255428000
       }
     }
     read_time: {
-      seconds: 1721655327
-      nanos: 903250000
+      seconds: 1722471841
+      nanos: 944215000
     }
   }
 }
-ref_index: 42
+ref_index: 46
 40
 kind: RECV
 is_error: true
-ref_index: 42
+ref_index: 46
 222
 kind: REQUEST
 method: "/google.firestore.v1.Firestore/BeginTransaction"
@@ -1028,18 +1056,18 @@ message: {
     database: "projects/go-discovery-exp/databases/(default)"
   }
 }
-410
+412
 kind: RESPONSE
 message: {
   [type.googleapis.com/google.firestore.v1.BeginTransactionResponse]: {
-    transaction: "\x11s\xa5\xdd0k\xd2\x04\x0f\"Y\x00\xd4u\xc8\xcd\x1d\xe5\xd31\xeb\xc1i\x01l+~M\xe6\xeb\xc3\xe1\xf22\xa5\xcc\x01G1\xe3i\xc4u\xf0\xa4Lt!\x07\x97\xeb\xaeൃX \xac\x1f\x7f\xf2\x8b\xa9\x7f;\x1e\xd6\xf7\x8f\x11RSi\xfaME\x82\xa1c\x85\xf8^\xf0'\xcfX\xbfN{e\xef\xeb\xa6XRς\x19\x055"
+    transaction: "\x11l\x0f\xa2,u\x95zT\"Y\x00\xd4u\xc8\xcd5\xcf\x1c]c\x8d}Q%\x99\xddG\xe2\x92J]E\x07y\xac\x0b\x1b\xa0\xbb\x9a\x16\xad\xf9$\xcf\x14\"\x19v\xdaK^R\xc3`\x93\xafp\x85쳎\x11P\xdec\x9c\xa5\xec'\xa6\xb2\xb0\xb2\xf1\xa2\"te7p\x08*\x82\x02Z\xaf\x12&\x16\x17\xf5\x1c\xab[\xa6\xae3\xc7"
   }
 }
-ref_index: 51
+ref_index: 55
 70
 kind: CREATE_STREAM
 method: "/google.firestore.v1.Firestore/RunQuery"
-987
+989
 kind: SEND
 message: {
   [type.googleapis.com/google.firestore.v1.RunQueryRequest]: {
@@ -1066,10 +1094,10 @@ message: {
         }
       }
     }
-    transaction: "\x11s\xa5\xdd0k\xd2\x04\x0f\"Y\x00\xd4u\xc8\xcd\x1d\xe5\xd31\xeb\xc1i\x01l+~M\xe6\xeb\xc3\xe1\xf22\xa5\xcc\x01G1\xe3i\xc4u\xf0\xa4Lt!\x07\x97\xeb\xaeൃX \xac\x1f\x7f\xf2\x8b\xa9\x7f;\x1e\xd6\xf7\x8f\x11RSi\xfaME\x82\xa1c\x85\xf8^\xf0'\xcfX\xbfN{e\xef\xeb\xa6XRς\x19\x055"
+    transaction: "\x11l\x0f\xa2,u\x95zT\"Y\x00\xd4u\xc8\xcd5\xcf\x1c]c\x8d}Q%\x99\xddG\xe2\x92J]E\x07y\xac\x0b\x1b\xa0\xbb\x9a\x16\xad\xf9$\xcf\x14\"\x19v\xdaK^R\xc3`\x93\xafp\x85쳎\x11P\xdec\x9c\xa5\xec'\xa6\xb2\xb0\xb2\xf1\xa2\"te7p\x08*\x82\x02Z\xaf\x12&\x16\x17\xf5\x1c\xab[\xa6\xae3\xc7"
   }
 }
-ref_index: 53
+ref_index: 57
 541
 kind: RECV
 message: {
@@ -1077,32 +1105,32 @@ message: {
     document: {
       name: "projects/go-discovery-exp/databases/(default)/documents/values/3000"
       fields: {
-        key: "v"
+        key: "V"
         value: {
           bytes_value: "0"
         }
       }
       create_time: {
-        seconds: 1721655327
-        nanos: 222942000
+        seconds: 1722471841
+        nanos: 255428000
       }
       update_time: {
-        seconds: 1721655327
-        nanos: 222942000
+        seconds: 1722471841
+        nanos: 255428000
       }
     }
     read_time: {
-      seconds: 1721655327
-      nanos: 907076000
+      seconds: 1722471841
+      nanos: 947802000
     }
   }
 }
-ref_index: 53
+ref_index: 57
 40
 kind: RECV
 is_error: true
-ref_index: 53
-2293
+ref_index: 57
+2295
 kind: REQUEST
 method: "/google.firestore.v1.Firestore/Commit"
 message: {
@@ -1115,7 +1143,7 @@ message: {
       update: {
         name: "projects/go-discovery-exp/databases/(default)/documents/values/3000"
         fields: {
-          key: "v"
+          key: "V"
           value: {
             bytes_value: "0"
           }
@@ -1129,7 +1157,7 @@ message: {
       update: {
         name: "projects/go-discovery-exp/databases/(default)/documents/values/3002"
         fields: {
-          key: "v"
+          key: "V"
           value: {
             bytes_value: "2"
           }
@@ -1143,7 +1171,7 @@ message: {
       update: {
         name: "projects/go-discovery-exp/databases/(default)/documents/values/3004"
         fields: {
-          key: "v"
+          key: "V"
           value: {
             bytes_value: "4"
           }
@@ -1157,7 +1185,7 @@ message: {
       update: {
         name: "projects/go-discovery-exp/databases/(default)/documents/values/3006"
         fields: {
-          key: "v"
+          key: "V"
           value: {
             bytes_value: "6"
           }
@@ -1171,7 +1199,7 @@ message: {
       update: {
         name: "projects/go-discovery-exp/databases/(default)/documents/values/3008"
         fields: {
-          key: "v"
+          key: "V"
           value: {
             bytes_value: "8"
           }
@@ -1181,7 +1209,7 @@ message: {
     writes: {
       delete: "projects/go-discovery-exp/databases/(default)/documents/values/3000"
     }
-    transaction: "\x11s\xa5\xdd0k\xd2\x04\x0f\"Y\x00\xd4u\xc8\xcd\x1d\xe5\xd31\xeb\xc1i\x01l+~M\xe6\xeb\xc3\xe1\xf22\xa5\xcc\x01G1\xe3i\xc4u\xf0\xa4Lt!\x07\x97\xeb\xaeൃX \xac\x1f\x7f\xf2\x8b\xa9\x7f;\x1e\xd6\xf7\x8f\x11RSi\xfaME\x82\xa1c\x85\xf8^\xf0'\xcfX\xbfN{e\xef\xeb\xa6XRς\x19\x055"
+    transaction: "\x11l\x0f\xa2,u\x95zT\"Y\x00\xd4u\xc8\xcd5\xcf\x1c]c\x8d}Q%\x99\xddG\xe2\x92J]E\x07y\xac\x0b\x1b\xa0\xbb\x9a\x16\xad\xf9$\xcf\x14\"\x19v\xdaK^R\xc3`\x93\xafp\x85쳎\x11P\xdec\x9c\xa5\xec'\xa6\xb2\xb0\xb2\xf1\xa2\"te7p\x08*\x82\x02Z\xaf\x12&\x16\x17\xf5\x1c\xab[\xa6\xae3\xc7"
   }
 }
 598
@@ -1197,25 +1225,25 @@ message: {
     write_results: {}
     write_results: {
       update_time: {
-        seconds: 1721655328
-        nanos: 296191000
+        seconds: 1722471842
+        nanos: 322629000
       }
     }
     write_results: {}
     write_results: {
       update_time: {
-        seconds: 1721171630
-        nanos: 112889000
+        seconds: 1722471841
+        nanos: 255428000
       }
     }
     write_results: {}
     commit_time: {
-      seconds: 1721655328
-      nanos: 296191000
+      seconds: 1722471842
+      nanos: 322629000
     }
   }
 }
-ref_index: 57
+ref_index: 61
 70
 kind: CREATE_STREAM
 method: "/google.firestore.v1.Firestore/RunQuery"
@@ -1248,7 +1276,7 @@ message: {
     }
   }
 }
-ref_index: 59
+ref_index: 63
 541
 kind: RECV
 message: {
@@ -1256,27 +1284,27 @@ message: {
     document: {
       name: "projects/go-discovery-exp/databases/(default)/documents/values/3006"
       fields: {
-        key: "v"
+        key: "V"
         value: {
           bytes_value: "6"
         }
       }
       create_time: {
-        seconds: 1721655328
-        nanos: 296191000
+        seconds: 1722471842
+        nanos: 322629000
       }
       update_time: {
-        seconds: 1721655328
-        nanos: 296191000
+        seconds: 1722471842
+        nanos: 322629000
       }
     }
     read_time: {
-      seconds: 1721655328
-      nanos: 389515000
+      seconds: 1722471842
+      nanos: 433247000
     }
   }
 }
-ref_index: 59
+ref_index: 63
 541
 kind: RECV
 message: {
@@ -1284,7 +1312,7 @@ message: {
     document: {
       name: "projects/go-discovery-exp/databases/(default)/documents/values/3008"
       fields: {
-        key: "v"
+        key: "V"
         value: {
           bytes_value: "8"
         }
@@ -1294,17 +1322,17 @@ message: {
         nanos: 112889000
       }
       update_time: {
-        seconds: 1721171630
-        nanos: 112889000
+        seconds: 1722471841
+        nanos: 255428000
       }
     }
     read_time: {
-      seconds: 1721655328
-      nanos: 389515000
+      seconds: 1722471842
+      nanos: 433247000
     }
   }
 }
-ref_index: 59
+ref_index: 63
 541
 kind: RECV
 message: {
@@ -1312,7 +1340,7 @@ message: {
     document: {
       name: "projects/go-discovery-exp/databases/(default)/documents/values/3009"
       fields: {
-        key: "v"
+        key: "V"
         value: {
           bytes_value: "9"
         }
@@ -1322,21 +1350,21 @@ message: {
         nanos: 112889000
       }
       update_time: {
-        seconds: 1721171630
-        nanos: 112889000
+        seconds: 1722471841
+        nanos: 255428000
       }
     }
     read_time: {
-      seconds: 1721655328
-      nanos: 389515000
+      seconds: 1722471842
+      nanos: 433247000
     }
   }
 }
-ref_index: 59
+ref_index: 63
 40
 kind: RECV
 is_error: true
-ref_index: 59
+ref_index: 63
 222
 kind: REQUEST
 method: "/google.firestore.v1.Firestore/BeginTransaction"
@@ -1345,18 +1373,18 @@ message: {
     database: "projects/go-discovery-exp/databases/(default)"
   }
 }
-408
+409
 kind: RESPONSE
 message: {
   [type.googleapis.com/google.firestore.v1.BeginTransactionResponse]: {
-    transaction: "\x11\x11 \x8b\x8cX\xe5\x84\xdc\"Y\x00\xd4u\xc8͎\xeb=\xcc\x18ב\x02\x1fu\xed\xaaj\xc0\xf4zZ+\xb8\xb3E\xb9N\xc6\x14\xe2\xbdk\xac\xa8\x1bj\xd7\x0e\x97R<\x7fR\xd3\x0f\x84\xc3\x1d\x14\xb0\xf0\r<G\xf2I\xdf\xee*\xc2x1h.$\xa2X\x12dyY\x10\x95I\xb3w\x99\xdf\xcd\xcefy\xa1V\xe5n4?"
+    transaction: "\x11l\xe2\x0c\xfa\xec\x82;d\"Y\x00\xd4u\xc8\xcd\x010\xae։aS\x95\t`Z1\xdc\xce\xeaO\x8e+\x17\xd87\xa9\xcby\xb0F\x8cn\xb8n\xf9F*\x12\x1d\xc3RZ\xbe\xcex\x9c/$\x1edVV\xa7\x1e0Rz\x11\x8bY\xb5\nz\xbd\x98}\xa1^\xc0\xaeM\xda\xe3\xbe\x17\xb8\xc4\x14\xe2{rQ\xa1\xbd\x9f\xb2\xe2\xd5"
   }
 }
-ref_index: 65
+ref_index: 69
 70
 kind: CREATE_STREAM
 method: "/google.firestore.v1.Firestore/RunQuery"
-981
+982
 kind: SEND
 message: {
   [type.googleapis.com/google.firestore.v1.RunQueryRequest]: {
@@ -1383,42 +1411,95 @@ message: {
         }
       }
     }
-    transaction: "\x11\x11 \x8b\x8cX\xe5\x84\xdc\"Y\x00\xd4u\xc8͎\xeb=\xcc\x18ב\x02\x1fu\xed\xaaj\xc0\xf4zZ+\xb8\xb3E\xb9N\xc6\x14\xe2\xbdk\xac\xa8\x1bj\xd7\x0e\x97R<\x7fR\xd3\x0f\x84\xc3\x1d\x14\xb0\xf0\r<G\xf2I\xdf\xee*\xc2x1h.$\xa2X\x12dyY\x10\x95I\xb3w\x99\xdf\xcd\xcefy\xa1V\xe5n4?"
+    transaction: "\x11l\xe2\x0c\xfa\xec\x82;d\"Y\x00\xd4u\xc8\xcd\x010\xae։aS\x95\t`Z1\xdc\xce\xeaO\x8e+\x17\xd87\xa9\xcby\xb0F\x8cn\xb8n\xf9F*\x12\x1d\xc3RZ\xbe\xcex\x9c/$\x1edVV\xa7\x1e0Rz\x11\x8bY\xb5\nz\xbd\x98}\xa1^\xc0\xaeM\xda\xe3\xbe\x17\xb8\xc4\x14\xe2{rQ\xa1\xbd\x9f\xb2\xe2\xd5"
   }
 }
-ref_index: 67
-178
+ref_index: 71
+538
 kind: RECV
 message: {
   [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
+    document: {
+      name: "projects/go-discovery-exp/databases/(default)/documents/values/61"
+      fields: {
+        key: "v"
+        value: {
+          bytes_value: ""
+        }
+      }
+      create_time: {
+        seconds: 1721939401
+        nanos: 289035000
+      }
+      update_time: {
+        seconds: 1721939401
+        nanos: 289035000
+      }
+    }
     read_time: {
-      seconds: 1721655328
-      nanos: 585255000
+      seconds: 1722471842
+      nanos: 652207000
     }
   }
 }
-ref_index: 67
+ref_index: 71
+538
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
+    document: {
+      name: "projects/go-discovery-exp/databases/(default)/documents/values/62"
+      fields: {
+        key: "v"
+        value: {
+          bytes_value: ""
+        }
+      }
+      create_time: {
+        seconds: 1721939401
+        nanos: 289035000
+      }
+      update_time: {
+        seconds: 1721939401
+        nanos: 289035000
+      }
+    }
+    read_time: {
+      seconds: 1722471842
+      nanos: 652207000
+    }
+  }
+}
+ref_index: 71
 40
 kind: RECV
 is_error: true
-ref_index: 67
-492
+ref_index: 71
+697
 kind: REQUEST
 method: "/google.firestore.v1.Firestore/Commit"
 message: {
   [type.googleapis.com/google.firestore.v1.CommitRequest]: {
     database: "projects/go-discovery-exp/databases/(default)"
-    transaction: "\x11\x11 \x8b\x8cX\xe5\x84\xdc\"Y\x00\xd4u\xc8͎\xeb=\xcc\x18ב\x02\x1fu\xed\xaaj\xc0\xf4zZ+\xb8\xb3E\xb9N\xc6\x14\xe2\xbdk\xac\xa8\x1bj\xd7\x0e\x97R<\x7fR\xd3\x0f\x84\xc3\x1d\x14\xb0\xf0\r<G\xf2I\xdf\xee*\xc2x1h.$\xa2X\x12dyY\x10\x95I\xb3w\x99\xdf\xcd\xcefy\xa1V\xe5n4?"
+    writes: {
+      delete: "projects/go-discovery-exp/databases/(default)/documents/values/61"
+    }
+    writes: {
+      delete: "projects/go-discovery-exp/databases/(default)/documents/values/62"
+    }
+    transaction: "\x11l\xe2\x0c\xfa\xec\x82;d\"Y\x00\xd4u\xc8\xcd\x010\xae։aS\x95\t`Z1\xdc\xce\xeaO\x8e+\x17\xd87\xa9\xcby\xb0F\x8cn\xb8n\xf9F*\x12\x1d\xc3RZ\xbe\xcex\x9c/$\x1edVV\xa7\x1e0Rz\x11\x8bY\xb5\nz\xbd\x98}\xa1^\xc0\xaeM\xda\xe3\xbe\x17\xb8\xc4\x14\xe2{rQ\xa1\xbd\x9f\xb2\xe2\xd5"
   }
 }
-182
+226
 kind: RESPONSE
 message: {
   [type.googleapis.com/google.firestore.v1.CommitResponse]: {
+    write_results: {}
+    write_results: {}
     commit_time: {
-      seconds: 1721655328
-      nanos: 585255000
+      seconds: 1722471842
+      nanos: 813240000
     }
   }
 }
-ref_index: 71
+ref_index: 76
