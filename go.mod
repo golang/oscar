@@ -3,14 +3,11 @@ module golang.org/x/oscar
 go 1.23
 
 require (
-	cloud.google.com/go/firestore v1.16.0
-	cloud.google.com/go/secretmanager v1.13.3
 	github.com/cockroachdb/pebble v1.1.1
 	github.com/google/generative-ai-go v0.16.0
 	github.com/google/go-replayers/grpcreplay v1.3.0
 	golang.org/x/tools v0.23.0
 	google.golang.org/api v0.189.0
-	google.golang.org/grpc v1.64.1
 	rsc.io/markdown v0.0.0-20240617154923-1f2ef1438fed
 	rsc.io/omap v1.2.1-0.20240709133045-40dad5c0c0fb
 	rsc.io/ordered v1.1.0
@@ -23,7 +20,6 @@ require (
 	cloud.google.com/go/auth v0.7.2 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.3 // indirect
 	cloud.google.com/go/compute/metadata v0.5.0 // indirect
-	cloud.google.com/go/iam v1.1.10 // indirect
 	cloud.google.com/go/longrunning v0.5.9 // indirect
 	github.com/DataDog/zstd v1.4.5 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -69,8 +65,8 @@ require (
 	golang.org/x/sys v0.22.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
-	google.golang.org/genproto v0.0.0-20240722135656-d784300faade // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240722135656-d784300faade // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240722135656-d784300faade // indirect
+	google.golang.org/grpc v1.64.1 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 )

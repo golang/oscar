@@ -24,3 +24,29 @@ before sending patches.
 
 Unless otherwise noted, the Go source files are distributed under
 the BSD-style license found in the LICENSE file.
+
+## Developing code
+
+This repo consists of two modules:
+
+  - The top-level one, golang.org/x/oscar
+  - A nested module, golang.org/x/oscar/internal/gcp, for packages that
+    depend on Google Cloud Platform.
+
+If you work on both together, you should have a `go.work` file at the repo root
+with the contents
+```
+go 1.23
+
+use (
+	.
+	./internal/gcp
+)
+```
+Do not commit this file, or the related `go.work.sum` file that will be created
+automatically, into the repo.
+To make git ignore them for this repo, add these lines to your `.git/info/exclude` file:
+```
+go.work
+go.work.sum
+```

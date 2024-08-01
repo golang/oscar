@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package gcphandler implements a slog.Handler that works
+// Package gcphandler implements a [slog.Handler] that works
 // with the Google Cloud Platform's logging service.
 // It always writes to stderr, so it is most suitable for
 // programs that run on a managed service that treats JSON
@@ -17,6 +17,14 @@ import (
 )
 
 // New creates a new [slog.Handler] for GCP logging.
+// It follows [GCP's logging specification] by modifying
+// slog defaults:
+//   - It replaces the key "msg" with "message".
+//   - It replaces the key "level" with "severity".
+//   - It replaces the key "traceID" with "logging.googleapis.com/trace.".
+//   - It replaces the value for the "time" key with an RFC3339-formatted string.
+//
+// [GCP's logging specification]: https://cloud.google.com/logging/docs/agent/logging/configuration#special-fields
 func New(level slog.Leveler) slog.Handler {
 	return newHandler(level, os.Stderr)
 }
@@ -34,7 +42,6 @@ var testTime time.Time
 
 // replaceAttr uses GCP names for certain fields.
 // It also formats times in the way that GCP expects.
-// See https://cloud.google.com/logging/docs/agent/logging/configuration#special-fields.
 func replaceAttr(groups []string, a slog.Attr) slog.Attr {
 	switch a.Key {
 	case "time":

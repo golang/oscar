@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package implements the [internal/secret] package using Google Cloud
-// Storage's Secret Manager service.
+// Package gcpsecret implements the [golang.org/x/oscar/internal/secret] package
+// using Google Cloud Storage's Secret Manager service.
 package gcpsecret
 
 import (
