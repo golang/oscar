@@ -64,50 +64,65 @@ func TestLock(t *testing.T) {
 	if err != nil {
 		t.Skipf("skipping: %v", err)
 	}
-	ctx := context.Background()
-	db, err := NewDB(ctx, testutil.Slogger(t), projectID, firestoreTestDatabase)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer db.Close()
 
-	defer func(lt time.Duration) {
+	defer func(lt, lr time.Duration) {
 		lockTimeout = lt
-	}(lockTimeout)
+		lockRenew = lr
+	}(lockTimeout, lockRenew)
+	lockRenew = 1 * time.Second
 	lockTimeout = 2 * time.Second
 
+	t.Run("lock-renew-unlock", func(t *testing.T) {
+		db, name := newTestDB(t, projectID)
+
+		// Lock will renew with no errors.
+		db.Lock(name)
+		time.Sleep(lockRenew * 2)
+		db.Unlock(name)
+
+		// Lock will be re-acquired with no errors.
+		db.Lock(name)
+		time.Sleep(lockRenew * 2)
+		db.Unlock(name)
+	})
+
 	t.Run("basic", func(t *testing.T) {
+		db, _ := newTestDB(t, projectID)
 		storage.TestDBLock(t, db)
 	})
 
 	t.Run("timeout", func(t *testing.T) {
-		c := make(chan struct{})
+		db1, name := newTestDB(t, projectID)
+		db2, _ := newTestDB(t, projectID)
+
+		c1, c2 := make(chan struct{}), make(chan struct{})
 
 		go func() {
-			db.Lock("L")
-			// The second Lock should wait until the first Lock times
-			// out, then it should succeed.
-			db.Lock("L")
-			db.Unlock("L")
-			close(c)
+			<-c1
+			// db2 can steal the lock after it times out.
+			db2.Lock(name)
+			db2.Unlock(name)
+			close(c2)
 		}()
+
+		// Simulate the case in which db1 manages to lock the lock
+		// in firestore but never unlocks it.
+		if held := db1.lockTx(name); !held {
+			t.Fatal("could not write lock to firestore")
+		}
+		close(c1)
+
 		select {
-		case <-c:
+		case <-c2:
 			// Success.
 		case <-time.After(2 * lockTimeout):
 			t.Fatal("lock timeout didn't happen in time")
 		}
 	})
+
 	t.Run("owner", func(t *testing.T) {
-		// When run frequently, this test causes contention on the lock name.
-		// So pick a random name.
-		name := fmt.Sprintf("M%d", rand.IntN(10))
-		db.deleteLock(nil, name) // Ensure the lock is not present.
-		db2, err := NewDB(ctx, testutil.Slogger(t), projectID, firestoreTestDatabase)
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer db2.Close()
+		db, name := newTestDB(t, projectID)
+		db2, _ := newTestDB(t, projectID)
 
 		testutil.StopPanic(func() {
 			db.Lock(name)
@@ -115,6 +130,33 @@ func TestLock(t *testing.T) {
 			t.Error("unlock wrong owner did not panic")
 		})
 	})
+}
+
+// unlockAll unlocks all the locks held by db.
+// For testing.
+func unlockAll(db *DB) {
+	for _, name := range db.activeLocks.Names() {
+		db.Unlock(name)
+	}
+}
+
+// newTestDB returns a new DB and the name of a lock that
+// can be used for tests.
+// It ensures that the lock name does not already exist in the
+// test firestore DB.
+func newTestDB(t *testing.T, projectID string) (_ *DB, lock string) {
+	db, err := NewDB(context.Background(), testutil.Slogger(t), projectID, firestoreTestDatabase)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		unlockAll(db)
+		db.Close()
+	})
+	// Pick a random name (with the test name as a prefix) to avoid contention.
+	lock = fmt.Sprintf("%s%03d", t.Name(), rand.N(1000))
+	db.deleteLock(nil, lock) // Ensure the lock is not present.
+	return db, lock
 }
 
 func TestErrors(t *testing.T) {
