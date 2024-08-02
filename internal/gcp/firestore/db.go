@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"iter"
 	"math/rand/v2"
-	"net/url"
 	"slices"
 	"time"
 
@@ -72,7 +71,7 @@ func (db *DB) waitForLock(name string) bool {
 	// A snapshot iterator iterates over changing states of the document.
 	// It yields its first value immediately, and subsequent values only when
 	// the document changes state.
-	dr := db.client.Collection(lockCollection).Doc(url.PathEscape(name))
+	dr := db.client.Collection(lockCollection).Doc(encodeLockName(name))
 	iter := dr.Snapshots(ctx)
 	defer iter.Stop()
 	for {
@@ -133,12 +132,12 @@ type lock struct {
 
 // setLock sets the value of the named lock in the DB, along with its creation time.
 func (db *DB) setLock(tx *firestore.Transaction, name string) {
-	db.set(tx, lockCollection, url.PathEscape(name), lock{db.uid})
+	db.set(tx, lockCollection, encodeLockName(name), lock{db.uid})
 }
 
 // getLock returns the value of the named lock in the DB.
 func (db *DB) getLock(tx *firestore.Transaction, name string) (int64, time.Time) {
-	ds := db.get(tx, lockCollection, url.PathEscape(name))
+	ds := db.get(tx, lockCollection, encodeLockName(name))
 	if ds == nil {
 		return 0, time.Time{}
 	}
@@ -148,7 +147,11 @@ func (db *DB) getLock(tx *firestore.Transaction, name string) (int64, time.Time)
 
 // deleteLock deletes the named lock in the DB.
 func (db *DB) deleteLock(tx *firestore.Transaction, name string) {
-	db.delete(tx, lockCollection, url.PathEscape(name))
+	db.delete(tx, lockCollection, encodeLockName(name))
+}
+
+func encodeLockName(name string) string {
+	return hex.EncodeToString([]byte(name))
 }
 
 // Set implements [storage.DB.Set].
