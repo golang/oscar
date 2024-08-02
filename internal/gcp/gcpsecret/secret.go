@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package gcpsecret implements the [golang.org/x/oscar/internal/secret] package
+// Package gcpsecret implements a [secret.DB]
 // using Google Cloud Storage's Secret Manager service.
 package gcpsecret
 
@@ -12,6 +12,7 @@ import (
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	smpb "cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
+	_ "golang.org/x/oscar/internal/secret"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
