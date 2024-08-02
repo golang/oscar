@@ -264,7 +264,7 @@ func TestErrors(t *testing.T) {
 	if _, err := rr.Client().Get(srv.URL + "/redirect"); err == nil || !strings.Contains(err.Error(), "file already closed") {
 		t.Errorf("did not report failure from record write: err = %v", err)
 	}
-	rr.broken = errors.New("BROKEN ERROR")
+	rr.writeErr = errors.New("BROKEN ERROR")
 	if _, err := rr.Client().Get(srv.URL + "/redirect"); err == nil || !strings.Contains(err.Error(), "BROKEN ERROR") {
 		t.Errorf("did not report previous write failure: err = %v", err)
 	}

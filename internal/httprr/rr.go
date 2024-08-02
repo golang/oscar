@@ -43,14 +43,14 @@ func init() {
 // In replay mode, the RecordReplay responds to requests by finding
 // an identical request in the log and sending the logged response.
 type RecordReplay struct {
-	file string
-	real http.RoundTripper
+	file string            // file being read or written
+	real http.RoundTripper // real HTTP connection
 
-	mu     sync.Mutex
-	broken error
-	record *os.File
-	replay map[string]string
-	scrub  []func(*http.Request) error
+	mu       sync.Mutex
+	scrub    []func(*http.Request) error // scrubbers for logging requests
+	replay   map[string]string           // if replaying, the log
+	record   *os.File                    // if recording, the file being written
+	writeErr error                       // if recording, any write error encountered
 }
 
 // Scrub adds new scrubbing functions to rr.
@@ -99,12 +99,14 @@ func Open(file string, rt http.RoundTripper) (*RecordReplay, error) {
 }
 
 // creates creates a new record-mode RecordReplay in the file.
-// TODO maybe export
 func create(file string, rt http.RoundTripper) (*RecordReplay, error) {
 	f, err := os.Create(file)
 	if err != nil {
 		return nil, err
 	}
+
+	// Write header line.
+	// Each round-trip will write a new request-response record.
 	if _, err := fmt.Fprintf(f, "httprr trace v1\n"); err != nil {
 		// unreachable unless write error immediately after os.Create
 		f.Close()
@@ -123,18 +125,23 @@ func open(file string, rt http.RoundTripper) (*RecordReplay, error) {
 	// Note: To handle larger traces without storing entirely in memory,
 	// could instead read the file incrementally, storing a map[hash]offsets
 	// and then reread the relevant part of the file during RoundTrip.
-
 	bdata, err := os.ReadFile(file)
 	if err != nil {
 		return nil, err
 	}
+
+	// Trace begins with header line.
 	data := string(bdata)
 	line, data, ok := strings.Cut(data, "\n")
 	if !ok || line != "httprr trace v1" {
 		return nil, fmt.Errorf("read %s: not an httprr trace", file)
 	}
+
 	replay := make(map[string]string)
 	for data != "" {
+		// Each record starts with a line of the form "n1 n2\n"
+		// followed by n1 bytes of request encoding and
+		// n2 bytes of response encoding.
 		line, data, ok = strings.Cut(data, "\n")
 		f1, f2, _ := strings.Cut(line, " ")
 		n1, err1 := strconv.Atoi(f1)
@@ -198,24 +205,59 @@ func (b *Body) Close() error {
 // and then responds with the previously logged response.
 // If the log does not contain req, RoundTrip returns an error.
 func (rr *RecordReplay) RoundTrip(req *http.Request) (*http.Response, error) {
+	reqWire, err := rr.reqWire(req)
+	if err != nil {
+		return nil, err
+	}
+
+	// If we're in replay mode, replay a response.
+	if rr.replay != nil {
+		return rr.replayRoundTrip(req, reqWire)
+	}
+
+	// Otherwise run a real round trip and save the request-response pair.
+	// But if we've had a log write error already, don't bother.
+	if err := rr.writeError(); err != nil {
+		return nil, err
+	}
+	resp, err := rr.real.RoundTrip(req)
+	if err != nil {
+		return nil, err
+	}
+
+	// Encode resp and decode to get a copy for our caller.
+	respWire, err := rr.respWire(resp)
+	if err != nil {
+		return nil, err
+	}
+	if err := rr.writeLog(reqWire, respWire); err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+// reqWire returns the wire-format HTTP request key to be
+// used for request when saving to the log or looking up in a
+// previously written log. It consumes the original req.Body
+// but modifies req.Body to be an equivalent [*Body].
+func (rr *RecordReplay) reqWire(req *http.Request) (string, error) {
 	// rkey is the scrubbed request used as a lookup key.
+	// Clone req including req.Body.
 	rkey := req.Clone(context.Background())
 	if req.Body != nil {
 		body, err := io.ReadAll(req.Body)
 		req.Body.Close()
 		if err != nil {
-			return nil, err
+			return "", err
 		}
 		req.Body = &Body{Data: body}
 		rkey.Body = &Body{Data: bytes.Clone(body)}
 	}
 
-	if len(rr.scrub) > 0 {
-		// Canonicalize and scrub body.
-		for _, scrub := range rr.scrub {
-			if err := scrub(rkey); err != nil {
-				return nil, err
-			}
+	// Canonicalize and scrub request key.
+	for _, scrub := range rr.scrub {
+		if err := scrub(rkey); err != nil {
+			return "", err
 		}
 	}
 
@@ -224,71 +266,82 @@ func (rr *RecordReplay) RoundTrip(req *http.Request) (*http.Response, error) {
 		rkey.ContentLength = int64(len(rkey.Body.(*Body).Data))
 	}
 
-	// Use WriteProxy instead of Write to preserve the URL scheme.
-	var bkey strings.Builder
-	if err := rkey.WriteProxy(&bkey); err != nil {
-		return nil, err
+	// Serialize rkey to produce the log entry.
+	// Use WriteProxy instead of Write to preserve the URL's scheme.
+	var key strings.Builder
+	if err := rkey.WriteProxy(&key); err != nil {
+		return "", err
 	}
-	key := bkey.String()
+	return key.String(), nil
+}
 
-	if rr.replay != nil {
-		if respWire, ok := rr.replay[key]; ok {
-			resp, err := http.ReadResponse(bufio.NewReader(strings.NewReader(respWire)), req)
-			if err != nil {
-				return nil, fmt.Errorf("read %s: corrupt httprr trace: %v", rr.file, err)
-			}
-			return resp, nil
-		}
-		return nil, fmt.Errorf("cached HTTP response not found for:\n%s", key)
+// respWire returns the wire-format HTTP response log entry.
+// It modifies resp but leaves an equivalent response in its place.
+func (rr *RecordReplay) respWire(resp *http.Response) (string, error) {
+	var key bytes.Buffer
+	if err := resp.Write(&key); err != nil {
+		return "", err
 	}
-
-	rr.mu.Lock()
-	err := rr.broken
-	rr.mu.Unlock()
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := rr.real.RoundTrip(req)
-	if err != nil {
-		return nil, err
-	}
-
-	var respBuf strings.Builder
-	if err := resp.Write(&respBuf); err != nil {
-		return nil, err
-	}
-	respWire := respBuf.String()
-
-	resp, err = http.ReadResponse(bufio.NewReader(strings.NewReader(respWire)), req)
+	resp2, err := http.ReadResponse(bufio.NewReader(bytes.NewReader(key.Bytes())), resp.Request)
 	if err != nil {
 		// unreachable unless resp.Write does not round-trip with http.ReadResponse
-		return nil, err
+		return "", err
 	}
+	*resp = *resp2
+	return key.String(), nil
+}
 
-	rr.mu.Lock()
-	defer rr.mu.Unlock()
-	if rr.broken != nil {
-		// unreachable unless concurrent I/O error; checked above
-		return nil, rr.broken
+// replayRoundTrip implements RoundTrip using the replay log.
+func (rr *RecordReplay) replayRoundTrip(req *http.Request, reqLog string) (*http.Response, error) {
+	respLog, ok := rr.replay[reqLog]
+	if !ok {
+		return nil, fmt.Errorf("cached HTTP response not found for:\n%s", reqLog)
 	}
-	_, err1 := fmt.Fprintf(rr.record, "%d %d\n", len(key), len(respWire))
-	_, err2 := rr.record.WriteString(key)
-	_, err3 := rr.record.WriteString(respWire)
-	if err := cmp.Or(err1, err2, err3); err != nil {
-		rr.broken = err
-		rr.record.Close()
-		os.Remove(rr.file)
-		return nil, err
+	resp, err := http.ReadResponse(bufio.NewReader(strings.NewReader(respLog)), req)
+	if err != nil {
+		return nil, fmt.Errorf("read %s: corrupt httprr trace: %v", rr.file, err)
 	}
 	return resp, nil
+}
+
+// writeError reports any previous log write error.
+func (rr *RecordReplay) writeError() error {
+	rr.mu.Lock()
+	defer rr.mu.Unlock()
+	return rr.writeErr
+}
+
+// writeLog writes the request-response pair to the log.
+// If a write fails, writeLog arranges for rr.broken to return
+// an error and deletes the underlying log.
+func (rr *RecordReplay) writeLog(reqWire, respWire string) error {
+	rr.mu.Lock()
+	defer rr.mu.Unlock()
+
+	if rr.writeErr != nil {
+		// Unreachable unless concurrent I/O error.
+		// Caller should have checked already.
+		return rr.writeErr
+	}
+
+	_, err1 := fmt.Fprintf(rr.record, "%d %d\n", len(reqWire), len(respWire))
+	_, err2 := rr.record.WriteString(reqWire)
+	_, err3 := rr.record.WriteString(respWire)
+	if err := cmp.Or(err1, err2, err3); err != nil {
+		rr.writeErr = err
+		rr.record.Close()
+		os.Remove(rr.file)
+		return err
+	}
+
+	return nil
 }
 
 // Close closes the RecordReplay.
 // It is a no-op in replay mode.
 func (rr *RecordReplay) Close() error {
-	if rr.broken != nil {
-		return rr.broken
+	if rr.writeErr != nil {
+		return rr.writeErr
 	}
 	if rr.record != nil {
 		return rr.record.Close()
