@@ -1,201 +1,103 @@
 RPCReTxt1
 "go-discovery-exp,"
-79
-kind: CREATE_STREAM
-method: "/google.firestore.v1.Firestore/BatchGetDocuments"
-252
-kind: SEND
-message: {
-  [type.googleapis.com/google.firestore.v1.BatchGetDocumentsRequest]: {
-    database: "projects/go-discovery-exp/databases/(default)"
-    documents: "projects/go-discovery-exp/databases/(default)/documents/c/d"
+81
+kind:  CREATE_STREAM
+method:  "/google.firestore.v1.Firestore/BatchGetDocuments"
+258
+kind:  SEND
+message:  {
+  [type.googleapis.com/google.firestore.v1.BatchGetDocumentsRequest]:  {
+    database:  "projects/go-discovery-exp/databases/(default)"
+    documents:  "projects/go-discovery-exp/databases/(default)/documents/c/d"
   }
 }
-ref_index: 1
-261
-kind: RECV
-message: {
-  [type.googleapis.com/google.firestore.v1.BatchGetDocumentsResponse]: {
-    missing: "projects/go-discovery-exp/databases/(default)/documents/c/d"
-    read_time: {
-      seconds: 1722510074
-      nanos: 371441000
+ref_index:  1
+269
+kind:  RECV
+message:  {
+  [type.googleapis.com/google.firestore.v1.BatchGetDocumentsResponse]:  {
+    missing:  "projects/go-discovery-exp/databases/(default)/documents/c/d"
+    read_time:  {
+      seconds:  1722609336
+      nanos:  542527000
     }
   }
 }
-ref_index: 1
-39
-kind: RECV
-is_error: true
-ref_index: 1
-2361
-kind: REQUEST
-method: "/google.firestore.v1.Firestore/Commit"
-message: {
-  [type.googleapis.com/google.firestore.v1.CommitRequest]: {
-    database: "projects/go-discovery-exp/databases/(default)"
-    writes: {
-      update: {
-        name: "projects/go-discovery-exp/databases/(default)/documents/vectors/orange2"
-        fields: {
-          key: "Embedding"
-          value: {
-            map_value: {
-              fields: {
-                key: "__type__"
-                value: {
-                  string_value: "__vector__"
+ref_index:  1
+42
+kind:  RECV
+is_error:  true
+ref_index:  1
+2435
+kind:  REQUEST
+method:  "/google.firestore.v1.Firestore/Commit"
+message:  {
+  [type.googleapis.com/google.firestore.v1.CommitRequest]:  {
+    database:  "projects/go-discovery-exp/databases/(default)"
+    writes:  {
+      update:  {
+        name:  "projects/go-discovery-exp/databases/(default)/documents/vectorDBs/test/vectors/6f72616e676532"
+        fields:  {
+          key:  "Embedding"
+          value:  {
+            map_value:  {
+              fields:  {
+                key:  "__type__"
+                value:  {
+                  string_value:  "__vector__"
                 }
               }
-              fields: {
-                key: "value"
-                value: {
-                  array_value: {
-                    values: {
-                      double_value: 0.30135461688041687
+              fields:  {
+                key:  "value"
+                value:  {
+                  array_value:  {
+                    values:  {
+                      double_value:  0.30135461688041687
                     }
-                    values: {
-                      double_value: 0.3094993531703949
+                    values:  {
+                      double_value:  0.3094993531703949
                     }
-                    values: {
-                      double_value: 0.2633459270000458
+                    values:  {
+                      double_value:  0.2633459270000458
                     }
-                    values: {
-                      double_value: 0.298639714717865
+                    values:  {
+                      double_value:  0.298639714717865
                     }
-                    values: {
-                      double_value: 0.27963536977767944
+                    values:  {
+                      double_value:  0.27963536977767944
                     }
-                    values: {
-                      double_value: 0.2742055654525757
+                    values:  {
+                      double_value:  0.2742055654525757
                     }
-                    values: {
-                      double_value: 0.1357453316450119
+                    values:  {
+                      double_value:  0.1357453316450119
                     }
-                    values: {
-                      double_value: -0.695016086101532
+                    values:  {
+                      double_value:  -0.695016086101532
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
-                    values: {
-                      double_value: 0
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-290
-kind: RESPONSE
-message: {
-  [type.googleapis.com/google.firestore.v1.CommitResponse]: {
-    write_results: {
-      update_time: {
-        seconds: 1721666627
-        nanos: 811432000
-      }
-    }
-    commit_time: {
-      seconds: 1722510074
-      nanos: 381426000
-    }
-  }
-}
-ref_index: 5
-2366
-kind: REQUEST
-method: "/google.firestore.v1.Firestore/Commit"
-message: {
-  [type.googleapis.com/google.firestore.v1.CommitRequest]: {
-    database: "projects/go-discovery-exp/databases/(default)"
-    writes: {
-      update: {
-        name: "projects/go-discovery-exp/databases/(default)/documents/vectors/orange1"
-        fields: {
-          key: "Embedding"
-          value: {
-            map_value: {
-              fields: {
-                key: "__type__"
-                value: {
-                  string_value: "__vector__"
-                }
-              }
-              fields: {
-                key: "value"
-                value: {
-                  array_value: {
-                    values: {
-                      double_value: 0.30146464705467224
-                    }
-                    values: {
-                      double_value: 0.30961233377456665
-                    }
-                    values: {
-                      double_value: 0.2634420692920685
-                    }
-                    values: {
-                      double_value: 0.29874876141548157
-                    }
-                    values: {
-                      double_value: 0.2797374725341797
-                    }
-                    values: {
-                      double_value: 0.27430567145347595
-                    }
-                    values: {
-                      double_value: 0.13307899236679077
-                    }
-                    values: {
-                      double_value: -0.6952698230743408
-                    }
-                    values: {
-                      double_value: 0
-                    }
-                    values: {
-                      double_value: 0
-                    }
-                    values: {
-                      double_value: 0
-                    }
-                    values: {
-                      double_value: 0
-                    }
-                    values: {
-                      double_value: 0
-                    }
-                    values: {
-                      double_value: 0
-                    }
-                    values: {
-                      double_value: 0
-                    }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
                   }
                 }
@@ -207,109 +109,93 @@ message: {
     }
   }
 }
-290
-kind: RESPONSE
-message: {
-  [type.googleapis.com/google.firestore.v1.CommitResponse]: {
-    write_results: {
-      update_time: {
-        seconds: 1721666627
-        nanos: 948188000
+301
+kind:  RESPONSE
+message:  {
+  [type.googleapis.com/google.firestore.v1.CommitResponse]:  {
+    write_results:  {
+      update_time:  {
+        seconds:  1722609340
+        nanos:  833560000
       }
     }
-    commit_time: {
-      seconds: 1722510074
-      nanos: 381426000
+    commit_time:  {
+      seconds:  1722609340
+      nanos:  833560000
     }
   }
 }
-ref_index: 7
-222
-kind: REQUEST
-method: "/google.firestore.v1.Firestore/BeginTransaction"
-message: {
-  [type.googleapis.com/google.firestore.v1.BeginTransactionRequest]: {
-    database: "projects/go-discovery-exp/databases/(default)"
-  }
-}
-401
-kind: RESPONSE
-message: {
-  [type.googleapis.com/google.firestore.v1.BeginTransactionResponse]: {
-    transaction: "\x11\xde\xc38\xb9/P\xaf!\"Y\x00\xd4u\xc8\xcd\x15}i\xe8Q\x0c\xc7/\xe1SfC\xd3$\xef\xa2\x18O\x9a%\xc4ѻ\x83\xea\x13\xa6\xaf\x824\x06\"\xaf\x1e\x89\xfan\xe2ϓ\x97gC\xebܲ\xc3\xfb;\xe2\x82x\xa3\xddM\xd9q倲\xb4A\xee[\x98\x7fP΁\xbeQ\xb1q{\x9d\xa7\x98I?\xe4\xf6;\x8b\xc3"
-  }
-}
-ref_index: 9
-5781
-kind: REQUEST
-method: "/google.firestore.v1.Firestore/Commit"
-message: {
-  [type.googleapis.com/google.firestore.v1.CommitRequest]: {
-    database: "projects/go-discovery-exp/databases/(default)"
-    writes: {
-      update: {
-        name: "projects/go-discovery-exp/databases/(default)/documents/vectors/apple3"
-        fields: {
-          key: "Embedding"
-          value: {
-            map_value: {
-              fields: {
-                key: "__type__"
-                value: {
-                  string_value: "__vector__"
+ref_index:  5
+2440
+kind:  REQUEST
+method:  "/google.firestore.v1.Firestore/Commit"
+message:  {
+  [type.googleapis.com/google.firestore.v1.CommitRequest]:  {
+    database:  "projects/go-discovery-exp/databases/(default)"
+    writes:  {
+      update:  {
+        name:  "projects/go-discovery-exp/databases/(default)/documents/vectorDBs/test/vectors/6f72616e676531"
+        fields:  {
+          key:  "Embedding"
+          value:  {
+            map_value:  {
+              fields:  {
+                key:  "__type__"
+                value:  {
+                  string_value:  "__vector__"
                 }
               }
-              fields: {
-                key: "value"
-                value: {
-                  array_value: {
-                    values: {
-                      double_value: 0.2749089002609253
+              fields:  {
+                key:  "value"
+                value:  {
+                  array_value:  {
+                    values:  {
+                      double_value:  0.30146464705467224
                     }
-                    values: {
-                      double_value: 0.3174206018447876
+                    values:  {
+                      double_value:  0.30961233377456665
                     }
-                    values: {
-                      double_value: 0.3174206018447876
+                    values:  {
+                      double_value:  0.2634420692920685
                     }
-                    values: {
-                      double_value: 0.30608412623405457
+                    values:  {
+                      double_value:  0.29874876141548157
                     }
-                    values: {
-                      double_value: 0.28624534606933594
+                    values:  {
+                      double_value:  0.2797374725341797
                     }
-                    values: {
-                      double_value: 0.1445397287607193
+                    values:  {
+                      double_value:  0.27430567145347595
                     }
-                    values: {
-                      double_value: -0.7255327701568604
+                    values:  {
+                      double_value:  0.13307899236679077
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  -0.6952698230743408
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
                   }
                 }
@@ -319,70 +205,184 @@ message: {
         }
       }
     }
-    writes: {
-      update: {
-        name: "projects/go-discovery-exp/databases/(default)/documents/vectors/apple4"
-        fields: {
-          key: "Embedding"
-          value: {
-            map_value: {
-              fields: {
-                key: "__type__"
-                value: {
-                  string_value: "__vector__"
+  }
+}
+301
+kind:  RESPONSE
+message:  {
+  [type.googleapis.com/google.firestore.v1.CommitResponse]:  {
+    write_results:  {
+      update_time:  {
+        seconds:  1722609340
+        nanos:  946687000
+      }
+    }
+    commit_time:  {
+      seconds:  1722609340
+      nanos:  946687000
+    }
+  }
+}
+ref_index:  7
+227
+kind:  REQUEST
+method:  "/google.firestore.v1.Firestore/BeginTransaction"
+message:  {
+  [type.googleapis.com/google.firestore.v1.BeginTransactionRequest]:  {
+    database:  "projects/go-discovery-exp/databases/(default)"
+  }
+}
+382
+kind:  RESPONSE
+message:  {
+  [type.googleapis.com/google.firestore.v1.BeginTransactionResponse]:  {
+    transaction:  "\x11N\xd7<b\x949vZ\"Y\x00\xd4u\xc8\xcdO\x91A\x0eόmzi\x06L$\x80\xee\x02k\x1d\x89ΰ\xf6\x00\x17AJ-\xd7A\xe5Fg\xe7}\x11\xe77\xad\x9e\xfa\xc0m\xb8-QT\xbc.\nj'\x1adV-\x04\xa7\x82eI\xb8\xf7\xf3\x14F\xb9\xebX\xddA\x153\xaf\x9e\xd1x$\xd6+&NJ\x81Ǒ"
+  }
+}
+ref_index:  9
+5943
+kind:  REQUEST
+method:  "/google.firestore.v1.Firestore/Commit"
+message:  {
+  [type.googleapis.com/google.firestore.v1.CommitRequest]:  {
+    database:  "projects/go-discovery-exp/databases/(default)"
+    writes:  {
+      update:  {
+        name:  "projects/go-discovery-exp/databases/(default)/documents/vectorDBs/test/vectors/6170706c6533"
+        fields:  {
+          key:  "Embedding"
+          value:  {
+            map_value:  {
+              fields:  {
+                key:  "__type__"
+                value:  {
+                  string_value:  "__vector__"
                 }
               }
-              fields: {
-                key: "value"
-                value: {
-                  array_value: {
-                    values: {
-                      double_value: 0.274795264005661
+              fields:  {
+                key:  "value"
+                value:  {
+                  array_value:  {
+                    values:  {
+                      double_value:  0.2749089002609253
                     }
-                    values: {
-                      double_value: 0.3172893524169922
+                    values:  {
+                      double_value:  0.3174206018447876
                     }
-                    values: {
-                      double_value: 0.3172893524169922
+                    values:  {
+                      double_value:  0.3174206018447876
                     }
-                    values: {
-                      double_value: 0.3059576153755188
+                    values:  {
+                      double_value:  0.30608412623405457
                     }
-                    values: {
-                      double_value: 0.2861270308494568
+                    values:  {
+                      double_value:  0.28624534606933594
                     }
-                    values: {
-                      double_value: 0.1473129242658615
+                    values:  {
+                      double_value:  0.1445397287607193
                     }
-                    values: {
-                      double_value: -0.7252328395843506
+                    values:  {
+                      double_value:  -0.7255327701568604
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    writes:  {
+      update:  {
+        name:  "projects/go-discovery-exp/databases/(default)/documents/vectorDBs/test/vectors/6170706c6534"
+        fields:  {
+          key:  "Embedding"
+          value:  {
+            map_value:  {
+              fields:  {
+                key:  "__type__"
+                value:  {
+                  string_value:  "__vector__"
+                }
+              }
+              fields:  {
+                key:  "value"
+                value:  {
+                  array_value:  {
+                    values:  {
+                      double_value:  0.274795264005661
+                    }
+                    values:  {
+                      double_value:  0.3172893524169922
+                    }
+                    values:  {
+                      double_value:  0.3172893524169922
+                    }
+                    values:  {
+                      double_value:  0.3059576153755188
+                    }
+                    values:  {
+                      double_value:  0.2861270308494568
+                    }
+                    values:  {
+                      double_value:  0.1473129242658615
+                    }
+                    values:  {
+                      double_value:  -0.7252328395843506
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
                     }
                   }
                 }
@@ -392,34 +392,34 @@ message: {
         }
       }
     }
-    writes: {
-      update: {
-        name: "projects/go-discovery-exp/databases/(default)/documents/vectors/ignore"
-        fields: {
-          key: "Embedding"
-          value: {
-            map_value: {
-              fields: {
-                key: "__type__"
-                value: {
-                  string_value: "__vector__"
+    writes:  {
+      update:  {
+        name:  "projects/go-discovery-exp/databases/(default)/documents/vectorDBs/test/vectors/69676e6f7265"
+        fields:  {
+          key:  "Embedding"
+          value:  {
+            map_value:  {
+              fields:  {
+                key:  "__type__"
+                value:  {
+                  string_value:  "__vector__"
                 }
               }
-              fields: {
-                key: "value"
-                value: {
-                  array_value: {
-                    values: {
-                      double_value: 0.31871140003204346
+              fields:  {
+                key:  "value"
+                value:  {
+                  array_value:  {
+                    values:  {
+                      double_value:  0.31871140003204346
                     }
-                    values: {
-                      double_value: 0.3154592514038086
+                    values:  {
+                      double_value:  0.3154592514038086
                     }
-                    values: {
-                      double_value: 0.32521572709083557
+                    values:  {
+                      double_value:  0.32521572709083557
                     }
-                    values: {
-                      double_value: -0.8325522541999817
+                    values:  {
+                      double_value:  -0.8325522541999817
                     }
                   }
                 }
@@ -429,117 +429,117 @@ message: {
         }
       }
     }
-    transaction: "\x11\xde\xc38\xb9/P\xaf!\"Y\x00\xd4u\xc8\xcd\x15}i\xe8Q\x0c\xc7/\xe1SfC\xd3$\xef\xa2\x18O\x9a%\xc4ѻ\x83\xea\x13\xa6\xaf\x824\x06\"\xaf\x1e\x89\xfan\xe2ϓ\x97gC\xebܲ\xc3\xfb;\xe2\x82x\xa3\xddM\xd9q倲\xb4A\xee[\x98\x7fP΁\xbeQ\xb1q{\x9d\xa7\x98I?\xe4\xf6;\x8b\xc3"
+    transaction:  "\x11N\xd7<b\x949vZ\"Y\x00\xd4u\xc8\xcdO\x91A\x0eόmzi\x06L$\x80\xee\x02k\x1d\x89ΰ\xf6\x00\x17AJ-\xd7A\xe5Fg\xe7}\x11\xe77\xad\x9e\xfa\xc0m\xb8-QT\xbc.\nj'\x1adV-\x04\xa7\x82eI\xb8\xf7\xf3\x14F\xb9\xebX\xddA\x153\xaf\x9e\xd1x$\xd6+&NJ\x81Ǒ"
   }
 }
-509
-kind: RESPONSE
-message: {
-  [type.googleapis.com/google.firestore.v1.CommitResponse]: {
-    write_results: {
-      update_time: {
-        seconds: 1721666628
-        nanos: 229712000
+528
+kind:  RESPONSE
+message:  {
+  [type.googleapis.com/google.firestore.v1.CommitResponse]:  {
+    write_results:  {
+      update_time:  {
+        seconds:  1722609341
+        nanos:  212533000
       }
     }
-    write_results: {
-      update_time: {
-        seconds: 1721666628
-        nanos: 229712000
+    write_results:  {
+      update_time:  {
+        seconds:  1722609341
+        nanos:  212533000
       }
     }
-    write_results: {
-      update_time: {
-        seconds: 1721666628
-        nanos: 229712000
+    write_results:  {
+      update_time:  {
+        seconds:  1722609341
+        nanos:  212533000
       }
     }
-    commit_time: {
-      seconds: 1722510075
-      nanos: 148135000
+    commit_time:  {
+      seconds:  1722609341
+      nanos:  212533000
     }
   }
 }
-ref_index: 11
-79
-kind: CREATE_STREAM
-method: "/google.firestore.v1.Firestore/BatchGetDocuments"
-264
-kind: SEND
-message: {
-  [type.googleapis.com/google.firestore.v1.BatchGetDocumentsRequest]: {
-    database: "projects/go-discovery-exp/databases/(default)"
-    documents: "projects/go-discovery-exp/databases/(default)/documents/vectors/apple3"
+ref_index:  11
+81
+kind:  CREATE_STREAM
+method:  "/google.firestore.v1.Firestore/BatchGetDocuments"
+291
+kind:  SEND
+message:  {
+  [type.googleapis.com/google.firestore.v1.BatchGetDocumentsRequest]:  {
+    database:  "projects/go-discovery-exp/databases/(default)"
+    documents:  "projects/go-discovery-exp/databases/(default)/documents/vectorDBs/test/vectors/6170706c6533"
   }
 }
-ref_index: 13
-2331
-kind: RECV
-message: {
-  [type.googleapis.com/google.firestore.v1.BatchGetDocumentsResponse]: {
-    found: {
-      name: "projects/go-discovery-exp/databases/(default)/documents/vectors/apple3"
-      fields: {
-        key: "Embedding"
-        value: {
-          map_value: {
-            fields: {
-              key: "__type__"
-              value: {
-                string_value: "__vector__"
+ref_index:  13
+2411
+kind:  RECV
+message:  {
+  [type.googleapis.com/google.firestore.v1.BatchGetDocumentsResponse]:  {
+    found:  {
+      name:  "projects/go-discovery-exp/databases/(default)/documents/vectorDBs/test/vectors/6170706c6533"
+      fields:  {
+        key:  "Embedding"
+        value:  {
+          map_value:  {
+            fields:  {
+              key:  "__type__"
+              value:  {
+                string_value:  "__vector__"
               }
             }
-            fields: {
-              key: "value"
-              value: {
-                array_value: {
-                  values: {
-                    double_value: 0.2749089002609253
+            fields:  {
+              key:  "value"
+              value:  {
+                array_value:  {
+                  values:  {
+                    double_value:  0.2749089002609253
                   }
-                  values: {
-                    double_value: 0.3174206018447876
+                  values:  {
+                    double_value:  0.3174206018447876
                   }
-                  values: {
-                    double_value: 0.3174206018447876
+                  values:  {
+                    double_value:  0.3174206018447876
                   }
-                  values: {
-                    double_value: 0.30608412623405457
+                  values:  {
+                    double_value:  0.30608412623405457
                   }
-                  values: {
-                    double_value: 0.28624534606933594
+                  values:  {
+                    double_value:  0.28624534606933594
                   }
-                  values: {
-                    double_value: 0.1445397287607193
+                  values:  {
+                    double_value:  0.1445397287607193
                   }
-                  values: {
-                    double_value: -0.7255327701568604
+                  values:  {
+                    double_value:  -0.7255327701568604
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
                 }
               }
@@ -547,273 +547,183 @@ message: {
           }
         }
       }
-      create_time: {
-        seconds: 1721666278
-        nanos: 579066000
+      create_time:  {
+        seconds:  1722609341
+        nanos:  212533000
       }
-      update_time: {
-        seconds: 1721666628
-        nanos: 229712000
+      update_time:  {
+        seconds:  1722609341
+        nanos:  212533000
       }
     }
-    read_time: {
-      seconds: 1722510074
-      nanos: 371441000
+    read_time:  {
+      seconds:  1722609341
+      nanos:  212533000
     }
   }
 }
-ref_index: 13
-40
-kind: RECV
-is_error: true
-ref_index: 13
-70
-kind: CREATE_STREAM
-method: "/google.firestore.v1.Firestore/RunQuery"
-2278
-kind: SEND
-message: {
-  [type.googleapis.com/google.firestore.v1.RunQueryRequest]: {
-    parent: "projects/go-discovery-exp/databases/(default)/documents"
-    structured_query: {
-      from: {
-        collection_id: "vectors"
+ref_index:  13
+43
+kind:  RECV
+is_error:  true
+ref_index:  13
+72
+kind:  CREATE_STREAM
+method:  "/google.firestore.v1.Firestore/RunQuery"
+2349
+kind:  SEND
+message:  {
+  [type.googleapis.com/google.firestore.v1.RunQueryRequest]:  {
+    parent:  "projects/go-discovery-exp/databases/(default)/documents/vectorDBs/test"
+    structured_query:  {
+      from:  {
+        collection_id:  "vectors"
       }
-      find_nearest: {
-        vector_field: {
-          field_path: "Embedding"
+      find_nearest:  {
+        vector_field:  {
+          field_path:  "Embedding"
         }
-        query_vector: {
-          map_value: {
-            fields: {
-              key: "__type__"
-              value: {
-                string_value: "__vector__"
+        query_vector:  {
+          map_value:  {
+            fields:  {
+              key:  "__type__"
+              value:  {
+                string_value:  "__vector__"
               }
             }
-            fields: {
-              key: "value"
-              value: {
-                array_value: {
-                  values: {
-                    double_value: 0.2746795415878296
+            fields:  {
+              key:  "value"
+              value:  {
+                array_value:  {
+                  values:  {
+                    double_value:  0.2746795415878296
                   }
-                  values: {
-                    double_value: 0.31715577840805054
+                  values:  {
+                    double_value:  0.31715577840805054
                   }
-                  values: {
-                    double_value: 0.31715577840805054
+                  values:  {
+                    double_value:  0.31715577840805054
                   }
-                  values: {
-                    double_value: 0.3058287799358368
+                  values:  {
+                    double_value:  0.3058287799358368
                   }
-                  values: {
-                    double_value: 0.28600654006004333
+                  values:  {
+                    double_value:  0.28600654006004333
                   }
-                  values: {
-                    double_value: 0.15008264780044556
+                  values:  {
+                    double_value:  0.15008264780044556
                   }
-                  values: {
-                    double_value: -0.7249274849891663
+                  values:  {
+                    double_value:  -0.7249274849891663
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
                 }
               }
             }
           }
         }
-        distance_measure: DOT_PRODUCT
-        limit: {
-          value: 5
+        distance_measure:  DOT_PRODUCT
+        limit:  {
+          value:  5
         }
       }
     }
   }
 }
-ref_index: 17
-2322
-kind: RECV
-message: {
-  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
-    document: {
-      name: "projects/go-discovery-exp/databases/(default)/documents/vectors/apple4"
-      fields: {
-        key: "Embedding"
-        value: {
-          map_value: {
-            fields: {
-              key: "__type__"
-              value: {
-                string_value: "__vector__"
+ref_index:  17
+2402
+kind:  RECV
+message:  {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]:  {
+    document:  {
+      name:  "projects/go-discovery-exp/databases/(default)/documents/vectorDBs/test/vectors/6170706c6534"
+      fields:  {
+        key:  "Embedding"
+        value:  {
+          map_value:  {
+            fields:  {
+              key:  "__type__"
+              value:  {
+                string_value:  "__vector__"
               }
             }
-            fields: {
-              key: "value"
-              value: {
-                array_value: {
-                  values: {
-                    double_value: 0.274795264005661
+            fields:  {
+              key:  "value"
+              value:  {
+                array_value:  {
+                  values:  {
+                    double_value:  0.274795264005661
                   }
-                  values: {
-                    double_value: 0.3172893524169922
+                  values:  {
+                    double_value:  0.3172893524169922
                   }
-                  values: {
-                    double_value: 0.3172893524169922
+                  values:  {
+                    double_value:  0.3172893524169922
                   }
-                  values: {
-                    double_value: 0.3059576153755188
+                  values:  {
+                    double_value:  0.3059576153755188
                   }
-                  values: {
-                    double_value: 0.2861270308494568
+                  values:  {
+                    double_value:  0.2861270308494568
                   }
-                  values: {
-                    double_value: 0.1473129242658615
+                  values:  {
+                    double_value:  0.1473129242658615
                   }
-                  values: {
-                    double_value: -0.7252328395843506
+                  values:  {
+                    double_value:  -0.7252328395843506
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-      create_time: {
-        seconds: 1721666278
-        nanos: 579066000
-      }
-      update_time: {
-        seconds: 1721666628
-        nanos: 229712000
-      }
-    }
-    read_time: {
-      seconds: 1722510075
-      nanos: 455689000
-    }
-  }
-}
-ref_index: 17
-2325
-kind: RECV
-message: {
-  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
-    document: {
-      name: "projects/go-discovery-exp/databases/(default)/documents/vectors/apple3"
-      fields: {
-        key: "Embedding"
-        value: {
-          map_value: {
-            fields: {
-              key: "__type__"
-              value: {
-                string_value: "__vector__"
-              }
-            }
-            fields: {
-              key: "value"
-              value: {
-                array_value: {
-                  values: {
-                    double_value: 0.2749089002609253
-                  }
-                  values: {
-                    double_value: 0.3174206018447876
-                  }
-                  values: {
-                    double_value: 0.3174206018447876
-                  }
-                  values: {
-                    double_value: 0.30608412623405457
-                  }
-                  values: {
-                    double_value: 0.28624534606933594
-                  }
-                  values: {
-                    double_value: 0.1445397287607193
-                  }
-                  values: {
-                    double_value: -0.7255327701568604
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
                 }
               }
@@ -821,89 +731,89 @@ message: {
           }
         }
       }
-      create_time: {
-        seconds: 1721666278
-        nanos: 579066000
+      create_time:  {
+        seconds:  1722609341
+        nanos:  212533000
       }
-      update_time: {
-        seconds: 1721666628
-        nanos: 229712000
+      update_time:  {
+        seconds:  1722609341
+        nanos:  212533000
       }
     }
-    read_time: {
-      seconds: 1722510075
-      nanos: 455689000
+    read_time:  {
+      seconds:  1722609341
+      nanos:  419778000
     }
   }
 }
-ref_index: 17
-2346
-kind: RECV
-message: {
-  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
-    document: {
-      name: "projects/go-discovery-exp/databases/(default)/documents/vectors/orange1"
-      fields: {
-        key: "Embedding"
-        value: {
-          map_value: {
-            fields: {
-              key: "__type__"
-              value: {
-                string_value: "__vector__"
+ref_index:  17
+2405
+kind:  RECV
+message:  {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]:  {
+    document:  {
+      name:  "projects/go-discovery-exp/databases/(default)/documents/vectorDBs/test/vectors/6170706c6533"
+      fields:  {
+        key:  "Embedding"
+        value:  {
+          map_value:  {
+            fields:  {
+              key:  "__type__"
+              value:  {
+                string_value:  "__vector__"
               }
             }
-            fields: {
-              key: "value"
-              value: {
-                array_value: {
-                  values: {
-                    double_value: 0.30146464705467224
+            fields:  {
+              key:  "value"
+              value:  {
+                array_value:  {
+                  values:  {
+                    double_value:  0.2749089002609253
                   }
-                  values: {
-                    double_value: 0.30961233377456665
+                  values:  {
+                    double_value:  0.3174206018447876
                   }
-                  values: {
-                    double_value: 0.2634420692920685
+                  values:  {
+                    double_value:  0.3174206018447876
                   }
-                  values: {
-                    double_value: 0.29874876141548157
+                  values:  {
+                    double_value:  0.30608412623405457
                   }
-                  values: {
-                    double_value: 0.2797374725341797
+                  values:  {
+                    double_value:  0.28624534606933594
                   }
-                  values: {
-                    double_value: 0.27430567145347595
+                  values:  {
+                    double_value:  0.1445397287607193
                   }
-                  values: {
-                    double_value: 0.13307899236679077
+                  values:  {
+                    double_value:  -0.7255327701568604
                   }
-                  values: {
-                    double_value: -0.6952698230743408
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
                 }
               }
@@ -911,89 +821,89 @@ message: {
           }
         }
       }
-      create_time: {
-        seconds: 1721665713
-        nanos: 754362000
+      create_time:  {
+        seconds:  1722609341
+        nanos:  212533000
       }
-      update_time: {
-        seconds: 1721666627
-        nanos: 948188000
+      update_time:  {
+        seconds:  1722609341
+        nanos:  212533000
       }
     }
-    read_time: {
-      seconds: 1722510075
-      nanos: 455689000
+    read_time:  {
+      seconds:  1722609341
+      nanos:  419778000
     }
   }
 }
-ref_index: 17
-2341
-kind: RECV
-message: {
-  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
-    document: {
-      name: "projects/go-discovery-exp/databases/(default)/documents/vectors/orange2"
-      fields: {
-        key: "Embedding"
-        value: {
-          map_value: {
-            fields: {
-              key: "__type__"
-              value: {
-                string_value: "__vector__"
+ref_index:  17
+2427
+kind:  RECV
+message:  {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]:  {
+    document:  {
+      name:  "projects/go-discovery-exp/databases/(default)/documents/vectorDBs/test/vectors/6f72616e676531"
+      fields:  {
+        key:  "Embedding"
+        value:  {
+          map_value:  {
+            fields:  {
+              key:  "__type__"
+              value:  {
+                string_value:  "__vector__"
               }
             }
-            fields: {
-              key: "value"
-              value: {
-                array_value: {
-                  values: {
-                    double_value: 0.30135461688041687
+            fields:  {
+              key:  "value"
+              value:  {
+                array_value:  {
+                  values:  {
+                    double_value:  0.30146464705467224
                   }
-                  values: {
-                    double_value: 0.3094993531703949
+                  values:  {
+                    double_value:  0.30961233377456665
                   }
-                  values: {
-                    double_value: 0.2633459270000458
+                  values:  {
+                    double_value:  0.2634420692920685
                   }
-                  values: {
-                    double_value: 0.298639714717865
+                  values:  {
+                    double_value:  0.29874876141548157
                   }
-                  values: {
-                    double_value: 0.27963536977767944
+                  values:  {
+                    double_value:  0.2797374725341797
                   }
-                  values: {
-                    double_value: 0.2742055654525757
+                  values:  {
+                    double_value:  0.27430567145347595
                   }
-                  values: {
-                    double_value: 0.1357453316450119
+                  values:  {
+                    double_value:  0.13307899236679077
                   }
-                  values: {
-                    double_value: -0.695016086101532
+                  values:  {
+                    double_value:  -0.6952698230743408
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
                 }
               }
@@ -1001,211 +911,89 @@ message: {
           }
         }
       }
-      create_time: {
-        seconds: 1721665713
-        nanos: 507024000
+      create_time:  {
+        seconds:  1722609340
+        nanos:  946687000
       }
-      update_time: {
-        seconds: 1721666627
-        nanos: 811432000
+      update_time:  {
+        seconds:  1722609340
+        nanos:  946687000
       }
     }
-    read_time: {
-      seconds: 1722510075
-      nanos: 455689000
-    }
-  }
-}
-ref_index: 17
-40
-kind: RECV
-is_error: true
-ref_index: 17
-79
-kind: CREATE_STREAM
-method: "/google.firestore.v1.Firestore/BatchGetDocuments"
-253
-kind: SEND
-message: {
-  [type.googleapis.com/google.firestore.v1.BatchGetDocumentsRequest]: {
-    database: "projects/go-discovery-exp/databases/(default)"
-    documents: "projects/go-discovery-exp/databases/(default)/documents/c/d"
-  }
-}
-ref_index: 24
-262
-kind: RECV
-message: {
-  [type.googleapis.com/google.firestore.v1.BatchGetDocumentsResponse]: {
-    missing: "projects/go-discovery-exp/databases/(default)/documents/c/d"
-    read_time: {
-      seconds: 1722510075
-      nanos: 629932000
+    read_time:  {
+      seconds:  1722609341
+      nanos:  419778000
     }
   }
 }
-ref_index: 24
-40
-kind: RECV
-is_error: true
-ref_index: 24
-70
-kind: CREATE_STREAM
-method: "/google.firestore.v1.Firestore/RunQuery"
-2278
-kind: SEND
-message: {
-  [type.googleapis.com/google.firestore.v1.RunQueryRequest]: {
-    parent: "projects/go-discovery-exp/databases/(default)/documents"
-    structured_query: {
-      from: {
-        collection_id: "vectors"
-      }
-      find_nearest: {
-        vector_field: {
-          field_path: "Embedding"
-        }
-        query_vector: {
-          map_value: {
-            fields: {
-              key: "__type__"
-              value: {
-                string_value: "__vector__"
+ref_index:  17
+2422
+kind:  RECV
+message:  {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]:  {
+    document:  {
+      name:  "projects/go-discovery-exp/databases/(default)/documents/vectorDBs/test/vectors/6f72616e676532"
+      fields:  {
+        key:  "Embedding"
+        value:  {
+          map_value:  {
+            fields:  {
+              key:  "__type__"
+              value:  {
+                string_value:  "__vector__"
               }
             }
-            fields: {
-              key: "value"
-              value: {
-                array_value: {
-                  values: {
-                    double_value: 0.2746795415878296
+            fields:  {
+              key:  "value"
+              value:  {
+                array_value:  {
+                  values:  {
+                    double_value:  0.30135461688041687
                   }
-                  values: {
-                    double_value: 0.31715577840805054
+                  values:  {
+                    double_value:  0.3094993531703949
                   }
-                  values: {
-                    double_value: 0.31715577840805054
+                  values:  {
+                    double_value:  0.2633459270000458
                   }
-                  values: {
-                    double_value: 0.3058287799358368
+                  values:  {
+                    double_value:  0.298639714717865
                   }
-                  values: {
-                    double_value: 0.28600654006004333
+                  values:  {
+                    double_value:  0.27963536977767944
                   }
-                  values: {
-                    double_value: 0.15008264780044556
+                  values:  {
+                    double_value:  0.2742055654525757
                   }
-                  values: {
-                    double_value: -0.7249274849891663
+                  values:  {
+                    double_value:  0.1357453316450119
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  -0.695016086101532
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
-                  }
-                }
-              }
-            }
-          }
-        }
-        distance_measure: DOT_PRODUCT
-        limit: {
-          value: 3
-        }
-      }
-    }
-  }
-}
-ref_index: 28
-2322
-kind: RECV
-message: {
-  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
-    document: {
-      name: "projects/go-discovery-exp/databases/(default)/documents/vectors/apple4"
-      fields: {
-        key: "Embedding"
-        value: {
-          map_value: {
-            fields: {
-              key: "__type__"
-              value: {
-                string_value: "__vector__"
-              }
-            }
-            fields: {
-              key: "value"
-              value: {
-                array_value: {
-                  values: {
-                    double_value: 0.274795264005661
-                  }
-                  values: {
-                    double_value: 0.3172893524169922
-                  }
-                  values: {
-                    double_value: 0.3172893524169922
-                  }
-                  values: {
-                    double_value: 0.3059576153755188
-                  }
-                  values: {
-                    double_value: 0.2861270308494568
-                  }
-                  values: {
-                    double_value: 0.1473129242658615
-                  }
-                  values: {
-                    double_value: -0.7252328395843506
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
                 }
               }
@@ -1213,89 +1001,211 @@ message: {
           }
         }
       }
-      create_time: {
-        seconds: 1721666278
-        nanos: 579066000
+      create_time:  {
+        seconds:  1722609340
+        nanos:  833560000
       }
-      update_time: {
-        seconds: 1721666628
-        nanos: 229712000
+      update_time:  {
+        seconds:  1722609340
+        nanos:  833560000
       }
     }
-    read_time: {
-      seconds: 1722510075
-      nanos: 721203000
+    read_time:  {
+      seconds:  1722609341
+      nanos:  419778000
     }
   }
 }
-ref_index: 28
-2325
-kind: RECV
-message: {
-  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
-    document: {
-      name: "projects/go-discovery-exp/databases/(default)/documents/vectors/apple3"
-      fields: {
-        key: "Embedding"
-        value: {
-          map_value: {
-            fields: {
-              key: "__type__"
-              value: {
-                string_value: "__vector__"
+ref_index:  17
+43
+kind:  RECV
+is_error:  true
+ref_index:  17
+81
+kind:  CREATE_STREAM
+method:  "/google.firestore.v1.Firestore/BatchGetDocuments"
+259
+kind:  SEND
+message:  {
+  [type.googleapis.com/google.firestore.v1.BatchGetDocumentsRequest]:  {
+    database:  "projects/go-discovery-exp/databases/(default)"
+    documents:  "projects/go-discovery-exp/databases/(default)/documents/c/d"
+  }
+}
+ref_index:  24
+270
+kind:  RECV
+message:  {
+  [type.googleapis.com/google.firestore.v1.BatchGetDocumentsResponse]:  {
+    missing:  "projects/go-discovery-exp/databases/(default)/documents/c/d"
+    read_time:  {
+      seconds:  1722609341
+      nanos:  212533000
+    }
+  }
+}
+ref_index:  24
+43
+kind:  RECV
+is_error:  true
+ref_index:  24
+72
+kind:  CREATE_STREAM
+method:  "/google.firestore.v1.Firestore/RunQuery"
+2349
+kind:  SEND
+message:  {
+  [type.googleapis.com/google.firestore.v1.RunQueryRequest]:  {
+    parent:  "projects/go-discovery-exp/databases/(default)/documents/vectorDBs/test"
+    structured_query:  {
+      from:  {
+        collection_id:  "vectors"
+      }
+      find_nearest:  {
+        vector_field:  {
+          field_path:  "Embedding"
+        }
+        query_vector:  {
+          map_value:  {
+            fields:  {
+              key:  "__type__"
+              value:  {
+                string_value:  "__vector__"
               }
             }
-            fields: {
-              key: "value"
-              value: {
-                array_value: {
-                  values: {
-                    double_value: 0.2749089002609253
+            fields:  {
+              key:  "value"
+              value:  {
+                array_value:  {
+                  values:  {
+                    double_value:  0.2746795415878296
                   }
-                  values: {
-                    double_value: 0.3174206018447876
+                  values:  {
+                    double_value:  0.31715577840805054
                   }
-                  values: {
-                    double_value: 0.3174206018447876
+                  values:  {
+                    double_value:  0.31715577840805054
                   }
-                  values: {
-                    double_value: 0.30608412623405457
+                  values:  {
+                    double_value:  0.3058287799358368
                   }
-                  values: {
-                    double_value: 0.28624534606933594
+                  values:  {
+                    double_value:  0.28600654006004333
                   }
-                  values: {
-                    double_value: 0.1445397287607193
+                  values:  {
+                    double_value:  0.15008264780044556
                   }
-                  values: {
-                    double_value: -0.7255327701568604
+                  values:  {
+                    double_value:  -0.7249274849891663
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
+                  }
+                }
+              }
+            }
+          }
+        }
+        distance_measure:  DOT_PRODUCT
+        limit:  {
+          value:  3
+        }
+      }
+    }
+  }
+}
+ref_index:  28
+2402
+kind:  RECV
+message:  {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]:  {
+    document:  {
+      name:  "projects/go-discovery-exp/databases/(default)/documents/vectorDBs/test/vectors/6170706c6534"
+      fields:  {
+        key:  "Embedding"
+        value:  {
+          map_value:  {
+            fields:  {
+              key:  "__type__"
+              value:  {
+                string_value:  "__vector__"
+              }
+            }
+            fields:  {
+              key:  "value"
+              value:  {
+                array_value:  {
+                  values:  {
+                    double_value:  0.274795264005661
+                  }
+                  values:  {
+                    double_value:  0.3172893524169922
+                  }
+                  values:  {
+                    double_value:  0.3172893524169922
+                  }
+                  values:  {
+                    double_value:  0.3059576153755188
+                  }
+                  values:  {
+                    double_value:  0.2861270308494568
+                  }
+                  values:  {
+                    double_value:  0.1473129242658615
+                  }
+                  values:  {
+                    double_value:  -0.7252328395843506
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
                   }
                 }
               }
@@ -1303,89 +1213,89 @@ message: {
           }
         }
       }
-      create_time: {
-        seconds: 1721666278
-        nanos: 579066000
+      create_time:  {
+        seconds:  1722609341
+        nanos:  212533000
       }
-      update_time: {
-        seconds: 1721666628
-        nanos: 229712000
+      update_time:  {
+        seconds:  1722609341
+        nanos:  212533000
       }
     }
-    read_time: {
-      seconds: 1722510075
-      nanos: 721203000
+    read_time:  {
+      seconds:  1722609341
+      nanos:  855078000
     }
   }
 }
-ref_index: 28
-2346
-kind: RECV
-message: {
-  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
-    document: {
-      name: "projects/go-discovery-exp/databases/(default)/documents/vectors/orange1"
-      fields: {
-        key: "Embedding"
-        value: {
-          map_value: {
-            fields: {
-              key: "__type__"
-              value: {
-                string_value: "__vector__"
+ref_index:  28
+2405
+kind:  RECV
+message:  {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]:  {
+    document:  {
+      name:  "projects/go-discovery-exp/databases/(default)/documents/vectorDBs/test/vectors/6170706c6533"
+      fields:  {
+        key:  "Embedding"
+        value:  {
+          map_value:  {
+            fields:  {
+              key:  "__type__"
+              value:  {
+                string_value:  "__vector__"
               }
             }
-            fields: {
-              key: "value"
-              value: {
-                array_value: {
-                  values: {
-                    double_value: 0.30146464705467224
+            fields:  {
+              key:  "value"
+              value:  {
+                array_value:  {
+                  values:  {
+                    double_value:  0.2749089002609253
                   }
-                  values: {
-                    double_value: 0.30961233377456665
+                  values:  {
+                    double_value:  0.3174206018447876
                   }
-                  values: {
-                    double_value: 0.2634420692920685
+                  values:  {
+                    double_value:  0.3174206018447876
                   }
-                  values: {
-                    double_value: 0.29874876141548157
+                  values:  {
+                    double_value:  0.30608412623405457
                   }
-                  values: {
-                    double_value: 0.2797374725341797
+                  values:  {
+                    double_value:  0.28624534606933594
                   }
-                  values: {
-                    double_value: 0.27430567145347595
+                  values:  {
+                    double_value:  0.1445397287607193
                   }
-                  values: {
-                    double_value: 0.13307899236679077
+                  values:  {
+                    double_value:  -0.7255327701568604
                   }
-                  values: {
-                    double_value: -0.6952698230743408
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
                 }
               }
@@ -1393,23 +1303,113 @@ message: {
           }
         }
       }
-      create_time: {
-        seconds: 1721665713
-        nanos: 754362000
+      create_time:  {
+        seconds:  1722609341
+        nanos:  212533000
       }
-      update_time: {
-        seconds: 1721666627
-        nanos: 948188000
+      update_time:  {
+        seconds:  1722609341
+        nanos:  212533000
       }
     }
-    read_time: {
-      seconds: 1722510075
-      nanos: 721203000
+    read_time:  {
+      seconds:  1722609341
+      nanos:  855078000
     }
   }
 }
-ref_index: 28
-40
-kind: RECV
-is_error: true
-ref_index: 28
+ref_index:  28
+2427
+kind:  RECV
+message:  {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]:  {
+    document:  {
+      name:  "projects/go-discovery-exp/databases/(default)/documents/vectorDBs/test/vectors/6f72616e676531"
+      fields:  {
+        key:  "Embedding"
+        value:  {
+          map_value:  {
+            fields:  {
+              key:  "__type__"
+              value:  {
+                string_value:  "__vector__"
+              }
+            }
+            fields:  {
+              key:  "value"
+              value:  {
+                array_value:  {
+                  values:  {
+                    double_value:  0.30146464705467224
+                  }
+                  values:  {
+                    double_value:  0.30961233377456665
+                  }
+                  values:  {
+                    double_value:  0.2634420692920685
+                  }
+                  values:  {
+                    double_value:  0.29874876141548157
+                  }
+                  values:  {
+                    double_value:  0.2797374725341797
+                  }
+                  values:  {
+                    double_value:  0.27430567145347595
+                  }
+                  values:  {
+                    double_value:  0.13307899236679077
+                  }
+                  values:  {
+                    double_value:  -0.6952698230743408
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      create_time:  {
+        seconds:  1722609340
+        nanos:  946687000
+      }
+      update_time:  {
+        seconds:  1722609340
+        nanos:  946687000
+      }
+    }
+    read_time:  {
+      seconds:  1722609341
+      nanos:  855078000
+    }
+  }
+}
+ref_index:  28
+43
+kind:  RECV
+is_error:  true
+ref_index:  28

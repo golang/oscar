@@ -15,7 +15,8 @@ func TestVectorDB(t *testing.T) {
 	rr, project, database := openRR(t, "testdata/vectordb.grpcrr")
 	ctx := context.Background()
 	storage.TestVectorDB(t, func() storage.VectorDB {
-		vdb, err := NewVectorDB(ctx, &DBOptions{ProjectID: project, Database: database, ClientOptions: rr.ClientOptions()})
+		vdb, err := NewVectorDB(ctx, "test",
+			&DBOptions{ProjectID: project, Database: database, ClientOptions: rr.ClientOptions()})
 		if err != nil {
 			t.Fatal(err)
 		}
