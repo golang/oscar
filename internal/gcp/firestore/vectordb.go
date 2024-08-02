@@ -116,7 +116,7 @@ type vBatch struct {
 
 // Batch implements [storage.VectorDB.Batch].
 func (db *VectorDB) Batch() storage.VectorBatch {
-	return &vBatch{db.fs.newBatch(vectorCollection)}
+	return &vBatch{db.fs.newBatch(db.fs.client.Collection(vectorCollection))}
 }
 
 // Approximate size of a float64 encoded as a Firestore value.

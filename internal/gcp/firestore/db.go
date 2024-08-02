@@ -21,7 +21,8 @@ import (
 // It implements [storage.DB].
 type DB struct {
 	*fstore
-	uid int64 // unique ID, to identify lock owners
+	uid                 int64 // unique ID, to identify lock owners
+	lockColl, valueColl *firestore.CollectionRef
 }
 
 // NewDB constructs a [DB] with the given [DBOptions].
@@ -30,13 +31,13 @@ func NewDB(ctx context.Context, dbopts *DBOptions) (*DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &DB{fs, rand.Int64()}, nil
+	return &DB{
+		fstore:    fs,
+		uid:       rand.Int64(),
+		lockColl:  fs.client.Collection("locks"),
+		valueColl: fs.client.Collection("values"),
+	}, nil
 }
-
-const (
-	lockCollection  = "locks"
-	valueCollection = "values"
-)
 
 // vars for testing
 var (
@@ -71,7 +72,7 @@ func (db *DB) waitForLock(name string) bool {
 	// A snapshot iterator iterates over changing states of the document.
 	// It yields its first value immediately, and subsequent values only when
 	// the document changes state.
-	dr := db.client.Collection(lockCollection).Doc(encodeLockName(name))
+	dr := db.lockColl.Doc(encodeLockName(name))
 	iter := dr.Snapshots(ctx)
 	defer iter.Stop()
 	for {
@@ -132,12 +133,12 @@ type lock struct {
 
 // setLock sets the value of the named lock in the DB, along with its creation time.
 func (db *DB) setLock(tx *firestore.Transaction, name string) {
-	db.set(tx, lockCollection, encodeLockName(name), lock{db.uid})
+	db.set(tx, db.lockColl, encodeLockName(name), lock{db.uid})
 }
 
 // getLock returns the value of the named lock in the DB.
 func (db *DB) getLock(tx *firestore.Transaction, name string) (int64, time.Time) {
-	ds := db.get(tx, lockCollection, encodeLockName(name))
+	ds := db.get(tx, db.lockColl, encodeLockName(name))
 	if ds == nil {
 		return 0, time.Time{}
 	}
@@ -147,7 +148,7 @@ func (db *DB) getLock(tx *firestore.Transaction, name string) (int64, time.Time)
 
 // deleteLock deletes the named lock in the DB.
 func (db *DB) deleteLock(tx *firestore.Transaction, name string) {
-	db.delete(tx, lockCollection, encodeLockName(name))
+	db.delete(tx, db.lockColl, encodeLockName(name))
 }
 
 func encodeLockName(name string) string {
@@ -156,13 +157,13 @@ func encodeLockName(name string) string {
 
 // Set implements [storage.DB.Set].
 func (db *DB) Set(key, val []byte) {
-	db.set(nil, valueCollection, encodeKey(key), value{val})
+	db.set(nil, db.valueColl, encodeKey(key), value{val})
 }
 
 // Get implements [storage.DB.Get].
 func (db *DB) Get(key []byte) ([]byte, bool) {
 	ekey := encodeKey(key)
-	ds := db.get(nil, valueCollection, ekey)
+	ds := db.get(nil, db.valueColl, ekey)
 	if ds == nil {
 		return nil, false
 	}
@@ -171,18 +172,18 @@ func (db *DB) Get(key []byte) ([]byte, bool) {
 
 // Delete implements [storage.DB.Delete].
 func (db *DB) Delete(key []byte) {
-	db.delete(nil, valueCollection, encodeKey(key))
+	db.delete(nil, db.valueColl, encodeKey(key))
 }
 
 // DeleteRange implements [storage.DB.DeleteRange].
 func (db *DB) DeleteRange(start, end []byte) {
-	db.deleteRange(valueCollection, encodeKey(start), encodeKey(end))
+	db.deleteRange(db.valueColl, encodeKey(start), encodeKey(end))
 }
 
 // Scan implements [storage.DB.Scan].
 func (db *DB) Scan(start, end []byte) iter.Seq2[[]byte, func() []byte] {
 	return func(yield func(key []byte, valf func() []byte) bool) {
-		for ds := range db.scan(nil, valueCollection, encodeKey(start), encodeKey(end)) {
+		for ds := range db.scan(nil, db.valueColl, encodeKey(start), encodeKey(end)) {
 			if !yield(decodeKey(ds.Ref.ID), func() []byte { return dataTo[value](db.fstore, ds).V }) {
 				return
 			}
@@ -192,7 +193,7 @@ func (db *DB) Scan(start, end []byte) iter.Seq2[[]byte, func() []byte] {
 
 // Batch implements [storage.DB.Batch].
 func (db *DB) Batch() storage.Batch {
-	return &dbBatch{db.newBatch(valueCollection)}
+	return &dbBatch{db.newBatch(db.valueColl)}
 }
 
 type dbBatch struct {

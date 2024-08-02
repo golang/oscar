@@ -92,8 +92,8 @@ func (f *fstore) Panic(msg string, args ...any) {
 
 // get retrieves the document with the given collection and ID.
 // If tx is non-nil, the get happens inside the transaction.
-func (f *fstore) get(tx *firestore.Transaction, coll, id string) *firestore.DocumentSnapshot {
-	dr := f.client.Collection(coll).Doc(id)
+func (f *fstore) get(tx *firestore.Transaction, coll *firestore.CollectionRef, id string) *firestore.DocumentSnapshot {
+	dr := coll.Doc(id)
 	var ds *firestore.DocumentSnapshot
 	var err error
 	if tx == nil {
@@ -113,8 +113,8 @@ func (f *fstore) get(tx *firestore.Transaction, coll, id string) *firestore.Docu
 
 // set sets the document with the given collection and ID to value.
 // If tx is non-nil, the set happens inside the transaction.
-func (f *fstore) set(tx *firestore.Transaction, coll, key string, value any) {
-	dr := f.client.Collection(coll).Doc(key)
+func (f *fstore) set(tx *firestore.Transaction, coll *firestore.CollectionRef, key string, value any) {
+	dr := coll.Doc(key)
 	if dr == nil {
 		f.Panic("firestore set bad doc ref args", "collection", coll, "key", key)
 	}
@@ -133,8 +133,8 @@ func (f *fstore) set(tx *firestore.Transaction, coll, key string, value any) {
 // delete deletes the document with the given collection and ID.
 // If tx is non-nil, the delete happens inside the transaction.
 // It is not an error to call delete on a document that doesn't exist.
-func (f *fstore) delete(tx *firestore.Transaction, coll, key string) {
-	dr := f.client.Collection(coll).Doc(key)
+func (f *fstore) delete(tx *firestore.Transaction, coll *firestore.CollectionRef, key string) {
+	dr := coll.Doc(key)
 	var err error
 	if tx == nil {
 		_, err = dr.Delete(context.TODO())
@@ -149,7 +149,7 @@ func (f *fstore) delete(tx *firestore.Transaction, coll, key string) {
 
 // deleteRange deletes all the documents in the collection coll whose IDs are between
 // start and end, inclusive.
-func (f *fstore) deleteRange(coll, start, end string) {
+func (f *fstore) deleteRange(coll *firestore.CollectionRef, start, end string) {
 	bw := f.client.BulkWriter(context.TODO())
 	for ds := range f.scan(nil, coll, start, end) {
 		if _, err := bw.Delete(ds.Ref); err != nil {
@@ -174,8 +174,8 @@ func (f *fstore) runTransaction(fn func(ctx context.Context, tx *firestore.Trans
 
 // scan returns an iterator over the documents in the collection coll whose IDs are
 // between start and end, inclusive.
-func (f *fstore) scan(tx *firestore.Transaction, coll, start, end string) iter.Seq[*firestore.DocumentSnapshot] {
-	query := f.client.Collection(coll).
+func (f *fstore) scan(tx *firestore.Transaction, coll *firestore.CollectionRef, start, end string) iter.Seq[*firestore.DocumentSnapshot] {
+	query := coll.
 		OrderBy(firestore.DocumentID, firestore.Asc).
 		StartAt(start).
 		EndAt(end)
@@ -217,13 +217,13 @@ func dataTo[T any](f *fstore, ds *firestore.DocumentSnapshot) T {
 // All of a batch's operations must occur within the same collection.
 type batch struct {
 	f              *fstore
-	coll           string
+	coll           *firestore.CollectionRef
 	ops            []*op
 	size           int  // approximate size of ops
 	hasDeleteRange bool // at least one op is a deleteRange
 }
 
-func (f *fstore) newBatch(coll string) *batch {
+func (f *fstore) newBatch(coll *firestore.CollectionRef) *batch {
 	return &batch{f: f, coll: coll, size: fixedSize}
 }
 
