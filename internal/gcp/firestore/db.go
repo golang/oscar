@@ -9,12 +9,14 @@ import (
 	"encoding/hex"
 	"fmt"
 	"iter"
+	"log/slog"
 	"math/rand/v2"
 	"slices"
 	"time"
 
 	"cloud.google.com/go/firestore"
 	"golang.org/x/oscar/internal/storage"
+	"google.golang.org/api/option"
 )
 
 // DB is a connection to a Firestore database.
@@ -26,9 +28,14 @@ type DB struct {
 	values *firestore.CollectionRef
 }
 
-// NewDB constructs a [DB] with the given [DBOptions].
-func NewDB(ctx context.Context, dbopts *DBOptions) (*DB, error) {
-	fs, err := newFstore(ctx, dbopts)
+// NewDB constructs a [DB] with the given GCP logger, project ID, Firestore database, and client options.
+// The projectID must not be empty.
+// If the database is empty, the default database will be used.
+//
+// Key-value pairs are stored in the collection "values".
+// Locks are stored in the collection "locks".
+func NewDB(ctx context.Context, lg *slog.Logger, projectID, database string, opts ...option.ClientOption) (*DB, error) {
+	fs, err := newFstore(ctx, lg, projectID, database, opts)
 	if err != nil {
 		return nil, err
 	}

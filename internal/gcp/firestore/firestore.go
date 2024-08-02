@@ -23,6 +23,7 @@ package firestore
 
 import (
 	"context"
+	"errors"
 	"iter"
 	"log/slog"
 	"reflect"
@@ -35,34 +36,20 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// DBOptions is the configuration for a [DB] or [VectorDB].
-type DBOptions struct {
-	ProjectID     string // if empty, attempt to detect the project
-	Database      string // if empty, use the default database
-	Logger        *slog.Logger
-	ClientOptions []option.ClientOption // options to the Firestore client
-}
-
 // fstore implements operations common to both [storage.DB] and [storage.VectorDB].
 type fstore struct {
 	client *firestore.Client
 	slog   *slog.Logger
 }
 
-func newFstore(ctx context.Context, dbopts *DBOptions) (*fstore, error) {
-	if dbopts == nil {
-		dbopts = &DBOptions{}
+func newFstore(ctx context.Context, lg *slog.Logger, projectID, database string, opts []option.ClientOption) (*fstore, error) {
+	if projectID == "" {
+		return nil, errors.New("firestore: empty projectID")
 	}
-	if dbopts.ProjectID == "" {
-		dbopts.ProjectID = firestore.DetectProjectID
+	if database == "" {
+		database = firestore.DefaultDatabaseID
 	}
-	if dbopts.Database == "" {
-		dbopts.Database = firestore.DefaultDatabaseID
-	}
-	if dbopts.Logger == nil {
-		dbopts.Logger = slog.Default()
-	}
-	client, err := firestore.NewClientWithDatabase(ctx, dbopts.ProjectID, dbopts.Database, dbopts.ClientOptions...)
+	client, err := firestore.NewClientWithDatabase(ctx, projectID, database, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +58,7 @@ func newFstore(ctx context.Context, dbopts *DBOptions) (*fstore, error) {
 	if _, err := client.Doc("c/d").Get(ctx); err != nil && !isNotFound(err) {
 		return nil, err
 	}
-	return &fstore{client: client, slog: dbopts.Logger}, nil
+	return &fstore{client: client, slog: lg}, nil
 }
 
 func (f *fstore) Flush() {

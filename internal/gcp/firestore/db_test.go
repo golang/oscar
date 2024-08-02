@@ -16,6 +16,7 @@ import (
 
 	"golang.org/x/oscar/internal/grpcrr"
 	"golang.org/x/oscar/internal/storage"
+	"golang.org/x/oscar/internal/testutil"
 )
 
 var (
@@ -32,7 +33,7 @@ func TestDB(t *testing.T) {
 	}()
 	ctx := context.Background()
 
-	db, err := NewDB(ctx, &DBOptions{ProjectID: fsProject, Database: fsDatabase, ClientOptions: rr.ClientOptions()})
+	db, err := NewDB(ctx, testutil.Slogger(t), fsProject, fsDatabase, rr.ClientOptions()...)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -63,7 +64,7 @@ func TestLock(t *testing.T) {
 		t.Skip("missing -project")
 	}
 	ctx := context.Background()
-	db, err := NewDB(ctx, &DBOptions{ProjectID: *project, Database: *database})
+	db, err := NewDB(ctx, testutil.Slogger(t), *project, *database, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -101,7 +102,7 @@ func TestLock(t *testing.T) {
 		// So pick a random name.
 		name := fmt.Sprintf("M%d", rand.IntN(10))
 		db.deleteLock(nil, name) // Ensure the lock is not present.
-		db2, err := NewDB(ctx, &DBOptions{ProjectID: *project, Database: *database})
+		db2, err := NewDB(ctx, testutil.Slogger(t), *project, *database, nil)
 		if err != nil {
 			t.Fatal(err)
 		}

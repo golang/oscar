@@ -7,12 +7,14 @@ package firestore
 import (
 	"context"
 	"encoding/hex"
+	"log/slog"
 	"path"
 
 	"cloud.google.com/go/firestore"
 	"golang.org/x/oscar/internal/llm"
 	"golang.org/x/oscar/internal/storage"
 	"google.golang.org/api/iterator"
+	"google.golang.org/api/option"
 )
 
 // A VectorDB is a [storage.VectorDB] using Firestore.
@@ -22,7 +24,10 @@ type VectorDB struct {
 	coll      *firestore.CollectionRef
 }
 
-// NewVectorDB creates a [VectorDB] with the given namespace and [DBOptions].
+// NewVectorDB creates a [VectorDB] with the given logger, GCP project ID,
+// Firestore database, namespace and client options.
+// The projectID must not be empty.
+// If the database is empty, the default database will be used.
 // The namespace must be a [valid Firestore collection ID].
 // Namespaces allow multiple vector DBs to be stored in the same Firestore DB.
 //
@@ -30,8 +35,8 @@ type VectorDB struct {
 // "vectorDBs/NS/vectors".
 //
 // [valid Firestore collection ID]: https://firebase.google.com/docs/firestore/quotas#collections_documents_and_fields
-func NewVectorDB(ctx context.Context, namespace string, dbopts *DBOptions) (*VectorDB, error) {
-	fs, err := newFstore(ctx, dbopts)
+func NewVectorDB(ctx context.Context, lg *slog.Logger, projectID, database, namespace string, opts ...option.ClientOption) (*VectorDB, error) {
+	fs, err := newFstore(ctx, lg, projectID, database, opts)
 	if err != nil {
 		return nil, err
 	}

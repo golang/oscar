@@ -9,14 +9,14 @@ import (
 	"testing"
 
 	"golang.org/x/oscar/internal/storage"
+	"golang.org/x/oscar/internal/testutil"
 )
 
 func TestVectorDB(t *testing.T) {
 	rr, project, database := openRR(t, "testdata/vectordb.grpcrr")
 	ctx := context.Background()
 	storage.TestVectorDB(t, func() storage.VectorDB {
-		vdb, err := NewVectorDB(ctx, "test",
-			&DBOptions{ProjectID: project, Database: database, ClientOptions: rr.ClientOptions()})
+		vdb, err := NewVectorDB(ctx, testutil.Slogger(t), project, database, "test", rr.ClientOptions()...)
 		if err != nil {
 			t.Fatal(err)
 		}
