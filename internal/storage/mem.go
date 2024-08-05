@@ -273,10 +273,24 @@ func MemVectorDB(db DB, lg *slog.Logger, namespace string) VectorDB {
 }
 
 func (db *memVectorDB) Set(id string, vec llm.Vector) {
+	// No need to put db.storage.Set under db.mu.Lock() since
+	// it does its own locking. The other potentially problematic
+	// contention is between what is in db.storage and db.cache
+	// under several concurrent writes. This is only a problem
+	// when different routines put a different value for the same
+	// document, which is highly unlikely in practice.
 	db.storage.Set(ordered.Encode("llm.Vector", db.namespace, id), vec.Encode())
 
 	db.mu.Lock()
 	db.cache[id] = slices.Clone(vec)
+	db.mu.Unlock()
+}
+
+func (db *memVectorDB) Delete(id string) {
+	db.storage.Delete(ordered.Encode("llm.Vector", db.namespace, id))
+
+	db.mu.Lock()
+	delete(db.cache, id)
 	db.mu.Unlock()
 }
 
@@ -285,6 +299,32 @@ func (db *memVectorDB) Get(name string) (llm.Vector, bool) {
 	vec, ok := db.cache[name]
 	db.mu.RUnlock()
 	return vec, ok
+}
+
+// All returns all ID-vector pairs. There are no guarantees
+// on the iteration order; the order can change with each call.
+func (db *memVectorDB) All() iter.Seq2[string, func() llm.Vector] {
+	return func(yield func(key string, val func() llm.Vector) bool) {
+		db.mu.RLock()
+		locked := true
+		defer func() {
+			if locked {
+				db.mu.RUnlock()
+			}
+		}()
+		// Iterate through the cache since we have an invariant that
+		// both the cache and the underlying storage are synced.
+		for id, vec := range db.cache {
+			val := func() llm.Vector { return vec }
+			db.mu.RUnlock()
+			locked = false
+			if !yield(id, val) {
+				return
+			}
+			db.mu.RLock()
+			locked = true
+		}
+	}
 }
 
 func (db *memVectorDB) Search(target llm.Vector, n int) []VectorResult {
@@ -319,6 +359,12 @@ func (b *memVectorBatch) Set(name string, vec llm.Vector) {
 	b.sb.Set(ordered.Encode("llm.Vector", b.db.namespace, name), vec.Encode())
 
 	b.w[name] = slices.Clone(vec)
+}
+
+func (b *memVectorBatch) Delete(name string) {
+	b.sb.Delete(ordered.Encode("llm.Vector", b.db.namespace, name))
+
+	delete(b.w, name)
 }
 
 func (b *memVectorBatch) MaybeApply() bool {

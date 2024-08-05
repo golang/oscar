@@ -6,6 +6,7 @@ package storage
 
 import (
 	"cmp"
+	"iter"
 
 	"golang.org/x/oscar/internal/llm"
 )
@@ -17,12 +18,27 @@ type VectorDB interface {
 	// Set sets the vector associated with the given document ID to vec.
 	Set(id string, vec llm.Vector)
 
-	// TODO: Add Delete.
+	// Delete deletes any vector associated with document ID key.
+	// Delete of an unset key is a no-op.
+	Delete(id string)
 
 	// Get gets the vector associated with the given document ID.
 	// If no such document exists, Get returns nil, false.
 	// If a document exists, Get returns vec, true.
 	Get(id string) (llm.Vector, bool)
+
+	// All returns an iterator over all ID-vector pairs in the vector db.
+	// The second value in each iteration pair is a function returning a
+	// vector, not the vector itself:
+	//
+	//	for key, getVec := range vecdb.All() {
+	//		vec := getVec()
+	//		fmt.Printf("%q: %q\n", key, vec)
+	//	}
+	//
+	// In iterations that only need the keys or only need the vectors for a subset of keys,
+	// some VectorDB implementations may avoid work when the value function is not called.
+	All() iter.Seq2[string, func() llm.Vector]
 
 	// Batch returns a new [VectorBatch] that accumulates
 	// vector database mutations to apply in an atomic operation.
@@ -50,7 +66,9 @@ type VectorBatch interface {
 	// Set sets the vector associated with the given document ID to vec.
 	Set(id string, vec llm.Vector)
 
-	// TODO: Add Delete.
+	// Delete deletes any vector associated with document ID key.
+	// Delete of an unset key is a no-op.
+	Delete(id string)
 
 	// MaybeApply calls Apply if the VectorBatch is getting close to full.
 	// Every VectorBatch has a limit to how many operations can be batched,

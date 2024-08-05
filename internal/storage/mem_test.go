@@ -5,8 +5,10 @@
 package storage
 
 import (
+	"reflect"
 	"testing"
 
+	"golang.org/x/oscar/internal/llm"
 	"golang.org/x/oscar/internal/testutil"
 )
 
@@ -57,5 +59,31 @@ func TestMemVectorBatchMaybeApply(t *testing.T) {
 	b.MaybeApply() // now should apply
 	if _, ok := vdb.Get("apple3"); !ok {
 		t.Errorf("Get(apple3) failed after MaybeApply that did apply")
+	}
+}
+
+func TestMemVectorDBAll(t *testing.T) {
+	db := &maybeDB{DB: MemDB()}
+	vdb := MemVectorDB(db, testutil.Slogger(t), "")
+
+	vdb.Set("apple1", embed("apple1"))
+	vdb.Set("apple2", embed("apple2"))
+	vdb.Delete("apple2")
+	_, _ = vdb.Get("apple1")
+	vdb.Set("apple3", embed("apple3"))
+	vdb.Delete("apple3")
+	vdb.Set("apple3", embed("apple3"))
+
+	got := make(map[string]llm.Vector)
+	for k, vec := range vdb.All() {
+		got[k] = vec()
+	}
+
+	want := map[string]llm.Vector{
+		"apple1": embed("apple1"),
+		"apple3": embed("apple3"),
+	}
+	if !reflect.DeepEqual(want, got) {
+		t.Fatalf("got %v;\nwant %v", got, want)
 	}
 }

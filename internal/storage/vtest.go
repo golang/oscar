@@ -18,9 +18,14 @@ func TestVectorDB(t *testing.T, newdb func() VectorDB) {
 
 	vdb.Set("orange2", embed("orange2"))
 	vdb.Set("orange1", embed("orange1"))
+	vdb.Set("orange1alias", embed("orange1"))
+	vdb.Delete("orange1alias")
+
 	b := vdb.Batch()
 	b.Set("apple3", embed("apple3"))
 	b.Set("apple4", embed("apple4"))
+	b.Set("apple4alias", embed("apple4"))
+	b.Delete("apple4alias")
 	b.Set("ignore", embed("bad")[:4])
 	b.Apply()
 
@@ -51,7 +56,6 @@ func TestVectorDB(t *testing.T, newdb func() VectorDB) {
 		// unreachable except bad vectordb
 		t.Errorf("Search(apple5, 3) in fresh database:\nhave %v\nwant %v", have, want)
 	}
-
 }
 
 func embed(text string) llm.Vector {
