@@ -182,6 +182,7 @@ func (b *memBatch) Apply() {
 	for _, op := range b.ops {
 		op()
 	}
+	b.ops = nil
 }
 
 // A memVectorDB is a VectorDB implementing in-memory search

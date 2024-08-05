@@ -90,6 +90,17 @@ func TestDB(t *testing.T, db DB) {
 		t.Fatalf("Scan(-1, 11) after batch Delete+Set = %v, want %v", scan, want)
 	}
 
+	// Check that batch.Apply clears the batch.
+	k := ordered.Encode("a")
+	b = db.Batch()
+	b.Set(k, []byte{0})
+	b.Apply()
+	db.Delete(k)
+	b.Apply() // should be a no-op
+	if _, ok := db.Get(k); ok {
+		t.Fatalf("empty Apply should be no-op, but got previous value")
+	}
+
 	// Can't test much, but check that it doesn't crash.
 	db.Flush()
 }
