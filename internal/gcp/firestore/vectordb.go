@@ -7,6 +7,7 @@ package firestore
 import (
 	"context"
 	"encoding/hex"
+	"iter"
 	"log/slog"
 	"path"
 
@@ -83,6 +84,36 @@ func (db *VectorDB) Get(id string) (llm.Vector, bool) {
 	return llm.Vector(doc.Embedding), true
 }
 
+// Delete implements [storage.VectorDB.Delete].
+func (db *VectorDB) Delete(id string) {
+	db.fs.delete(nil, db.coll, encodeVectorID(id))
+}
+
+// All implements [storage.VectorDB.All].
+func (db *VectorDB) All() iter.Seq2[string, func() llm.Vector] {
+	iter := db.coll.Documents(context.Background())
+	return func(yield func(string, func() llm.Vector) bool) {
+		defer iter.Stop()
+		for {
+			ds, err := iter.Next()
+			if err == iterator.Done {
+				return
+			}
+			if err != nil {
+				db.fs.Panic("firestore VectorDB All", "err", err)
+			}
+			id := db.decodeVectorID(ds.Ref.ID)
+			var doc vectorDoc
+			if err := ds.DataTo(&doc); err != nil {
+				db.fs.Panic("firestore VectorDB All", "ID", id, "err", err)
+			}
+			if !yield(id, func() llm.Vector { return llm.Vector(doc.Embedding) }) {
+				return
+			}
+		}
+	}
+}
+
 // Search implements [storage.VectorDB.Search].
 func (db *VectorDB) Search(vec llm.Vector, n int) []storage.VectorResult {
 	q := db.coll.FindNearest("Embedding", firestore.Vector32(vec), n, firestore.DistanceMeasureDotProduct, nil)
@@ -103,7 +134,7 @@ func (db *VectorDB) Search(vec llm.Vector, n int) []storage.VectorResult {
 		}
 		id := db.decodeVectorID(docsnap.Ref.ID)
 		res = append(res, storage.VectorResult{
-			ID:    string(id),
+			ID:    id,
 			Score: vec.Dot(llm.Vector(doc.Embedding)),
 		})
 	}
@@ -137,6 +168,10 @@ const perFloatSize = 11
 // Set implements [storage.VectorBatch.Set].
 func (b *vBatch) Set(id string, vec llm.Vector) {
 	b.b.set(encodeVectorID(id), vectorDoc{firestore.Vector32(vec)}, len(vec)*perFloatSize)
+}
+
+func (b *vBatch) Delete(id string) {
+	b.b.delete(encodeVectorID(id))
 }
 
 // MaybeApply implements [storage.VectorBatch.MaybeApply].

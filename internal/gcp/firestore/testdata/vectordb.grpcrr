@@ -1,201 +1,103 @@
 RPCReTxt1
 "oscar-go-424217,test"
-79
-kind: CREATE_STREAM
-method: "/google.firestore.v1.Firestore/BatchGetDocuments"
-240
-kind: SEND
-message: {
-  [type.googleapis.com/google.firestore.v1.BatchGetDocumentsRequest]: {
-    database: "projects/oscar-go-424217/databases/test"
-    documents: "projects/oscar-go-424217/databases/test/documents/c/d"
+81
+kind:  CREATE_STREAM
+method:  "/google.firestore.v1.Firestore/BatchGetDocuments"
+246
+kind:  SEND
+message:  {
+  [type.googleapis.com/google.firestore.v1.BatchGetDocumentsRequest]:  {
+    database:  "projects/oscar-go-424217/databases/test"
+    documents:  "projects/oscar-go-424217/databases/test/documents/c/d"
   }
 }
-ref_index: 1
-254
-kind: RECV
-message: {
-  [type.googleapis.com/google.firestore.v1.BatchGetDocumentsResponse]: {
-    missing: "projects/oscar-go-424217/databases/test/documents/c/d"
-    read_time: {
-      seconds: 1722947329
-      nanos: 36509000
+ref_index:  1
+263
+kind:  RECV
+message:  {
+  [type.googleapis.com/google.firestore.v1.BatchGetDocumentsResponse]:  {
+    missing:  "projects/oscar-go-424217/databases/test/documents/c/d"
+    read_time:  {
+      seconds:  1722983218
+      nanos:  164421000
     }
   }
 }
-ref_index: 1
-39
-kind: RECV
-is_error: true
-ref_index: 1
-2371
-kind: REQUEST
-method: "/google.firestore.v1.Firestore/Commit"
-message: {
-  [type.googleapis.com/google.firestore.v1.CommitRequest]: {
-    database: "projects/oscar-go-424217/databases/test"
-    writes: {
-      update: {
-        name: "projects/oscar-go-424217/databases/test/documents/vectorDBs/test/vectors/6f72616e676532"
-        fields: {
-          key: "Embedding"
-          value: {
-            map_value: {
-              fields: {
-                key: "__type__"
-                value: {
-                  string_value: "__vector__"
+ref_index:  1
+42
+kind:  RECV
+is_error:  true
+ref_index:  1
+2430
+kind:  REQUEST
+method:  "/google.firestore.v1.Firestore/Commit"
+message:  {
+  [type.googleapis.com/google.firestore.v1.CommitRequest]:  {
+    database:  "projects/oscar-go-424217/databases/test"
+    writes:  {
+      update:  {
+        name:  "projects/oscar-go-424217/databases/test/documents/vectorDBs/namespace-0/vectors/6f72616e676532"
+        fields:  {
+          key:  "Embedding"
+          value:  {
+            map_value:  {
+              fields:  {
+                key:  "__type__"
+                value:  {
+                  string_value:  "__vector__"
                 }
               }
-              fields: {
-                key: "value"
-                value: {
-                  array_value: {
-                    values: {
-                      double_value: 0.30135461688041687
+              fields:  {
+                key:  "value"
+                value:  {
+                  array_value:  {
+                    values:  {
+                      double_value:  0.30135461688041687
                     }
-                    values: {
-                      double_value: 0.3094993531703949
+                    values:  {
+                      double_value:  0.3094993531703949
                     }
-                    values: {
-                      double_value: 0.2633459270000458
+                    values:  {
+                      double_value:  0.2633459270000458
                     }
-                    values: {
-                      double_value: 0.298639714717865
+                    values:  {
+                      double_value:  0.298639714717865
                     }
-                    values: {
-                      double_value: 0.27963536977767944
+                    values:  {
+                      double_value:  0.27963536977767944
                     }
-                    values: {
-                      double_value: 0.2742055654525757
+                    values:  {
+                      double_value:  0.2742055654525757
                     }
-                    values: {
-                      double_value: 0.1357453316450119
+                    values:  {
+                      double_value:  0.1357453316450119
                     }
-                    values: {
-                      double_value: -0.695016086101532
+                    values:  {
+                      double_value:  -0.695016086101532
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
-                    values: {
-                      double_value: 0
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-289
-kind: RESPONSE
-message: {
-  [type.googleapis.com/google.firestore.v1.CommitResponse]: {
-    write_results: {
-      update_time: {
-        seconds: 1722946808
-        nanos: 460034000
-      }
-    }
-    commit_time: {
-      seconds: 1722947329
-      nanos: 39409000
-    }
-  }
-}
-ref_index: 5
-2376
-kind: REQUEST
-method: "/google.firestore.v1.Firestore/Commit"
-message: {
-  [type.googleapis.com/google.firestore.v1.CommitRequest]: {
-    database: "projects/oscar-go-424217/databases/test"
-    writes: {
-      update: {
-        name: "projects/oscar-go-424217/databases/test/documents/vectorDBs/test/vectors/6f72616e676531"
-        fields: {
-          key: "Embedding"
-          value: {
-            map_value: {
-              fields: {
-                key: "__type__"
-                value: {
-                  string_value: "__vector__"
-                }
-              }
-              fields: {
-                key: "value"
-                value: {
-                  array_value: {
-                    values: {
-                      double_value: 0.30146464705467224
-                    }
-                    values: {
-                      double_value: 0.30961233377456665
-                    }
-                    values: {
-                      double_value: 0.2634420692920685
-                    }
-                    values: {
-                      double_value: 0.29874876141548157
-                    }
-                    values: {
-                      double_value: 0.2797374725341797
-                    }
-                    values: {
-                      double_value: 0.27430567145347595
-                    }
-                    values: {
-                      double_value: 0.13307899236679077
-                    }
-                    values: {
-                      double_value: -0.6952698230743408
-                    }
-                    values: {
-                      double_value: 0
-                    }
-                    values: {
-                      double_value: 0
-                    }
-                    values: {
-                      double_value: 0
-                    }
-                    values: {
-                      double_value: 0
-                    }
-                    values: {
-                      double_value: 0
-                    }
-                    values: {
-                      double_value: 0
-                    }
-                    values: {
-                      double_value: 0
-                    }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
                   }
                 }
@@ -207,109 +109,93 @@ message: {
     }
   }
 }
-290
-kind: RESPONSE
-message: {
-  [type.googleapis.com/google.firestore.v1.CommitResponse]: {
-    write_results: {
-      update_time: {
-        seconds: 1722946808
-        nanos: 603940000
+300
+kind:  RESPONSE
+message:  {
+  [type.googleapis.com/google.firestore.v1.CommitResponse]:  {
+    write_results:  {
+      update_time:  {
+        seconds:  1722974076
+        nanos:  64162000
       }
     }
-    commit_time: {
-      seconds: 1722947329
-      nanos: 257169000
+    commit_time:  {
+      seconds:  1722983229
+      nanos:  716960000
     }
   }
 }
-ref_index: 7
-216
-kind: REQUEST
-method: "/google.firestore.v1.Firestore/BeginTransaction"
-message: {
-  [type.googleapis.com/google.firestore.v1.BeginTransactionRequest]: {
-    database: "projects/oscar-go-424217/databases/test"
-  }
-}
-383
-kind: RESPONSE
-message: {
-  [type.googleapis.com/google.firestore.v1.BeginTransactionResponse]: {
-    transaction: "\x11k\x89\xa9~\xea\xdb-\x84\"Y\x00\xd4u\xc8\xcdt\xe71\xa6\x97Qo\xa3\t\xf78\xbf\x1d\xef\xdbgj@O\xe3䳷\xc6\x04\xa6\x14zw\xd0)o(\xddDU\xab=:̂㞢ݕ\xe7\xb9\xcd\xc4\xcb^8\x04\x1f\x95\xfd\x8b\xd1n\xd9 \x960\xb8\x04~\xbey\x03\x10\xe0{W\x91WWֱō\x9e|)"
-  }
-}
-ref_index: 9
-5802
-kind: REQUEST
-method: "/google.firestore.v1.Firestore/Commit"
-message: {
-  [type.googleapis.com/google.firestore.v1.CommitRequest]: {
-    database: "projects/oscar-go-424217/databases/test"
-    writes: {
-      update: {
-        name: "projects/oscar-go-424217/databases/test/documents/vectorDBs/test/vectors/6170706c6533"
-        fields: {
-          key: "Embedding"
-          value: {
-            map_value: {
-              fields: {
-                key: "__type__"
-                value: {
-                  string_value: "__vector__"
+ref_index:  5
+2435
+kind:  REQUEST
+method:  "/google.firestore.v1.Firestore/Commit"
+message:  {
+  [type.googleapis.com/google.firestore.v1.CommitRequest]:  {
+    database:  "projects/oscar-go-424217/databases/test"
+    writes:  {
+      update:  {
+        name:  "projects/oscar-go-424217/databases/test/documents/vectorDBs/namespace-0/vectors/6f72616e676531"
+        fields:  {
+          key:  "Embedding"
+          value:  {
+            map_value:  {
+              fields:  {
+                key:  "__type__"
+                value:  {
+                  string_value:  "__vector__"
                 }
               }
-              fields: {
-                key: "value"
-                value: {
-                  array_value: {
-                    values: {
-                      double_value: 0.2749089002609253
+              fields:  {
+                key:  "value"
+                value:  {
+                  array_value:  {
+                    values:  {
+                      double_value:  0.30146464705467224
                     }
-                    values: {
-                      double_value: 0.3174206018447876
+                    values:  {
+                      double_value:  0.30961233377456665
                     }
-                    values: {
-                      double_value: 0.3174206018447876
+                    values:  {
+                      double_value:  0.2634420692920685
                     }
-                    values: {
-                      double_value: 0.30608412623405457
+                    values:  {
+                      double_value:  0.29874876141548157
                     }
-                    values: {
-                      double_value: 0.28624534606933594
+                    values:  {
+                      double_value:  0.2797374725341797
                     }
-                    values: {
-                      double_value: 0.1445397287607193
+                    values:  {
+                      double_value:  0.27430567145347595
                     }
-                    values: {
-                      double_value: -0.7255327701568604
+                    values:  {
+                      double_value:  0.13307899236679077
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  -0.6952698230743408
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
-                    values: {
-                      double_value: 0
+                    values:  {
+                      double_value:  0
                     }
                   }
                 }
@@ -319,107 +205,95 @@ message: {
         }
       }
     }
-    writes: {
-      update: {
-        name: "projects/oscar-go-424217/databases/test/documents/vectorDBs/test/vectors/6170706c6534"
-        fields: {
-          key: "Embedding"
-          value: {
-            map_value: {
-              fields: {
-                key: "__type__"
-                value: {
-                  string_value: "__vector__"
-                }
-              }
-              fields: {
-                key: "value"
-                value: {
-                  array_value: {
-                    values: {
-                      double_value: 0.274795264005661
-                    }
-                    values: {
-                      double_value: 0.3172893524169922
-                    }
-                    values: {
-                      double_value: 0.3172893524169922
-                    }
-                    values: {
-                      double_value: 0.3059576153755188
-                    }
-                    values: {
-                      double_value: 0.2861270308494568
-                    }
-                    values: {
-                      double_value: 0.1473129242658615
-                    }
-                    values: {
-                      double_value: -0.7252328395843506
-                    }
-                    values: {
-                      double_value: 0
-                    }
-                    values: {
-                      double_value: 0
-                    }
-                    values: {
-                      double_value: 0
-                    }
-                    values: {
-                      double_value: 0
-                    }
-                    values: {
-                      double_value: 0
-                    }
-                    values: {
-                      double_value: 0
-                    }
-                    values: {
-                      double_value: 0
-                    }
-                    values: {
-                      double_value: 0
-                    }
-                    values: {
-                      double_value: 0
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
+  }
+}
+301
+kind:  RESPONSE
+message:  {
+  [type.googleapis.com/google.firestore.v1.CommitResponse]:  {
+    write_results:  {
+      update_time:  {
+        seconds:  1722974076
+        nanos:  238818000
       }
     }
-    writes: {
-      update: {
-        name: "projects/oscar-go-424217/databases/test/documents/vectorDBs/test/vectors/69676e6f7265"
-        fields: {
-          key: "Embedding"
-          value: {
-            map_value: {
-              fields: {
-                key: "__type__"
-                value: {
-                  string_value: "__vector__"
+    commit_time:  {
+      seconds:  1722983230
+      nanos:  716984000
+    }
+  }
+}
+ref_index:  7
+2445
+kind:  REQUEST
+method:  "/google.firestore.v1.Firestore/Commit"
+message:  {
+  [type.googleapis.com/google.firestore.v1.CommitRequest]:  {
+    database:  "projects/oscar-go-424217/databases/test"
+    writes:  {
+      update:  {
+        name:  "projects/oscar-go-424217/databases/test/documents/vectorDBs/namespace-0/vectors/6f72616e676531616c696173"
+        fields:  {
+          key:  "Embedding"
+          value:  {
+            map_value:  {
+              fields:  {
+                key:  "__type__"
+                value:  {
+                  string_value:  "__vector__"
                 }
               }
-              fields: {
-                key: "value"
-                value: {
-                  array_value: {
-                    values: {
-                      double_value: 0.31871140003204346
+              fields:  {
+                key:  "value"
+                value:  {
+                  array_value:  {
+                    values:  {
+                      double_value:  0.30146464705467224
                     }
-                    values: {
-                      double_value: 0.3154592514038086
+                    values:  {
+                      double_value:  0.30961233377456665
                     }
-                    values: {
-                      double_value: 0.32521572709083557
+                    values:  {
+                      double_value:  0.2634420692920685
                     }
-                    values: {
-                      double_value: -0.8325522541999817
+                    values:  {
+                      double_value:  0.29874876141548157
+                    }
+                    values:  {
+                      double_value:  0.2797374725341797
+                    }
+                    values:  {
+                      double_value:  0.27430567145347595
+                    }
+                    values:  {
+                      double_value:  0.13307899236679077
+                    }
+                    values:  {
+                      double_value:  -0.6952698230743408
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
                     }
                   }
                 }
@@ -429,117 +303,135 @@ message: {
         }
       }
     }
-    transaction: "\x11k\x89\xa9~\xea\xdb-\x84\"Y\x00\xd4u\xc8\xcdt\xe71\xa6\x97Qo\xa3\t\xf78\xbf\x1d\xef\xdbgj@O\xe3䳷\xc6\x04\xa6\x14zw\xd0)o(\xddDU\xab=:̂㞢ݕ\xe7\xb9\xcd\xc4\xcb^8\x04\x1f\x95\xfd\x8b\xd1n\xd9 \x960\xb8\x04~\xbey\x03\x10\xe0{W\x91WWֱō\x9e|)"
   }
 }
-509
-kind: RESPONSE
-message: {
-  [type.googleapis.com/google.firestore.v1.CommitResponse]: {
-    write_results: {
-      update_time: {
-        seconds: 1722946808
-        nanos: 881521000
+301
+kind:  RESPONSE
+message:  {
+  [type.googleapis.com/google.firestore.v1.CommitResponse]:  {
+    write_results:  {
+      update_time:  {
+        seconds:  1722983231
+        nanos:  133921000
       }
     }
-    write_results: {
-      update_time: {
-        seconds: 1722946808
-        nanos: 881521000
-      }
-    }
-    write_results: {
-      update_time: {
-        seconds: 1722946808
-        nanos: 881521000
-      }
-    }
-    commit_time: {
-      seconds: 1722947329
-      nanos: 257169000
+    commit_time:  {
+      seconds:  1722983231
+      nanos:  133921000
     }
   }
 }
-ref_index: 11
-79
-kind: CREATE_STREAM
-method: "/google.firestore.v1.Firestore/BatchGetDocuments"
-273
-kind: SEND
-message: {
-  [type.googleapis.com/google.firestore.v1.BatchGetDocumentsRequest]: {
-    database: "projects/oscar-go-424217/databases/test"
-    documents: "projects/oscar-go-424217/databases/test/documents/vectorDBs/test/vectors/6170706c6533"
+ref_index:  9
+344
+kind:  REQUEST
+method:  "/google.firestore.v1.Firestore/Commit"
+message:  {
+  [type.googleapis.com/google.firestore.v1.CommitRequest]:  {
+    database:  "projects/oscar-go-424217/databases/test"
+    writes:  {
+      delete:  "projects/oscar-go-424217/databases/test/documents/vectorDBs/namespace-0/vectors/6f72616e676531616c696173"
+    }
   }
 }
-ref_index: 13
-2346
-kind: RECV
-message: {
-  [type.googleapis.com/google.firestore.v1.BatchGetDocumentsResponse]: {
-    found: {
-      name: "projects/oscar-go-424217/databases/test/documents/vectorDBs/test/vectors/6170706c6533"
-      fields: {
-        key: "Embedding"
-        value: {
-          map_value: {
-            fields: {
-              key: "__type__"
-              value: {
-                string_value: "__vector__"
+212
+kind:  RESPONSE
+message:  {
+  [type.googleapis.com/google.firestore.v1.CommitResponse]:  {
+    write_results:  {}
+    commit_time:  {
+      seconds:  1722983231
+      nanos:  254848000
+    }
+  }
+}
+ref_index:  11
+221
+kind:  REQUEST
+method:  "/google.firestore.v1.Firestore/BeginTransaction"
+message:  {
+  [type.googleapis.com/google.firestore.v1.BeginTransactionRequest]:  {
+    database:  "projects/oscar-go-424217/databases/test"
+  }
+}
+409
+kind:  RESPONSE
+message:  {
+  [type.googleapis.com/google.firestore.v1.BeginTransactionResponse]:  {
+    transaction:  "\x11\xeb\xd0\xd4\x1br-\xe3\xc0\"Y\x00\xd4u\xc8\xcdF\xb3\xad~\xb5\x9f\x81y\x1e\x8e\x91\xd8\x1e\xc2DZ\xfd\xb4\\8\x1f\xe0s`\xc4&\x9bi_LK&X\xbcO\xb2\x8e\x080\xe9\x92\xfd3l/J\xe7\x90\xcd`\x89Q}\xfc\x94r\xb4j\xa9[\nGloCw\x8a\t@\xb9\xbd\x92\xb4\x91\xac{`P\xa4A\xad*\xf6\xb8"
+  }
+}
+ref_index:  13
+8326
+kind:  REQUEST
+method:  "/google.firestore.v1.Firestore/Commit"
+message:  {
+  [type.googleapis.com/google.firestore.v1.CommitRequest]:  {
+    database:  "projects/oscar-go-424217/databases/test"
+    writes:  {
+      update:  {
+        name:  "projects/oscar-go-424217/databases/test/documents/vectorDBs/namespace-0/vectors/6170706c6533"
+        fields:  {
+          key:  "Embedding"
+          value:  {
+            map_value:  {
+              fields:  {
+                key:  "__type__"
+                value:  {
+                  string_value:  "__vector__"
+                }
               }
-            }
-            fields: {
-              key: "value"
-              value: {
-                array_value: {
-                  values: {
-                    double_value: 0.2749089002609253
-                  }
-                  values: {
-                    double_value: 0.3174206018447876
-                  }
-                  values: {
-                    double_value: 0.3174206018447876
-                  }
-                  values: {
-                    double_value: 0.30608412623405457
-                  }
-                  values: {
-                    double_value: 0.28624534606933594
-                  }
-                  values: {
-                    double_value: 0.1445397287607193
-                  }
-                  values: {
-                    double_value: -0.7255327701568604
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
+              fields:  {
+                key:  "value"
+                value:  {
+                  array_value:  {
+                    values:  {
+                      double_value:  0.2749089002609253
+                    }
+                    values:  {
+                      double_value:  0.3174206018447876
+                    }
+                    values:  {
+                      double_value:  0.3174206018447876
+                    }
+                    values:  {
+                      double_value:  0.30608412623405457
+                    }
+                    values:  {
+                      double_value:  0.28624534606933594
+                    }
+                    values:  {
+                      double_value:  0.1445397287607193
+                    }
+                    values:  {
+                      double_value:  -0.7255327701568604
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
+                    }
                   }
                 }
               }
@@ -547,183 +439,72 @@ message: {
           }
         }
       }
-      create_time: {
-        seconds: 1722946808
-        nanos: 881521000
-      }
-      update_time: {
-        seconds: 1722946808
-        nanos: 881521000
-      }
     }
-    read_time: {
-      seconds: 1722947320
-      nanos: 584388000
-    }
-  }
-}
-ref_index: 13
-40
-kind: RECV
-is_error: true
-ref_index: 13
-70
-kind: CREATE_STREAM
-method: "/google.firestore.v1.Firestore/RunQuery"
-2287
-kind: SEND
-message: {
-  [type.googleapis.com/google.firestore.v1.RunQueryRequest]: {
-    parent: "projects/oscar-go-424217/databases/test/documents/vectorDBs/test"
-    structured_query: {
-      from: {
-        collection_id: "vectors"
-      }
-      find_nearest: {
-        vector_field: {
-          field_path: "Embedding"
-        }
-        query_vector: {
-          map_value: {
-            fields: {
-              key: "__type__"
-              value: {
-                string_value: "__vector__"
-              }
-            }
-            fields: {
-              key: "value"
-              value: {
-                array_value: {
-                  values: {
-                    double_value: 0.2746795415878296
-                  }
-                  values: {
-                    double_value: 0.31715577840805054
-                  }
-                  values: {
-                    double_value: 0.31715577840805054
-                  }
-                  values: {
-                    double_value: 0.3058287799358368
-                  }
-                  values: {
-                    double_value: 0.28600654006004333
-                  }
-                  values: {
-                    double_value: 0.15008264780044556
-                  }
-                  values: {
-                    double_value: -0.7249274849891663
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
+    writes:  {
+      update:  {
+        name:  "projects/oscar-go-424217/databases/test/documents/vectorDBs/namespace-0/vectors/6170706c6534"
+        fields:  {
+          key:  "Embedding"
+          value:  {
+            map_value:  {
+              fields:  {
+                key:  "__type__"
+                value:  {
+                  string_value:  "__vector__"
                 }
               }
-            }
-          }
-        }
-        distance_measure: DOT_PRODUCT
-        limit: {
-          value: 5
-        }
-      }
-    }
-  }
-}
-ref_index: 17
-2337
-kind: RECV
-message: {
-  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
-    document: {
-      name: "projects/oscar-go-424217/databases/test/documents/vectorDBs/test/vectors/6170706c6534"
-      fields: {
-        key: "Embedding"
-        value: {
-          map_value: {
-            fields: {
-              key: "__type__"
-              value: {
-                string_value: "__vector__"
-              }
-            }
-            fields: {
-              key: "value"
-              value: {
-                array_value: {
-                  values: {
-                    double_value: 0.274795264005661
-                  }
-                  values: {
-                    double_value: 0.3172893524169922
-                  }
-                  values: {
-                    double_value: 0.3172893524169922
-                  }
-                  values: {
-                    double_value: 0.3059576153755188
-                  }
-                  values: {
-                    double_value: 0.2861270308494568
-                  }
-                  values: {
-                    double_value: 0.1473129242658615
-                  }
-                  values: {
-                    double_value: -0.7252328395843506
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
+              fields:  {
+                key:  "value"
+                value:  {
+                  array_value:  {
+                    values:  {
+                      double_value:  0.274795264005661
+                    }
+                    values:  {
+                      double_value:  0.3172893524169922
+                    }
+                    values:  {
+                      double_value:  0.3172893524169922
+                    }
+                    values:  {
+                      double_value:  0.3059576153755188
+                    }
+                    values:  {
+                      double_value:  0.2861270308494568
+                    }
+                    values:  {
+                      double_value:  0.1473129242658615
+                    }
+                    values:  {
+                      double_value:  -0.7252328395843506
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
+                    }
                   }
                 }
               }
@@ -731,89 +512,72 @@ message: {
           }
         }
       }
-      create_time: {
-        seconds: 1722946808
-        nanos: 881521000
-      }
-      update_time: {
-        seconds: 1722946808
-        nanos: 881521000
-      }
     }
-    read_time: {
-      seconds: 1722947329
-      nanos: 754580000
-    }
-  }
-}
-ref_index: 17
-2340
-kind: RECV
-message: {
-  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
-    document: {
-      name: "projects/oscar-go-424217/databases/test/documents/vectorDBs/test/vectors/6170706c6533"
-      fields: {
-        key: "Embedding"
-        value: {
-          map_value: {
-            fields: {
-              key: "__type__"
-              value: {
-                string_value: "__vector__"
+    writes:  {
+      update:  {
+        name:  "projects/oscar-go-424217/databases/test/documents/vectorDBs/namespace-0/vectors/6170706c6534616c696173"
+        fields:  {
+          key:  "Embedding"
+          value:  {
+            map_value:  {
+              fields:  {
+                key:  "__type__"
+                value:  {
+                  string_value:  "__vector__"
+                }
               }
-            }
-            fields: {
-              key: "value"
-              value: {
-                array_value: {
-                  values: {
-                    double_value: 0.2749089002609253
-                  }
-                  values: {
-                    double_value: 0.3174206018447876
-                  }
-                  values: {
-                    double_value: 0.3174206018447876
-                  }
-                  values: {
-                    double_value: 0.30608412623405457
-                  }
-                  values: {
-                    double_value: 0.28624534606933594
-                  }
-                  values: {
-                    double_value: 0.1445397287607193
-                  }
-                  values: {
-                    double_value: -0.7255327701568604
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
+              fields:  {
+                key:  "value"
+                value:  {
+                  array_value:  {
+                    values:  {
+                      double_value:  0.274795264005661
+                    }
+                    values:  {
+                      double_value:  0.3172893524169922
+                    }
+                    values:  {
+                      double_value:  0.3172893524169922
+                    }
+                    values:  {
+                      double_value:  0.3059576153755188
+                    }
+                    values:  {
+                      double_value:  0.2861270308494568
+                    }
+                    values:  {
+                      double_value:  0.1473129242658615
+                    }
+                    values:  {
+                      double_value:  -0.7252328395843506
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
+                    }
+                    values:  {
+                      double_value:  0
+                    }
                   }
                 }
               }
@@ -821,89 +585,39 @@ message: {
           }
         }
       }
-      create_time: {
-        seconds: 1722946808
-        nanos: 881521000
-      }
-      update_time: {
-        seconds: 1722946808
-        nanos: 881521000
-      }
     }
-    read_time: {
-      seconds: 1722947329
-      nanos: 754580000
+    writes:  {
+      delete:  "projects/oscar-go-424217/databases/test/documents/vectorDBs/namespace-0/vectors/6170706c6534616c696173"
     }
-  }
-}
-ref_index: 17
-2362
-kind: RECV
-message: {
-  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
-    document: {
-      name: "projects/oscar-go-424217/databases/test/documents/vectorDBs/test/vectors/6f72616e676531"
-      fields: {
-        key: "Embedding"
-        value: {
-          map_value: {
-            fields: {
-              key: "__type__"
-              value: {
-                string_value: "__vector__"
+    writes:  {
+      update:  {
+        name:  "projects/oscar-go-424217/databases/test/documents/vectorDBs/namespace-0/vectors/69676e6f7265"
+        fields:  {
+          key:  "Embedding"
+          value:  {
+            map_value:  {
+              fields:  {
+                key:  "__type__"
+                value:  {
+                  string_value:  "__vector__"
+                }
               }
-            }
-            fields: {
-              key: "value"
-              value: {
-                array_value: {
-                  values: {
-                    double_value: 0.30146464705467224
-                  }
-                  values: {
-                    double_value: 0.30961233377456665
-                  }
-                  values: {
-                    double_value: 0.2634420692920685
-                  }
-                  values: {
-                    double_value: 0.29874876141548157
-                  }
-                  values: {
-                    double_value: 0.2797374725341797
-                  }
-                  values: {
-                    double_value: 0.27430567145347595
-                  }
-                  values: {
-                    double_value: 0.13307899236679077
-                  }
-                  values: {
-                    double_value: -0.6952698230743408
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
-                  }
-                  values: {
-                    double_value: 0
+              fields:  {
+                key:  "value"
+                value:  {
+                  array_value:  {
+                    values:  {
+                      double_value:  0.31871140003204346
+                    }
+                    values:  {
+                      double_value:  0.3154592514038086
+                    }
+                    values:  {
+                      double_value:  0.32521572709083557
+                    }
+                    values:  {
+                      double_value:  -0.8325522541999817
+                    }
                   }
                 }
               }
@@ -911,89 +625,120 @@ message: {
           }
         }
       }
-      create_time: {
-        seconds: 1722946808
-        nanos: 603940000
-      }
-      update_time: {
-        seconds: 1722946808
-        nanos: 603940000
+    }
+    transaction:  "\x11\xeb\xd0\xd4\x1br-\xe3\xc0\"Y\x00\xd4u\xc8\xcdF\xb3\xad~\xb5\x9f\x81y\x1e\x8e\x91\xd8\x1e\xc2DZ\xfd\xb4\\8\x1f\xe0s`\xc4&\x9bi_LK&X\xbcO\xb2\x8e\x080\xe9\x92\xfd3l/J\xe7\x90\xcd`\x89Q}\xfc\x94r\xb4j\xa9[\nGloCw\x8a\t@\xb9\xbd\x92\xb4\x91\xac{`P\xa4A\xad*\xf6\xb8"
+  }
+}
+574
+kind:  RESPONSE
+message:  {
+  [type.googleapis.com/google.firestore.v1.CommitResponse]:  {
+    write_results:  {
+      update_time:  {
+        seconds:  1722974076
+        nanos:  863888000
       }
     }
-    read_time: {
-      seconds: 1722947329
-      nanos: 754580000
+    write_results:  {
+      update_time:  {
+        seconds:  1722974076
+        nanos:  863888000
+      }
+    }
+    write_results:  {}
+    write_results:  {}
+    write_results:  {
+      update_time:  {
+        seconds:  1722974076
+        nanos:  863888000
+      }
+    }
+    commit_time:  {
+      seconds:  1722983231
+      nanos:  264210000
     }
   }
 }
-ref_index: 17
-2357
-kind: RECV
-message: {
-  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
-    document: {
-      name: "projects/oscar-go-424217/databases/test/documents/vectorDBs/test/vectors/6f72616e676532"
-      fields: {
-        key: "Embedding"
-        value: {
-          map_value: {
-            fields: {
-              key: "__type__"
-              value: {
-                string_value: "__vector__"
+ref_index:  15
+81
+kind:  CREATE_STREAM
+method:  "/google.firestore.v1.Firestore/BatchGetDocuments"
+286
+kind:  SEND
+message:  {
+  [type.googleapis.com/google.firestore.v1.BatchGetDocumentsRequest]:  {
+    database:  "projects/oscar-go-424217/databases/test"
+    documents:  "projects/oscar-go-424217/databases/test/documents/vectorDBs/namespace-0/vectors/6170706c6533"
+  }
+}
+ref_index:  17
+2412
+kind:  RECV
+message:  {
+  [type.googleapis.com/google.firestore.v1.BatchGetDocumentsResponse]:  {
+    found:  {
+      name:  "projects/oscar-go-424217/databases/test/documents/vectorDBs/namespace-0/vectors/6170706c6533"
+      fields:  {
+        key:  "Embedding"
+        value:  {
+          map_value:  {
+            fields:  {
+              key:  "__type__"
+              value:  {
+                string_value:  "__vector__"
               }
             }
-            fields: {
-              key: "value"
-              value: {
-                array_value: {
-                  values: {
-                    double_value: 0.30135461688041687
+            fields:  {
+              key:  "value"
+              value:  {
+                array_value:  {
+                  values:  {
+                    double_value:  0.2749089002609253
                   }
-                  values: {
-                    double_value: 0.3094993531703949
+                  values:  {
+                    double_value:  0.3174206018447876
                   }
-                  values: {
-                    double_value: 0.2633459270000458
+                  values:  {
+                    double_value:  0.3174206018447876
                   }
-                  values: {
-                    double_value: 0.298639714717865
+                  values:  {
+                    double_value:  0.30608412623405457
                   }
-                  values: {
-                    double_value: 0.27963536977767944
+                  values:  {
+                    double_value:  0.28624534606933594
                   }
-                  values: {
-                    double_value: 0.2742055654525757
+                  values:  {
+                    double_value:  0.1445397287607193
                   }
-                  values: {
-                    double_value: 0.1357453316450119
+                  values:  {
+                    double_value:  -0.7255327701568604
                   }
-                  values: {
-                    double_value: -0.695016086101532
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
                 }
               }
@@ -1001,211 +746,183 @@ message: {
           }
         }
       }
-      create_time: {
-        seconds: 1722946808
-        nanos: 460034000
+      create_time:  {
+        seconds:  1722974076
+        nanos:  863888000
       }
-      update_time: {
-        seconds: 1722946808
-        nanos: 460034000
+      update_time:  {
+        seconds:  1722974076
+        nanos:  863888000
       }
     }
-    read_time: {
-      seconds: 1722947329
-      nanos: 754580000
-    }
-  }
-}
-ref_index: 17
-40
-kind: RECV
-is_error: true
-ref_index: 17
-79
-kind: CREATE_STREAM
-method: "/google.firestore.v1.Firestore/BatchGetDocuments"
-241
-kind: SEND
-message: {
-  [type.googleapis.com/google.firestore.v1.BatchGetDocumentsRequest]: {
-    database: "projects/oscar-go-424217/databases/test"
-    documents: "projects/oscar-go-424217/databases/test/documents/c/d"
-  }
-}
-ref_index: 24
-256
-kind: RECV
-message: {
-  [type.googleapis.com/google.firestore.v1.BatchGetDocumentsResponse]: {
-    missing: "projects/oscar-go-424217/databases/test/documents/c/d"
-    read_time: {
-      seconds: 1722947329
-      nanos: 991933000
+    read_time:  {
+      seconds:  1722983231
+      nanos:  254848000
     }
   }
 }
-ref_index: 24
-40
-kind: RECV
-is_error: true
-ref_index: 24
-70
-kind: CREATE_STREAM
-method: "/google.firestore.v1.Firestore/RunQuery"
-2287
-kind: SEND
-message: {
-  [type.googleapis.com/google.firestore.v1.RunQueryRequest]: {
-    parent: "projects/oscar-go-424217/databases/test/documents/vectorDBs/test"
-    structured_query: {
-      from: {
-        collection_id: "vectors"
+ref_index:  17
+43
+kind:  RECV
+is_error:  true
+ref_index:  17
+72
+kind:  CREATE_STREAM
+method:  "/google.firestore.v1.Firestore/RunQuery"
+2350
+kind:  SEND
+message:  {
+  [type.googleapis.com/google.firestore.v1.RunQueryRequest]:  {
+    parent:  "projects/oscar-go-424217/databases/test/documents/vectorDBs/namespace-0"
+    structured_query:  {
+      from:  {
+        collection_id:  "vectors"
       }
-      find_nearest: {
-        vector_field: {
-          field_path: "Embedding"
+      find_nearest:  {
+        vector_field:  {
+          field_path:  "Embedding"
         }
-        query_vector: {
-          map_value: {
-            fields: {
-              key: "__type__"
-              value: {
-                string_value: "__vector__"
+        query_vector:  {
+          map_value:  {
+            fields:  {
+              key:  "__type__"
+              value:  {
+                string_value:  "__vector__"
               }
             }
-            fields: {
-              key: "value"
-              value: {
-                array_value: {
-                  values: {
-                    double_value: 0.2746795415878296
+            fields:  {
+              key:  "value"
+              value:  {
+                array_value:  {
+                  values:  {
+                    double_value:  0.2746795415878296
                   }
-                  values: {
-                    double_value: 0.31715577840805054
+                  values:  {
+                    double_value:  0.31715577840805054
                   }
-                  values: {
-                    double_value: 0.31715577840805054
+                  values:  {
+                    double_value:  0.31715577840805054
                   }
-                  values: {
-                    double_value: 0.3058287799358368
+                  values:  {
+                    double_value:  0.3058287799358368
                   }
-                  values: {
-                    double_value: 0.28600654006004333
+                  values:  {
+                    double_value:  0.28600654006004333
                   }
-                  values: {
-                    double_value: 0.15008264780044556
+                  values:  {
+                    double_value:  0.15008264780044556
                   }
-                  values: {
-                    double_value: -0.7249274849891663
+                  values:  {
+                    double_value:  -0.7249274849891663
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
                 }
               }
             }
           }
         }
-        distance_measure: DOT_PRODUCT
-        limit: {
-          value: 3
+        distance_measure:  DOT_PRODUCT
+        limit:  {
+          value:  5
         }
       }
     }
   }
 }
-ref_index: 28
-2336
-kind: RECV
-message: {
-  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
-    document: {
-      name: "projects/oscar-go-424217/databases/test/documents/vectorDBs/test/vectors/6170706c6534"
-      fields: {
-        key: "Embedding"
-        value: {
-          map_value: {
-            fields: {
-              key: "__type__"
-              value: {
-                string_value: "__vector__"
+ref_index:  21
+2403
+kind:  RECV
+message:  {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]:  {
+    document:  {
+      name:  "projects/oscar-go-424217/databases/test/documents/vectorDBs/namespace-0/vectors/6170706c6534"
+      fields:  {
+        key:  "Embedding"
+        value:  {
+          map_value:  {
+            fields:  {
+              key:  "__type__"
+              value:  {
+                string_value:  "__vector__"
               }
             }
-            fields: {
-              key: "value"
-              value: {
-                array_value: {
-                  values: {
-                    double_value: 0.274795264005661
+            fields:  {
+              key:  "value"
+              value:  {
+                array_value:  {
+                  values:  {
+                    double_value:  0.274795264005661
                   }
-                  values: {
-                    double_value: 0.3172893524169922
+                  values:  {
+                    double_value:  0.3172893524169922
                   }
-                  values: {
-                    double_value: 0.3172893524169922
+                  values:  {
+                    double_value:  0.3172893524169922
                   }
-                  values: {
-                    double_value: 0.3059576153755188
+                  values:  {
+                    double_value:  0.3059576153755188
                   }
-                  values: {
-                    double_value: 0.2861270308494568
+                  values:  {
+                    double_value:  0.2861270308494568
                   }
-                  values: {
-                    double_value: 0.1473129242658615
+                  values:  {
+                    double_value:  0.1473129242658615
                   }
-                  values: {
-                    double_value: -0.7252328395843506
+                  values:  {
+                    double_value:  -0.7252328395843506
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
                 }
               }
@@ -1213,89 +930,89 @@ message: {
           }
         }
       }
-      create_time: {
-        seconds: 1722946808
-        nanos: 881521000
+      create_time:  {
+        seconds:  1722974076
+        nanos:  863888000
       }
-      update_time: {
-        seconds: 1722946808
-        nanos: 881521000
+      update_time:  {
+        seconds:  1722974076
+        nanos:  863888000
       }
     }
-    read_time: {
-      seconds: 1722947330
-      nanos: 93495000
+    read_time:  {
+      seconds:  1722983231
+      nanos:  764643000
     }
   }
 }
-ref_index: 28
-2339
-kind: RECV
-message: {
-  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
-    document: {
-      name: "projects/oscar-go-424217/databases/test/documents/vectorDBs/test/vectors/6170706c6533"
-      fields: {
-        key: "Embedding"
-        value: {
-          map_value: {
-            fields: {
-              key: "__type__"
-              value: {
-                string_value: "__vector__"
+ref_index:  21
+2406
+kind:  RECV
+message:  {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]:  {
+    document:  {
+      name:  "projects/oscar-go-424217/databases/test/documents/vectorDBs/namespace-0/vectors/6170706c6533"
+      fields:  {
+        key:  "Embedding"
+        value:  {
+          map_value:  {
+            fields:  {
+              key:  "__type__"
+              value:  {
+                string_value:  "__vector__"
               }
             }
-            fields: {
-              key: "value"
-              value: {
-                array_value: {
-                  values: {
-                    double_value: 0.2749089002609253
+            fields:  {
+              key:  "value"
+              value:  {
+                array_value:  {
+                  values:  {
+                    double_value:  0.2749089002609253
                   }
-                  values: {
-                    double_value: 0.3174206018447876
+                  values:  {
+                    double_value:  0.3174206018447876
                   }
-                  values: {
-                    double_value: 0.3174206018447876
+                  values:  {
+                    double_value:  0.3174206018447876
                   }
-                  values: {
-                    double_value: 0.30608412623405457
+                  values:  {
+                    double_value:  0.30608412623405457
                   }
-                  values: {
-                    double_value: 0.28624534606933594
+                  values:  {
+                    double_value:  0.28624534606933594
                   }
-                  values: {
-                    double_value: 0.1445397287607193
+                  values:  {
+                    double_value:  0.1445397287607193
                   }
-                  values: {
-                    double_value: -0.7255327701568604
+                  values:  {
+                    double_value:  -0.7255327701568604
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
                 }
               }
@@ -1303,89 +1020,89 @@ message: {
           }
         }
       }
-      create_time: {
-        seconds: 1722946808
-        nanos: 881521000
+      create_time:  {
+        seconds:  1722974076
+        nanos:  863888000
       }
-      update_time: {
-        seconds: 1722946808
-        nanos: 881521000
+      update_time:  {
+        seconds:  1722974076
+        nanos:  863888000
       }
     }
-    read_time: {
-      seconds: 1722947330
-      nanos: 93495000
+    read_time:  {
+      seconds:  1722983231
+      nanos:  764643000
     }
   }
 }
-ref_index: 28
-2361
-kind: RECV
-message: {
-  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
-    document: {
-      name: "projects/oscar-go-424217/databases/test/documents/vectorDBs/test/vectors/6f72616e676531"
-      fields: {
-        key: "Embedding"
-        value: {
-          map_value: {
-            fields: {
-              key: "__type__"
-              value: {
-                string_value: "__vector__"
+ref_index:  21
+2428
+kind:  RECV
+message:  {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]:  {
+    document:  {
+      name:  "projects/oscar-go-424217/databases/test/documents/vectorDBs/namespace-0/vectors/6f72616e676531"
+      fields:  {
+        key:  "Embedding"
+        value:  {
+          map_value:  {
+            fields:  {
+              key:  "__type__"
+              value:  {
+                string_value:  "__vector__"
               }
             }
-            fields: {
-              key: "value"
-              value: {
-                array_value: {
-                  values: {
-                    double_value: 0.30146464705467224
+            fields:  {
+              key:  "value"
+              value:  {
+                array_value:  {
+                  values:  {
+                    double_value:  0.30146464705467224
                   }
-                  values: {
-                    double_value: 0.30961233377456665
+                  values:  {
+                    double_value:  0.30961233377456665
                   }
-                  values: {
-                    double_value: 0.2634420692920685
+                  values:  {
+                    double_value:  0.2634420692920685
                   }
-                  values: {
-                    double_value: 0.29874876141548157
+                  values:  {
+                    double_value:  0.29874876141548157
                   }
-                  values: {
-                    double_value: 0.2797374725341797
+                  values:  {
+                    double_value:  0.2797374725341797
                   }
-                  values: {
-                    double_value: 0.27430567145347595
+                  values:  {
+                    double_value:  0.27430567145347595
                   }
-                  values: {
-                    double_value: 0.13307899236679077
+                  values:  {
+                    double_value:  0.13307899236679077
                   }
-                  values: {
-                    double_value: -0.6952698230743408
+                  values:  {
+                    double_value:  -0.6952698230743408
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
-                  values: {
-                    double_value: 0
+                  values:  {
+                    double_value:  0
                   }
                 }
               }
@@ -1393,23 +1110,505 @@ message: {
           }
         }
       }
-      create_time: {
-        seconds: 1722946808
-        nanos: 603940000
+      create_time:  {
+        seconds:  1722974076
+        nanos:  238818000
       }
-      update_time: {
-        seconds: 1722946808
-        nanos: 603940000
+      update_time:  {
+        seconds:  1722974076
+        nanos:  238818000
       }
     }
-    read_time: {
-      seconds: 1722947330
-      nanos: 93495000
+    read_time:  {
+      seconds:  1722983231
+      nanos:  764643000
     }
   }
 }
-ref_index: 28
-40
-kind: RECV
-is_error: true
-ref_index: 28
+ref_index:  21
+2421
+kind:  RECV
+message:  {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]:  {
+    document:  {
+      name:  "projects/oscar-go-424217/databases/test/documents/vectorDBs/namespace-0/vectors/6f72616e676532"
+      fields:  {
+        key:  "Embedding"
+        value:  {
+          map_value:  {
+            fields:  {
+              key:  "__type__"
+              value:  {
+                string_value:  "__vector__"
+              }
+            }
+            fields:  {
+              key:  "value"
+              value:  {
+                array_value:  {
+                  values:  {
+                    double_value:  0.30135461688041687
+                  }
+                  values:  {
+                    double_value:  0.3094993531703949
+                  }
+                  values:  {
+                    double_value:  0.2633459270000458
+                  }
+                  values:  {
+                    double_value:  0.298639714717865
+                  }
+                  values:  {
+                    double_value:  0.27963536977767944
+                  }
+                  values:  {
+                    double_value:  0.2742055654525757
+                  }
+                  values:  {
+                    double_value:  0.1357453316450119
+                  }
+                  values:  {
+                    double_value:  -0.695016086101532
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      create_time:  {
+        seconds:  1722974076
+        nanos:  64162000
+      }
+      update_time:  {
+        seconds:  1722974076
+        nanos:  64162000
+      }
+    }
+    read_time:  {
+      seconds:  1722983231
+      nanos:  764643000
+    }
+  }
+}
+ref_index:  21
+43
+kind:  RECV
+is_error:  true
+ref_index:  21
+81
+kind:  CREATE_STREAM
+method:  "/google.firestore.v1.Firestore/BatchGetDocuments"
+247
+kind:  SEND
+message:  {
+  [type.googleapis.com/google.firestore.v1.BatchGetDocumentsRequest]:  {
+    database:  "projects/oscar-go-424217/databases/test"
+    documents:  "projects/oscar-go-424217/databases/test/documents/c/d"
+  }
+}
+ref_index:  28
+263
+kind:  RECV
+message:  {
+  [type.googleapis.com/google.firestore.v1.BatchGetDocumentsResponse]:  {
+    missing:  "projects/oscar-go-424217/databases/test/documents/c/d"
+    read_time:  {
+      seconds:  1722983232
+      nanos:  31133000
+    }
+  }
+}
+ref_index:  28
+43
+kind:  RECV
+is_error:  true
+ref_index:  28
+72
+kind:  CREATE_STREAM
+method:  "/google.firestore.v1.Firestore/RunQuery"
+2350
+kind:  SEND
+message:  {
+  [type.googleapis.com/google.firestore.v1.RunQueryRequest]:  {
+    parent:  "projects/oscar-go-424217/databases/test/documents/vectorDBs/namespace-0"
+    structured_query:  {
+      from:  {
+        collection_id:  "vectors"
+      }
+      find_nearest:  {
+        vector_field:  {
+          field_path:  "Embedding"
+        }
+        query_vector:  {
+          map_value:  {
+            fields:  {
+              key:  "__type__"
+              value:  {
+                string_value:  "__vector__"
+              }
+            }
+            fields:  {
+              key:  "value"
+              value:  {
+                array_value:  {
+                  values:  {
+                    double_value:  0.2746795415878296
+                  }
+                  values:  {
+                    double_value:  0.31715577840805054
+                  }
+                  values:  {
+                    double_value:  0.31715577840805054
+                  }
+                  values:  {
+                    double_value:  0.3058287799358368
+                  }
+                  values:  {
+                    double_value:  0.28600654006004333
+                  }
+                  values:  {
+                    double_value:  0.15008264780044556
+                  }
+                  values:  {
+                    double_value:  -0.7249274849891663
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                }
+              }
+            }
+          }
+        }
+        distance_measure:  DOT_PRODUCT
+        limit:  {
+          value:  3
+        }
+      }
+    }
+  }
+}
+ref_index:  32
+2403
+kind:  RECV
+message:  {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]:  {
+    document:  {
+      name:  "projects/oscar-go-424217/databases/test/documents/vectorDBs/namespace-0/vectors/6170706c6534"
+      fields:  {
+        key:  "Embedding"
+        value:  {
+          map_value:  {
+            fields:  {
+              key:  "__type__"
+              value:  {
+                string_value:  "__vector__"
+              }
+            }
+            fields:  {
+              key:  "value"
+              value:  {
+                array_value:  {
+                  values:  {
+                    double_value:  0.274795264005661
+                  }
+                  values:  {
+                    double_value:  0.3172893524169922
+                  }
+                  values:  {
+                    double_value:  0.3172893524169922
+                  }
+                  values:  {
+                    double_value:  0.3059576153755188
+                  }
+                  values:  {
+                    double_value:  0.2861270308494568
+                  }
+                  values:  {
+                    double_value:  0.1473129242658615
+                  }
+                  values:  {
+                    double_value:  -0.7252328395843506
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      create_time:  {
+        seconds:  1722974076
+        nanos:  863888000
+      }
+      update_time:  {
+        seconds:  1722974076
+        nanos:  863888000
+      }
+    }
+    read_time:  {
+      seconds:  1722983232
+      nanos:  150078000
+    }
+  }
+}
+ref_index:  32
+2406
+kind:  RECV
+message:  {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]:  {
+    document:  {
+      name:  "projects/oscar-go-424217/databases/test/documents/vectorDBs/namespace-0/vectors/6170706c6533"
+      fields:  {
+        key:  "Embedding"
+        value:  {
+          map_value:  {
+            fields:  {
+              key:  "__type__"
+              value:  {
+                string_value:  "__vector__"
+              }
+            }
+            fields:  {
+              key:  "value"
+              value:  {
+                array_value:  {
+                  values:  {
+                    double_value:  0.2749089002609253
+                  }
+                  values:  {
+                    double_value:  0.3174206018447876
+                  }
+                  values:  {
+                    double_value:  0.3174206018447876
+                  }
+                  values:  {
+                    double_value:  0.30608412623405457
+                  }
+                  values:  {
+                    double_value:  0.28624534606933594
+                  }
+                  values:  {
+                    double_value:  0.1445397287607193
+                  }
+                  values:  {
+                    double_value:  -0.7255327701568604
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      create_time:  {
+        seconds:  1722974076
+        nanos:  863888000
+      }
+      update_time:  {
+        seconds:  1722974076
+        nanos:  863888000
+      }
+    }
+    read_time:  {
+      seconds:  1722983232
+      nanos:  150078000
+    }
+  }
+}
+ref_index:  32
+2428
+kind:  RECV
+message:  {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]:  {
+    document:  {
+      name:  "projects/oscar-go-424217/databases/test/documents/vectorDBs/namespace-0/vectors/6f72616e676531"
+      fields:  {
+        key:  "Embedding"
+        value:  {
+          map_value:  {
+            fields:  {
+              key:  "__type__"
+              value:  {
+                string_value:  "__vector__"
+              }
+            }
+            fields:  {
+              key:  "value"
+              value:  {
+                array_value:  {
+                  values:  {
+                    double_value:  0.30146464705467224
+                  }
+                  values:  {
+                    double_value:  0.30961233377456665
+                  }
+                  values:  {
+                    double_value:  0.2634420692920685
+                  }
+                  values:  {
+                    double_value:  0.29874876141548157
+                  }
+                  values:  {
+                    double_value:  0.2797374725341797
+                  }
+                  values:  {
+                    double_value:  0.27430567145347595
+                  }
+                  values:  {
+                    double_value:  0.13307899236679077
+                  }
+                  values:  {
+                    double_value:  -0.6952698230743408
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                  values:  {
+                    double_value:  0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      create_time:  {
+        seconds:  1722974076
+        nanos:  238818000
+      }
+      update_time:  {
+        seconds:  1722974076
+        nanos:  238818000
+      }
+    }
+    read_time:  {
+      seconds:  1722983232
+      nanos:  150078000
+    }
+  }
+}
+ref_index:  32
+43
+kind:  RECV
+is_error:  true
+ref_index:  32

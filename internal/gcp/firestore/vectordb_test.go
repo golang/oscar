@@ -6,6 +6,7 @@ package firestore
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"golang.org/x/oscar/internal/storage"
@@ -18,11 +19,16 @@ import (
 func TestVectorDB(t *testing.T) {
 	rr, project, database := openRR(t, "testdata/vectordb.grpcrr")
 	ctx := context.Background()
-	storage.TestVectorDB(t, func() storage.VectorDB {
-		vdb, err := NewVectorDB(ctx, testutil.Slogger(t), project, database, "test", rr.ClientOptions()...)
+	nsid := 0
+	newvdb := func() storage.VectorDB {
+		ns := fmt.Sprintf("namespace-%d", nsid)
+		// TODO: use a different namespace each time
+		// nsid++
+		vdb, err := NewVectorDB(ctx, testutil.Slogger(t), project, database, ns, rr.ClientOptions()...)
 		if err != nil {
 			t.Fatal(err)
 		}
 		return vdb
-	})
+	}
+	storage.TestVectorDB(t, newvdb)
 }
