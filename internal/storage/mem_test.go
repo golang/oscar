@@ -8,7 +8,6 @@ import (
 	"reflect"
 	"testing"
 
-	"golang.org/x/oscar/internal/llm"
 	"golang.org/x/oscar/internal/testutil"
 )
 
@@ -101,15 +100,12 @@ func TestMemVectorDBAll(t *testing.T) {
 	vdb.Delete("apple3")
 	vdb.Set("apple3", embed("apple3"))
 
-	got := make(map[string]llm.Vector)
-	for k, vec := range vdb.All() {
-		got[k] = vec()
+	var got []string
+	for k := range vdb.All() {
+		got = append(got, k)
 	}
 
-	want := map[string]llm.Vector{
-		"apple1": embed("apple1"),
-		"apple3": embed("apple3"),
-	}
+	want := []string{"apple1", "apple3"}
 	if !reflect.DeepEqual(want, got) {
 		t.Fatalf("got %v;\nwant %v", got, want)
 	}
