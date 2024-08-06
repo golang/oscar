@@ -350,15 +350,17 @@ type memVectorBatch struct {
 	db *memVectorDB          // underlying memVectorDB
 	sb Batch                 // batch for underlying DB
 	w  map[string]llm.Vector // vectors to write
+	d  map[string]bool       // vectors to delete
 }
 
 func (db *memVectorDB) Batch() VectorBatch {
-	return &memVectorBatch{db, db.storage.Batch(), make(map[string]llm.Vector)}
+	return &memVectorBatch{db, db.storage.Batch(), make(map[string]llm.Vector), make(map[string]bool)}
 }
 
 func (b *memVectorBatch) Set(name string, vec llm.Vector) {
 	b.sb.Set(ordered.Encode("llm.Vector", b.db.namespace, name), vec.Encode())
 
+	delete(b.d, name)
 	b.w[name] = slices.Clone(vec)
 }
 
@@ -366,6 +368,7 @@ func (b *memVectorBatch) Delete(name string) {
 	b.sb.Delete(ordered.Encode("llm.Vector", b.db.namespace, name))
 
 	delete(b.w, name)
+	b.d[name] = true
 }
 
 func (b *memVectorBatch) MaybeApply() bool {
@@ -386,4 +389,9 @@ func (b *memVectorBatch) Apply() {
 		b.db.cache[name] = vec
 	}
 	clear(b.w)
+
+	for name := range b.d {
+		delete(b.db.cache, name)
+	}
+	clear(b.d)
 }
