@@ -12,6 +12,9 @@ import (
 	"golang.org/x/oscar/internal/testutil"
 )
 
+// To record this test:
+//
+//	go test -v -run 'TestVectorDB$' -grpcrecord vectordb -project $OSCAR_PROJECT -database test
 func TestVectorDB(t *testing.T) {
 	rr, project, database := openRR(t, "testdata/vectordb.grpcrr")
 	ctx := context.Background()

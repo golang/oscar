@@ -24,6 +24,9 @@ var (
 	database = flag.String("database", "", "Firestore database for testing")
 )
 
+// To record this test:
+//
+//	go test -v -run 'TestDB$' -grpcrecord db -project $OSCAR_PROJECT -database test
 func TestDB(t *testing.T) {
 	rr, fsProject, fsDatabase := openRR(t, "testdata/db.grpcrr")
 	defer func() {
