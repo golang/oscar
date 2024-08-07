@@ -75,12 +75,12 @@ func (c *Client) EmbedDocs(ctx context.Context, docs []llm.EmbedDoc) ([]llm.Vect
 	return vecs, nil
 }
 
-func embed(ctx context.Context, hc *http.Client, embedURL *url.URL, inputs []string, mn string) ([]llm.Vector, error) {
+func embed(ctx context.Context, hc *http.Client, embedURL *url.URL, inputs []string, model string) ([]llm.Vector, error) {
 	embReq := struct {
 		Model string   `json:"model"`
 		Input []string `json:"input"`
 	}{
-		Model: mn,
+		Model: model,
 		Input: inputs,
 	}
 	erj, err := json.Marshal(embReq)
