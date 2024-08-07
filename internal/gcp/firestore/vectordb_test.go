@@ -31,14 +31,14 @@ func TestVectorDB(t *testing.T) {
 
 // deleteVectorDBs deletes all the vectors and their related collections from the
 // given Firestore DB, specified as a project and database name.
-// It does this by deleting all documents in all collections named "vectors".
-// Although these all live under the "vectorDBs" collection, it isn't possible
-// to delete that collection. In Firestore, only documents can be deleted,
-// and they can only be iterated over from their immediate parent collection.
-// The CollectionGroup call selects all collections named "vectors", regardless
-// of their parents. (There is a way to recursively walk the hierarchy, but using
-// a collection group is simpler.)
 func deleteVectorDBs(t *testing.T, project, database string) {
+	// Delete all documents in all collections named "vectors".
+	// Although these all live under the "vectorDBs" collection, it isn't possible
+	// to delete that collection. In Firestore, only documents can be deleted,
+	// and they can only be iterated over from their immediate parent collection.
+	// The CollectionGroup call selects all collections named "vectors", regardless
+	// of their parents. (There is a way to recursively walk the hierarchy, but using
+	// a collection group is simpler.)
 	ctx := context.Background()
 	client, err := firestore.NewClientWithDatabase(ctx, project, database)
 	if err != nil {
