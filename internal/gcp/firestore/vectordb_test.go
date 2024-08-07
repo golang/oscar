@@ -14,17 +14,14 @@ import (
 	"google.golang.org/api/iterator"
 )
 
-// To record this test:
-//
-//	go test -v -run 'TestVectorDB$' -grpcrecord vectordb -project $OSCAR_PROJECT -database test
 func TestVectorDB(t *testing.T) {
-	rr, project, database := openRR(t, "testdata/vectordb.grpcrr")
+	rr, project := openRR(t, "testdata/vectordb.grpcrr")
 	ctx := context.Background()
 	if rr.Recording() {
-		deleteVectorDBs(t, project, database)
+		deleteVectorDBs(t, project, firestoreTestDatabase)
 	}
 	storage.TestVectorDB(t, func() storage.VectorDB {
-		vdb, err := NewVectorDB(ctx, testutil.Slogger(t), project, database, "test", rr.ClientOptions()...)
+		vdb, err := NewVectorDB(ctx, testutil.Slogger(t), project, firestoreTestDatabase, "test", rr.ClientOptions()...)
 		if err != nil {
 			t.Fatal(err)
 		}
