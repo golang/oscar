@@ -75,25 +75,28 @@ func (db *DB) Lock(name string) {
 // It returns false if the snapshot iterator timed out without the lock
 // being acquired.
 func (db *DB) waitForLock(name string) bool {
-	ctx, cancel := context.WithTimeout(context.Background(), lockTimeout)
-	defer cancel()
-	// A snapshot iterator iterates over changing states of the document.
+	// Use a snapshot iterator to iterate over changing states of the document.
 	// It yields its first value immediately, and subsequent values only when
 	// the document changes state.
+	// We want the iterator to time out eventually, or an orphaned lock document
+	// that remains unchanged could cause it to wait indefinitely.
+	ctx, cancel := context.WithTimeout(context.Background(), lockTimeout)
+	defer cancel()
 	dr := db.locks.Doc(encodeLockName(name))
 	iter := dr.Snapshots(ctx)
 	defer iter.Stop()
 	for {
-		ds, err := iter.Next()
+		_, err := iter.Next()
 		if err == nil {
-			if !ds.Exists() && db.tryLock(name) {
-				// The lock doesn't exist and we managed to get it.
+			if db.tryLock(name) {
 				return true
 			}
 			// Wait for a change in the lock document.
 			continue
 		}
 		if isTimeout(err) {
+			// The lock document may not have changed for lockTimeout;
+			// assume that's true and try to steal it.
 			return db.tryLock(name)
 		}
 		// unreachable except for bad DB
