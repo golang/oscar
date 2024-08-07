@@ -5,7 +5,7 @@ go 1.23
 require (
 	github.com/cockroachdb/pebble v1.1.1
 	github.com/google/generative-ai-go v0.16.0
-	github.com/google/go-replayers/grpcreplay v1.3.0
+	github.com/google/go-replayers/grpcreplay v1.3.1-0.20240807114419-950aeedc364f
 	golang.org/x/tools v0.23.0
 	google.golang.org/api v0.189.0
 	rsc.io/markdown v0.0.0-20240617154923-1f2ef1438fed
