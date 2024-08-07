@@ -44,7 +44,7 @@ func newTestClient(t *testing.T, rrfile string) *Client {
 	rr, err := httprr.Open(rrfile, http.DefaultTransport)
 	check(err)
 
-	c, err := NewClient(lg, rr.Client(), "")
+	c, err := NewClient(lg, rr.Client(), "", "mxbai-embed-large")
 	check(err)
 
 	return c

@@ -27,14 +27,16 @@ import (
 
 // A Client represents a connection to Ollama.
 type Client struct {
-	slog *slog.Logger
-	hc   *http.Client
-	url  *url.URL // url of the ollama server
+	slog      *slog.Logger
+	hc        *http.Client
+	url       *url.URL // url of the ollama server
+	modelName string
 }
 
 // NewClient returns a connection to Ollama server. If empty, the
 // server is assumed to be hosted at http://127.0.0.1:11434.
-func NewClient(lg *slog.Logger, hc *http.Client, server string) (*Client, error) {
+// ideally, use the largest ollama embedding model, ie: "mxbai-embed-large"
+func NewClient(lg *slog.Logger, hc *http.Client, server string, mn string) (*Client, error) {
 	if server == "" {
 		host := os.Getenv("OLLAMA_HOST")
 		if host == "" {
@@ -46,7 +48,7 @@ func NewClient(lg *slog.Logger, hc *http.Client, server string) (*Client, error)
 	if err != nil {
 		return nil, err
 	}
-	return &Client{slog: lg, hc: hc, url: u}, nil
+	return &Client{slog: lg, hc: hc, url: u, modelName: mn}, nil
 }
 
 const maxBatch = 512 // default physical batch size in ollama
@@ -63,7 +65,7 @@ func (c *Client) EmbedDocs(ctx context.Context, docs []llm.EmbedDoc) ([]llm.Vect
 			input := doc.Title + "\n\n" + doc.Text
 			inputs = append(inputs, input)
 		}
-		vs, err := embed(ctx, c.hc, embedURL, inputs)
+		vs, err := embed(ctx, c.hc, embedURL, inputs, c.modelName)
 		if err != nil {
 			return nil, err
 		}
@@ -72,12 +74,12 @@ func (c *Client) EmbedDocs(ctx context.Context, docs []llm.EmbedDoc) ([]llm.Vect
 	return vecs, nil
 }
 
-func embed(ctx context.Context, hc *http.Client, embedURL *url.URL, inputs []string) ([]llm.Vector, error) {
+func embed(ctx context.Context, hc *http.Client, embedURL *url.URL, inputs []string, mn string) ([]llm.Vector, error) {
 	embReq := struct {
 		Model string   `json:"model"`
 		Input []string `json:"input"`
 	}{
-		Model: "mxbai-embed-large", // use largest ollama embedding model
+		Model: mn,
 		Input: inputs,
 	}
 	erj, err := json.Marshal(embReq)

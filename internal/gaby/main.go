@@ -413,7 +413,7 @@ func main() {
 	// Ran during setup: gh.Add("golang/go")
 
 	dc := docs.New(db)
-	ai, err := gemini.NewClient(ctx, lg, sdb, http.DefaultClient)
+	ai, err := gemini.NewClient(ctx, lg, sdb, http.DefaultClient, "text-embedding-004")
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -49,14 +49,15 @@ func Scrub(req *http.Request) error {
 
 // A Client represents a connection to Gemini.
 type Client struct {
-	slog  *slog.Logger
-	genai *genai.Client
+	slog      *slog.Logger
+	genai     *genai.Client
+	modelName string
 }
 
 // NewClient returns a connection to Gemini, using the given logger and HTTP client.
 // It expects to find a secret of the form "AIza..." or "user:AIza..." in sdb
 // under the name "ai.google.dev".
-func NewClient(ctx context.Context, lg *slog.Logger, sdb secret.DB, hc *http.Client) (*Client, error) {
+func NewClient(ctx context.Context, lg *slog.Logger, sdb secret.DB, hc *http.Client, mn string) (*Client, error) {
 	key, ok := sdb.Get("ai.google.dev")
 	if !ok {
 		return nil, fmt.Errorf("missing api key for ai.google.dev")
@@ -80,7 +81,7 @@ func NewClient(ctx context.Context, lg *slog.Logger, sdb secret.DB, hc *http.Cli
 		return nil, err
 	}
 
-	return &Client{slog: lg, genai: ai}, nil
+	return &Client{slog: lg, genai: ai, modelName: mn}, nil
 }
 
 // withKey returns a new http.Client that is the same as hc
@@ -114,7 +115,7 @@ const maxBatch = 100 // empirical limit
 // EmbedDocs returns the vector embeddings for the docs,
 // implementing [llm.Embedder].
 func (c *Client) EmbedDocs(ctx context.Context, docs []llm.EmbedDoc) ([]llm.Vector, error) {
-	model := c.genai.EmbeddingModel("text-embedding-004")
+	model := c.genai.EmbeddingModel(c.modelName)
 	var vecs []llm.Vector
 	for docs := range slices.Chunk(docs, maxBatch) {
 		b := model.NewBatch()
