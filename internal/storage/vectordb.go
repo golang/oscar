@@ -36,6 +36,7 @@ type VectorDB interface {
 	//		fmt.Printf("%q: %q\n", key, vec)
 	//	}
 	//
+	// The pairs are ordered in lexicographic order of IDs.
 	// In iterations that only need the keys or only need the vectors for a subset of keys,
 	// some VectorDB implementations may avoid work when the value function is not called.
 	All() iter.Seq2[string, func() llm.Vector]

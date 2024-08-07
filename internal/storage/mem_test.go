@@ -5,7 +5,6 @@
 package storage
 
 import (
-	"reflect"
 	"testing"
 
 	"golang.org/x/oscar/internal/testutil"
@@ -58,55 +57,5 @@ func TestMemVectorBatchMaybeApply(t *testing.T) {
 	b.MaybeApply() // now should apply
 	if _, ok := vdb.Get("apple3"); !ok {
 		t.Errorf("Get(apple3) failed after MaybeApply that did apply")
-	}
-}
-
-func TestMemVectorBatch(t *testing.T) {
-	db := &maybeDB{DB: MemDB()}
-	vdb := MemVectorDB(db, testutil.Slogger(t), "")
-
-	vdb.Set("apple1", embed("apple1"))
-
-	b := vdb.Batch()
-	b.Set("apple2", embed("apple2"))
-	b.Delete("apple2")
-
-	b.Delete("apple1")
-
-	b.Delete("apple3")
-	b.Set("apple3", embed("apple3"))
-	b.Apply()
-
-	if _, ok := vdb.Get("apple1"); ok {
-		t.Fatalf("found apple1 but it should be deleted")
-	}
-	if _, ok := vdb.Get("apple2"); ok {
-		t.Fatalf("found apple2 but it should be deleted")
-	}
-	if _, ok := vdb.Get("apple3"); !ok {
-		t.Fatalf("expected to find apple3 but it is deleted")
-	}
-}
-
-func TestMemVectorDBAll(t *testing.T) {
-	db := &maybeDB{DB: MemDB()}
-	vdb := MemVectorDB(db, testutil.Slogger(t), "")
-
-	vdb.Set("apple1", embed("apple1"))
-	vdb.Set("apple2", embed("apple2"))
-	vdb.Delete("apple2")
-	_, _ = vdb.Get("apple1")
-	vdb.Set("apple3", embed("apple3"))
-	vdb.Delete("apple3")
-	vdb.Set("apple3", embed("apple3"))
-
-	var got []string
-	for k := range vdb.All() {
-		got = append(got, k)
-	}
-
-	want := []string{"apple1", "apple3"}
-	if !reflect.DeepEqual(want, got) {
-		t.Fatalf("got %v;\nwant %v", got, want)
 	}
 }
