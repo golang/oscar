@@ -15,9 +15,9 @@ import (
 
 // TestVectorDB verifies that implementations of [VectorDB]
 // conform to its specification.
-// The newdb function should create a new connection to the same underlying storage.
-func TestVectorDB(t *testing.T, newdb func() VectorDB) {
-	vdb := newdb()
+// The opendb function should create a new connection to the same underlying storage.
+func TestVectorDB(t *testing.T, opendb func() VectorDB) {
+	vdb := opendb()
 
 	vdb.Set("orange2", embed("orange2"))
 	vdb.Set("orange1", embed("orange1"))
@@ -73,7 +73,7 @@ func TestVectorDB(t *testing.T, newdb func() VectorDB) {
 
 	vdb.Flush()
 
-	vdb = newdb()
+	vdb = opendb()
 	have = vdb.Search(embed("apple5"), 3)
 	want = want[:3]
 	if !reflect.DeepEqual(have, want) {
