@@ -1,4 +1,6 @@
-#!/bin/bash -e
+#!/bin/bash
+
+set -e
 
 # This script creates Firestore databases for Oscar.
 # It takes no arguments, but requires that the OSCAR_PROJECT
@@ -6,7 +8,7 @@
 #
 # It creates three databases:
 #   test    for unit and integration tests
-#   devel   for experimentation (not dev; DB names must be >= 4 chars)
+#   devel   for experimentation (not dev; DB names must be at least 4 chars)
 #   prod    for production
 
 if [[ $OSCAR_PROJECT = '' ]]; then
