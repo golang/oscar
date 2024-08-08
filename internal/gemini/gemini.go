@@ -57,8 +57,7 @@ type Client struct {
 // NewClient returns a connection to Gemini, using the given logger and HTTP client.
 // It expects to find a secret of the form "AIza..." or "user:AIza..." in sdb
 // under the name "ai.google.dev".
-// The model is the model name to use for embedding,
-// such as text-embedding-004.
+// The model is the model name to use for embedding, such as text-embedding-004.
 func NewClient(ctx context.Context, lg *slog.Logger, sdb secret.DB, hc *http.Client, model string) (*Client, error) {
 	key, ok := sdb.Get("ai.google.dev")
 	if !ok {

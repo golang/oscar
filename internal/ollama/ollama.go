@@ -35,7 +35,7 @@ type Client struct {
 
 // NewClient returns a connection to Ollama server. If empty, the
 // server is assumed to be hosted at http://127.0.0.1:11434.
-// The model is the model name to use for embedding,
+// The model is the model name to use for embedding.
 // A typical model for embedding is "mxbai-embed-large".
 func NewClient(lg *slog.Logger, hc *http.Client, server string, model string) (*Client, error) {
 	if server == "" {
