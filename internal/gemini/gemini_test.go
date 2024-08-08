@@ -49,7 +49,7 @@ func newTestClient(t *testing.T, rrfile string) *Client {
 	rr.Scrub(Scrub)
 	sdb := secret.ReadOnlyMap{"ai.google.dev": "nokey"}
 
-	c, err := NewClient(ctx, lg, sdb, rr.Client())
+	c, err := NewClient(ctx, lg, sdb, rr.Client(), "text-embedding-004")
 	check(err)
 
 	return c
