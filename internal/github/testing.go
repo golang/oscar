@@ -27,7 +27,7 @@ import (
 //
 // Each Client has only one TestingClient associated with it. Every call to Testing returns the same TestingClient.
 func (c *Client) Testing() *TestingClient {
-	if !testing.Testing() {
+	if !testing.Testing() && !c.testing {
 		return nil
 	}
 
