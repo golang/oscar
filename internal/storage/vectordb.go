@@ -16,6 +16,7 @@ import (
 // corresponding to documents.
 type VectorDB interface {
 	// Set sets the vector associated with the given document ID to vec.
+	// The id argument must not be empty.
 	Set(id string, vec llm.Vector)
 
 	// Delete deletes any vector associated with document ID key.

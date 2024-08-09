@@ -286,6 +286,9 @@ func (db *memVectorDB) Set(id string, vec llm.Vector) {
 	// under several concurrent writes. This is only a problem
 	// when different routines put a different value for the same
 	// document, which is highly unlikely in practice.
+	if len(id) == 0 {
+		db.storage.Panic("memVectorDB set: empty ID")
+	}
 	db.storage.Set(ordered.Encode("llm.Vector", db.namespace, id), vec.Encode())
 
 	db.mu.Lock()
@@ -363,6 +366,9 @@ func (db *memVectorDB) Batch() VectorBatch {
 }
 
 func (b *memVectorBatch) Set(name string, vec llm.Vector) {
+	if len(name) == 0 {
+		b.db.storage.Panic("memVectorDB batch set: empty ID")
+	}
 	b.sb.Set(ordered.Encode("llm.Vector", b.db.namespace, name), vec.Encode())
 
 	delete(b.d, name)

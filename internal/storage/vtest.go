@@ -26,6 +26,10 @@ func TestVectorDB(t *testing.T, opendb func() VectorDB) {
 	vdb.Delete("orange1")
 	vdb.Set("orange1", embed("orange1"))
 
+	if !panics(func() { vdb.Set("", llm.Vector{}) }) {
+		t.Fatalf("Set with empty key does not but should")
+	}
+
 	haveAll := allIDs(vdb)
 	wantAll := []string{"orange1", "orange2"}
 	if !reflect.DeepEqual(haveAll, wantAll) {
@@ -45,6 +49,10 @@ func TestVectorDB(t *testing.T, opendb func() VectorDB) {
 	b.Delete("orange4")
 	b.Set("orange4", embed("orange4"))
 	b.Apply()
+
+	if !panics(func() { b.Set("", llm.Vector{}) }) {
+		t.Fatalf("Batch.Set with empty key does not but should")
+	}
 
 	haveAll = allIDs(vdb)
 	wantAll = []string{"apple3", "apple4", "ignore", "orange1", "orange2", "orange4"}
