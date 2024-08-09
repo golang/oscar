@@ -8,6 +8,7 @@ package gcpsecret
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
@@ -18,8 +19,8 @@ import (
 )
 
 // SecretDB implements [secret.DB] using the SecretManager in a GCP project.
-// The secret names passed to [SecretDB.Get] and [SecretDB.Set] are used
-// directly as the SecretManager names, and the values are used directly
+// The secret names passed to [SecretDB.Get] and [SecretDB.Set] are hex-encoded
+// before being passed to SecretManager, and the values are used directly
 // as the Data field of a SecretPayload.
 type SecretDB struct {
 	client    *secretmanager.Client
@@ -47,8 +48,9 @@ func (db *SecretDB) Close() {
 // Get implements [secrets.DB.Get].
 func (db *SecretDB) Get(name string) (secret string, ok bool) {
 	ctx := context.TODO()
+	hexName := hex.EncodeToString([]byte(name))
 	result, err := db.client.AccessSecretVersion(ctx, &smpb.AccessSecretVersionRequest{
-		Name: fmt.Sprintf("projects/%s/secrets/%s/versions/latest", db.projectID, name),
+		Name: fmt.Sprintf("projects/%s/secrets/%s/versions/latest", db.projectID, hexName),
 	})
 	if err != nil {
 		return "", false
@@ -65,10 +67,11 @@ func (db *SecretDB) Set(name, secret string) {
 }
 
 func (db *SecretDB) set(ctx context.Context, name, secret string) error {
+	hexName := hex.EncodeToString([]byte(name))
 
 	add := func() error {
 		_, err := db.client.AddSecretVersion(ctx, &smpb.AddSecretVersionRequest{
-			Parent:  fmt.Sprintf("projects/%s/secrets/%s", db.projectID, name),
+			Parent:  fmt.Sprintf("projects/%s/secrets/%s", db.projectID, hexName),
 			Payload: &smpb.SecretPayload{Data: []byte(secret)},
 		})
 		return err
@@ -81,7 +84,7 @@ func (db *SecretDB) set(ctx context.Context, name, secret string) error {
 	// Secret not found. Try to create it.
 	_, err = db.client.CreateSecret(ctx, &smpb.CreateSecretRequest{
 		Parent:   fmt.Sprintf("projects/%s", db.projectID),
-		SecretId: name,
+		SecretId: hexName,
 		Secret:   &smpb.Secret{Replication: &smpb.Replication{Replication: &smpb.Replication_Automatic_{}}},
 	})
 	if err != nil {

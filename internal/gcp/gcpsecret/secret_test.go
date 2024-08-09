@@ -42,4 +42,11 @@ func TestDB(t *testing.T) {
 	if _, ok := db.Get("unknown"); ok {
 		t.Error("got true, want false")
 	}
+
+	// Names with dots are disallowed by Secret Manager, but not by this DB.
+	const dotName = "test.key"
+	db.Set(dotName, "abc")
+	if _, ok := db.Get(dotName); !ok {
+		t.Errorf("secret %q not defined", dotName)
+	}
 }
