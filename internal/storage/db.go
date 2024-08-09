@@ -45,6 +45,7 @@ type DB interface {
 	Unlock(name string)
 
 	// Set sets the value associated with key to val.
+	// The key must not be of length zero.
 	Set(key, val []byte)
 
 	// Get looks up the value associated with key.

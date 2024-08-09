@@ -168,6 +168,9 @@ func encodeLockName(name string) string {
 
 // Set implements [storage.DB.Set].
 func (db *DB) Set(key, val []byte) {
+	if len(key) == 0 {
+		db.Panic("firestore set: empty key")
+	}
 	db.set(nil, db.values, encodeKey(key), value{val})
 }
 
@@ -223,6 +226,9 @@ func (b *dbBatch) DeleteRange(start, end []byte) {
 
 // Set implements [storage.Batch.Set].
 func (b *dbBatch) Set(key, val []byte) {
+	if len(key) == 0 {
+		b.b.f.Panic("firestore batch set: empty key")
+	}
 	// TODO(jba): account for size of encoded struct.
 	b.b.set(encodeKey(key), value{slices.Clone(val)}, len(val))
 }

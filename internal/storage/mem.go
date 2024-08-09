@@ -132,6 +132,9 @@ func (db *memDB) DeleteRange(start, end []byte) {
 
 // Set sets the value associated with key to val.
 func (db *memDB) Set(key, val []byte) {
+	if len(key) == 0 {
+		db.Panic("memdb set: empty key")
+	}
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
@@ -155,6 +158,9 @@ type memBatch struct {
 }
 
 func (b *memBatch) Set(key, val []byte) {
+	if len(key) == 0 {
+		b.db.Panic("memdb batch set: empty key")
+	}
 	k := string(key)
 	v := bytes.Clone(val)
 	b.ops = append(b.ops, func() { b.db.data.Set(k, v) })

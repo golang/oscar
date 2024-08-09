@@ -121,6 +121,9 @@ func (f *fstore) set(tx *firestore.Transaction, coll *firestore.CollectionRef, k
 // If tx is non-nil, the delete happens inside the transaction.
 // It is not an error to call delete on a document that doesn't exist.
 func (f *fstore) delete(tx *firestore.Transaction, coll *firestore.CollectionRef, key string) {
+	if len(key) == 0 {
+		return
+	}
 	dr := coll.Doc(key)
 	var err error
 	if tx == nil {
@@ -161,11 +164,20 @@ func (f *fstore) runTransaction(fn func(ctx context.Context, tx *firestore.Trans
 
 // scan returns an iterator over the documents in the collection coll whose IDs are
 // between start and end, inclusive.
+// An empty string for start or end indicates the beginning of the collection.
 func (f *fstore) scan(tx *firestore.Transaction, coll *firestore.CollectionRef, start, end string) iter.Seq[*firestore.DocumentSnapshot] {
-	query := coll.
-		OrderBy(firestore.DocumentID, firestore.Asc).
-		StartAt(start).
-		EndAt(end)
+	if end == "" {
+		// The iteration ends at the start of the collection, so there is nothing to iterate over.
+		return func(yield func(*firestore.DocumentSnapshot) bool) {
+			return
+		}
+	}
+
+	query := coll.OrderBy(firestore.DocumentID, firestore.Asc).EndAt(end)
+	if start != "" {
+		query = query.StartAt(start)
+	}
+
 	var iter *firestore.DocumentIterator
 	if tx == nil {
 		iter = query.Documents(context.TODO())
@@ -181,7 +193,7 @@ func (f *fstore) scan(tx *firestore.Transaction, coll *firestore.CollectionRef, 
 			}
 			if err != nil {
 				// unreachable except for bad DB
-				f.Panic("firestore scan", "collection", coll, "err", err)
+				f.Panic("firestore scan", "collection", coll.Path, "err", err)
 			}
 			if !yield(ds) {
 				return
@@ -232,6 +244,8 @@ const (
 	// However, I found that exceeding 4 MiB often failed
 	// with a "too big" error.
 	maxSize = 4 << 20
+	// Transactions tend to time out if they perform too many operations.
+	maxOps = 10_000
 )
 
 // set adds a set operation to the batch. It is the caller's responsibility to
@@ -246,6 +260,9 @@ func (b *batch) set(id string, val any, valSize int) {
 
 // delete adds a delete operation to the batch.
 func (b *batch) delete(id string) {
+	if len(id) == 0 {
+		return
+	}
 	b.ops = append(b.ops, &op{id: id, value: nil})
 	b.size += perWriteSize + len(id)
 }
@@ -262,7 +279,7 @@ func (b *batch) maybeApply() bool {
 	// Apply if the batch is large, or if there is even one deleteRange.
 	// We don't know how many documents are in the range, and each one
 	// is a separate operation in the transaction, so be conservative.
-	if b.size > maxSize || b.hasDeleteRange {
+	if b.size >= maxSize || len(b.ops) >= maxOps || b.hasDeleteRange {
 		b.apply()
 		return true
 	}

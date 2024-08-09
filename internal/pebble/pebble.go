@@ -89,6 +89,9 @@ func (d *db) Panic(msg string, args ...any) {
 }
 
 func (d *db) Set(key, val []byte) {
+	if len(key) == 0 {
+		d.Panic("pebble set: empty key")
+	}
 	if err := d.p.Set(key, val, noSync); err != nil {
 		// unreachable except db error
 		d.Panic("pebble set", "key", storage.Fmt(key), "val", storage.Fmt(val), "err", err)
@@ -167,6 +170,9 @@ func (d *db) Batch() storage.Batch {
 }
 
 func (b *batch) Set(key, val []byte) {
+	if len(key) == 0 {
+		b.db.Panic("pebble batch set: empty key")
+	}
 	if err := b.b.Set(key, val, noSync); err != nil {
 		// unreachable except db error
 		b.db.Panic("pebble batch set", "key", storage.Fmt(key), "val", storage.Fmt(val), "err", err)
