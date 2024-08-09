@@ -61,7 +61,7 @@ func usage() {
 }
 
 func main() {
-	log.SetFlags(0)
+	log.SetFlags(log.Ltime)
 	log.SetPrefix("syncdb: ")
 	flag.Usage = usage
 	flag.Parse()
@@ -112,6 +112,14 @@ func syncDB(dst, src storage.DB) int {
 	defer stop()
 	dkey, dvalf, dok := dnext()
 
+	maybeApply := func(key []byte) {
+		n++
+		if n%1000 == 0 {
+			log.Printf("synced %d items, at key %s", n, storage.Fmt(key))
+		}
+		batch.MaybeApply()
+	}
+
 	for skey, svalf := range src.Scan(nil, inf) {
 		// Ignore source items from vector DBs.
 		if bytes.HasPrefix(skey, llmVector) {
@@ -120,8 +128,7 @@ func syncDB(dst, src storage.DB) int {
 		// Delete destination items before this source key.
 		for dok && bytes.Compare(dkey, skey) < 0 {
 			batch.Delete(dkey)
-			n++
-			batch.MaybeApply()
+			maybeApply(skey)
 			dkey, dvalf, dok = dnext()
 		}
 		// Copy the source item unless its key and value equal the destination item.
@@ -129,8 +136,7 @@ func syncDB(dst, src storage.DB) int {
 		sval := svalf()
 		if !keq || !bytes.Equal(sval, dvalf()) {
 			batch.Set(skey, sval)
-			n++
-			batch.MaybeApply()
+			maybeApply(skey)
 		}
 		if keq {
 			dkey, dvalf, dok = dnext()
@@ -140,8 +146,7 @@ func syncDB(dst, src storage.DB) int {
 	// delete them.
 	for dok {
 		batch.Delete(dkey)
-		n++
-		batch.MaybeApply()
+		maybeApply(dkey)
 		dkey, _, dok = dnext()
 	}
 	batch.Apply()
