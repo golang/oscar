@@ -385,6 +385,7 @@ import (
 	"golang.org/x/oscar/internal/embeddocs"
 	"golang.org/x/oscar/internal/gcp/firestore"
 	"golang.org/x/oscar/internal/gcp/gcphandler"
+	"golang.org/x/oscar/internal/gcp/gcpsecret"
 	"golang.org/x/oscar/internal/gemini"
 	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/githubdocs"
@@ -395,7 +396,12 @@ import (
 	"golang.org/x/oscar/internal/storage"
 )
 
-var searchMode = flag.Bool("search", false, "run in interactive search mode")
+var (
+	searchMode    = flag.Bool("search", false, "run in interactive search mode (local mode only)")
+	firestoreDB   = flag.String("firestoredb", "", "name of the Firestore DB to use (cloud mode only)")
+	enableSync    = flag.Bool("enablesync", false, "sync the DB with GitHub and other external sources")
+	enableChanges = flag.Bool("enablechanges", false, "allow changes to GitHub")
+)
 
 func main() {
 	flag.Parse()
@@ -449,35 +455,21 @@ func runLocally(ctx context.Context) {
 		return
 	}
 
-	gh.Sync(ctx)
-	githubdocs.Sync(ctx, lg, dc, gh)
-	embeddocs.Sync(ctx, lg, vdb, ai, dc)
+	sync(ctx, lg, vdb, ai, dc, gh)
 
-	cf := commentfix.New(lg, gh, "gerritlinks")
-	cf.EnableProject("golang/go")
-	cf.EnableEdits()
-	cf.AutoLink(`\bCL ([0-9]+)\b`, "https://go.dev/cl/$1")
-	cf.ReplaceURL(`\Qhttps://go-review.git.corp.google.com/\E`, "https://go-review.googlesource.com/")
+	cf := newGerritlinksCommentFixer(lg, gh)
+	rp := newRelatedPoster(lg, db, gh, vdb, dc)
 
-	rp := related.New(lg, db, gh, vdb, dc, "related")
-	rp.EnableProject("golang/go")
-	rp.EnablePosts()
-	rp.SkipBodyContains("— [watchflakes](https://go.dev/wiki/Watchflakes)")
-	rp.SkipTitlePrefix("x/tools/gopls: release version v")
-	rp.SkipTitleSuffix(" backport]")
 	for {
-		gh.Sync(ctx)
-		githubdocs.Sync(ctx, lg, dc, gh)
-		embeddocs.Sync(ctx, lg, vdb, ai, dc)
-		cf.Run(ctx)
-		rp.Run(ctx)
+		sync(ctx, lg, vdb, ai, dc, gh)
+		run(ctx, cf, rp)
 		time.Sleep(2 * time.Minute)
 	}
 }
 
 func runOnCloudRun(ctx context.Context) {
 	var logLevel slog.LevelVar // defaults to Info
-	slog.SetDefault(slog.New(gcphandler.New(&logLevel)))
+	lg := slog.New(gcphandler.New(&logLevel))
 
 	projectID, err := metadata.ProjectIDWithContext(ctx)
 	if err != nil {
@@ -487,25 +479,107 @@ func runOnCloudRun(ctx context.Context) {
 		log.Fatal("project ID from metadata is empty")
 	}
 
-	firestoreDB := os.Getenv("OSCAR_FIRESTORE_DB")
-	if firestoreDB == "" {
-		log.Fatal("empty OSCAR_FIRESTORE_DB env var")
+	if *firestoreDB == "" {
+		log.Fatal("missing -firestoredb flag")
 	}
 
 	slog.Info("Oscar starting",
+		"syncEnabled", *enableSync,
+		"changesEnabled", *enableChanges,
 		"project", projectID,
-		"FirestoreDB", firestoreDB,
+		"FirestoreDB", *firestoreDB,
 		"Cloud Run service", os.Getenv("K_SERVICE"))
 
-	db, err := firestore.NewDB(ctx, slog.Default(), projectID, firestoreDB)
+	db, err := firestore.NewDB(ctx, lg, projectID, *firestoreDB)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	// TODO(jba): remaining setup with the db.
-	_ = db
+	vdb, err := firestore.NewVectorDB(ctx, lg, projectID, *firestoreDB, "gaby")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	sdb, err := gcpsecret.NewSecretDB(ctx, projectID)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	gh := github.New(lg, db, sdb, http.DefaultClient)
+	// TODO: if changes are not enabled, call EnableTesting
+	// and save the the diverted edits somewhere.
+	// TODO: for new databases, gh.Add("golang/go")
+
+	dc := docs.New(db)
+	ai, err := gemini.NewClient(ctx, lg, sdb, http.DefaultClient, "text-embedding-004")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	cf := newGerritlinksCommentFixer(lg, gh)
+	rp := newRelatedPoster(lg, db, gh, vdb, dc)
+
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Oscar\n")
-		fmt.Fprintf(w, "project %s, firestore DB %s\n", projectID, firestoreDB)
+		fmt.Fprintf(w, "project %s, firestore DB %s\n", projectID, *firestoreDB)
+		fmt.Fprintf(w, "sync enabled: %t, changes enabled: %t\n", *enableSync, *enableChanges)
+		fmt.Fprintf(w, "log level: %s\n", logLevel.Level())
 	})
+	// syncAndRun is called periodically by a Cloud Scheduler job.
+	http.HandleFunc("/syncAndRun", func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		sync(ctx, lg, vdb, ai, dc, gh)
+		if *enableChanges {
+			lg.Info("running")
+			run(ctx, cf, rp)
+		}
+	})
+
 	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), nil))
+}
+
+// Sync synchronizes the DBs with the current GitHub state.
+func sync(ctx context.Context, lg *slog.Logger, vdb storage.VectorDB, ai *gemini.Client, dc *docs.Corpus, gh *github.Client) {
+	if *enableSync {
+		lg.Info("syncing")
+		gh.Sync(ctx)
+		githubdocs.Sync(ctx, lg, dc, gh)
+		embeddocs.Sync(ctx, lg, vdb, ai, dc)
+	}
+}
+
+type runnable interface {
+	Run(context.Context)
+}
+
+// run calls Run once for each runnable.
+func run(ctx context.Context, rs ...runnable) {
+	for _, r := range rs {
+		r.Run(ctx)
+	}
+}
+
+func newGerritlinksCommentFixer(lg *slog.Logger, gh *github.Client) *commentfix.Fixer {
+	cf := commentfix.New(lg, gh, "gerritlinks")
+	cf.EnableProject("golang/go")
+	cf.AutoLink(`\bCL ([0-9]+)\b`, "https://go.dev/cl/$1")
+	cf.ReplaceURL(`\Qhttps://go-review.git.corp.google.com/\E`, "https://go-review.googlesource.com/")
+	if *enableChanges {
+		cf.EnableEdits()
+	}
+	return cf
+}
+
+func newRelatedPoster(lg *slog.Logger, db storage.DB, gh *github.Client, vdb storage.VectorDB, dc *docs.Corpus) *related.Poster {
+	rp := related.New(lg, db, gh, vdb, dc, "related")
+	rp.EnableProject("golang/go")
+	rp.SkipBodyContains("— [watchflakes](https://go.dev/wiki/Watchflakes)")
+	rp.SkipTitlePrefix("x/tools/gopls: release version v")
+	rp.SkipTitleSuffix(" backport]")
+	if *enableChanges {
+		rp.EnablePosts()
+	}
+	return rp
 }
 
 // onCloudRun reports whether the current process is running on Cloud Run.

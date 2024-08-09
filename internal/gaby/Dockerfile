@@ -3,6 +3,19 @@
 # license that can be found in the LICENSE file.
 
 # This Dockerfile expects the build context to be the repo root.
+# It takes three build args:
+
+#   FIRESTORE_DB: the name of the Firestore database to use
+#   ENABLE_SYNC: whether syncing from GitHub is enabled (optional, default false)
+#   ENABLE_CHANGES: whether writing to GitHub is enabled (optional, default false)
+#
+# Example:
+#  cd $ROOT_OF_OSCAR_REPO
+#  docker build -t $IMAGE_NAME \
+#     --build-arg FIRESTORE_DB=prod \
+#     --build-arg ENABLE_SYNC=true \
+#     --build-arg ENABLE_CHANGES=false \
+#     .
 
 ################################################################
 FROM golang:1.23rc2 AS builder
@@ -40,7 +53,16 @@ WORKDIR app
 
 COPY --from=builder src/gaby gaby
 
-ARG FIRESTORE_DB
-ENV OSCAR_FIRESTORE_DB=$FIRESTORE_DB
+# To pass flag values to the command from docker build args, we must set environment
+# variables. The ARG names cannot be substituted into a CMD.
 
-CMD ["./gaby"]
+ARG FIRESTORE_DB
+ENV FIRESTORE_DB=$FIRESTORE_DB
+
+ARG ENABLE_SYNC=false
+ENV ENABLE_SYNC=$ENABLE_SYNC
+
+ARG ENABLE_CHANGES=false
+ENV ENABLE_CHANGES=$ENABLE_CHANGES
+
+CMD ./gaby -firestoredb $FIRESTORE_DB -enablesync=$ENABLE_SYNC -enablechanges=$ENABLE_CHANGES
