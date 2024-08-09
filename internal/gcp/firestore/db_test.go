@@ -8,11 +8,11 @@ import (
 	"context"
 	"fmt"
 	"math/rand/v2"
-	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
+	"golang.org/x/oscar/internal/gcp/gcpconfig"
 	"golang.org/x/oscar/internal/grpcrr"
 	"golang.org/x/oscar/internal/storage"
 	"golang.org/x/oscar/internal/testutil"
@@ -60,9 +60,9 @@ func TestLock(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping in short mode")
 	}
-	projectID := os.Getenv("OSCAR_PROJECT")
-	if projectID == "" {
-		t.Skip("skipping: no OSCAR_PROJECT env var")
+	projectID, err := gcpconfig.Project()
+	if err != nil {
+		t.Skipf("skipping: %v", err)
 	}
 	ctx := context.Background()
 	db, err := NewDB(ctx, testutil.Slogger(t), projectID, firestoreTestDatabase)
@@ -133,10 +133,7 @@ func openRR(t *testing.T, file string) (_ *grpcrr.RecordReplay, projectID string
 		t.Fatalf("grpcrr.Open: %v", err)
 	}
 	if rr.Recording() {
-		projectID = os.Getenv("OSCAR_PROJECT")
-		if projectID == "" {
-			t.Fatal("recording requires env var OSCAR_PROJECT to be set")
-		}
+		projectID = gcpconfig.MustProject(t)
 		rr.SetInitial([]byte(projectID))
 		return rr, projectID
 	}

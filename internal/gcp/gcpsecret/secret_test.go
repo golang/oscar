@@ -8,20 +8,29 @@ package gcpsecret
 
 import (
 	"context"
-	"flag"
+	"path/filepath"
 	"testing"
+
+	"golang.org/x/oscar/internal/gcp/gcpconfig"
+	"golang.org/x/oscar/internal/grpcrr"
+	"golang.org/x/oscar/internal/testutil"
 )
 
-var project = flag.String("project", "", "project for testing")
-
 func TestDB(t *testing.T) {
-	if *project == "" {
-		t.Skip("missing -project")
+	check := testutil.Checker(t)
+	rr, err := grpcrr.Open(filepath.FromSlash("testdata/sdb.grpcrr"))
+	check(err)
+
+	var projectID string
+	if rr.Recording() {
+		projectID = gcpconfig.MustProject(t)
+		rr.SetInitial([]byte(projectID))
+	} else {
+		projectID = string(rr.Initial())
 	}
-	db, err := NewSecretDB(context.Background(), *project)
-	if err != nil {
-		t.Fatal(err)
-	}
+
+	db, err := NewSecretDB(context.Background(), projectID, rr.ClientOptions()...)
+	check(err)
 	defer db.Close()
 
 	const (

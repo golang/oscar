@@ -1,0 +1,121 @@
+RPCReTxt1
+"oscar-go-1"
+290
+kind: REQUEST
+method: "/google.cloud.secretmanager.v1.SecretManagerService/AddSecretVersion"
+message: {
+  [type.googleapis.com/google.cloud.secretmanager.v1.AddSecretVersionRequest]: {
+    parent: "projects/oscar-go-1/secrets/74657374"
+    payload: {
+      data: "not-a-secret"
+    }
+  }
+}
+354
+kind: RESPONSE
+message: {
+  [type.googleapis.com/google.cloud.secretmanager.v1.SecretVersion]: {
+    name: "projects/685789191942/secrets/74657374/versions/3"
+    create_time: {
+      seconds: 1723231659
+      nanos: 699544000
+    }
+    state: ENABLED
+    replication_status: {
+      automatic: {}
+    }
+    etag: "\"161f4522f12d58\""
+  }
+}
+ref_index: 1
+262
+kind: REQUEST
+method: "/google.cloud.secretmanager.v1.SecretManagerService/AccessSecretVersion"
+message: {
+  [type.googleapis.com/google.cloud.secretmanager.v1.AccessSecretVersionRequest]: {
+    name: "projects/oscar-go-1/secrets/74657374/versions/latest"
+  }
+}
+269
+kind: RESPONSE
+message: {
+  [type.googleapis.com/google.cloud.secretmanager.v1.AccessSecretVersionResponse]: {
+    name: "projects/685789191942/secrets/74657374/versions/3"
+    payload: {
+      data: "not-a-secret"
+      data_crc32c: 679015127
+    }
+  }
+}
+ref_index: 3
+268
+kind: REQUEST
+method: "/google.cloud.secretmanager.v1.SecretManagerService/AccessSecretVersion"
+message: {
+  [type.googleapis.com/google.cloud.secretmanager.v1.AccessSecretVersionRequest]: {
+    name: "projects/oscar-go-1/secrets/756e6b6e6f776e/versions/latest"
+  }
+}
+568
+kind: RESPONSE
+message: {
+  [type.googleapis.com/google.rpc.Status]: {
+    code: 5
+    message: "Secret [projects/685789191942/secrets/756e6b6e6f776e] not found or has no versions."
+    details: {
+      [type.googleapis.com/google.rpc.DebugInfo]: {
+        detail: "[ORIGINAL ERROR] generic::not_found: Secret [projects/685789191942/secrets/756e6b6e6f776e] not found or has no versions. [google.rpc.error_details_ext] { message: \"Secret [projects/685789191942/secrets/756e6b6e6f776e] not found or has no versions.\" }"
+      }
+    }
+  }
+}
+is_error: true
+ref_index: 5
+289
+kind: REQUEST
+method: "/google.cloud.secretmanager.v1.SecretManagerService/AddSecretVersion"
+message: {
+  [type.googleapis.com/google.cloud.secretmanager.v1.AddSecretVersionRequest]: {
+    parent: "projects/oscar-go-1/secrets/746573742e6b6579"
+    payload: {
+      data: "abc"
+    }
+  }
+}
+362
+kind: RESPONSE
+message: {
+  [type.googleapis.com/google.cloud.secretmanager.v1.SecretVersion]: {
+    name: "projects/685789191942/secrets/746573742e6b6579/versions/2"
+    create_time: {
+      seconds: 1723231660
+      nanos: 615127000
+    }
+    state: ENABLED
+    replication_status: {
+      automatic: {}
+    }
+    etag: "\"161f4522ff25d7\""
+  }
+}
+ref_index: 7
+270
+kind: REQUEST
+method: "/google.cloud.secretmanager.v1.SecretManagerService/AccessSecretVersion"
+message: {
+  [type.googleapis.com/google.cloud.secretmanager.v1.AccessSecretVersionRequest]: {
+    name: "projects/oscar-go-1/secrets/746573742e6b6579/versions/latest"
+  }
+}
+268
+kind: RESPONSE
+message: {
+  [type.googleapis.com/google.cloud.secretmanager.v1.AccessSecretVersionResponse]: {
+    name: "projects/685789191942/secrets/746573742e6b6579/versions/2"
+    payload: {
+      data: "abc"
+      data_crc32c: 910901175
+    }
+  }
+}
+ref_index: 9

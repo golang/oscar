@@ -14,6 +14,7 @@ import (
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	smpb "cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
 	_ "golang.org/x/oscar/internal/secret"
+	"google.golang.org/api/option"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -28,8 +29,8 @@ type SecretDB struct {
 }
 
 // NewSecretDB returns a [SecretDB] using the GCP SecretManager of the given project.
-func NewSecretDB(ctx context.Context, projectID string) (*SecretDB, error) {
-	client, err := secretmanager.NewClient(ctx)
+func NewSecretDB(ctx context.Context, projectID string, opts ...option.ClientOption) (*SecretDB, error) {
+	client, err := secretmanager.NewClient(ctx, opts...)
 	if err != nil {
 		// unreachable unless the GCP SecretManager service is in a bad state
 		return nil, err
