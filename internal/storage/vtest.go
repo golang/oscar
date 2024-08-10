@@ -57,6 +57,16 @@ func TestVectorDB(t *testing.T, opendb func() VectorDB) {
 		t.Fatalf("Batch.Set with empty key did not panic")
 	})
 
+	// Check that batch.Apply clears the batch.
+	b = vdb.Batch()
+	b.Set("apple5", embed("apple5"))
+	b.Apply()
+	vdb.Delete("apple5")
+	b.Apply() // should be a no-op
+	if _, ok := vdb.Get("apple5"); ok {
+		t.Fatalf("empty Apply should be no-op, but got previous value")
+	}
+
 	haveAll = allIDs(vdb)
 	wantAll = []string{"apple3", "apple4", "ignore", "orange1", "orange2", "orange4"}
 	if !reflect.DeepEqual(haveAll, wantAll) {
