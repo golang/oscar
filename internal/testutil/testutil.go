@@ -37,6 +37,18 @@ func SlogBuffer() (lg *slog.Logger, out *bytes.Buffer) {
 	return lg, &buf
 }
 
+// StopPanic runs f but silently recovers from any panic f causes.
+// The normal usage is:
+//
+//	testutil.StopPanic(func() {
+//		callThatShouldPanic()
+//		t.Errorf("callThatShouldPanic did not panic")
+//	})
+func StopPanic(f func()) {
+	defer func() { recover() }()
+	f()
+}
+
 // Check calls t.Fatal(err) if err is not nil.
 func Check(t *testing.T, err error) {
 	if err != nil {

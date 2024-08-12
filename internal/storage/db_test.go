@@ -8,6 +8,7 @@ import (
 	"math"
 	"testing"
 
+	"golang.org/x/oscar/internal/testutil"
 	"rsc.io/ordered"
 )
 
@@ -22,7 +23,6 @@ func TestPanic(t *testing.T) {
 		Panic("msg", "key", "val")
 		t.Fatalf("did not panic")
 	}()
-
 }
 
 func TestJSON(t *testing.T) {
@@ -33,13 +33,10 @@ func TestJSON(t *testing.T) {
 		t.Errorf("JSON(%v) = %#q, want %#q", x, js, want)
 	}
 
-	func() {
-		defer func() {
-			recover()
-		}()
+	testutil.StopPanic(func() {
 		JSON(math.NaN())
 		t.Errorf("JSON(NaN) did not panic")
-	}()
+	})
 }
 
 var fmtTests = []struct {

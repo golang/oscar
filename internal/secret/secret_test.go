@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"golang.org/x/oscar/internal/testutil"
 )
 
 func TestNetrc(t *testing.T) {
@@ -26,13 +28,10 @@ func TestNetrc(t *testing.T) {
 		t.Errorf("Get(example.com) = %q, %v, want %q, %v", secret, ok, "u2:p2", true)
 	}
 
-	func() {
-		defer func() {
-			recover()
-		}()
+	testutil.StopPanic(func() {
 		db.Set("name", "value")
 		t.Errorf("Set did not panic")
-	}()
+	})
 }
 
 var testNetrc = `
@@ -47,11 +46,8 @@ func TestEmpty(t *testing.T) {
 		t.Errorf("Get(missing) = %q, %v, want %q, %v", secret, ok, "", false)
 	}
 
-	func() {
-		defer func() {
-			recover()
-		}()
+	testutil.StopPanic(func() {
 		db.Set("name", "value")
 		t.Errorf("Set did not panic")
-	}()
+	})
 }

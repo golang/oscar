@@ -109,22 +109,20 @@ func TestLock(t *testing.T) {
 		}
 		defer db2.Close()
 
-		func() {
-			defer func() { recover() }()
+		testutil.StopPanic(func() {
 			db.Lock(name)
 			db2.Unlock(name)
 			t.Error("unlock wrong owner did not panic")
-		}()
+		})
 	})
 }
 
 func TestErrors(t *testing.T) {
-	if !panics(func() {
+	testutil.StopPanic(func() {
 		var b batch
 		b.set("x", nil, 1)
-	}) {
 		t.Error("batch.set does not panic on nil value")
-	}
+	})
 }
 
 func openRR(t *testing.T, file string) (_ *grpcrr.RecordReplay, projectID string) {

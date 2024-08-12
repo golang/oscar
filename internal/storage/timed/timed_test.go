@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"golang.org/x/oscar/internal/storage"
+	"golang.org/x/oscar/internal/testutil"
 )
 
 func Test(t *testing.T) {
@@ -281,43 +282,37 @@ func TestLocking(t *testing.T) {
 	b.Apply()
 
 	w := NewWatcher(db, "name", "kind", func(e *Entry) *Entry { return e })
-	callRecover := func() { recover() }
 
 	w.lock()
-	func() {
-		defer callRecover()
+	testutil.StopPanic(func() {
 		w.lock()
 		t.Fatalf("second w.lock did not panic")
-	}()
+	})
 
 	w.unlock()
-	func() {
-		defer callRecover()
+	testutil.StopPanic(func() {
 		w.unlock()
 		t.Fatalf("second w.unlock did not panic")
-	}()
+	})
 
-	func() {
-		defer callRecover()
+	testutil.StopPanic(func() {
 		w.MarkOld(0)
 		t.Fatalf("MarkOld outside iteration did not panic")
-	}()
+	})
 
 	did := false
-	for _ = range w.Recent() {
+	for range w.Recent() {
 		did = true
-		func() {
-			defer callRecover()
+		testutil.StopPanic(func() {
 			w.Restart()
 			t.Fatalf("Restart inside iteration did not panic")
-		}()
+		})
 
-		func() {
-			defer callRecover()
-			for _ = range w.Recent() {
+		testutil.StopPanic(func() {
+			for range w.Recent() {
 			}
 			t.Fatalf("iteration inside iteration did not panic")
-		}()
+		})
 	}
 	if !did {
 		t.Fatalf("range over Recent did not find any entries")

@@ -57,28 +57,23 @@ func TestTestdata(t *testing.T) {
 }
 
 func TestPanics(t *testing.T) {
-	callRecover := func() { recover() }
-
-	func() {
-		defer callRecover()
+	testutil.StopPanic(func() {
 		var f Fixer
 		f.EnableEdits()
 		t.Errorf("EnableEdits on zero Fixer did not panic")
-	}()
+	})
 
-	func() {
-		defer callRecover()
+	testutil.StopPanic(func() {
 		var f Fixer
 		f.EnableProject("abc/xyz")
 		t.Errorf("EnableProject on zero Fixer did not panic")
-	}()
+	})
 
-	func() {
-		defer callRecover()
+	testutil.StopPanic(func() {
 		var f Fixer
 		f.Run(ctx)
 		t.Errorf("Run on zero Fixer did not panic")
-	}()
+	})
 }
 
 func TestErrors(t *testing.T) {

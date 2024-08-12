@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"golang.org/x/oscar/internal/llm"
+	"golang.org/x/oscar/internal/testutil"
 )
 
 // TestVectorDB verifies that implementations of [VectorDB]
@@ -26,9 +27,10 @@ func TestVectorDB(t *testing.T, opendb func() VectorDB) {
 	vdb.Delete("orange1")
 	vdb.Set("orange1", embed("orange1"))
 
-	if !panics(func() { vdb.Set("", llm.Vector{}) }) {
+	testutil.StopPanic(func() {
+		vdb.Set("", llm.Vector{})
 		t.Fatalf("Set with empty key does not but should")
-	}
+	})
 
 	haveAll := allIDs(vdb)
 	wantAll := []string{"orange1", "orange2"}
@@ -50,9 +52,10 @@ func TestVectorDB(t *testing.T, opendb func() VectorDB) {
 	b.Set("orange4", embed("orange4"))
 	b.Apply()
 
-	if !panics(func() { b.Set("", llm.Vector{}) }) {
+	testutil.StopPanic(func() {
+		b.Set("", llm.Vector{})
 		t.Fatalf("Batch.Set with empty key does not but should")
-	}
+	})
 
 	haveAll = allIDs(vdb)
 	wantAll = []string{"apple3", "apple4", "ignore", "orange1", "orange2", "orange4"}

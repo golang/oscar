@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"golang.org/x/oscar/internal/testutil"
 	"rsc.io/ordered"
 )
 
@@ -28,9 +29,10 @@ func TestDB(t *testing.T, db DB) {
 		t.Fatalf("Get(missing) = %v, %v, want nil, false", val, ok)
 	}
 
-	if !panics(func() { db.Set(nil, []byte{0}) }) {
+	testutil.StopPanic(func() {
+		db.Set(nil, []byte{0})
 		t.Fatal("Set with nil key does not panic but should")
-	}
+	})
 
 	db.Delete([]byte("key"))
 	if val, ok := db.Get([]byte("key")); val != nil || ok != false {
@@ -45,9 +47,10 @@ func TestDB(t *testing.T, db DB) {
 	}
 	b.Apply()
 
-	if !panics(func() { b.Set(nil, []byte{0}) }) {
+	testutil.StopPanic(func() {
+		b.Set(nil, []byte{0})
 		t.Fatal("Set with nil key does not panic but should")
-	}
+	})
 
 	collect := func(min, max, stop int) []int {
 		t.Helper()
@@ -157,21 +160,8 @@ func TestDBLock(t *testing.T, db locker) {
 	<-c
 	wg.Wait()
 
-	func() {
-		defer func() {
-			recover()
-		}()
+	testutil.StopPanic(func() {
 		db.Unlock("def")
 		t.Errorf("Unlock never-locked key did not panic")
-	}()
-}
-
-func panics(f func()) (b bool) {
-	defer func() {
-		if recover() != nil {
-			b = true
-		}
-	}()
-	f()
-	return false
+	})
 }

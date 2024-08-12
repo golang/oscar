@@ -203,7 +203,7 @@ func DeleteRange(db storage.DB, b storage.Batch, kind string, start, end []byte)
 func ScanAfter(db storage.DB, kind string, t DBTime, filter func(key []byte) bool) iter.Seq[*Entry] {
 	return func(yield func(*Entry) bool) {
 		start, end := ordered.Encode(kind+"ByTime", int64(t+1)), ordered.Encode(kind+"ByTime", ordered.Inf)
-		for tkey, _ := range db.Scan(start, end) {
+		for tkey := range db.Scan(start, end) {
 			var t int64
 			key, err := ordered.DecodePrefix(tkey, nil, &t) // drop kind
 			if err != nil {
