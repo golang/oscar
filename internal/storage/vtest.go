@@ -29,7 +29,7 @@ func TestVectorDB(t *testing.T, opendb func() VectorDB) {
 
 	testutil.StopPanic(func() {
 		vdb.Set("", llm.Vector{})
-		t.Fatalf("Set with empty key does not but should")
+		t.Fatalf("Set with empty key did not panic")
 	})
 
 	haveAll := allIDs(vdb)
@@ -54,7 +54,7 @@ func TestVectorDB(t *testing.T, opendb func() VectorDB) {
 
 	testutil.StopPanic(func() {
 		b.Set("", llm.Vector{})
-		t.Fatalf("Batch.Set with empty key does not but should")
+		t.Fatalf("Batch.Set with empty key did not panic")
 	})
 
 	haveAll = allIDs(vdb)

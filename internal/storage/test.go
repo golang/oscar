@@ -31,7 +31,7 @@ func TestDB(t *testing.T, db DB) {
 
 	testutil.StopPanic(func() {
 		db.Set(nil, []byte{0})
-		t.Fatal("Set with nil key does not panic but should")
+		t.Fatal("Set with nil key did not panic")
 	})
 
 	db.Delete([]byte("key"))
@@ -49,7 +49,7 @@ func TestDB(t *testing.T, db DB) {
 
 	testutil.StopPanic(func() {
 		b.Set(nil, []byte{0})
-		t.Fatal("Set with nil key does not panic but should")
+		t.Fatal("Set with nil key did not panic")
 	})
 
 	collect := func(min, max, stop int) []int {
