@@ -5,7 +5,7 @@ go 1.23
 require (
 	cloud.google.com/go/firestore v1.16.0
 	cloud.google.com/go/secretmanager v1.13.3
-	golang.org/x/oscar v0.0.0-20240801212007-9e71e189ddd6
+	golang.org/x/oscar v0.0.0-20240812141603-6612d5e50e18
 	google.golang.org/api v0.189.0
 	google.golang.org/grpc v1.64.1
 )
@@ -16,13 +16,13 @@ require (
 	cloud.google.com/go/auth/oauth2adapt v0.2.3 // indirect
 	cloud.google.com/go/compute/metadata v0.5.0 // indirect
 	cloud.google.com/go/iam v1.1.10 // indirect
-	cloud.google.com/go/longrunning v0.5.9 // indirect
+	cloud.google.com/go/longrunning v0.5.11 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
-	github.com/google/go-replayers/grpcreplay v1.3.0 // indirect
+	github.com/google/go-replayers/grpcreplay v1.3.1-0.20240807114419-950aeedc364f // indirect
 	github.com/google/s2a-go v0.1.7 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.2 // indirect
 	github.com/googleapis/gax-go/v2 v2.13.0 // indirect

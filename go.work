@@ -2,7 +2,7 @@ go 1.23
 
 use (
 	.
+	./internal/gaby
 	./internal/gcp
 	./internal/syncdb
-	./internal/gaby
 )
