@@ -54,7 +54,10 @@ func (db *SecretDB) Get(name string) (secret string, ok bool) {
 		Name: fmt.Sprintf("projects/%s/secrets/%s/versions/latest", db.projectID, hexName),
 	})
 	if err != nil {
-		return "", false
+		if isNotFound(err) {
+			return "", false
+		}
+		panic(err)
 	}
 	return string(result.Payload.Data), true
 }
@@ -94,7 +97,7 @@ func (db *SecretDB) set(ctx context.Context, name, secret string) error {
 	return add()
 }
 
-// isNotFound reports whether an error returned by the Firestore client is a NotFound
+// isNotFound reports whether an error returned by the Secret Manager client is a NotFound
 // error.
 func isNotFound(err error) bool {
 	return status.Code(err) == codes.NotFound
