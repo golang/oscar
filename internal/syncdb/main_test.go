@@ -6,6 +6,7 @@ package main
 
 import (
 	"bytes"
+	"log/slog"
 	"maps"
 	"strconv"
 	"testing"
@@ -14,17 +15,18 @@ import (
 	"rsc.io/ordered"
 )
 
+var testMaps = []map[string]int{
+	{},
+	{"a": 1},
+	{"b": 1},
+	{"a": 1, "b": 2},
+	{"b": 2, "c": 3},
+}
+
 func TestSyncDB(t *testing.T) {
-	ms := []map[string]int{
-		{},
-		{"a": 1},
-		{"b": 1},
-		{"a": 1, "b": 2},
-		{"b": 2, "c": 3},
-	}
 	// Check every pair of maps.
-	for _, sm := range ms {
-		for _, dm := range ms {
+	for _, sm := range testMaps {
+		for _, dm := range testMaps {
 			src := mapToDB(sm)
 			// These should not be copied to dst.
 			src.Set(ordered.Encode("llm.Vector", "ns", "x"), []byte("0"))
@@ -34,6 +36,24 @@ func TestSyncDB(t *testing.T) {
 			m := dbToMap(t, dst)
 			if !maps.Equal(m, sm) {
 				t.Errorf("syncDB(dst=%v, src=%v): dst = %v; should equal src", dm, sm, m)
+			}
+			if want := countDiffs(sm, dm); n != want {
+				t.Errorf("synced %d items, wanted %d", n, want)
+			}
+		}
+	}
+}
+
+func TestSyncVecDB(t *testing.T) {
+	// Check every pair of maps.
+	for _, sm := range testMaps {
+		for _, dm := range testMaps {
+			src := mapToVecDB(sm)
+			dst := mapToVecDB(dm)
+			n := syncVecDB(dst, src)
+			m := vecDBToMap(t, dst)
+			if !maps.Equal(m, sm) {
+				t.Errorf("syncVecDB(dst=%v, src=%v): dst = %v; should equal src", dm, sm, m)
 			}
 			if want := countDiffs(sm, dm); n != want {
 				t.Errorf("synced %d items, wanted %d", n, want)
@@ -94,6 +114,24 @@ func dbToMap(t *testing.T, db storage.DB) map[string]int {
 			t.Fatal(err)
 		}
 		m[sk] = iv
+	}
+	return m
+}
+
+func mapToVecDB(m map[string]int) storage.VectorDB {
+	db := storage.MemDB()
+	vdb := storage.MemVectorDB(db, slog.Default(), "")
+	for k, v := range m {
+		vdb.Set(k, []float32{float32(v)})
+	}
+	return vdb
+}
+
+func vecDBToMap(t *testing.T, vdb storage.VectorDB) map[string]int {
+	t.Helper()
+	m := map[string]int{}
+	for k, vf := range vdb.All() {
+		m[k] = int(vf()[0])
 	}
 	return m
 }
