@@ -13,10 +13,9 @@ import (
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	smpb "cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
+	"golang.org/x/oscar/internal/gcp/grpcerrors"
 	_ "golang.org/x/oscar/internal/secret"
 	"google.golang.org/api/option"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 // SecretDB implements [secret.DB] using the SecretManager in a GCP project.
@@ -54,7 +53,7 @@ func (db *SecretDB) Get(name string) (secret string, ok bool) {
 		Name: fmt.Sprintf("projects/%s/secrets/%s/versions/latest", db.projectID, hexName),
 	})
 	if err != nil {
-		if isNotFound(err) {
+		if grpcerrors.IsNotFound(err) {
 			return "", false
 		}
 		panic(err)
@@ -82,7 +81,7 @@ func (db *SecretDB) set(ctx context.Context, name, secret string) error {
 	}
 
 	err := add()
-	if err == nil || !isNotFound(err) {
+	if err == nil || !grpcerrors.IsNotFound(err) {
 		return err
 	}
 	// Secret not found. Try to create it.
@@ -95,10 +94,4 @@ func (db *SecretDB) set(ctx context.Context, name, secret string) error {
 		return err
 	}
 	return add()
-}
-
-// isNotFound reports whether an error returned by the Secret Manager client is a NotFound
-// error.
-func isNotFound(err error) bool {
-	return status.Code(err) == codes.NotFound
 }

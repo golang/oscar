@@ -29,11 +29,10 @@ import (
 	"reflect"
 
 	"cloud.google.com/go/firestore"
+	"golang.org/x/oscar/internal/gcp/grpcerrors"
 	"golang.org/x/oscar/internal/storage"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 // fstore implements operations common to both [storage.DB] and [storage.VectorDB].
@@ -55,7 +54,7 @@ func newFstore(ctx context.Context, lg *slog.Logger, projectID, database string,
 	}
 	// The client doesn't actually connect until something is done, so get a document
 	// to see if there's a problem.
-	if _, err := client.Doc("c/d").Get(ctx); err != nil && !isNotFound(err) {
+	if _, err := client.Doc("c/d").Get(ctx); err != nil && !grpcerrors.IsNotFound(err) {
 		return nil, err
 	}
 	return &fstore{client: client, slog: lg}, nil
@@ -89,7 +88,7 @@ func (f *fstore) get(tx *firestore.Transaction, coll *firestore.CollectionRef, i
 		ds, err = tx.Get(dr)
 	}
 	if err != nil {
-		if isNotFound(err) {
+		if grpcerrors.IsNotFound(err) {
 			return nil
 		}
 		// unreachable except for bad DB
@@ -317,15 +316,4 @@ func (b *batch) apply() {
 	})
 	b.ops = nil
 	b.size = fixedSize
-}
-
-// isNotFound reports whether an error returned by the Firestore client is a NotFound
-// error.
-func isNotFound(err error) bool {
-	return status.Code(err) == codes.NotFound
-}
-
-// isTimeout reports whether an error returned by the Firestore client indicates a timeout.
-func isTimeout(err error) bool {
-	return status.Code(err) == codes.DeadlineExceeded
 }

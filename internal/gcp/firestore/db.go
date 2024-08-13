@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/firestore"
+	"golang.org/x/oscar/internal/gcp/grpcerrors"
 	"golang.org/x/oscar/internal/storage"
 	"google.golang.org/api/option"
 )
@@ -94,7 +95,7 @@ func (db *DB) waitForLock(name string) bool {
 			// Wait for a change in the lock document.
 			continue
 		}
-		if isTimeout(err) {
+		if grpcerrors.IsTimeout(err) {
 			// The lock document may not have changed for lockTimeout;
 			// assume that's true and try to steal it.
 			return db.tryLock(name)

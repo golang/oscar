@@ -12,6 +12,7 @@ import (
 	"path"
 
 	"cloud.google.com/go/firestore"
+	"golang.org/x/oscar/internal/gcp/grpcerrors"
 	"golang.org/x/oscar/internal/llm"
 	"golang.org/x/oscar/internal/storage"
 	"google.golang.org/api/iterator"
@@ -75,7 +76,7 @@ func (db *VectorDB) Set(id string, vec llm.Vector) {
 func (db *VectorDB) Get(id string) (llm.Vector, bool) {
 	docsnap, err := db.docref(id).Get(context.TODO())
 	if err != nil {
-		if isNotFound(err) {
+		if grpcerrors.IsNotFound(err) {
 			return nil, false
 		}
 		db.fs.Panic("firestore VectorDB Get", "id", id, "err", err)
