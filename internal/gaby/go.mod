@@ -4,8 +4,8 @@ go 1.23
 
 require (
 	cloud.google.com/go/compute/metadata v0.5.0
-	golang.org/x/oscar v0.0.0-20240813203442-2b204a51b15b
-	golang.org/x/oscar/internal/gcp v0.0.0-20240813203442-2b204a51b15b
+	golang.org/x/oscar v0.0.0-20240814133909-75be6f15ff9e
+	golang.org/x/oscar/internal/gcp v0.0.0-20240814133909-75be6f15ff9e
 )
 
 require (

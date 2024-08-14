@@ -3,8 +3,8 @@ module golang.org/x/oscar/internal/syncdb
 go 1.23
 
 require (
-	golang.org/x/oscar v0.0.0-20240813203442-2b204a51b15b
-	golang.org/x/oscar/internal/gcp v0.0.0-20240813203442-2b204a51b15b
+	golang.org/x/oscar v0.0.0-20240814133909-75be6f15ff9e
+	golang.org/x/oscar/internal/gcp v0.0.0-20240814133909-75be6f15ff9e
 	rsc.io/ordered v1.1.0
 )
 

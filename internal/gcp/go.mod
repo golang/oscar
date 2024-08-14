@@ -5,7 +5,7 @@ go 1.23
 require (
 	cloud.google.com/go/firestore v1.16.0
 	cloud.google.com/go/secretmanager v1.13.3
-	golang.org/x/oscar v0.0.0-20240813203442-2b204a51b15b
+	golang.org/x/oscar v0.0.0-20240814133909-75be6f15ff9e
 	google.golang.org/api v0.189.0
 	google.golang.org/grpc v1.64.1
 )
