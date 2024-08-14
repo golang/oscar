@@ -184,8 +184,11 @@ func syncDB(dst, src storage.DB) int {
 		}
 		// Delete destination items before this source key.
 		for dok && bytes.Compare(dkey, skey) < 0 {
-			batch.Delete(dkey)
-			maybeApply(skey)
+			// Ignore target items from vector DBs.
+			if !bytes.HasPrefix(dkey, llmVector) {
+				batch.Delete(dkey)
+				maybeApply(skey)
+			}
 			dkey, dvalf, dok = dnext()
 		}
 		// Copy the source item unless its key and value equal the destination item.
@@ -202,8 +205,11 @@ func syncDB(dst, src storage.DB) int {
 	// All remaining destination keys are larger than the largest source key;
 	// delete them.
 	for dok {
-		batch.Delete(dkey)
-		maybeApply(dkey)
+		// Ignore target items from vector DBs.
+		if !bytes.HasPrefix(dkey, llmVector) {
+			batch.Delete(dkey)
+			maybeApply(dkey)
+		}
 		dkey, _, dok = dnext()
 	}
 	batch.Apply()

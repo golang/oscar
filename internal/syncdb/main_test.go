@@ -5,12 +5,13 @@
 package main
 
 import (
-	"bytes"
 	"log/slog"
 	"maps"
 	"strconv"
+	"strings"
 	"testing"
 
+	"golang.org/x/oscar/internal/llm"
 	"golang.org/x/oscar/internal/storage"
 	"rsc.io/ordered"
 )
@@ -21,6 +22,7 @@ var testMaps = []map[string]int{
 	{"b": 1},
 	{"a": 1, "b": 2},
 	{"b": 2, "c": 3},
+	{"p": 4},
 }
 
 func TestSyncDB(t *testing.T) {
@@ -32,13 +34,24 @@ func TestSyncDB(t *testing.T) {
 			src.Set(ordered.Encode("llm.Vector", "ns", "x"), []byte("0"))
 			src.Set(ordered.Encode("llm.Vector", "ns", "y"), []byte("0"))
 			dst := mapToDB(dm)
-			n := syncDB(dst, src)
-			m := dbToMap(t, dst)
-			if !maps.Equal(m, sm) {
-				t.Errorf("syncDB(dst=%v, src=%v): dst = %v; should equal src", dm, sm, m)
+			// These should not be deleted from dst.
+			dst.Set(ordered.Encode("llm.Vector", "ns", "w"), []byte("0"))
+			dst.Set(ordered.Encode("llm.Vector", "ns", "z"), []byte("0"))
+
+			srcNonVec, srcVec := split(t, src)
+			dstNonVec, dstVec := split(t, dst)
+			syncDB(dst, src)
+			srcSyncNonVec, srcSyncVec := split(t, src)
+			dstSyncNonVec, dstSyncVec := split(t, dst)
+
+			if !maps.Equal(dstSyncNonVec, srcSyncNonVec) {
+				t.Errorf("syncDB(dst=%v, src=%v): dst = %v; should equal src", dstNonVec, srcNonVec, dstSyncNonVec)
 			}
-			if want := countDiffs(sm, dm); n != want {
-				t.Errorf("synced %d items, wanted %d", n, want)
+			if !maps.Equal(dstVec, dstSyncVec) {
+				t.Errorf("vector dst=%v should equal synced vector dst=%v", dstVec, dstSyncVec)
+			}
+			if !maps.Equal(srcVec, srcSyncVec) {
+				t.Errorf("vector src=%v should equal synced vector dst=%v", srcVec, srcSyncVec)
 			}
 		}
 	}
@@ -48,49 +61,78 @@ func TestSyncVecDB(t *testing.T) {
 	// Check every pair of maps.
 	for _, sm := range testMaps {
 		for _, dm := range testMaps {
-			src := mapToVecDB(sm)
-			dst := mapToVecDB(dm)
-			n := syncVecDB(dst, src)
-			m := vecDBToMap(t, dst)
-			if !maps.Equal(m, sm) {
-				t.Errorf("syncVecDB(dst=%v, src=%v): dst = %v; should equal src", dm, sm, m)
+			src := storage.MemDB()
+			// These should not be copied to dst.
+			src.Set(ordered.Encode("x"), []byte("1"))
+			src.Set(ordered.Encode("w"), []byte("2"))
+			sv := mapToVecDB(src, dm)
+			dst := storage.MemDB()
+			// These should not be deleted from dst.
+			dst.Set(ordered.Encode("y"), []byte("3"))
+			dst.Set(ordered.Encode("z"), []byte("4"))
+			dv := mapToVecDB(dst, sm)
+
+			srcNonVec, srcVec := split(t, src)
+			dstNonVec, dstVec := split(t, dst)
+			syncVecDB(dv, sv)
+			srcSyncNonVec, srcSyncVec := split(t, src)
+			dstSyncNonVec, dstSyncVec := split(t, dst)
+
+			if !maps.Equal(dstSyncVec, srcSyncVec) {
+				t.Errorf("syncVecDB(dst=%v, src=%v): dst = %v; should equal src", dstVec, srcVec, dstSyncVec)
 			}
-			if want := countDiffs(sm, dm); n != want {
-				t.Errorf("synced %d items, wanted %d", n, want)
+			if !maps.Equal(dstNonVec, dstSyncNonVec) {
+				t.Errorf("non-vector dst=%v should equal synced non-vector dst=%v", dstVec, dstSyncVec)
+			}
+			if !maps.Equal(srcNonVec, srcSyncNonVec) {
+				t.Errorf("non-vector src=%v should equal synced non-vector dst=%v", srcVec, srcSyncVec)
 			}
 		}
 	}
 }
 
-// countDiffs counts the differences in the maps:
-// the number of changes to dst that must be made for it to be equal to src.
-func countDiffs(src, dst map[string]int) int {
-	n := 0
-	for k, sv := range src {
-		if bytes.HasPrefix([]byte(k), llmVector) {
-			continue
-		}
-		// Need to copy if the key is either missing or has a different value.
-		if dv, ok := dst[k]; !ok || dv != sv {
-			n++
-		}
+// key decodes k into a list of strings and returns their comma concatenation.
+func key(k []byte) (string, error) {
+	elems, err := ordered.DecodeAny(k)
+	if err != nil {
+		return "", err
 	}
-	for k := range dst {
-		if _, ok := src[k]; !ok {
-			n++
-		}
+	var selems []string
+	for _, e := range elems {
+		selems = append(selems, e.(string))
 	}
-	return n
+	return strings.Join(selems, ","), nil
 }
 
-func TestCountDiffs(t *testing.T) {
-	src := map[string]int{"a": 0, "b": 1, "c": 2}
-	dst := map[string]int{"b": 1, "c": 3, "d": 4}
-	// "a" and "c" are copied, "d" is deleted.
-	want := 3
-	if got := countDiffs(src, dst); got != want {
-		t.Errorf("got %d, want %d", got, want)
+// split breaks db into a non-vector and a vector segment and
+// returns the two segments. The segmentation is based on whether
+// a db key starts with "llm.Vector".
+func split(t *testing.T, db storage.DB) (map[string]int, map[string]int) {
+	nonVec, vec := make(map[string]int), make(map[string]int)
+	for k, vf := range db.Scan(nil, ordered.Encode(ordered.Inf)) {
+		sk, err := key(k)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if strings.HasPrefix(sk, "llm.Vector") {
+			var v llm.Vector
+			v.Decode(vf())
+			if len(v) == 0 {
+				vec[sk] = 0 // for test vectors []byte("0")
+			} else {
+				vec[sk] = int(v[0])
+			}
+		} else {
+			iv, err := strconv.Atoi(string(vf()))
+			if err != nil {
+				t.Fatal(err)
+			}
+			nonVec[sk] = iv
+		}
 	}
+	return nonVec, vec
+
 }
 
 func mapToDB(m map[string]int) storage.DB {
@@ -101,37 +143,10 @@ func mapToDB(m map[string]int) storage.DB {
 	return db
 }
 
-func dbToMap(t *testing.T, db storage.DB) map[string]int {
-	t.Helper()
-	m := map[string]int{}
-	for k, vf := range db.Scan(nil, ordered.Encode(ordered.Inf)) {
-		var sk string
-		if _, err := ordered.DecodePrefix(k, &sk); err != nil {
-			t.Fatal(err)
-		}
-		iv, err := strconv.Atoi(string(vf()))
-		if err != nil {
-			t.Fatal(err)
-		}
-		m[sk] = iv
-	}
-	return m
-}
-
-func mapToVecDB(m map[string]int) storage.VectorDB {
-	db := storage.MemDB()
+func mapToVecDB(db storage.DB, m map[string]int) storage.VectorDB {
 	vdb := storage.MemVectorDB(db, slog.Default(), "")
 	for k, v := range m {
 		vdb.Set(k, []float32{float32(v)})
 	}
 	return vdb
-}
-
-func vecDBToMap(t *testing.T, vdb storage.VectorDB) map[string]int {
-	t.Helper()
-	m := map[string]int{}
-	for k, vf := range vdb.All() {
-		m[k] = int(vf()[0])
-	}
-	return m
 }
