@@ -99,13 +99,13 @@ func main() {
 		check(err)
 		dst, err := openVecDB(flag.Arg(1))
 		check(err)
-		n = syncVecDB(src, dst)
+		n = syncVecDB(dst, src)
 	} else {
 		src, err := openDB(flag.Arg(0))
 		check(err)
 		dst, err := openDB(flag.Arg(1))
 		check(err)
-		n = syncDB(src, dst)
+		n = syncDB(dst, src)
 	}
 	log.Printf("synced %d total items", n)
 }
