@@ -427,7 +427,31 @@ Pages:
 			if issue > 0 {
 				meta.Issue.Number = issue
 			} else if meta.Issue.Number == 0 {
-				return fmt.Errorf("parsing message: no issue number: %s", string(raw))
+				// Locking a GitHub comment thread on a *commit*
+				// appears in the /issues/events stream. For example
+				// https://github.com/golang/go/commit/af43932c20d5b59cdffca45406754dbccbb46dfa
+				// is now locked and has this GitHub event in the /issues/events stream:
+				//
+				//	{
+				//		"id": 13683643830,
+				//		"node_id": "LOE_lADOAWBuf8DPAAAAAy-b1bY",
+				//		"url": "https://api.github.com/repos/golang/go/issues/events/13683643830",
+				//		"actor": {
+				//			"login": "ianlancetaylor",
+				//			...
+				//		},
+				//		"event": "locked",
+				//		"commit_id": "af43932c20d5b59cdffca45406754dbccbb46dfa",
+				//		"commit_url": "https://api.github.com/repos/golang/go/commits/af43932c20d5b59cdffca45406754dbccbb46dfa",
+				//		"created_at": "2024-07-29T16:56:44Z",
+				//		"lock_reason": null,
+				//		"issue": null,
+				//		"performed_via_github_app": null
+				//	}
+				//
+				// Assume the lack of issue number is something like that.
+				c.slog.Warn("github sync event without issue id", "json", raw)
+				continue
 			}
 			if meta.ID == 0 {
 				return fmt.Errorf("parsing message: no id: %s", string(raw))
@@ -499,6 +523,7 @@ func (c *Client) get(ctx context.Context, url, etag string, obj any) (*http.Resp
 	nrate := 0
 	nfail := 0
 Redo:
+	c.slog.Info("github get", "url", url)
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, err
