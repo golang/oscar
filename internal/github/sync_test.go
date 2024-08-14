@@ -10,6 +10,7 @@ import (
 	"iter"
 	"net/http"
 	"slices"
+	"strings"
 	"testing"
 
 	"golang.org/x/oscar/internal/httprr"
@@ -34,7 +35,7 @@ func TestMarkdown(t *testing.T) {
 	}
 	c := New(lg, db, sdb, rr.Client())
 	check(c.Add("rsc/markdown"))
-	check(c.Sync(ctx))
+	c.Sync(ctx)
 
 	w := c.EventWatcher("test1")
 	for e := range w.Recent() {
@@ -50,7 +51,7 @@ func TestMarkdown(t *testing.T) {
 		sdb = secret.Netrc()
 	}
 	c = New(lg, db, sdb, rr.Client())
-	check(c.Sync(ctx))
+	c.Sync(ctx)
 
 	// Test that EventWatcher sees the updates.
 	diffEvents(t,
@@ -71,14 +72,13 @@ func TestMarkdown(t *testing.T) {
 		sdb = secret.Netrc()
 	}
 	c = New(lg, db, sdb, rr.Client())
-	check(c.Sync(ctx))
+	c.Sync(ctx)
 
 	testMarkdownEvents(t, c)
 }
 
 func TestMarkdownIncrementalSync(t *testing.T) {
 	check := testutil.Checker(t)
-	lg := testutil.Slogger(t)
 	db := storage.MemDB()
 
 	// Initial load.
@@ -89,6 +89,8 @@ func TestMarkdownIncrementalSync(t *testing.T) {
 	if rr.Recording() {
 		sdb = secret.Netrc()
 	}
+
+	lg, logbuf := testutil.SlogBuffer()
 	c := New(lg, db, sdb, rr.Client())
 	check(c.Add("rsc/markdown"))
 
@@ -97,11 +99,13 @@ func TestMarkdownIncrementalSync(t *testing.T) {
 		testFullSyncStop = nil
 	}()
 	for {
-		err := c.Sync(ctx)
-		if err == nil {
+		logbuf.Reset()
+		c.Sync(ctx)
+		err := logbuf.String()
+		if !strings.Contains(err, "ERROR") {
 			break
 		}
-		if !errors.Is(err, testFullSyncStop) {
+		if !strings.Contains(err, testFullSyncStop.Error()) {
 			t.Fatal(err)
 		}
 	}
@@ -125,7 +129,7 @@ func testMarkdownEvents(t *testing.T, c *Client) {
 	diffEvents(t, have, markdownEvents[:len(markdownEvents)/2])
 
 	// Again with a different project.
-	for _ = range c.Events("fauxlang/faux", -1, 100) {
+	for range c.Events("fauxlang/faux", -1, 100) {
 		t.Errorf("EventsAfter: project filter failed")
 	}
 
@@ -145,7 +149,7 @@ func testMarkdownEvents(t *testing.T, c *Client) {
 	diffEvents(t, have, markdownEarlyEvents)
 
 	// Again with a different project.
-	for _ = range c.EventsAfter(0, "fauxlang/faux") {
+	for range c.EventsAfter(0, "fauxlang/faux") {
 		t.Errorf("EventsAfter: project filter failed")
 	}
 }
@@ -204,7 +208,7 @@ func TestIvy(t *testing.T) {
 	}
 	c := New(lg, db, sdb, rr.Client())
 	check(c.Add("robpike/ivy"))
-	check(c.Sync(ctx))
+	c.Sync(ctx)
 }
 
 func TestOmap(t *testing.T) {
@@ -220,7 +224,7 @@ func TestOmap(t *testing.T) {
 	}
 	c := New(lg, db, sdb, rr.Client())
 	check(c.Add("rsc/omap"))
-	check(c.Sync(ctx))
+	c.Sync(ctx)
 }
 
 var markdownEarlyEvents = [][]byte{

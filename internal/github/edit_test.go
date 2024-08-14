@@ -33,7 +33,7 @@ func TestMarkdownEditing(t *testing.T) {
 	}
 	c := New(lg, db, sdb, rr.Client())
 	check(c.Add("rsc/tmp"))
-	check(c.Sync(ctx))
+	c.Sync(ctx)
 
 	var ei, ec *Event
 	for e := range c.Events("rsc/tmp", 5, 5) {

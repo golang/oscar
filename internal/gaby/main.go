@@ -11,6 +11,7 @@ import (
 	"io"
 	"log"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"time"
@@ -32,190 +33,238 @@ import (
 	"golang.org/x/oscar/internal/storage"
 )
 
-var (
-	searchMode    = flag.Bool("search", false, "run in interactive search mode (local mode only)")
-	firestoreDB   = flag.String("firestoredb", "", "name of the Firestore DB to use (cloud mode only)")
-	enableSync    = flag.Bool("enablesync", false, "sync the DB with GitHub and other external sources")
-	enableChanges = flag.Bool("enablechanges", false, "allow changes to GitHub")
-)
+var flags struct {
+	search        bool
+	firestoredb   string
+	enablesync    bool
+	enablechanges bool
+}
+
+func init() {
+	flag.BoolVar(&flags.search, "search", false, "run in interactive search mode")
+	flag.StringVar(&flags.firestoredb, "firestoredb", "", "name of the Firestore DB to use")
+	flag.BoolVar(&flags.enablesync, "enablesync", false, "sync the DB with GitHub and other external sources")
+	flag.BoolVar(&flags.enablechanges, "enablechanges", false, "allow changes to GitHub")
+}
+
+// Gaby holds the state for gaby's execution.
+type Gaby struct {
+	ctx   context.Context
+	cloud bool                    // running on Cloud Run
+	meta  map[string]string       // any metadata we want to expose
+	addr  string                  // address to serve HTTP on
+	crons []func(context.Context) // functions to run every minute or so
+
+	slog      *slog.Logger     // slog output to use
+	slogLevel *slog.LevelVar   // slog level, for changing as needed
+	http      *http.Client     // http client to use
+	db        storage.DB       // database to use
+	vector    storage.VectorDB // vector database to use
+	secret    secret.DB        // secret database to use
+	docs      *docs.Corpus     // document corpus to use
+	embed     llm.Embedder     // LLM embedder to use
+	github    *github.Client   // github client to use
+}
 
 func main() {
 	flag.Parse()
-	ctx := context.Background()
-	if onCloudRun() {
-		runOnCloudRun(ctx)
+
+	level := new(slog.LevelVar)
+	g := &Gaby{
+		ctx:       context.Background(),
+		cloud:     onCloudRun(),
+		meta:      map[string]string{},
+		slog:      slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: level})),
+		slogLevel: level,
+		http:      http.DefaultClient,
+		addr:      "localhost:4229", // 4229 = gaby on a phone
+	}
+
+	if g.cloud {
+		g.initCloud()
 	} else {
-		runLocally(ctx)
+		g.initLocal()
 	}
-}
 
-func runLocally(ctx context.Context) {
-	lg := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	var syncs, changes []func(context.Context)
 
-	sdb := secret.Netrc()
+	g.github = github.New(g.slog, g.db, g.secret, g.http)
+	syncs = append(syncs, g.github.Sync)
 
-	db, err := pebble.Open(lg, "gaby.db")
+	g.docs = docs.New(g.db)
+	syncs = append(syncs, func(ctx context.Context) { githubdocs.Sync(ctx, g.slog, g.docs, g.github) })
+
+	ai, err := gemini.NewClient(g.ctx, g.slog, g.secret, g.http, "text-embedding-004")
 	if err != nil {
 		log.Fatal(err)
 	}
+	g.embed = ai
+	syncs = append(syncs, func(ctx context.Context) { embeddocs.Sync(ctx, g.slog, g.vector, g.embed, g.docs) })
 
-	vdb := storage.MemVectorDB(db, lg, "")
-
-	gh := github.New(lg, db, secret.Netrc(), http.DefaultClient)
-	// Ran during setup: gh.Add("golang/go")
-
-	dc := docs.New(db)
-	ai, err := gemini.NewClient(ctx, lg, sdb, http.DefaultClient, "text-embedding-004")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if *searchMode {
-		// Search loop.
-		data, err := io.ReadAll(os.Stdin)
-		if err != nil {
-			log.Fatal(err)
-		}
-		vecs, err := ai.EmbedDocs(context.Background(), []llm.EmbedDoc{{Title: "", Text: string(data)}})
-		if err != nil {
-			log.Fatal(err)
-		}
-		vec := vecs[0]
-		for _, r := range vdb.Search(vec, 20) {
-			title := "?"
-			if d, ok := dc.Get(r.ID); ok {
-				title = d.Title
-			}
-			fmt.Printf(" %.5f %s # %s\n", r.Score, r.ID, title)
-		}
+	if flags.search {
+		g.searchLoop()
 		return
 	}
 
-	sync(ctx, lg, vdb, ai, dc, gh)
+	cf := commentfix.New(g.slog, g.github, "gerritlinks")
+	cf.EnableProject("golang/go")
+	cf.AutoLink(`\bCL ([0-9]+)\b`, "https://go.dev/cl/$1")
+	cf.ReplaceURL(`\Qhttps://go-review.git.corp.google.com/\E`, "https://go-review.googlesource.com/")
+	cf.EnableEdits()
+	changes = append(changes, cf.Run)
 
-	cf := newGerritlinksCommentFixer(lg, gh)
-	rp := newRelatedPoster(lg, db, gh, vdb, dc)
+	rp := related.New(g.slog, g.db, g.github, g.vector, g.docs, "related")
+	rp.EnableProject("golang/go")
+	rp.SkipBodyContains("— [watchflakes](https://go.dev/wiki/Watchflakes)")
+	rp.SkipTitlePrefix("x/tools/gopls: release version v")
+	rp.SkipTitleSuffix(" backport]")
+	rp.EnablePosts()
+	changes = append(changes, rp.Run)
 
-	for {
-		sync(ctx, lg, vdb, ai, dc, gh)
-		run(ctx, cf, rp)
-		time.Sleep(2 * time.Minute)
+	if flags.enablesync {
+		g.crons = append(g.crons, syncs...)
 	}
+	if flags.enablechanges {
+		g.crons = append(g.crons, changes...)
+	}
+
+	g.serveHTTP()
+	log.Printf("serving %s\n", g.addr)
+
+	if !g.cloud {
+		// Simulate Cloud Scheduler.
+		go g.localCron()
+	}
+	select {}
 }
 
-func runOnCloudRun(ctx context.Context) {
-	var logLevel slog.LevelVar // defaults to Info
-	lg := slog.New(gcphandler.New(&logLevel))
+// initLocal initializes a local Gaby instance.
+func (g *Gaby) initLocal() {
+	g.slog.Info("gaby local init", "flags", flags)
+	g.secret = secret.Netrc()
 
-	projectID, err := metadata.ProjectIDWithContext(ctx)
+	db, err := pebble.Open(g.slog, "gaby.db")
+	if err != nil {
+		log.Fatal(err)
+	}
+	g.db = db
+	g.vector = storage.MemVectorDB(db, g.slog, "")
+}
+
+// initCloud initializes a Gaby instance running on Cloud Run.
+func (g *Gaby) initCloud() {
+	g.slog = slog.New(gcphandler.New(g.slogLevel))
+
+	projectID, err := metadata.ProjectIDWithContext(g.ctx)
 	if err != nil {
 		log.Fatalf("metadata project ID: %v", err)
 	}
 	if projectID == "" {
 		log.Fatal("project ID from metadata is empty")
 	}
+	g.meta["project"] = projectID
 
-	if *firestoreDB == "" {
+	port := os.Getenv("PORT")
+	if port == "" {
+		log.Fatal("$PORT not set")
+	}
+	g.meta["port"] = port
+	g.addr = ":" + port
+
+	g.slog.Info("gaby cloud init",
+		"flags", flags,
+		"project", projectID,
+		"k_service", os.Getenv("K_SERVICE"),
+		"k_revision", os.Getenv("K_REVISION"))
+
+	if flags.firestoredb == "" {
 		log.Fatal("missing -firestoredb flag")
 	}
 
-	slog.Info("Oscar starting",
-		"syncEnabled", *enableSync,
-		"changesEnabled", *enableChanges,
-		"project", projectID,
-		"FirestoreDB", *firestoreDB,
-		"Cloud Run service", os.Getenv("K_SERVICE"))
-
-	db, err := firestore.NewDB(ctx, lg, projectID, *firestoreDB)
+	db, err := firestore.NewDB(g.ctx, g.slog, projectID, flags.firestoredb)
 	if err != nil {
 		log.Fatal(err)
 	}
+	g.db = db
 
-	vdb, err := firestore.NewVectorDB(ctx, lg, projectID, *firestoreDB, "gaby")
+	vdb, err := firestore.NewVectorDB(g.ctx, g.slog, projectID, flags.firestoredb, "gaby")
 	if err != nil {
 		log.Fatal(err)
 	}
+	g.vector = vdb
 
-	sdb, err := gcpsecret.NewSecretDB(ctx, projectID)
+	sdb, err := gcpsecret.NewSecretDB(g.ctx, projectID)
 	if err != nil {
 		log.Fatal(err)
 	}
+	g.secret = sdb
+}
 
-	gh := github.New(lg, db, sdb, http.DefaultClient)
-	// TODO: if changes are not enabled, call EnableTesting
-	// and save the the diverted edits somewhere.
-	// TODO: for new databases, gh.Add("golang/go")
-
-	dc := docs.New(db)
-	ai, err := gemini.NewClient(ctx, lg, sdb, http.DefaultClient, "text-embedding-004")
+// searchLoop runs an interactive search loop.
+// It is called when the -search flag is specified.
+func (g *Gaby) searchLoop() {
+	// Search loop.
+	data, err := io.ReadAll(os.Stdin)
 	if err != nil {
 		log.Fatal(err)
 	}
+	vecs, err := g.embed.EmbedDocs(context.Background(), []llm.EmbedDoc{{Title: "", Text: string(data)}})
+	if err != nil {
+		log.Fatal(err)
+	}
+	vec := vecs[0]
+	for _, r := range g.vector.Search(vec, 20) {
+		title := "?"
+		if d, ok := g.docs.Get(r.ID); ok {
+			title = d.Title
+		}
+		fmt.Printf(" %.5f %s # %s\n", r.Score, r.ID, title)
+	}
+}
 
-	cf := newGerritlinksCommentFixer(lg, gh)
-	rp := newRelatedPoster(lg, db, gh, vdb, dc)
-
+// serveHTTP serves HTTP endpoints for Gaby.
+func (g *Gaby) serveHTTP() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Oscar\n")
-		fmt.Fprintf(w, "project %s, firestore DB %s\n", projectID, *firestoreDB)
-		fmt.Fprintf(w, "sync enabled: %t, changes enabled: %t\n", *enableSync, *enableChanges)
-		fmt.Fprintf(w, "log level: %s\n", logLevel.Level())
+		fmt.Fprintf(w, "Gaby\n")
+		fmt.Fprintf(w, "meta: %+v\n", g.meta)
+		fmt.Fprintf(w, "flags: %+v\n", flags)
+		fmt.Fprintf(w, "log level: %v\n", g.slogLevel.Level())
 	})
-	// syncAndRun is called periodically by a Cloud Scheduler job.
-	http.HandleFunc("/syncAndRun", func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		sync(ctx, lg, vdb, ai, dc, gh)
-		if *enableChanges {
-			lg.Info("running")
-			run(ctx, cf, rp)
+
+	// cron is called periodically by a Cloud Scheduler job.
+	http.HandleFunc("/cron", func(w http.ResponseWriter, r *http.Request) {
+		g.db.Lock("gabycron")
+		defer g.db.Unlock("gabycron")
+
+		for _, cron := range g.crons {
+			cron(g.ctx)
 		}
 	})
 
-	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), nil))
-}
-
-// Sync synchronizes the DBs with the current GitHub state.
-func sync(ctx context.Context, lg *slog.Logger, vdb storage.VectorDB, ai *gemini.Client, dc *docs.Corpus, gh *github.Client) {
-	if *enableSync {
-		lg.Info("syncing")
-		gh.Sync(ctx)
-		githubdocs.Sync(ctx, lg, dc, gh)
-		embeddocs.Sync(ctx, lg, vdb, ai, dc)
+	// Listen in this goroutine so that we can return a synchronous error
+	// if the port is already in use or the address is otherwise invalid.
+	// Run the actual server in a background goroutine.
+	l, err := net.Listen("tcp", g.addr)
+	if err != nil {
+		log.Fatal(err)
 	}
+	go func() {
+		log.Fatal(http.Serve(l, nil))
+	}()
 }
 
-type runnable interface {
-	Run(context.Context)
-}
-
-// run calls Run once for each runnable.
-func run(ctx context.Context, rs ...runnable) {
-	for _, r := range rs {
-		r.Run(ctx)
+// localCron simulates Cloud Scheduler by fetching our server's /cron endpoint once per minute.
+func (g *Gaby) localCron() {
+	for ; ; time.Sleep(1 * time.Minute) {
+		resp, err := http.Get("http://" + g.addr + "/cron")
+		if err != nil {
+			g.slog.Error("localcron get", "err", err)
+		}
+		data, _ := io.ReadAll(resp.Body)
+		if resp.StatusCode != 200 {
+			g.slog.Error("localcron get status", "status", resp.Status, "body", string(data))
+		}
 	}
-}
-
-func newGerritlinksCommentFixer(lg *slog.Logger, gh *github.Client) *commentfix.Fixer {
-	cf := commentfix.New(lg, gh, "gerritlinks")
-	cf.EnableProject("golang/go")
-	cf.AutoLink(`\bCL ([0-9]+)\b`, "https://go.dev/cl/$1")
-	cf.ReplaceURL(`\Qhttps://go-review.git.corp.google.com/\E`, "https://go-review.googlesource.com/")
-	if *enableChanges {
-		cf.EnableEdits()
-	}
-	return cf
-}
-
-func newRelatedPoster(lg *slog.Logger, db storage.DB, gh *github.Client, vdb storage.VectorDB, dc *docs.Corpus) *related.Poster {
-	rp := related.New(lg, db, gh, vdb, dc, "related")
-	rp.EnableProject("golang/go")
-	rp.SkipBodyContains("— [watchflakes](https://go.dev/wiki/Watchflakes)")
-	rp.SkipTitlePrefix("x/tools/gopls: release version v")
-	rp.SkipTitleSuffix(" backport]")
-	if *enableChanges {
-		rp.EnablePosts()
-	}
-	return rp
 }
 
 // onCloudRun reports whether the current process is running on Cloud Run.
