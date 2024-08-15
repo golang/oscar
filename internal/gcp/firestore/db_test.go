@@ -123,13 +123,15 @@ func TestLock(t *testing.T) {
 		db, name := newTestDB(t, projectID)
 
 		// Lock will renew with no errors.
+		// Wait for lockRenew * 5 to make sure multiple renewals work.
+		// (Before we added lock.Nonce, the second renewal failed.)
 		db.Lock(name)
-		time.Sleep(lockRenew * 2)
+		time.Sleep(lockRenew * 5)
 		db.Unlock(name)
 
 		// Lock will be re-acquired with no errors.
 		db.Lock(name)
-		time.Sleep(lockRenew * 2)
+		time.Sleep(lockRenew * 5)
 		db.Unlock(name)
 	})
 

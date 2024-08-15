@@ -293,14 +293,20 @@ func (db *DB) Unlock(name string) {
 }
 
 // A lock describes a lock in firestore.
-// The value consists of the UID of the DB that acquired the lock.
+// The value consists of the UID of the DB that acquired the lock
+// and a nonce to force Firestore to treat every renewal as an update.
+// Otherwise the updateTime does not change on renewal.
 type lock struct {
-	UID int64
+	UID   int64
+	Nonce int64
 }
 
-// setLock sets the value of the named lock in the DB, along with its creation time.
+// setLock sets the value of the named lock in the DB, along with its update time.
 func (db *DB) setLock(tx *firestore.Transaction, name string) {
-	db.set(tx, db.locks, encodeLockName(name), lock{db.uid})
+	db.set(tx, db.locks, encodeLockName(name), lock{
+		UID:   db.uid,
+		Nonce: rand.Int64(),
+	})
 }
 
 // getLock returns the value of the named lock in the DB and the times
