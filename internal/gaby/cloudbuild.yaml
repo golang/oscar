@@ -1,0 +1,21 @@
+steps:
+  - id: Lock
+    name: golang:1.23.0
+    entrypoint: bash
+    args:
+      - -ec
+      - |
+        if [[ "$COMMIT_SHA" = '' ]]; then
+          echo "no COMMIT_SHA, not locking"
+          exit 0
+        fi
+        go run golang.org/x/website/cmd/locktrigger@latest \
+          -project $PROJECT_ID -build $BUILD_ID -repo https://go.googlesource.com/oscar
+
+  - id: Test
+    name: golang:1.23.0
+    entrypoint: bash
+    args:
+      - -ec
+      # Run tests for all submodules.
+      - find . -name go.mod -execdir go test ./... \;
