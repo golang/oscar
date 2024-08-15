@@ -63,6 +63,7 @@ package timed
 
 import (
 	"iter"
+	"log/slog"
 	"sync/atomic"
 	"time"
 
@@ -219,6 +220,7 @@ func ScanAfter(db storage.DB, kind string, t DBTime, filter func(key []byte) boo
 				// Stale entries might happen if Set is called multiple times
 				// for the same key in a single batch, along with a later Delete,
 				// or Set+Delete in a single batch. Ignore.
+				slog.Info("timed stale missing", "tkey", storage.Fmt(tkey), "dkey", storage.Fmt(dkey))
 				continue
 			}
 			var t2 int64
@@ -233,6 +235,7 @@ func ScanAfter(db storage.DB, kind string, t DBTime, filter func(key []byte) boo
 				// The second Set will not see the first one's time entry to delete it.
 				// These should be rare.
 				// Skip this one and wait until we see the index entry for t2.
+				slog.Info("timed stale out of order", "tkey", storage.Fmt(tkey), "dkey", storage.Fmt(dkey), "dval-time", t2)
 				continue
 			}
 			if t > t2 {

@@ -228,4 +228,32 @@ func TestGitHub(t *testing.T) {
 	if bytes.Contains(buf.Bytes(), []byte("commentfix rewrite")) {
 		t.Fatalf("logs incorrectly mention rewrite of comment:\n%s", buf.Bytes())
 	}
+
+	// Check that when there's nothing to do, we still mark things old.
+	lg, buf = testutil.SlogBuffer()
+	f = New(lg, gh, "fixer4")
+	f.SetStderr(testutil.LogWriter(t))
+	f.EnableProject("rsc/tmp")
+	f.ReplaceText("zyzzyva", "ZYZZYVA")
+	f.EnableEdits()
+	f.SetTimeLimit(time.Time{})
+	f.Run(ctx)
+	// t.Logf("output:\n%s", buf)
+	if bytes.Contains(buf.Bytes(), []byte("commentfix rewrite")) {
+		t.Fatalf("logs incorrectly mention rewrite of comment:\n%s", buf.Bytes())
+	}
+
+	// Reverse the replacement and run again with same name; should not consider any comments.
+	lg, buf = testutil.SlogBuffer()
+	f = New(lg, gh, "fixer4")
+	f.SetStderr(testutil.LogWriter(t))
+	f.EnableProject("rsc/tmp")
+	f.ReplaceText("c", "C")
+	f.EnableEdits()
+	f.SetTimeLimit(time.Time{})
+	f.Run(ctx)
+	// t.Logf("output:\n%s", buf)
+	if bytes.Contains(buf.Bytes(), []byte("commentfix rewrite")) {
+		t.Fatalf("logs incorrectly mention rewrite of comment:\n%s", buf.Bytes())
+	}
 }

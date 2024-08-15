@@ -278,13 +278,30 @@ func (f *Fixer) Run(ctx context.Context) {
 	if f.watcher == nil {
 		panic("commentfix.Fixer: Run missing GitHub client")
 	}
+
+	last := timed.DBTime(0)
+	old := 0
+	const maxOld = 100
 	for e := range f.watcher.Recent() {
+		if f.edit && last != 0 {
+			// Occasionally remember where we were,
+			// so if we are repeatedly interrupted we still
+			// make progress.
+			if old++; old >= maxOld {
+				f.watcher.MarkOld(last)
+				f.watcher.Flush()
+				old = 0
+			}
+		}
+		last = e.DBTime
+
 		if !f.projects[e.Project] {
 			continue
 		}
 		var ic *issueOrComment
 		switch x := e.Typed.(type) {
-		default:
+		default: // for example, *github.IssueEvent
+			f.slog.Info("fixer skip", "dbtime", e.DBTime, "type", reflect.TypeOf(e.Typed).String())
 			continue
 		case *github.Issue:
 			if x.PullRequest != nil {
@@ -294,13 +311,12 @@ func (f *Fixer) Run(ctx context.Context) {
 				continue
 			}
 			ic = &issueOrComment{issue: x}
+			f.slog.Info("fixer run issue", "dbtime", e.DBTime, "issue", ic.issue.Number)
 		case *github.IssueComment:
 			ic = &issueOrComment{comment: x}
+			f.slog.Info("fixer run comment", "dbtime", e.DBTime, "url", ic.comment.URL)
 		}
 		if tm, err := time.Parse(time.RFC3339, ic.updatedAt()); err == nil && tm.Before(f.timeLimit) {
-			if f.edit {
-				f.watcher.MarkOld(e.DBTime)
-			}
 			continue
 		}
 		body, updated := f.Fix(ic.body())
@@ -326,12 +342,27 @@ func (f *Fixer) Run(ctx context.Context) {
 				f.slog.Error("commentfix edit", "project", e.Project, "issue", e.Issue, "err", err)
 				continue
 			}
+
+			// Mark this one old right now, so that we don't consider editing it again.
 			f.watcher.MarkOld(e.DBTime)
 			f.watcher.Flush()
+			old = 0
+
 			if !testing.Testing() {
 				// unreachable in tests
 				time.Sleep(1 * time.Second)
 			}
+		}
+	}
+
+	// Mark the final entry we saw as old.
+	// Have to start a new loop because MarkOld must be called during Recent.
+	// If another process has moved the mark past last, MarkOld is a no-op.
+	if f.edit && last != 0 {
+		for range f.watcher.Recent() {
+			f.watcher.MarkOld(last)
+			f.watcher.Flush()
+			break
 		}
 	}
 }
