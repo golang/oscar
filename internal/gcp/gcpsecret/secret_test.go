@@ -8,7 +8,6 @@ package gcpsecret
 
 import (
 	"context"
-	"path/filepath"
 	"testing"
 
 	"golang.org/x/oscar/internal/gcp/gcpconfig"
@@ -18,7 +17,7 @@ import (
 
 func TestDB(t *testing.T) {
 	check := testutil.Checker(t)
-	rr, err := grpcrr.Open(filepath.FromSlash("testdata/sdb.grpcrr"))
+	rr, err := grpcrr.Open("testdata/sdb.grpcrr")
 	check(err)
 
 	var projectID string

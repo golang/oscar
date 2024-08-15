@@ -172,28 +172,47 @@ func (f *fstore) scan(tx *firestore.Transaction, coll *firestore.CollectionRef, 
 		}
 	}
 
-	query := coll.OrderBy(firestore.DocumentID, firestore.Asc).EndAt(end)
-	if start != "" {
-		query = query.StartAt(start)
-	}
-
-	var iter *firestore.DocumentIterator
-	if tx == nil {
-		iter = query.Documents(context.TODO())
-	} else {
-		iter = tx.Documents(query)
-	}
 	return func(yield func(*firestore.DocumentSnapshot) bool) {
-		defer iter.Stop()
+		var iter *firestore.DocumentIterator
+		newIter := func(start string) {
+			query := coll.OrderBy(firestore.DocumentID, firestore.Asc).EndAt(end)
+			if start != "" {
+				query = query.StartAt(start)
+			}
+			if tx == nil {
+				iter = query.Documents(context.TODO())
+			} else {
+				iter = tx.Documents(query)
+			}
+		}
+		newIter(start)
+		// Note: Do not use defer iter.Stop(),
+		// because iter can change and we want
+		// to stop the final value of iter, not its current value.
+		defer func() {
+			iter.Stop()
+		}()
+		var last string
 		for {
 			ds, err := iter.Next()
 			if err == iterator.Done {
 				return
 			}
+			if grpcerrors.IsUnavailable(err) && last != "" {
+				// A Scan that runs for more than 60 seconds dies with
+				//	syncdb: 22:38:20 ERROR firestore scan collection=projects/oscar-go-1/databases/prod/documents/values err="rpc error: code = Unavailable desc = Query timed out. Please try either limiting the entities scanned, or run with an updated index configuration."
+				// To allow long scans, restart after the last document we saw.
+				f.slog.Info("firestore scan error; restarting", "last", storage.Fmt(decodeKey(last)), "err", err)
+				iter.Stop()
+				newIter(keyAfter(last))
+				last = ""
+				continue
+			}
 			if err != nil {
 				// unreachable except for bad DB
 				f.Panic("firestore scan", "collection", coll.Path, "err", err)
 			}
+			last = ds.Ref.ID
 			if !yield(ds) {
 				return
 			}

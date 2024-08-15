@@ -405,6 +405,7 @@ func encodeKey(k []byte) string {
 	return hex.EncodeToString(k)
 }
 
+// decodeKey decodes an encoded key back to the original.
 func decodeKey(s string) []byte {
 	b, err := hex.DecodeString(s)
 	if err != nil {
@@ -412,6 +413,11 @@ func decodeKey(s string) []byte {
 		panic(fmt.Sprintf("decodeKey(%q) failed: %v", s, err))
 	}
 	return b
+}
+
+// keyAfter returns the lexically next encoded key after s.
+func keyAfter(s string) string {
+	return s + "00"
 }
 
 // A value is a [DB] value as a Firestore document.

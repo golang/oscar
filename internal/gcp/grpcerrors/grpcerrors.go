@@ -21,3 +21,8 @@ func IsNotFound(err error) bool {
 func IsTimeout(err error) bool {
 	return status.Code(err) == codes.DeadlineExceeded
 }
+
+// IsUnavailable reports whether an error returned by a gRPC client indicates code “unavailable”.
+func IsUnavailable(err error) bool {
+	return status.Code(err) == codes.Unavailable
+}

@@ -95,13 +95,25 @@ func (db *VectorDB) Delete(id string) {
 
 // All implements [storage.VectorDB.All].
 func (db *VectorDB) All() iter.Seq2[string, func() llm.Vector] {
-	iter := db.coll.Documents(context.Background())
 	return func(yield func(string, func() llm.Vector) bool) {
-		defer iter.Stop()
+		iter := db.coll.Documents(context.Background())
+		defer func() { // not defer iter.Stop(); iter can change
+			iter.Stop()
+		}()
+		var last string
 		for {
 			ds, err := iter.Next()
 			if err == iterator.Done {
 				return
+			}
+			if grpcerrors.IsUnavailable(err) && last != "" {
+				// Cope with 60-second Firestore timeout by restarting after the last ID we observed.
+				// See longer comment in [fstore.scan].
+				db.fs.slog.Info("firestore VectorDB scan error; restarting", "last", string(decodeKey(last)), "err", err)
+				iter.Stop()
+				iter = db.coll.OrderBy(firestore.DocumentID, firestore.Asc).StartAt(keyAfter(last)).Documents(context.Background())
+				last = ""
+				continue
 			}
 			if err != nil {
 				db.fs.Panic("firestore VectorDB All", "err", err)
@@ -111,6 +123,7 @@ func (db *VectorDB) All() iter.Seq2[string, func() llm.Vector] {
 			if err := ds.DataTo(&doc); err != nil {
 				db.fs.Panic("firestore VectorDB All", "id", id, "err", err)
 			}
+			last = ds.Ref.ID
 			if !yield(id, func() llm.Vector { return llm.Vector(doc.Embedding) }) {
 				return
 			}

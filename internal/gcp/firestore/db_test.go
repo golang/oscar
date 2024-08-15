@@ -5,10 +5,16 @@
 package firestore
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	"fmt"
+	"io"
+	"io/fs"
 	"math/rand/v2"
+	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -22,11 +28,6 @@ const firestoreTestDatabase = "test"
 
 func TestDB(t *testing.T) {
 	rr, project := openRR(t, "testdata/db.grpcrr")
-	defer func() {
-		if err := rr.Close(); err != nil {
-			t.Fatal(err)
-		}
-	}()
 	ctx := context.Background()
 
 	db, err := NewDB(ctx, testutil.Slogger(t), project, firestoreTestDatabase, rr.ClientOptions()...)
@@ -46,11 +47,57 @@ func TestDB(t *testing.T) {
 	storage.TestDB(t, db)
 
 	// Test Batch.DeleteRange with MaybeApply.
+	t.Logf("test DeleteRange")
 	b := db.Batch()
 	b.DeleteRange([]byte("a"), []byte("b"))
 	applied := b.MaybeApply()
 	if !applied {
 		t.Error("MaybeApply with DeleteRange did not apply")
+	}
+}
+
+func TestDBSlow(t *testing.T) {
+	// Re-record with
+	//	OSCAR_PROJECT=oscar-go-1 go test -v -timeout=1h -run=TestDBSlow -grpcrecord=/dbslow
+	rr, project := openRR(t, "testdata/dbslow.grpcrr.gz")
+	ctx := context.Background()
+
+	db, err := NewDB(ctx, testutil.Slogger(t), project, firestoreTestDatabase, rr.ClientOptions()...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Use a fixed UID for deterministic record/replay.
+	db.uid = 1
+	defer db.Close()
+
+	// Test that Scan does not die after 60 seconds.
+	// Scan sends back keys in batches, so we have to
+	// write a lot of keys to make sure we cross into
+	// two batches.
+	t.Logf("test slow scan")
+	b := db.Batch()
+	const slowN = 400
+	slowKey := func(n int) string {
+		return fmt.Sprintf("slow2.%09d", n)
+	}
+	for i := range slowN {
+		b.Set([]byte(slowKey(i)), bytes.Repeat([]byte("A"), 100000))
+		b.MaybeApply()
+	}
+	b.Apply()
+	n := 0
+	for k := range db.Scan([]byte(slowKey(0)), []byte(slowKey(slowN-1))) {
+		if string(k) != slowKey(n) {
+			t.Fatalf("slow read #%d: have %q want %q", n, k, slowKey(n))
+		}
+		if rr.Recording() && n%100 == 0 {
+			t.Logf("scan %s; sleep", k)
+			time.Sleep(90 * time.Second)
+		}
+		n++
+	}
+	if n != slowN {
+		t.Errorf("slow reads: scanned %d keys, want %d", n, slowN)
 	}
 }
 
@@ -168,24 +215,73 @@ func TestErrors(t *testing.T) {
 }
 
 func openRR(t *testing.T, file string) (_ *grpcrr.RecordReplay, projectID string) {
-	rr, err := grpcrr.Open(filepath.FromSlash(file))
-	if err != nil {
-		t.Fatalf("grpcrr.Open: %v", err)
+	check := testutil.Checker(t)
+
+	// If target is a gzip file, decompress (if it exists) into a temp file,
+	// and recompress when test is done if modified.
+	if strings.HasSuffix(file, ".gz") {
+		// Decompress into temp file if it exists.
+		f, err := os.CreateTemp(t.TempDir(), strings.TrimSuffix(filepath.Base(file), "gz"))
+		check(err)
+
+		gzfile := file
+		tmpfile := f.Name()
+		file = tmpfile
+
+		var before fs.FileInfo
+		if zf, err := os.Open(gzfile); err != nil {
+			// File does not exist; remove temp file to avoid "empty replay file" error.
+			f.Close()
+			os.Remove(tmpfile)
+		} else {
+			zr, err := gzip.NewReader(zf)
+			check(err)
+			_, err = io.Copy(f, zr)
+			check(err)
+			zr.Close()
+			zf.Close()
+			before, err = f.Stat()
+			check(err)
+			f.Close()
+		}
+
+		// Recompress back during test cleanup.
+		t.Cleanup(func() {
+			f, err := os.Open(tmpfile)
+			check(err)
+			defer f.Close()
+			after, err := f.Stat()
+			check(err)
+			if before != nil && after.ModTime() == before.ModTime() && after.Size() == before.Size() {
+				// Trace not modified, must have been replaying.
+				return
+			}
+
+			// Recompress trace into gzfile.
+			zf, err := os.Create(gzfile)
+			check(err)
+			zw, err := gzip.NewWriterLevel(zf, gzip.BestCompression)
+			check(err)
+			_, err = io.Copy(zw, f)
+			check(err)
+			check(zw.Close())
+			check(zf.Close())
+		})
 	}
+
+	rr, err := grpcrr.Open(file)
+	check(err)
+
+	t.Cleanup(func() {
+		if err := rr.Close(); err != nil {
+			t.Fatal(err)
+		}
+	})
+
 	if rr.Recording() {
 		projectID = gcpconfig.MustProject(t)
 		rr.SetInitial([]byte(projectID))
 		return rr, projectID
 	}
 	return rr, string(rr.Initial())
-}
-
-func panics(f func()) (b bool) {
-	defer func() {
-		if recover() != nil {
-			b = true
-		}
-	}()
-	f()
-	return false
 }
