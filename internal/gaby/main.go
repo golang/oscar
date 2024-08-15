@@ -39,6 +39,7 @@ import (
 
 var flags struct {
 	search        bool
+	project       string
 	firestoredb   string
 	enablesync    bool
 	enablechanges bool
@@ -46,6 +47,7 @@ var flags struct {
 
 func init() {
 	flag.BoolVar(&flags.search, "search", false, "run in interactive search mode")
+	flag.StringVar(&flags.project, "project", "", "name of the Google Cloud Project")
 	flag.StringVar(&flags.firestoredb, "firestoredb", "", "name of the Firestore DB to use")
 	flag.BoolVar(&flags.enablesync, "enablesync", false, "sync the DB with GitHub and other external sources")
 	flag.BoolVar(&flags.enablechanges, "enablechanges", false, "allow changes to GitHub")
@@ -78,17 +80,13 @@ func main() {
 		ctx:       context.Background(),
 		cloud:     onCloudRun(),
 		meta:      map[string]string{},
-		slog:      slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: level})),
+		slog:      slog.New(gcphandler.New(level)),
 		slogLevel: level,
 		http:      http.DefaultClient,
 		addr:      "localhost:4229", // 4229 = gaby on a phone
 	}
 
-	if g.cloud {
-		g.initCloud()
-	} else {
-		g.initLocal()
-	}
+	g.initGCP()
 
 	var syncs, changes []func(context.Context)
 
@@ -110,8 +108,13 @@ func main() {
 	cr.Allow(godevAllow...)
 	cr.Deny(godevDeny...)
 	cr.Clean(godevClean)
-	syncs = append(syncs, cr.Run)
-	syncs = append(syncs, func(ctx context.Context) { crawldocs.Sync(ctx, g.slog, g.docs, cr) })
+	// TODO(rsc): Crawling is too slow with a remote Firestore database.
+	// Perhaps it will be okay when running on GCP.
+	// For now, disable.
+	if false {
+		syncs = append(syncs, cr.Run)
+		syncs = append(syncs, func(ctx context.Context) { crawldocs.Sync(ctx, g.slog, g.docs, cr) })
+	}
 
 	if flags.search {
 		g.searchLoop()
@@ -151,8 +154,10 @@ func main() {
 }
 
 // initLocal initializes a local Gaby instance.
+// No longer used, but here for experimentation.
 func (g *Gaby) initLocal() {
 	g.slog.Info("gaby local init", "flags", flags)
+
 	g.secret = secret.Netrc()
 
 	db, err := pebble.Open(g.slog, "gaby.db")
@@ -163,29 +168,30 @@ func (g *Gaby) initLocal() {
 	g.vector = storage.MemVectorDB(db, g.slog, "")
 }
 
-// initCloud initializes a Gaby instance running on Cloud Run.
-func (g *Gaby) initCloud() {
-	g.slog = slog.New(gcphandler.New(g.slogLevel))
+// initGCP initializes a Gaby instance to use GCP databases.
+func (g *Gaby) initGCP() {
+	if flags.project == "" {
+		projectID, err := metadata.ProjectIDWithContext(g.ctx)
+		if err != nil {
+			log.Fatalf("metadata project ID: %v", err)
+		}
+		if projectID == "" {
+			log.Fatal("project ID from metadata is empty")
+		}
+		flags.project = projectID
+	}
 
-	projectID, err := metadata.ProjectIDWithContext(g.ctx)
-	if err != nil {
-		log.Fatalf("metadata project ID: %v", err)
+	if g.cloud {
+		port := os.Getenv("PORT")
+		if port == "" {
+			log.Fatal("$PORT not set")
+		}
+		g.meta["port"] = port
+		g.addr = ":" + port
 	}
-	if projectID == "" {
-		log.Fatal("project ID from metadata is empty")
-	}
-	g.meta["project"] = projectID
-
-	port := os.Getenv("PORT")
-	if port == "" {
-		log.Fatal("$PORT not set")
-	}
-	g.meta["port"] = port
-	g.addr = ":" + port
 
 	g.slog.Info("gaby cloud init",
-		"flags", flags,
-		"project", projectID,
+		"flags", fmt.Sprintf("%+v", flags),
 		"k_service", os.Getenv("K_SERVICE"),
 		"k_revision", os.Getenv("K_REVISION"))
 
@@ -193,19 +199,19 @@ func (g *Gaby) initCloud() {
 		log.Fatal("missing -firestoredb flag")
 	}
 
-	db, err := firestore.NewDB(g.ctx, g.slog, projectID, flags.firestoredb)
+	db, err := firestore.NewDB(g.ctx, g.slog, flags.project, flags.firestoredb)
 	if err != nil {
 		log.Fatal(err)
 	}
 	g.db = db
 
-	vdb, err := firestore.NewVectorDB(g.ctx, g.slog, projectID, flags.firestoredb, "gaby")
+	vdb, err := firestore.NewVectorDB(g.ctx, g.slog, flags.project, flags.firestoredb, "gaby")
 	if err != nil {
 		log.Fatal(err)
 	}
 	g.vector = vdb
 
-	sdb, err := gcpsecret.NewSecretDB(g.ctx, projectID)
+	sdb, err := gcpsecret.NewSecretDB(g.ctx, flags.project)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -245,6 +251,9 @@ func (g *Gaby) serveHTTP() {
 
 	// cron is called periodically by a Cloud Scheduler job.
 	http.HandleFunc("/cron", func(w http.ResponseWriter, r *http.Request) {
+		g.slog.Info("cron start")
+		defer g.slog.Info("cron end")
+
 		g.db.Lock("gabycron")
 		defer g.db.Unlock("gabycron")
 
@@ -271,6 +280,7 @@ func (g *Gaby) localCron() {
 		resp, err := http.Get("http://" + g.addr + "/cron")
 		if err != nil {
 			g.slog.Error("localcron get", "err", err)
+			continue
 		}
 		data, _ := io.ReadAll(resp.Body)
 		if resp.StatusCode != 200 {
