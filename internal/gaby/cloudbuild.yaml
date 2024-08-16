@@ -12,6 +12,28 @@ steps:
         go run golang.org/x/website/cmd/locktrigger@latest \
           -project $PROJECT_ID -build $BUILD_ID -repo https://go.googlesource.com/oscar
 
+  - id: CheckEnv
+    name: bash
+    args:
+      - -ec
+      - |
+        if [[ "$SHORT_SHA" = '' ]]; then
+          echo >&2 "missing SHORT_SHA; use --substitutions on command line"
+          exit 1
+        fi
+        if [[ ! ${_ENV} =~ ^(devel|prod)$ ]]; then
+          echo >&2 "_ENV must be one of: devel, prod'"
+          exit 1
+        fi
+        if [[ ! ${_ENABLE_SYNC} =~ ^(true|false)$ ]]; then
+          echo >&2 "_ENABLE_SYNC must be one of: true, false'"
+          exit 1
+        fi
+        if [[ ! ${_ENABLE_CHANGES} =~ ^(true|false)$ ]]; then
+          echo >&2 "_ENABLE_CHANGES must be one of: true, false'"
+          exit 1
+        fi
+
   - id: Test
     name: golang:1.23.0
     entrypoint: bash
@@ -19,3 +41,46 @@ steps:
       - -ec
       # Run tests for all submodules.
       - find . -name go.mod -execdir go test ./... \;
+
+  - id: Build
+    name: gcr.io/cloud-builders/docker
+    entrypoint: bash
+    args:
+      - -ec
+      - |
+        env=${_ENV}
+        tag=$env-$(date +%Y%m%dt%H%M%S)-$SHORT_SHA
+        image=gcr.io/${PROJECT_ID}/gaby:$tag
+        firestore_db=$env
+        enable_sync=${_ENABLE_SYNC}
+        enable_changes=${_ENABLE_CHANGES}
+
+        echo "building image $image with firestore_db $firestore_db (enable_sync=$enable_sync, enable_changes=$enable_changes)"
+
+        docker build -t $image \
+          --build-arg FIRESTORE_DB="$firestore_db" \
+          --build-arg ENABLE_SYNC="$enable_sync" \
+          --build-arg ENABLE_CHANGES="$enable_changes" \
+          -f internal/gaby/Dockerfile .
+        docker push $image
+
+        # Save image name for later steps.
+        echo $image > /workspace/image-$env.txt
+
+  - id: Deploy
+    name: gcr.io/cloud-builders/gcloud
+    entrypoint: bash
+    args:
+      - -ec
+      - |
+        env=${_ENV}
+        image=$(cat /workspace/image-$env.txt)
+        service=gaby-$env
+        echo "deploying service $service from image $image"
+
+        gcloud run deploy --project $PROJECT_ID $service --image $image --region us-central1
+
+substitutions:
+  _ENV: "devel"
+  _ENABLE_SYNC: "false"
+  _ENABLE_CHANGES: "false"

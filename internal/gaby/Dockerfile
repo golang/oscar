@@ -18,7 +18,7 @@
 #     .
 
 ################################################################
-FROM golang:1.23rc2 AS builder
+FROM golang:1.23.0 AS builder
 
 # Set the working directory outside $GOPATH to ensure module mode is enabled.
 WORKDIR /src
