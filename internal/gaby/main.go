@@ -27,6 +27,7 @@ import (
 	"golang.org/x/oscar/internal/gcp/firestore"
 	"golang.org/x/oscar/internal/gcp/gcphandler"
 	"golang.org/x/oscar/internal/gcp/gcpsecret"
+	"golang.org/x/oscar/internal/gcp/metrics"
 	"golang.org/x/oscar/internal/gemini"
 	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/githubdocs"
@@ -86,7 +87,8 @@ func main() {
 		addr:      "localhost:4229", // 4229 = gaby on a phone
 	}
 
-	g.initGCP()
+	shutdown := g.initGCP()
+	defer shutdown()
 
 	var syncs, changes []func(context.Context)
 
@@ -168,8 +170,8 @@ func (g *Gaby) initLocal() {
 	g.vector = storage.MemVectorDB(db, g.slog, "")
 }
 
-// initGCP initializes a Gaby instance to use GCP databases.
-func (g *Gaby) initGCP() {
+// initGCP initializes a Gaby instance to use GCP databases and other resources.
+func (g *Gaby) initGCP() (shutdown func()) {
 	if flags.project == "" {
 		projectID, err := metadata.ProjectIDWithContext(g.ctx)
 		if err != nil {
@@ -216,6 +218,12 @@ func (g *Gaby) initGCP() {
 		log.Fatal(err)
 	}
 	g.secret = sdb
+
+	shutdown, err = metrics.Init(g.ctx, g.slog, flags.project)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return shutdown
 }
 
 // searchLoop runs an interactive search loop.
@@ -242,6 +250,8 @@ func (g *Gaby) searchLoop() {
 
 // serveHTTP serves HTTP endpoints for Gaby.
 func (g *Gaby) serveHTTP() {
+	cronCounter := metrics.NewCounter(metricName("crons"), "number of /cron requests")
+
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Gaby\n")
 		fmt.Fprintf(w, "meta: %+v\n", g.meta)
@@ -271,6 +281,7 @@ func (g *Gaby) serveHTTP() {
 		for _, cron := range g.crons {
 			cron(g.ctx)
 		}
+		cronCounter.Add(r.Context(), 1)
 	})
 
 	// Listen in this goroutine so that we can return a synchronous error
@@ -305,6 +316,19 @@ func onCloudRun() bool {
 	// There is no definitive test, so look for some environment variables specified in
 	// https://cloud.google.com/run/docs/container-contract#services-env-vars.
 	return os.Getenv("K_SERVICE") != "" && os.Getenv("K_REVISION") != ""
+}
+
+// metricName returns the full metric name for the given short name.
+// The names are chosen to display nicely on the Metric Explorer's "select a metric"
+// dropdown. Production metrics will group under "Gaby", while others will
+// have their own, distinct groups.
+func metricName(shortName string) string {
+	if flags.firestoredb == "prod" {
+		return "gaby/" + shortName
+	}
+	// Using a hyphen or slash after "gaby" puts the metric in the "Gaby" group.
+	// We want non-prod metrics to be in a different group.
+	return "gaby_" + flags.firestoredb + "/" + shortName
 }
 
 // Crawling parameters
