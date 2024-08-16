@@ -249,6 +249,17 @@ func (g *Gaby) serveHTTP() {
 		fmt.Fprintf(w, "log level: %v\n", g.slogLevel.Level())
 	})
 
+	// setlevel changes the log level dynamically.
+	// Usage: /setlevel?l=LEVEL
+	http.HandleFunc("/setlevel", func(w http.ResponseWriter, r *http.Request) {
+		if err := g.slogLevel.UnmarshalText([]byte(r.FormValue("l"))); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		// Don't use "level" as a key: it will be misinterpreted as the severity of the log entry.
+		g.slog.Info("log level set", "new-level", g.slogLevel.Level())
+	})
+
 	// cron is called periodically by a Cloud Scheduler job.
 	http.HandleFunc("/cron", func(w http.ResponseWriter, r *http.Request) {
 		g.slog.Info("cron start")
