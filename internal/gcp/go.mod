@@ -12,7 +12,7 @@ require (
 	go.opentelemetry.io/otel/metric v1.28.0
 	go.opentelemetry.io/otel/sdk v1.28.0
 	go.opentelemetry.io/otel/sdk/metric v1.28.0
-	golang.org/x/oscar v0.0.0-20240819185543-ff61e2033841
+	golang.org/x/oscar v0.0.0-20240819200921-b512a4fcd26f
 	google.golang.org/api v0.189.0
 	google.golang.org/grpc v1.64.1
 )
