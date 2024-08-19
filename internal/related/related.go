@@ -250,6 +250,11 @@ Watcher:
 	}
 }
 
+// Latest returns the latest known DBTime marked old by the Poster's Watcher.
+func (p *Poster) Latest() timed.DBTime {
+	return p.watcher.Latest()
+}
+
 var markdownEscaper = strings.NewReplacer(
 	"_", `\_`,
 	"*", `\*`,

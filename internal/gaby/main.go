@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/compute/metadata"
+	ometric "go.opentelemetry.io/otel/metric"
 	"golang.org/x/oscar/internal/commentfix"
 	"golang.org/x/oscar/internal/crawl"
 	"golang.org/x/oscar/internal/crawldocs"
@@ -36,6 +37,7 @@ import (
 	"golang.org/x/oscar/internal/related"
 	"golang.org/x/oscar/internal/secret"
 	"golang.org/x/oscar/internal/storage"
+	"golang.org/x/oscar/internal/storage/timed"
 )
 
 var flags struct {
@@ -71,6 +73,7 @@ type Gaby struct {
 	docs      *docs.Corpus     // document corpus to use
 	embed     llm.Embedder     // LLM embedder to use
 	github    *github.Client   // github client to use
+	meter     ometric.Meter    // used to create Open Telemetry instruments
 }
 
 func main() {
@@ -91,12 +94,15 @@ func main() {
 	defer shutdown()
 
 	var syncs, changes []func(context.Context)
+	// Named functions to retrieve latest Watcher times.
+	watcherLatests := map[string]func() timed.DBTime{}
 
 	g.github = github.New(g.slog, g.db, g.secret, g.http)
 	syncs = append(syncs, g.github.Sync)
 
 	g.docs = docs.New(g.db)
 	syncs = append(syncs, func(ctx context.Context) { githubdocs.Sync(ctx, g.slog, g.docs, g.github) })
+	watcherLatests["githubdocs"] = func() timed.DBTime { return githubdocs.Latest(g.github) }
 
 	ai, err := gemini.NewClient(g.ctx, g.slog, g.secret, g.http, "text-embedding-004")
 	if err != nil {
@@ -104,6 +110,7 @@ func main() {
 	}
 	g.embed = ai
 	syncs = append(syncs, func(ctx context.Context) { embeddocs.Sync(ctx, g.slog, g.vector, g.embed, g.docs) })
+	watcherLatests["embeddocs"] = func() timed.DBTime { return embeddocs.Latest(g.docs) }
 
 	cr := crawl.New(g.slog, g.db, g.http)
 	cr.Add("https://go.dev/")
@@ -116,6 +123,7 @@ func main() {
 	if false {
 		syncs = append(syncs, cr.Run)
 		syncs = append(syncs, func(ctx context.Context) { crawldocs.Sync(ctx, g.slog, g.docs, cr) })
+		watcherLatests["crawldocs"] = func() timed.DBTime { return crawldocs.Latest(cr) }
 	}
 
 	if flags.search {
@@ -129,6 +137,7 @@ func main() {
 	cf.ReplaceURL(`\Qhttps://go-review.git.corp.google.com/\E`, "https://go-review.googlesource.com/")
 	cf.EnableEdits()
 	changes = append(changes, cf.Run)
+	watcherLatests["gerritlinks fix"] = cf.Latest
 
 	rp := related.New(g.slog, g.db, g.github, g.vector, g.docs, "related")
 	rp.EnableProject("golang/go")
@@ -137,6 +146,7 @@ func main() {
 	rp.SkipTitleSuffix(" backport]")
 	rp.EnablePosts()
 	changes = append(changes, rp.Run)
+	watcherLatests["related"] = rp.Latest
 
 	if flags.enablesync {
 		g.crons = append(g.crons, syncs...)
@@ -145,8 +155,11 @@ func main() {
 		g.crons = append(g.crons, changes...)
 	}
 
+	// Install a metric that observes the latest values of the watchers each time metrics are sampled.
+	g.registerWatcherMetric(watcherLatests)
+
 	g.serveHTTP()
-	log.Printf("serving %s\n", g.addr)
+	log.Printf("serving %s", g.addr)
 
 	if !g.cloud {
 		// Simulate Cloud Scheduler.
@@ -219,11 +232,17 @@ func (g *Gaby) initGCP() (shutdown func()) {
 	}
 	g.secret = sdb
 
-	shutdown, err = gcpmetrics.Init(g.ctx, g.slog, flags.project)
+	// Initialize metric collection.
+	mp, err := gcpmetrics.NewMeterProvider(g.ctx, g.slog, flags.project)
 	if err != nil {
 		log.Fatal(err)
 	}
-	return shutdown
+	g.meter = mp.Meter("gcp")
+	return func() {
+		if err := mp.Shutdown(g.ctx); err != nil {
+			log.Fatal(err)
+		}
+	}
 }
 
 // searchLoop runs an interactive search loop.
@@ -250,7 +269,7 @@ func (g *Gaby) searchLoop() {
 
 // serveHTTP serves HTTP endpoints for Gaby.
 func (g *Gaby) serveHTTP() {
-	cronCounter := gcpmetrics.NewCounter(metricName("crons"), "number of /cron requests")
+	cronCounter := g.newCounter("crons", "number of /cron requests")
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Gaby\n")
@@ -316,19 +335,6 @@ func onCloudRun() bool {
 	// There is no definitive test, so look for some environment variables specified in
 	// https://cloud.google.com/run/docs/container-contract#services-env-vars.
 	return os.Getenv("K_SERVICE") != "" && os.Getenv("K_REVISION") != ""
-}
-
-// metricName returns the full metric name for the given short name.
-// The names are chosen to display nicely on the Metric Explorer's "select a metric"
-// dropdown. Production metrics will group under "Gaby", while others will
-// have their own, distinct groups.
-func metricName(shortName string) string {
-	if flags.firestoredb == "prod" {
-		return "gaby/" + shortName
-	}
-	// Using a hyphen or slash after "gaby" puts the metric in the "Gaby" group.
-	// We want non-prod metrics to be in a different group.
-	return "gaby_" + flags.firestoredb + "/" + shortName
 }
 
 // Crawling parameters

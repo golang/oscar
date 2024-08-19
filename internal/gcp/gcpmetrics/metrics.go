@@ -16,17 +16,14 @@ import (
 
 	gcpexporter "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric"
 	"go.opentelemetry.io/contrib/detectors/gcp"
-	ometric "go.opentelemetry.io/otel/metric"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.opentelemetry.io/otel/sdk/resource"
 )
 
-// The meter for creating metric instruments (counters and so on).
-var meter ometric.Meter
-var logger *slog.Logger
-
-func Init(ctx context.Context, lg *slog.Logger, projectID string) (shutdown func(), err error) {
+// NewMeterProvider creates an [sdkmetric.MeterProvider] that exports metrics to GCP's Monitoring service.
+// Call Shutdown on the MeterProvider after use.
+func NewMeterProvider(ctx context.Context, lg *slog.Logger, projectID string) (*sdkmetric.MeterProvider, error) {
 	// Create an exporter to send metrics to the GCP Monitoring service.
 	ex, err := gcpexporter.New(gcpexporter.WithProjectID(projectID))
 	if err != nil {
@@ -48,28 +45,10 @@ func Init(ctx context.Context, lg *slog.Logger, projectID string) (shutdown func
 		return nil, err
 	}
 	lg.Info("creating OTel MeterProvider", "resource", res.String())
-	mp := sdkmetric.NewMeterProvider(
+	return sdkmetric.NewMeterProvider(
 		sdkmetric.WithResource(res),
 		sdkmetric.WithReader(r),
-	)
-	logger = lg
-	meter = mp.Meter("gcp")
-	return func() {
-		if err := mp.Shutdown(context.Background()); err != nil {
-			lg.Warn("metric shutdown failed", "err", err)
-		}
-	}, nil
-}
-
-// NewCounter creates an integer counter instrument.
-// It panics if the counter cannot be created.
-func NewCounter(name, description string) ometric.Int64Counter {
-	c, err := meter.Int64Counter(name, ometric.WithDescription(description))
-	if err != nil {
-		logger.Error("counter creation failed", "name", name)
-		panic(err)
-	}
-	return c
+	), nil
 }
 
 // A loggingExporter wraps an [sdkmetric.Exporter] with logging.

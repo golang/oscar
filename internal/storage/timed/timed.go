@@ -273,6 +273,7 @@ type Watcher[T any] struct {
 	kind   string
 	decode func(*Entry) T
 	locked atomic.Bool
+	latest atomic.Int64 // highest known DBTime marked old, for fast retrieval by metrics
 }
 
 // NewWatcher returns a new named Watcher reading keys of the given kind from db.
@@ -319,6 +320,9 @@ func (w *Watcher[T]) cutoff() DBTime {
 			// unreachable unless corrupt storage
 			w.db.Panic("watcher decode", "dval", storage.Fmt(dval), "err", err)
 		}
+	}
+	if w.latest.Load() < t {
+		w.latest.Store(t)
 	}
 	return DBTime(t)
 }
@@ -388,6 +392,7 @@ func (w *Watcher[T]) MarkOld(t DBTime) {
 		return
 	}
 	w.db.Set(w.dkey, ordered.Encode(int64(t)))
+	w.latest.Store(int64(t))
 }
 
 // Flush flushes the definition of recent (changed by MarkOld) to the database.
@@ -395,4 +400,14 @@ func (w *Watcher[T]) MarkOld(t DBTime) {
 // but it can be called explicitly during a long iteration as well.
 func (w *Watcher[T]) Flush() {
 	w.db.Flush()
+}
+
+// Latest returns the latest known DBTime marked old by the Watcher.
+// It does not require the lock to be held.
+//
+// Latest may return a stale value. In particular, it will return
+// 0 until the first call to [Watcher.Recent] or [Watcher.MarkOld] in
+// the process.
+func (w *Watcher[T]) Latest() DBTime {
+	return DBTime(w.latest.Load())
 }

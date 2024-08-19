@@ -116,6 +116,10 @@ func Test(t *testing.T) {
 	last = 0
 	keys = nil
 	w := NewWatcher(db, "name", "kind", func(e *Entry) *Entry { return e })
+	if latest, want := w.Latest(), DBTime(0); latest != want {
+		t.Errorf("Watcher.Latest() = %d, want %d", latest, want)
+	}
+
 	for e := range w.Recent() {
 		do(e)
 		w.MarkOld(e.ModTime)
@@ -123,6 +127,9 @@ func Test(t *testing.T) {
 	}
 	if want := []string{"k1", "k3", "k2"}; !slices.Equal(keys, want) {
 		t.Errorf("Watcher.Recent() = %v, want %v", keys, want)
+	}
+	if got := w.Latest(); got != last {
+		t.Errorf("Watcher.Latest() = %d, want %d", got, last)
 	}
 
 	// Timed iteration with break.

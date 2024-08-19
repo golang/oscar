@@ -13,6 +13,7 @@ import (
 
 	"golang.org/x/oscar/internal/docs"
 	"golang.org/x/oscar/internal/github"
+	"golang.org/x/oscar/internal/storage/timed"
 )
 
 // Sync writes to dc docs corresponding to each issue in gh that is
@@ -46,6 +47,11 @@ func Sync(ctx context.Context, lg *slog.Logger, dc *docs.Corpus, gh *github.Clie
 // will appear unmodified; others will be marked new in the corpus.
 func Restart(lg *slog.Logger, gh *github.Client) {
 	gh.EventWatcher("githubdocs").Restart()
+}
+
+// Latest returns the latest known DBTime marked old by the client's Watcher.
+func Latest(gh *github.Client) timed.DBTime {
+	return gh.EventWatcher("githubdocs").Latest()
 }
 
 // cleanTitle should clean the title for indexing.

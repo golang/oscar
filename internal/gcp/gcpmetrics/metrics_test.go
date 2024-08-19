@@ -22,18 +22,21 @@ func Test(t *testing.T) {
 	}
 	ctx := context.Background()
 
-	shutdown, err := Init(ctx, testutil.Slogger(t), *project)
+	mp, err := NewMeterProvider(ctx, testutil.Slogger(t), *project)
 	if err != nil {
 		t.Fatal(err)
 	}
-	c := NewCounter("test-counter", "a counter for testing")
+	meter := mp.Meter("test")
+	c, err := meter.Int64Counter("test-counter")
 	if err != nil {
 		t.Fatal(err)
 	}
 	c.Add(ctx, 1)
 
 	// Force an export even if the interval hasn't passed.
-	shutdown()
+	if err := mp.Shutdown(ctx); err != nil {
+		t.Fatal(err)
+	}
 
 	if g, w := totalExports.Load(), int64(1); g != w {
 		t.Errorf("total exports: got %d, want %d", g, w)

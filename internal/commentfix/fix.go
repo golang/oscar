@@ -367,6 +367,11 @@ func (f *Fixer) Run(ctx context.Context) {
 	}
 }
 
+// Latest returns the latest known DBTime marked old by the Fixer's Watcher.
+func (f *Fixer) Latest() timed.DBTime {
+	return f.watcher.Latest()
+}
+
 type issueOrComment struct {
 	issue   *github.Issue
 	comment *github.IssueComment

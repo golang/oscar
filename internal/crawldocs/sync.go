@@ -10,6 +10,7 @@ import (
 
 	"golang.org/x/oscar/internal/crawl"
 	"golang.org/x/oscar/internal/docs"
+	"golang.org/x/oscar/internal/storage/timed"
 )
 
 // Sync reads new HTML pages from cr, splits them into sections using [Split],
@@ -42,4 +43,9 @@ func Sync(ctx context.Context, lg *slog.Logger, dc *docs.Corpus, cr *crawl.Crawl
 // Restart makes no use of its context.
 func Restart(ctx context.Context, lg *slog.Logger, cr *crawl.Crawler) {
 	cr.PageWatcher("crawldocs").Restart()
+}
+
+// Latest returns the latest known DBTime marked old by the crawler's Watcher.
+func Latest(cr *crawl.Crawler) timed.DBTime {
+	return cr.PageWatcher("crawldocs").Latest()
 }

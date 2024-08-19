@@ -83,3 +83,8 @@ func Sync(ctx context.Context, lg *slog.Logger, vdb storage.VectorDB, embed llm.
 		}
 	}
 }
+
+// Latest returns the latest known DBTime marked old by the corpus's Watcher.
+func Latest(dc *docs.Corpus) timed.DBTime {
+	return dc.DocWatcher("embeddocs").Latest()
+}
