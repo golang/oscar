@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"golang.org/x/oscar/internal/gcp/gcpconfig"
-	"golang.org/x/oscar/internal/grpcrr"
+	"golang.org/x/oscar/internal/gcp/grpcrr"
 	"golang.org/x/oscar/internal/testutil"
 )
 
