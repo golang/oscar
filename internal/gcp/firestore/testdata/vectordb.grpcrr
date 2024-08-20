@@ -1,25 +1,25 @@
 RPCReTxt1
-"oscar-432119"
+"oscar-go-1"
 79
 kind: CREATE_STREAM
 method: "/google.firestore.v1.Firestore/BatchGetDocuments"
-234
+230
 kind: SEND
 message: {
   [type.googleapis.com/google.firestore.v1.BatchGetDocumentsRequest]: {
-    database: "projects/oscar-432119/databases/test"
-    documents: "projects/oscar-432119/databases/test/documents/c/d"
+    database: "projects/oscar-go-1/databases/test"
+    documents: "projects/oscar-go-1/databases/test/documents/c/d"
   }
 }
 ref_index: 1
-252
+250
 kind: RECV
 message: {
   [type.googleapis.com/google.firestore.v1.BatchGetDocumentsResponse]: {
-    missing: "projects/oscar-432119/databases/test/documents/c/d"
+    missing: "projects/oscar-go-1/databases/test/documents/c/d"
     read_time: {
-      seconds: 1723318749
-      nanos: 406455000
+      seconds: 1724187614
+      nanos: 861355000
     }
   }
 }
@@ -28,15 +28,15 @@ ref_index: 1
 kind: RECV
 is_error: true
 ref_index: 1
-2365
+2361
 kind: REQUEST
 method: "/google.firestore.v1.Firestore/Commit"
 message: {
   [type.googleapis.com/google.firestore.v1.CommitRequest]: {
-    database: "projects/oscar-432119/databases/test"
+    database: "projects/oscar-go-1/databases/test"
     writes: {
       update: {
-        name: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/6f72616e676532"
+        name: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/6f72616e676532"
         fields: {
           key: "Embedding"
           value: {
@@ -115,26 +115,26 @@ message: {
   [type.googleapis.com/google.firestore.v1.CommitResponse]: {
     write_results: {
       update_time: {
-        seconds: 1723318749
-        nanos: 510983000
+        seconds: 1724187615
+        nanos: 144126000
       }
     }
     commit_time: {
-      seconds: 1723318749
-      nanos: 510983000
+      seconds: 1724187615
+      nanos: 144126000
     }
   }
 }
 ref_index: 5
-2370
+2366
 kind: REQUEST
 method: "/google.firestore.v1.Firestore/Commit"
 message: {
   [type.googleapis.com/google.firestore.v1.CommitRequest]: {
-    database: "projects/oscar-432119/databases/test"
+    database: "projects/oscar-go-1/databases/test"
     writes: {
       update: {
-        name: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/6f72616e676531"
+        name: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/6f72616e676531"
         fields: {
           key: "Embedding"
           value: {
@@ -213,26 +213,26 @@ message: {
   [type.googleapis.com/google.firestore.v1.CommitResponse]: {
     write_results: {
       update_time: {
-        seconds: 1723318749
-        nanos: 647678000
+        seconds: 1724187615
+        nanos: 295441000
       }
     }
     commit_time: {
-      seconds: 1723318749
-      nanos: 647678000
+      seconds: 1724187615
+      nanos: 295441000
     }
   }
 }
 ref_index: 7
-2380
+2376
 kind: REQUEST
 method: "/google.firestore.v1.Firestore/Commit"
 message: {
   [type.googleapis.com/google.firestore.v1.CommitRequest]: {
-    database: "projects/oscar-432119/databases/test"
+    database: "projects/oscar-go-1/databases/test"
     writes: {
       update: {
-        name: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/6f72616e676531616c696173"
+        name: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/6f72616e676531616c696173"
         fields: {
           key: "Embedding"
           value: {
@@ -311,25 +311,25 @@ message: {
   [type.googleapis.com/google.firestore.v1.CommitResponse]: {
     write_results: {
       update_time: {
-        seconds: 1723318749
-        nanos: 747512000
+        seconds: 1724187615
+        nanos: 426899000
       }
     }
     commit_time: {
-      seconds: 1723318749
-      nanos: 747512000
+      seconds: 1724187615
+      nanos: 426899000
     }
   }
 }
 ref_index: 9
-324
+320
 kind: REQUEST
 method: "/google.firestore.v1.Firestore/Commit"
 message: {
   [type.googleapis.com/google.firestore.v1.CommitRequest]: {
-    database: "projects/oscar-432119/databases/test"
+    database: "projects/oscar-go-1/databases/test"
     writes: {
-      delete: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/6f72616e676531616c696173"
+      delete: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/6f72616e676531616c696173"
     }
   }
 }
@@ -339,20 +339,20 @@ message: {
   [type.googleapis.com/google.firestore.v1.CommitResponse]: {
     write_results: {}
     commit_time: {
-      seconds: 1723318749
-      nanos: 876134000
+      seconds: 1724187615
+      nanos: 536139000
     }
   }
 }
 ref_index: 11
-314
+310
 kind: REQUEST
 method: "/google.firestore.v1.Firestore/Commit"
 message: {
   [type.googleapis.com/google.firestore.v1.CommitRequest]: {
-    database: "projects/oscar-432119/databases/test"
+    database: "projects/oscar-go-1/databases/test"
     writes: {
-      delete: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/6f72616e676531"
+      delete: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/6f72616e676531"
     }
   }
 }
@@ -362,21 +362,21 @@ message: {
   [type.googleapis.com/google.firestore.v1.CommitResponse]: {
     write_results: {}
     commit_time: {
-      seconds: 1723318749
-      nanos: 973478000
+      seconds: 1724187615
+      nanos: 644698000
     }
   }
 }
 ref_index: 13
-2370
+2366
 kind: REQUEST
 method: "/google.firestore.v1.Firestore/Commit"
 message: {
   [type.googleapis.com/google.firestore.v1.CommitRequest]: {
-    database: "projects/oscar-432119/databases/test"
+    database: "projects/oscar-go-1/databases/test"
     writes: {
       update: {
-        name: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/6f72616e676531"
+        name: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/6f72616e676531"
         fields: {
           key: "Embedding"
           value: {
@@ -455,13 +455,13 @@ message: {
   [type.googleapis.com/google.firestore.v1.CommitResponse]: {
     write_results: {
       update_time: {
-        seconds: 1723318750
-        nanos: 112480000
+        seconds: 1724187615
+        nanos: 760695000
       }
     }
     commit_time: {
-      seconds: 1723318750
-      nanos: 112480000
+      seconds: 1724187615
+      nanos: 760695000
     }
   }
 }
@@ -469,25 +469,34 @@ ref_index: 15
 70
 kind: CREATE_STREAM
 method: "/google.firestore.v1.Firestore/RunQuery"
-266
+422
 kind: SEND
 message: {
   [type.googleapis.com/google.firestore.v1.RunQueryRequest]: {
-    parent: "projects/oscar-432119/databases/test/documents/vectorDBs/test"
+    parent: "projects/oscar-go-1/databases/test/documents/vectorDBs/test"
     structured_query: {
       from: {
         collection_id: "vectors"
+      }
+      order_by: {
+        field: {
+          field_path: "__name__"
+        }
+        direction: ASCENDING
+      }
+      limit: {
+        value: 1000
       }
     }
   }
 }
 ref_index: 17
-2359
+2357
 kind: RECV
 message: {
   [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
     document: {
-      name: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/6f72616e676531"
+      name: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/6f72616e676531"
       fields: {
         key: "Embedding"
         value: {
@@ -557,27 +566,27 @@ message: {
         }
       }
       create_time: {
-        seconds: 1723318750
-        nanos: 112480000
+        seconds: 1724187615
+        nanos: 760695000
       }
       update_time: {
-        seconds: 1723318750
-        nanos: 112480000
+        seconds: 1724187615
+        nanos: 760695000
       }
     }
     read_time: {
-      seconds: 1723318750
-      nanos: 206655000
+      seconds: 1724187615
+      nanos: 854629000
     }
   }
 }
 ref_index: 17
-2354
+2352
 kind: RECV
 message: {
   [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
     document: {
-      name: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/6f72616e676532"
+      name: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/6f72616e676532"
       fields: {
         key: "Embedding"
         value: {
@@ -647,17 +656,17 @@ message: {
         }
       }
       create_time: {
-        seconds: 1723318749
-        nanos: 510983000
+        seconds: 1724187615
+        nanos: 144126000
       }
       update_time: {
-        seconds: 1723318749
-        nanos: 510983000
+        seconds: 1724187615
+        nanos: 144126000
       }
     }
     read_time: {
-      seconds: 1723318750
-      nanos: 206655000
+      seconds: 1724187615
+      nanos: 854629000
     }
   }
 }
@@ -666,15 +675,15 @@ ref_index: 17
 kind: RECV
 is_error: true
 ref_index: 17
-2348
+2344
 kind: REQUEST
 method: "/google.firestore.v1.Firestore/Commit"
 message: {
   [type.googleapis.com/google.firestore.v1.CommitRequest]: {
-    database: "projects/oscar-432119/databases/test"
+    database: "projects/oscar-go-1/databases/test"
     writes: {
       update: {
-        name: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/6170706c6531"
+        name: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/6170706c6531"
         fields: {
           key: "Embedding"
           value: {
@@ -753,45 +762,45 @@ message: {
   [type.googleapis.com/google.firestore.v1.CommitResponse]: {
     write_results: {
       update_time: {
-        seconds: 1723318750
-        nanos: 354136000
+        seconds: 1724187615
+        nanos: 965988000
       }
     }
     commit_time: {
-      seconds: 1723318750
-      nanos: 354136000
+      seconds: 1724187615
+      nanos: 965988000
     }
   }
 }
 ref_index: 22
-213
+211
 kind: REQUEST
 method: "/google.firestore.v1.Firestore/BeginTransaction"
 message: {
   [type.googleapis.com/google.firestore.v1.BeginTransactionRequest]: {
-    database: "projects/oscar-432119/databases/test"
+    database: "projects/oscar-go-1/databases/test"
   }
 }
-395
+404
 kind: RESPONSE
 message: {
   [type.googleapis.com/google.firestore.v1.BeginTransactionResponse]: {
-    transaction: "\x11\x1d1%\xa9\xb1\xb9VC\"Y\x00\xb8>\xbb\x0e\nn|'\x1d\xa22|\xdf89QX?\x07\xc0G\xfa\xdc\r\x07$\xfc\xd9\xca\xd88N\xa8\x93\x19w\xfa\xe5\x18\x95\x182|\x91\x10\xcb(|3\t\xfcE\xa0\x18\xa4\xe2\x99Y\xb0\r\xca\x1d\xacыg\x8b\xa3@\xb7F\n9\xbdd6_\\)\x08>\x1aN\xcdIП\xa2"
+    transaction: "\x11c\x18;\x8cH\xb5\xee\x92\"Y\x00\xb8>\xbb\x0eq=6-\xbf7\xd4) 1\x92\xe7\xd4|w\xf3,?\x03\x9a]\x17;\xf7'\n\xa29\xf2}k\x9a\n\x82Z\x01s\xa5\xe3\xb03=\xe9\xb7~\xf8\xec\xed\xb0\xe7ͅ\xa2\xea\x84\xc5t\xf5R\x02\xfd\x9e\x02\xb5\x87\xb2\xd9\xd9ҡ\nšALɭ\xb5\x1d`\xf2\x89\xeam"
   }
 }
 ref_index: 24
-12805
+12792
 kind: REQUEST
 method: "/google.firestore.v1.Firestore/Commit"
 message: {
   [type.googleapis.com/google.firestore.v1.CommitRequest]: {
-    database: "projects/oscar-432119/databases/test"
+    database: "projects/oscar-go-1/databases/test"
     writes: {
-      delete: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/6170706c6531"
+      delete: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/6170706c6531"
     }
     writes: {
       update: {
-        name: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/6170706c6533"
+        name: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/6170706c6533"
         fields: {
           key: "Embedding"
           value: {
@@ -864,7 +873,7 @@ message: {
     }
     writes: {
       update: {
-        name: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/6170706c6534"
+        name: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/6170706c6534"
         fields: {
           key: "Embedding"
           value: {
@@ -937,7 +946,7 @@ message: {
     }
     writes: {
       update: {
-        name: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/6170706c6534616c696173"
+        name: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/6170706c6534616c696173"
         fields: {
           key: "Embedding"
           value: {
@@ -1009,11 +1018,11 @@ message: {
       }
     }
     writes: {
-      delete: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/6170706c6534616c696173"
+      delete: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/6170706c6534616c696173"
     }
     writes: {
       update: {
-        name: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/69676e6f7265"
+        name: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/69676e6f7265"
         fields: {
           key: "Embedding"
           value: {
@@ -1050,7 +1059,7 @@ message: {
     }
     writes: {
       update: {
-        name: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/6f72616e676533"
+        name: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/6f72616e676533"
         fields: {
           key: "Embedding"
           value: {
@@ -1122,14 +1131,14 @@ message: {
       }
     }
     writes: {
-      delete: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/6f72616e676533"
+      delete: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/6f72616e676533"
     }
     writes: {
-      delete: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/6f72616e676534"
+      delete: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/6f72616e676534"
     }
     writes: {
       update: {
-        name: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/6f72616e676534"
+        name: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/6f72616e676534"
         fields: {
           key: "Embedding"
           value: {
@@ -1200,7 +1209,7 @@ message: {
         }
       }
     }
-    transaction: "\x11\x1d1%\xa9\xb1\xb9VC\"Y\x00\xb8>\xbb\x0e\nn|'\x1d\xa22|\xdf89QX?\x07\xc0G\xfa\xdc\r\x07$\xfc\xd9\xca\xd88N\xa8\x93\x19w\xfa\xe5\x18\x95\x182|\x91\x10\xcb(|3\t\xfcE\xa0\x18\xa4\xe2\x99Y\xb0\r\xca\x1d\xacыg\x8b\xa3@\xb7F\n9\xbdd6_\\)\x08>\x1aN\xcdIП\xa2"
+    transaction: "\x11c\x18;\x8cH\xb5\xee\x92\"Y\x00\xb8>\xbb\x0eq=6-\xbf7\xd4) 1\x92\xe7\xd4|w\xf3,?\x03\x9a]\x17;\xf7'\n\xa29\xf2}k\x9a\n\x82Z\x01s\xa5\xe3\xb03=\xe9\xb7~\xf8\xec\xed\xb0\xe7ͅ\xa2\xea\x84\xc5t\xf5R\x02\xfd\x9e\x02\xb5\x87\xb2\xd9\xd9ҡ\nšALɭ\xb5\x1d`\xf2\x89\xeam"
   }
 }
 837
@@ -1210,70 +1219,70 @@ message: {
     write_results: {}
     write_results: {
       update_time: {
-        seconds: 1723318750
-        nanos: 578886000
+        seconds: 1724187616
+        nanos: 148735000
       }
     }
     write_results: {
       update_time: {
-        seconds: 1723318750
-        nanos: 578886000
-      }
-    }
-    write_results: {}
-    write_results: {}
-    write_results: {
-      update_time: {
-        seconds: 1723318750
-        nanos: 578886000
+        seconds: 1724187616
+        nanos: 148735000
       }
     }
     write_results: {}
     write_results: {}
     write_results: {
       update_time: {
-        seconds: 1723318750
-        nanos: 578886000
+        seconds: 1724187616
+        nanos: 148735000
+      }
+    }
+    write_results: {}
+    write_results: {}
+    write_results: {
+      update_time: {
+        seconds: 1724187616
+        nanos: 148735000
       }
     }
     write_results: {
       update_time: {
-        seconds: 1723318750
-        nanos: 578886000
+        seconds: 1724187616
+        nanos: 148735000
       }
     }
     commit_time: {
-      seconds: 1723318750
-      nanos: 578886000
+      seconds: 1724187616
+      nanos: 148735000
     }
   }
 }
 ref_index: 26
-213
+211
 kind: REQUEST
 method: "/google.firestore.v1.Firestore/BeginTransaction"
 message: {
   [type.googleapis.com/google.firestore.v1.BeginTransactionRequest]: {
-    database: "projects/oscar-432119/databases/test"
+    database: "projects/oscar-go-1/databases/test"
   }
 }
-406
+379
 kind: RESPONSE
 message: {
   [type.googleapis.com/google.firestore.v1.BeginTransactionResponse]: {
-    transaction: "\x11/\x1a\xefi\xb2\\T8\"Y\x00\xd4u\xc8\xcd~o\x07\xd0)z\xe2Q\x9a\x87\xc4\x11\xcb\xc1\x8d>&\xdbj\xa0\x90t\xad\xf3k\x85\xe4\xb8ف\xc7\x1atͤ}uxz#\x1bS\x94\xcbL\xa6\xe5n\xf8\xa8PyA\xad \x00\xc7\x1d&\x1b\x8bc\xa8\x0e\xb2\xe6a\xb4c\xd7\u0083\xc9\xf9ä\xd6\x0c\x00{\x0e\x06`r"
+    transaction: "\x11̍\x9a˟ʌ\xe8\"Y\x00\xb8>\xbb\x0e\x9e\xdc+\x93*\xe9\xc8_\xce8\xb67\xa0s\x1c\x0e:Zo\xb0ɻ\x97Tᗢ\x1f\x0bK\x19&\xe3G{6qy&\x11\x9f\x92\xd0\xc6s\x18\xbe\x85\xe0Ul`\xc1\xcdj\xe6?vA\xa1U\"8\xf2\x13\x96&;]\xa2\tIF\x1f\x9b~*\xf5Pb\xfa\xf0a\xf9"
   }
 }
 ref_index: 28
-2638
+2607
 kind: REQUEST
 method: "/google.firestore.v1.Firestore/Commit"
 message: {
   [type.googleapis.com/google.firestore.v1.CommitRequest]: {
-    database: "projects/oscar-432119/databases/test"
+    database: "projects/oscar-go-1/databases/test"
     writes: {
       update: {
-        name: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/6170706c6535"
+        name: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/6170706c6535"
         fields: {
           key: "Embedding"
           value: {
@@ -1344,7 +1353,7 @@ message: {
         }
       }
     }
-    transaction: "\x11/\x1a\xefi\xb2\\T8\"Y\x00\xd4u\xc8\xcd~o\x07\xd0)z\xe2Q\x9a\x87\xc4\x11\xcb\xc1\x8d>&\xdbj\xa0\x90t\xad\xf3k\x85\xe4\xb8ف\xc7\x1atͤ}uxz#\x1bS\x94\xcbL\xa6\xe5n\xf8\xa8PyA\xad \x00\xc7\x1d&\x1b\x8bc\xa8\x0e\xb2\xe6a\xb4c\xd7\u0083\xc9\xf9ä\xd6\x0c\x00{\x0e\x06`r"
+    transaction: "\x11̍\x9a˟ʌ\xe8\"Y\x00\xb8>\xbb\x0e\x9e\xdc+\x93*\xe9\xc8_\xce8\xb67\xa0s\x1c\x0e:Zo\xb0ɻ\x97Tᗢ\x1f\x0bK\x19&\xe3G{6qy&\x11\x9f\x92\xd0\xc6s\x18\xbe\x85\xe0Ul`\xc1\xcdj\xe6?vA\xa1U\"8\xf2\x13\x96&;]\xa2\tIF\x1f\x9b~*\xf5Pb\xfa\xf0a\xf9"
   }
 }
 291
@@ -1353,25 +1362,25 @@ message: {
   [type.googleapis.com/google.firestore.v1.CommitResponse]: {
     write_results: {
       update_time: {
-        seconds: 1723318750
-        nanos: 820077000
+        seconds: 1724187616
+        nanos: 325704000
       }
     }
     commit_time: {
-      seconds: 1723318750
-      nanos: 820077000
+      seconds: 1724187616
+      nanos: 325704000
     }
   }
 }
 ref_index: 30
-312
+308
 kind: REQUEST
 method: "/google.firestore.v1.Firestore/Commit"
 message: {
   [type.googleapis.com/google.firestore.v1.CommitRequest]: {
-    database: "projects/oscar-432119/databases/test"
+    database: "projects/oscar-go-1/databases/test"
     writes: {
-      delete: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/6170706c6535"
+      delete: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/6170706c6535"
     }
   }
 }
@@ -1381,35 +1390,35 @@ message: {
   [type.googleapis.com/google.firestore.v1.CommitResponse]: {
     write_results: {}
     commit_time: {
-      seconds: 1723318750
-      nanos: 962987000
+      seconds: 1724187616
+      nanos: 432822000
     }
   }
 }
 ref_index: 32
-213
+211
 kind: REQUEST
 method: "/google.firestore.v1.Firestore/BeginTransaction"
 message: {
   [type.googleapis.com/google.firestore.v1.BeginTransactionRequest]: {
-    database: "projects/oscar-432119/databases/test"
+    database: "projects/oscar-go-1/databases/test"
   }
 }
-400
+393
 kind: RESPONSE
 message: {
   [type.googleapis.com/google.firestore.v1.BeginTransactionResponse]: {
-    transaction: "\x11t[\x0b\xf4reZx\"Y\x00\xb8>\xbb\x0e\xa5.\xb28\xa1:\x93zkɆ'\xcb\xe0\xd7L\xa6ֶ\x97*\x0b\xadq]\x17\x01\xfcH`\xb7g\n\xe4d\x05\xd5\x06\xc0Nj\x84e\xfa\xab\xbf\x1cQ\x98-\x80\x00f\x04\xf9D9K\xcd\rE'4\x8b\x9ev\xf7\xfb\xae\xc9\xde\xcf\xd3~sU-\xd7\xf4<\x19\x96\x07\xd3"
+    transaction: "\x11\xbb6\rj\x11%\x838\"Y\x00\xb8>\xbb\x0eKɖJSb\x90*\xed\xef\x1f-t\xf6\x9aD\xb3K|C\xc8gs\x9e\xbfj\xb8b/\x18D,\x90\xe8<\xb8\x9f\x88\xa2|z\xb7\x910\xd4\xc6\x14\xf0\x1c\x9f\xb9\x159\xbb\xc60\xe0ym\xa3\xf6\x07\x0fF/nF\xf5\xd0\xd6\x1d[\x86\xc8[\x08BNȿߦ\x94L"
   }
 }
 ref_index: 34
-475
+466
 kind: REQUEST
 method: "/google.firestore.v1.Firestore/Commit"
 message: {
   [type.googleapis.com/google.firestore.v1.CommitRequest]: {
-    database: "projects/oscar-432119/databases/test"
-    transaction: "\x11t[\x0b\xf4reZx\"Y\x00\xb8>\xbb\x0e\xa5.\xb28\xa1:\x93zkɆ'\xcb\xe0\xd7L\xa6ֶ\x97*\x0b\xadq]\x17\x01\xfcH`\xb7g\n\xe4d\x05\xd5\x06\xc0Nj\x84e\xfa\xab\xbf\x1cQ\x98-\x80\x00f\x04\xf9D9K\xcd\rE'4\x8b\x9ev\xf7\xfb\xae\xc9\xde\xcf\xd3~sU-\xd7\xf4<\x19\x96\x07\xd3"
+    database: "projects/oscar-go-1/databases/test"
+    transaction: "\x11\xbb6\rj\x11%\x838\"Y\x00\xb8>\xbb\x0eKɖJSb\x90*\xed\xef\x1f-t\xf6\x9aD\xb3K|C\xc8gs\x9e\xbfj\xb8b/\x18D,\x90\xe8<\xb8\x9f\x88\xa2|z\xb7\x910\xd4\xc6\x14\xf0\x1c\x9f\xb9\x159\xbb\xc60\xe0ym\xa3\xf6\x07\x0fF/nF\xf5\xd0\xd6\x1d[\x86\xc8[\x08BNȿߦ\x94L"
   }
 }
 105
@@ -1421,23 +1430,23 @@ ref_index: 36
 79
 kind: CREATE_STREAM
 method: "/google.firestore.v1.Firestore/BatchGetDocuments"
-267
+263
 kind: SEND
 message: {
   [type.googleapis.com/google.firestore.v1.BatchGetDocumentsRequest]: {
-    database: "projects/oscar-432119/databases/test"
-    documents: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/6170706c6535"
+    database: "projects/oscar-go-1/databases/test"
+    documents: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/6170706c6535"
   }
 }
 ref_index: 38
-285
+283
 kind: RECV
 message: {
   [type.googleapis.com/google.firestore.v1.BatchGetDocumentsResponse]: {
-    missing: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/6170706c6535"
+    missing: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/6170706c6535"
     read_time: {
-      seconds: 1723318751
-      nanos: 236139000
+      seconds: 1724187616
+      nanos: 432822000
     }
   }
 }
@@ -1449,25 +1458,34 @@ ref_index: 38
 70
 kind: CREATE_STREAM
 method: "/google.firestore.v1.Firestore/RunQuery"
-266
+422
 kind: SEND
 message: {
   [type.googleapis.com/google.firestore.v1.RunQueryRequest]: {
-    parent: "projects/oscar-432119/databases/test/documents/vectorDBs/test"
+    parent: "projects/oscar-go-1/databases/test/documents/vectorDBs/test"
     structured_query: {
       from: {
         collection_id: "vectors"
+      }
+      order_by: {
+        field: {
+          field_path: "__name__"
+        }
+        direction: ASCENDING
+      }
+      limit: {
+        value: 1000
       }
     }
   }
 }
 ref_index: 42
-2337
+2335
 kind: RECV
 message: {
   [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
     document: {
-      name: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/6170706c6533"
+      name: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/6170706c6533"
       fields: {
         key: "Embedding"
         value: {
@@ -1537,27 +1555,27 @@ message: {
         }
       }
       create_time: {
-        seconds: 1723318750
-        nanos: 578886000
+        seconds: 1724187616
+        nanos: 148735000
       }
       update_time: {
-        seconds: 1723318750
-        nanos: 578886000
+        seconds: 1724187616
+        nanos: 148735000
       }
     }
     read_time: {
-      seconds: 1723318751
-      nanos: 325104000
+      seconds: 1724187616
+      nanos: 874411000
     }
   }
 }
 ref_index: 42
-2334
+2332
 kind: RECV
 message: {
   [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
     document: {
-      name: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/6170706c6534"
+      name: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/6170706c6534"
       fields: {
         key: "Embedding"
         value: {
@@ -1627,27 +1645,27 @@ message: {
         }
       }
       create_time: {
-        seconds: 1723318750
-        nanos: 578886000
+        seconds: 1724187616
+        nanos: 148735000
       }
       update_time: {
-        seconds: 1723318750
-        nanos: 578886000
+        seconds: 1724187616
+        nanos: 148735000
       }
     }
     read_time: {
-      seconds: 1723318751
-      nanos: 325104000
+      seconds: 1724187616
+      nanos: 874411000
     }
   }
 }
 ref_index: 42
-1278
+1276
 kind: RECV
 message: {
   [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
     document: {
-      name: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/69676e6f7265"
+      name: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/69676e6f7265"
       fields: {
         key: "Embedding"
         value: {
@@ -1681,27 +1699,27 @@ message: {
         }
       }
       create_time: {
-        seconds: 1723318750
-        nanos: 578886000
+        seconds: 1724187616
+        nanos: 148735000
       }
       update_time: {
-        seconds: 1723318750
-        nanos: 578886000
+        seconds: 1724187616
+        nanos: 148735000
       }
     }
     read_time: {
-      seconds: 1723318751
-      nanos: 325104000
+      seconds: 1724187616
+      nanos: 874411000
     }
   }
 }
 ref_index: 42
-2359
+2357
 kind: RECV
 message: {
   [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
     document: {
-      name: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/6f72616e676531"
+      name: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/6f72616e676531"
       fields: {
         key: "Embedding"
         value: {
@@ -1771,27 +1789,27 @@ message: {
         }
       }
       create_time: {
-        seconds: 1723318750
-        nanos: 112480000
+        seconds: 1724187615
+        nanos: 760695000
       }
       update_time: {
-        seconds: 1723318750
-        nanos: 112480000
+        seconds: 1724187615
+        nanos: 760695000
       }
     }
     read_time: {
-      seconds: 1723318751
-      nanos: 325104000
+      seconds: 1724187616
+      nanos: 874411000
     }
   }
 }
 ref_index: 42
-2354
+2352
 kind: RECV
 message: {
   [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
     document: {
-      name: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/6f72616e676532"
+      name: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/6f72616e676532"
       fields: {
         key: "Embedding"
         value: {
@@ -1861,27 +1879,27 @@ message: {
         }
       }
       create_time: {
-        seconds: 1723318749
-        nanos: 510983000
+        seconds: 1724187615
+        nanos: 144126000
       }
       update_time: {
-        seconds: 1723318749
-        nanos: 510983000
+        seconds: 1724187615
+        nanos: 144126000
       }
     }
     read_time: {
-      seconds: 1723318751
-      nanos: 325104000
+      seconds: 1724187616
+      nanos: 874411000
     }
   }
 }
 ref_index: 42
-2358
+2356
 kind: RECV
 message: {
   [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
     document: {
-      name: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/6f72616e676534"
+      name: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/6f72616e676534"
       fields: {
         key: "Embedding"
         value: {
@@ -1951,17 +1969,17 @@ message: {
         }
       }
       create_time: {
-        seconds: 1723318750
-        nanos: 578886000
+        seconds: 1724187616
+        nanos: 148735000
       }
       update_time: {
-        seconds: 1723318750
-        nanos: 578886000
+        seconds: 1724187616
+        nanos: 148735000
       }
     }
     read_time: {
-      seconds: 1723318751
-      nanos: 325104000
+      seconds: 1724187616
+      nanos: 874411000
     }
   }
 }
@@ -1973,21 +1991,21 @@ ref_index: 42
 79
 kind: CREATE_STREAM
 method: "/google.firestore.v1.Firestore/BatchGetDocuments"
-267
+263
 kind: SEND
 message: {
   [type.googleapis.com/google.firestore.v1.BatchGetDocumentsRequest]: {
-    database: "projects/oscar-432119/databases/test"
-    documents: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/6170706c6533"
+    database: "projects/oscar-go-1/databases/test"
+    documents: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/6170706c6533"
   }
 }
 ref_index: 51
-2343
+2341
 kind: RECV
 message: {
   [type.googleapis.com/google.firestore.v1.BatchGetDocumentsResponse]: {
     found: {
-      name: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/6170706c6533"
+      name: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/6170706c6533"
       fields: {
         key: "Embedding"
         value: {
@@ -2057,17 +2075,17 @@ message: {
         }
       }
       create_time: {
-        seconds: 1723318750
-        nanos: 578886000
+        seconds: 1724187616
+        nanos: 148735000
       }
       update_time: {
-        seconds: 1723318750
-        nanos: 578886000
+        seconds: 1724187616
+        nanos: 148735000
       }
     }
     read_time: {
-      seconds: 1723318751
-      nanos: 376795000
+      seconds: 1724187616
+      nanos: 967304000
     }
   }
 }
@@ -2079,11 +2097,11 @@ ref_index: 51
 70
 kind: CREATE_STREAM
 method: "/google.firestore.v1.Firestore/RunQuery"
-2284
+2282
 kind: SEND
 message: {
   [type.googleapis.com/google.firestore.v1.RunQueryRequest]: {
-    parent: "projects/oscar-432119/databases/test/documents/vectorDBs/test"
+    parent: "projects/oscar-go-1/databases/test/documents/vectorDBs/test"
     structured_query: {
       from: {
         collection_id: "vectors"
@@ -2166,12 +2184,12 @@ message: {
   }
 }
 ref_index: 55
-2334
+2331
 kind: RECV
 message: {
   [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
     document: {
-      name: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/6170706c6534"
+      name: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/6170706c6534"
       fields: {
         key: "Embedding"
         value: {
@@ -2241,27 +2259,27 @@ message: {
         }
       }
       create_time: {
-        seconds: 1723318750
-        nanos: 578886000
+        seconds: 1724187616
+        nanos: 148735000
       }
       update_time: {
-        seconds: 1723318750
-        nanos: 578886000
+        seconds: 1724187616
+        nanos: 148735000
       }
     }
     read_time: {
-      seconds: 1723318751
-      nanos: 486798000
+      seconds: 1724187617
+      nanos: 54239000
     }
   }
 }
 ref_index: 55
-2337
+2334
 kind: RECV
 message: {
   [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
     document: {
-      name: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/6170706c6533"
+      name: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/6170706c6533"
       fields: {
         key: "Embedding"
         value: {
@@ -2331,27 +2349,27 @@ message: {
         }
       }
       create_time: {
-        seconds: 1723318750
-        nanos: 578886000
+        seconds: 1724187616
+        nanos: 148735000
       }
       update_time: {
-        seconds: 1723318750
-        nanos: 578886000
+        seconds: 1724187616
+        nanos: 148735000
       }
     }
     read_time: {
-      seconds: 1723318751
-      nanos: 486798000
+      seconds: 1724187617
+      nanos: 54239000
     }
   }
 }
 ref_index: 55
-2359
+2356
 kind: RECV
 message: {
   [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
     document: {
-      name: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/6f72616e676531"
+      name: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/6f72616e676531"
       fields: {
         key: "Embedding"
         value: {
@@ -2421,27 +2439,27 @@ message: {
         }
       }
       create_time: {
-        seconds: 1723318750
-        nanos: 112480000
+        seconds: 1724187615
+        nanos: 760695000
       }
       update_time: {
-        seconds: 1723318750
-        nanos: 112480000
+        seconds: 1724187615
+        nanos: 760695000
       }
     }
     read_time: {
-      seconds: 1723318751
-      nanos: 486798000
+      seconds: 1724187617
+      nanos: 54239000
     }
   }
 }
 ref_index: 55
-2354
+2351
 kind: RECV
 message: {
   [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
     document: {
-      name: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/6f72616e676532"
+      name: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/6f72616e676532"
       fields: {
         key: "Embedding"
         value: {
@@ -2511,27 +2529,27 @@ message: {
         }
       }
       create_time: {
-        seconds: 1723318749
-        nanos: 510983000
+        seconds: 1724187615
+        nanos: 144126000
       }
       update_time: {
-        seconds: 1723318749
-        nanos: 510983000
+        seconds: 1724187615
+        nanos: 144126000
       }
     }
     read_time: {
-      seconds: 1723318751
-      nanos: 486798000
+      seconds: 1724187617
+      nanos: 54239000
     }
   }
 }
 ref_index: 55
-2358
+2355
 kind: RECV
 message: {
   [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
     document: {
-      name: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/6f72616e676534"
+      name: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/6f72616e676534"
       fields: {
         key: "Embedding"
         value: {
@@ -2601,17 +2619,17 @@ message: {
         }
       }
       create_time: {
-        seconds: 1723318750
-        nanos: 578886000
+        seconds: 1724187616
+        nanos: 148735000
       }
       update_time: {
-        seconds: 1723318750
-        nanos: 578886000
+        seconds: 1724187616
+        nanos: 148735000
       }
     }
     read_time: {
-      seconds: 1723318751
-      nanos: 486798000
+      seconds: 1724187617
+      nanos: 54239000
     }
   }
 }
@@ -2623,23 +2641,23 @@ ref_index: 55
 79
 kind: CREATE_STREAM
 method: "/google.firestore.v1.Firestore/BatchGetDocuments"
-235
+231
 kind: SEND
 message: {
   [type.googleapis.com/google.firestore.v1.BatchGetDocumentsRequest]: {
-    database: "projects/oscar-432119/databases/test"
-    documents: "projects/oscar-432119/databases/test/documents/c/d"
+    database: "projects/oscar-go-1/databases/test"
+    documents: "projects/oscar-go-1/databases/test/documents/c/d"
   }
 }
 ref_index: 63
-253
+251
 kind: RECV
 message: {
   [type.googleapis.com/google.firestore.v1.BatchGetDocumentsResponse]: {
-    missing: "projects/oscar-432119/databases/test/documents/c/d"
+    missing: "projects/oscar-go-1/databases/test/documents/c/d"
     read_time: {
-      seconds: 1723318751
-      nanos: 376795000
+      seconds: 1724187616
+      nanos: 432822000
     }
   }
 }
@@ -2651,11 +2669,11 @@ ref_index: 63
 70
 kind: CREATE_STREAM
 method: "/google.firestore.v1.Firestore/RunQuery"
-2284
+2282
 kind: SEND
 message: {
   [type.googleapis.com/google.firestore.v1.RunQueryRequest]: {
-    parent: "projects/oscar-432119/databases/test/documents/vectorDBs/test"
+    parent: "projects/oscar-go-1/databases/test/documents/vectorDBs/test"
     structured_query: {
       from: {
         collection_id: "vectors"
@@ -2738,12 +2756,12 @@ message: {
   }
 }
 ref_index: 67
-2334
+2332
 kind: RECV
 message: {
   [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
     document: {
-      name: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/6170706c6534"
+      name: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/6170706c6534"
       fields: {
         key: "Embedding"
         value: {
@@ -2813,27 +2831,27 @@ message: {
         }
       }
       create_time: {
-        seconds: 1723318750
-        nanos: 578886000
+        seconds: 1724187616
+        nanos: 148735000
       }
       update_time: {
-        seconds: 1723318750
-        nanos: 578886000
+        seconds: 1724187616
+        nanos: 148735000
       }
     }
     read_time: {
-      seconds: 1723318751
-      nanos: 884641000
+      seconds: 1724187617
+      nanos: 445999000
     }
   }
 }
 ref_index: 67
-2337
+2335
 kind: RECV
 message: {
   [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
     document: {
-      name: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/6170706c6533"
+      name: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/6170706c6533"
       fields: {
         key: "Embedding"
         value: {
@@ -2903,27 +2921,27 @@ message: {
         }
       }
       create_time: {
-        seconds: 1723318750
-        nanos: 578886000
+        seconds: 1724187616
+        nanos: 148735000
       }
       update_time: {
-        seconds: 1723318750
-        nanos: 578886000
+        seconds: 1724187616
+        nanos: 148735000
       }
     }
     read_time: {
-      seconds: 1723318751
-      nanos: 884641000
+      seconds: 1724187617
+      nanos: 445999000
     }
   }
 }
 ref_index: 67
-2359
+2357
 kind: RECV
 message: {
   [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
     document: {
-      name: "projects/oscar-432119/databases/test/documents/vectorDBs/test/vectors/6f72616e676531"
+      name: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/6f72616e676531"
       fields: {
         key: "Embedding"
         value: {
@@ -2993,17 +3011,17 @@ message: {
         }
       }
       create_time: {
-        seconds: 1723318750
-        nanos: 112480000
+        seconds: 1724187615
+        nanos: 760695000
       }
       update_time: {
-        seconds: 1723318750
-        nanos: 112480000
+        seconds: 1724187615
+        nanos: 760695000
       }
     }
     read_time: {
-      seconds: 1723318751
-      nanos: 884641000
+      seconds: 1724187617
+      nanos: 445999000
     }
   }
 }

@@ -96,37 +96,38 @@ func (db *VectorDB) Delete(id string) {
 // All implements [storage.VectorDB.All].
 func (db *VectorDB) All() iter.Seq2[string, func() llm.Vector] {
 	return func(yield func(string, func() llm.Vector) bool) {
-		iter := db.coll.Documents(context.Background())
-		defer func() { // not defer iter.Stop(); iter can change
-			iter.Stop()
-		}()
-		var last string
+		next := func(start string) *firestore.DocumentIterator {
+			// OrderBy is required for StartAt to work.
+			query := db.coll.OrderBy(firestore.DocumentID, firestore.Asc).Limit(docLimit)
+			if start != "" {
+				query = query.StartAt(start)
+			}
+			return query.Documents(context.Background())
+		}
+		last := ""
 		for {
-			ds, err := iter.Next()
-			if err == iterator.Done {
-				return
-			}
-			if grpcerrors.IsUnavailable(err) && last != "" {
-				// Cope with 60-second Firestore timeout by restarting after the last ID we observed.
-				// See longer comment in [fstore.scan].
-				db.fs.slog.Info("firestore VectorDB scan error; restarting", "last", string(decodeKey(last)), "err", err)
-				iter.Stop()
-				iter = db.coll.OrderBy(firestore.DocumentID, firestore.Asc).StartAt(keyAfter(last)).Documents(context.Background())
-				last = ""
-				continue
-			}
+			page := next(last)
+			docs, err := page.GetAll()
 			if err != nil {
+				// Unreachable except for bad DB or potential 60 seconds timeout
+				// (see longer comment in [fstore.scan]).
+				// The timeout should not happen now with Query.Limit(docLimit).
 				db.fs.Panic("firestore VectorDB All", "err", err)
 			}
-			id := db.decodeVectorID(ds.Ref.ID)
-			var doc vectorDoc
-			if err := ds.DataTo(&doc); err != nil {
-				db.fs.Panic("firestore VectorDB All", "id", id, "err", err)
+			for _, ds := range docs {
+				id := db.decodeVectorID(ds.Ref.ID)
+				var doc vectorDoc
+				if err := ds.DataTo(&doc); err != nil {
+					db.fs.Panic("firestore VectorDB All", "id", id, "err", err)
+				}
+				if !yield(id, func() llm.Vector { return llm.Vector(doc.Embedding) }) {
+					return
+				}
 			}
-			last = ds.Ref.ID
-			if !yield(id, func() llm.Vector { return llm.Vector(doc.Embedding) }) {
+			if len(docs) < docLimit { // no more things to fetch
 				return
 			}
+			last = keyAfter(docs[len(docs)-1].Ref.ID)
 		}
 	}
 }
