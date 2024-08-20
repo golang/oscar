@@ -9,7 +9,6 @@ package gcpmetrics
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 	"strings"
 	"sync/atomic"
@@ -61,24 +60,19 @@ type loggingExporter struct {
 var totalExports, failedExports atomic.Int64
 
 func (e *loggingExporter) Export(ctx context.Context, rm *metricdata.ResourceMetrics) error {
-	var b strings.Builder
-	for _, sm := range rm.ScopeMetrics {
-		fmt.Fprintf(&b, "scope=%+v", sm.Scope)
-		for _, m := range sm.Metrics {
-			fmt.Fprintf(&b, " %q", m.Name)
-		}
-	}
-	e.lg.Debug("start metric export",
-		"resource", rm.Resource.String(),
-		"metrics", b.String(),
-	)
-	err := e.Exporter.Export(ctx, rm)
 	totalExports.Add(1)
+	err := e.Exporter.Export(ctx, rm)
 	if err != nil {
 		e.lg.Warn("metric export failed", "err", err)
 		failedExports.Add(1)
 	} else {
-		e.lg.Debug("end metric export")
+		var metricNames []string
+		for _, sm := range rm.ScopeMetrics {
+			for _, m := range sm.Metrics {
+				metricNames = append(metricNames, m.Name)
+			}
+		}
+		e.lg.Debug("exported metrics", "metrics", strings.Join(metricNames, " "))
 	}
 	return err
 }
