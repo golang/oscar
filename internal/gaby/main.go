@@ -26,9 +26,9 @@ import (
 	"golang.org/x/oscar/internal/embeddocs"
 	"golang.org/x/oscar/internal/gcp/firestore"
 	"golang.org/x/oscar/internal/gcp/gcphandler"
+	"golang.org/x/oscar/internal/gcp/gcpmetrics"
 	"golang.org/x/oscar/internal/gcp/gcpsecret"
 	"golang.org/x/oscar/internal/gcp/gemini"
-	"golang.org/x/oscar/internal/gcp/metrics"
 	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/githubdocs"
 	"golang.org/x/oscar/internal/llm"
@@ -219,7 +219,7 @@ func (g *Gaby) initGCP() (shutdown func()) {
 	}
 	g.secret = sdb
 
-	shutdown, err = metrics.Init(g.ctx, g.slog, flags.project)
+	shutdown, err = gcpmetrics.Init(g.ctx, g.slog, flags.project)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -250,7 +250,7 @@ func (g *Gaby) searchLoop() {
 
 // serveHTTP serves HTTP endpoints for Gaby.
 func (g *Gaby) serveHTTP() {
-	cronCounter := metrics.NewCounter(metricName("crons"), "number of /cron requests")
+	cronCounter := gcpmetrics.NewCounter(metricName("crons"), "number of /cron requests")
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Gaby\n")
