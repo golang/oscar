@@ -98,23 +98,30 @@ func (db *VectorDB) All() iter.Seq2[string, func() llm.Vector] {
 	return func(yield func(string, func() llm.Vector) bool) {
 		next := func(start string) *firestore.DocumentIterator {
 			// OrderBy is required for StartAt to work.
-			query := db.coll.OrderBy(firestore.DocumentID, firestore.Asc).Limit(docLimit)
+			query := db.coll.OrderBy(firestore.DocumentID, firestore.Asc).Limit(db.fs.docQueryLimit)
 			if start != "" {
 				query = query.StartAt(start)
 			}
 			return query.Documents(context.Background())
 		}
-		last := ""
+		var start, last string
 		for {
-			page := next(last)
-			docs, err := page.GetAll()
-			if err != nil {
-				// Unreachable except for bad DB or potential 60 seconds timeout
-				// (see longer comment in [fstore.scan]).
-				// The timeout should not happen now with Query.Limit(docLimit).
-				db.fs.Panic("firestore VectorDB All", "err", err)
-			}
-			for _, ds := range docs {
+			n := 0
+			it := next(start)
+			for { // should iterate up to db.fs.docQueryLimit number of times
+				ds, err := it.Next()
+				if err == iterator.Done {
+					break
+				}
+				if err != nil {
+					// Unreachable except for bad DB or potential 60 seconds timeout
+					// (see longer comment in [fstore.scan]).
+					// The timeout should not happen now with Query.Limit(db.fs.docQueryLimit).
+					db.fs.Panic("firestore VectorDB All", "err", err)
+				}
+				n++
+				last = ds.Ref.ID
+
 				id := db.decodeVectorID(ds.Ref.ID)
 				var doc vectorDoc
 				if err := ds.DataTo(&doc); err != nil {
@@ -124,10 +131,11 @@ func (db *VectorDB) All() iter.Seq2[string, func() llm.Vector] {
 					return
 				}
 			}
-			if len(docs) < docLimit { // no more things to fetch
+
+			start = keyAfter(last)
+			if n < db.fs.docQueryLimit { // no more things to fetch
 				return
 			}
-			last = keyAfter(docs[len(docs)-1].Ref.ID)
 		}
 	}
 }

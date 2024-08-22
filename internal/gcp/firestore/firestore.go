@@ -31,14 +31,25 @@ import (
 	"cloud.google.com/go/firestore"
 	"golang.org/x/oscar/internal/gcp/grpcerrors"
 	"golang.org/x/oscar/internal/storage"
+	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 )
 
 // fstore implements operations common to both [storage.DB] and [storage.VectorDB].
 type fstore struct {
-	client *firestore.Client
-	slog   *slog.Logger
+	client        *firestore.Client
+	slog          *slog.Logger
+	docQueryLimit int // number of docs to fetch in a single query (see scan)
 }
+
+// docQueryLimit is the default limit on the number of docs
+// to process in a single firestore query (see scan). Its value
+// has been experimentally shown sufficient to avoid timeouts
+// in practice for all but extreme cases. Assuming fetching
+// a single item takes 500ms on average, the docQueryLimit
+// allows processing 100 items within a single minute while
+// also leaving some extra buffer time.
+const docQueryLimit = 100
 
 func newFstore(ctx context.Context, lg *slog.Logger, projectID, database string, opts []option.ClientOption) (*fstore, error) {
 	if projectID == "" {
@@ -56,7 +67,7 @@ func newFstore(ctx context.Context, lg *slog.Logger, projectID, database string,
 	if _, err := client.Doc("c/d").Get(ctx); err != nil && !grpcerrors.IsNotFound(err) {
 		return nil, err
 	}
-	return &fstore{client: client, slog: lg}, nil
+	return &fstore{client: client, slog: lg, docQueryLimit: docQueryLimit}, nil
 }
 
 func (f *fstore) Flush() {
@@ -160,8 +171,6 @@ func (f *fstore) runTransaction(fn func(ctx context.Context, tx *firestore.Trans
 	}
 }
 
-const docLimit = 1000 // limit on number or docs to fetch in a single query
-
 // scan returns an iterator over the documents in the collection coll whose IDs are
 // between start and end, inclusive.
 // An empty string for start or end indicates the beginning of the collection.
@@ -175,7 +184,7 @@ func (f *fstore) scan(tx *firestore.Transaction, coll *firestore.CollectionRef, 
 
 	return func(yield func(*firestore.DocumentSnapshot) bool) {
 		next := func(start string) *firestore.DocumentIterator {
-			query := coll.OrderBy(firestore.DocumentID, firestore.Asc).Limit(docLimit).EndAt(end)
+			query := coll.OrderBy(firestore.DocumentID, firestore.Asc).Limit(f.docQueryLimit).EndAt(end)
 			if start != "" {
 				query = query.StartAt(start)
 			}
@@ -184,25 +193,32 @@ func (f *fstore) scan(tx *firestore.Transaction, coll *firestore.CollectionRef, 
 			}
 			return tx.Documents(query)
 		}
-		last := start
+		var last string
 		for {
-			page := next(last)
-			docs, err := page.GetAll()
-			if err != nil {
-				// Unreachable except for bad DB or potential 60 seconds timeout
-				//	syncdb: 22:38:20 ERROR firestore scan collection=projects/oscar-go-1/databases/prod/documents/values err="rpc error: code = Unavailable desc = Query timed out. Please try either limiting the entities scanned, or run with an updated index configuration."
-				// The timeout should not happen now with Query.Limit(docLimit).
-				f.Panic("firestore scan", "collection", coll.Path, "err", err)
-			}
-			for _, ds := range docs {
+			n := 0
+			it := next(start)
+			for { // should iterate up to f.docQueryLimit number of times
+				ds, err := it.Next()
+				if err == iterator.Done {
+					break
+				}
+				if err != nil {
+					// Unreachable except for bad DB or potential 60 seconds timeout
+					//	syncdb: 22:38:20 ERROR firestore scan collection=projects/oscar-go-1/databases/prod/documents/values err="rpc error: code = Unavailable desc = Query timed out. Please try either limiting the entities scanned, or run with an updated index configuration."
+					// The timeout should not happen now with Query.Limit(f.docQueryLimit).
+					f.Panic("firestore scan", "collection", coll.Path, "err", err)
+				}
+				n++
+				last = ds.Ref.ID
 				if !yield(ds) {
 					return
 				}
 			}
-			if len(docs) < docLimit { // no more things to fetch
+
+			start = keyAfter(last)
+			if n < f.docQueryLimit { // no more things to fetch
 				return
 			}
-			last = keyAfter(docs[len(docs)-1].Ref.ID)
 		}
 	}
 }

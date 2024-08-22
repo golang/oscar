@@ -12,14 +12,14 @@ message: {
   }
 }
 ref_index: 1
-250
+248
 kind: RECV
 message: {
   [type.googleapis.com/google.firestore.v1.BatchGetDocumentsResponse]: {
     missing: "projects/oscar-go-1/databases/test/documents/c/d"
     read_time: {
-      seconds: 1724187614
-      nanos: 861355000
+      seconds: 1724363492
+      nanos: 8543000
     }
   }
 }
@@ -115,13 +115,13 @@ message: {
   [type.googleapis.com/google.firestore.v1.CommitResponse]: {
     write_results: {
       update_time: {
-        seconds: 1724187615
-        nanos: 144126000
+        seconds: 1724363492
+        nanos: 282993000
       }
     }
     commit_time: {
-      seconds: 1724187615
-      nanos: 144126000
+      seconds: 1724363492
+      nanos: 282993000
     }
   }
 }
@@ -213,13 +213,13 @@ message: {
   [type.googleapis.com/google.firestore.v1.CommitResponse]: {
     write_results: {
       update_time: {
-        seconds: 1724187615
-        nanos: 295441000
+        seconds: 1724363492
+        nanos: 480861000
       }
     }
     commit_time: {
-      seconds: 1724187615
-      nanos: 295441000
+      seconds: 1724363492
+      nanos: 480861000
     }
   }
 }
@@ -311,13 +311,13 @@ message: {
   [type.googleapis.com/google.firestore.v1.CommitResponse]: {
     write_results: {
       update_time: {
-        seconds: 1724187615
-        nanos: 426899000
+        seconds: 1724363492
+        nanos: 600703000
       }
     }
     commit_time: {
-      seconds: 1724187615
-      nanos: 426899000
+      seconds: 1724363492
+      nanos: 600703000
     }
   }
 }
@@ -339,8 +339,8 @@ message: {
   [type.googleapis.com/google.firestore.v1.CommitResponse]: {
     write_results: {}
     commit_time: {
-      seconds: 1724187615
-      nanos: 536139000
+      seconds: 1724363492
+      nanos: 773556000
     }
   }
 }
@@ -362,8 +362,8 @@ message: {
   [type.googleapis.com/google.firestore.v1.CommitResponse]: {
     write_results: {}
     commit_time: {
-      seconds: 1724187615
-      nanos: 644698000
+      seconds: 1724363492
+      nanos: 876786000
     }
   }
 }
@@ -449,19 +449,19 @@ message: {
     }
   }
 }
-291
+289
 kind: RESPONSE
 message: {
   [type.googleapis.com/google.firestore.v1.CommitResponse]: {
     write_results: {
       update_time: {
-        seconds: 1724187615
-        nanos: 760695000
+        seconds: 1724363493
+        nanos: 54227000
       }
     }
     commit_time: {
-      seconds: 1724187615
-      nanos: 760695000
+      seconds: 1724363493
+      nanos: 54227000
     }
   }
 }
@@ -469,7 +469,7 @@ ref_index: 15
 70
 kind: CREATE_STREAM
 method: "/google.firestore.v1.Firestore/RunQuery"
-422
+421
 kind: SEND
 message: {
   [type.googleapis.com/google.firestore.v1.RunQueryRequest]: {
@@ -485,13 +485,13 @@ message: {
         direction: ASCENDING
       }
       limit: {
-        value: 1000
+        value: 100
       }
     }
   }
 }
 ref_index: 17
-2357
+2355
 kind: RECV
 message: {
   [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
@@ -566,17 +566,17 @@ message: {
         }
       }
       create_time: {
-        seconds: 1724187615
-        nanos: 760695000
+        seconds: 1724363493
+        nanos: 54227000
       }
       update_time: {
-        seconds: 1724187615
-        nanos: 760695000
+        seconds: 1724363493
+        nanos: 54227000
       }
     }
     read_time: {
-      seconds: 1724187615
-      nanos: 854629000
+      seconds: 1724363493
+      nanos: 179089000
     }
   }
 }
@@ -656,17 +656,17 @@ message: {
         }
       }
       create_time: {
-        seconds: 1724187615
-        nanos: 144126000
+        seconds: 1724363492
+        nanos: 282993000
       }
       update_time: {
-        seconds: 1724187615
-        nanos: 144126000
+        seconds: 1724363492
+        nanos: 282993000
       }
     }
     read_time: {
-      seconds: 1724187615
-      nanos: 854629000
+      seconds: 1724363493
+      nanos: 179089000
     }
   }
 }
@@ -762,13 +762,13 @@ message: {
   [type.googleapis.com/google.firestore.v1.CommitResponse]: {
     write_results: {
       update_time: {
-        seconds: 1724187615
-        nanos: 965988000
+        seconds: 1724363493
+        nanos: 332566000
       }
     }
     commit_time: {
-      seconds: 1724187615
-      nanos: 965988000
+      seconds: 1724363493
+      nanos: 332566000
     }
   }
 }
@@ -781,15 +781,15 @@ message: {
     database: "projects/oscar-go-1/databases/test"
   }
 }
-404
+387
 kind: RESPONSE
 message: {
   [type.googleapis.com/google.firestore.v1.BeginTransactionResponse]: {
-    transaction: "\x11c\x18;\x8cH\xb5\xee\x92\"Y\x00\xb8>\xbb\x0eq=6-\xbf7\xd4) 1\x92\xe7\xd4|w\xf3,?\x03\x9a]\x17;\xf7'\n\xa29\xf2}k\x9a\n\x82Z\x01s\xa5\xe3\xb03=\xe9\xb7~\xf8\xec\xed\xb0\xe7ͅ\xa2\xea\x84\xc5t\xf5R\x02\xfd\x9e\x02\xb5\x87\xb2\xd9\xd9ҡ\nšALɭ\xb5\x1d`\xf2\x89\xeam"
+    transaction: "\x11\x92țvx\x9d#0\"Y\x00\xb8>\xbb\x0e\x97\xfa&9\xd9\x18_\x8c\x0cxM\xfd/\xd0I\xe4\xed\xe6\xd2P\x03$\x04\x99Fx%sI\x12\x0b\xd0ݓg\x81\xf2\xa1\xc7μ\xe8M\xb2\xfd\x1ddE\x03Ï\xb69h$\x0chC\xdat\xe7X\xd5@n\xf7S\xf5h\x83d\xfc6\\\xde\x07VI\x1e\xe3d\x8eD\xe0"
   }
 }
 ref_index: 24
-12792
+12775
 kind: REQUEST
 method: "/google.firestore.v1.Firestore/Commit"
 message: {
@@ -1209,7 +1209,7 @@ message: {
         }
       }
     }
-    transaction: "\x11c\x18;\x8cH\xb5\xee\x92\"Y\x00\xb8>\xbb\x0eq=6-\xbf7\xd4) 1\x92\xe7\xd4|w\xf3,?\x03\x9a]\x17;\xf7'\n\xa29\xf2}k\x9a\n\x82Z\x01s\xa5\xe3\xb03=\xe9\xb7~\xf8\xec\xed\xb0\xe7ͅ\xa2\xea\x84\xc5t\xf5R\x02\xfd\x9e\x02\xb5\x87\xb2\xd9\xd9ҡ\nšALɭ\xb5\x1d`\xf2\x89\xeam"
+    transaction: "\x11\x92țvx\x9d#0\"Y\x00\xb8>\xbb\x0e\x97\xfa&9\xd9\x18_\x8c\x0cxM\xfd/\xd0I\xe4\xed\xe6\xd2P\x03$\x04\x99Fx%sI\x12\x0b\xd0ݓg\x81\xf2\xa1\xc7μ\xe8M\xb2\xfd\x1ddE\x03Ï\xb69h$\x0chC\xdat\xe7X\xd5@n\xf7S\xf5h\x83d\xfc6\\\xde\x07VI\x1e\xe3d\x8eD\xe0"
   }
 }
 837
@@ -1219,41 +1219,41 @@ message: {
     write_results: {}
     write_results: {
       update_time: {
-        seconds: 1724187616
-        nanos: 148735000
+        seconds: 1724363493
+        nanos: 647245000
       }
     }
     write_results: {
       update_time: {
-        seconds: 1724187616
-        nanos: 148735000
-      }
-    }
-    write_results: {}
-    write_results: {}
-    write_results: {
-      update_time: {
-        seconds: 1724187616
-        nanos: 148735000
+        seconds: 1724363493
+        nanos: 647245000
       }
     }
     write_results: {}
     write_results: {}
     write_results: {
       update_time: {
-        seconds: 1724187616
-        nanos: 148735000
+        seconds: 1724363493
+        nanos: 647245000
+      }
+    }
+    write_results: {}
+    write_results: {}
+    write_results: {
+      update_time: {
+        seconds: 1724363493
+        nanos: 647245000
       }
     }
     write_results: {
       update_time: {
-        seconds: 1724187616
-        nanos: 148735000
+        seconds: 1724363493
+        nanos: 647245000
       }
     }
     commit_time: {
-      seconds: 1724187616
-      nanos: 148735000
+      seconds: 1724363493
+      nanos: 647245000
     }
   }
 }
@@ -1266,15 +1266,15 @@ message: {
     database: "projects/oscar-go-1/databases/test"
   }
 }
-379
+410
 kind: RESPONSE
 message: {
   [type.googleapis.com/google.firestore.v1.BeginTransactionResponse]: {
-    transaction: "\x11̍\x9a˟ʌ\xe8\"Y\x00\xb8>\xbb\x0e\x9e\xdc+\x93*\xe9\xc8_\xce8\xb67\xa0s\x1c\x0e:Zo\xb0ɻ\x97Tᗢ\x1f\x0bK\x19&\xe3G{6qy&\x11\x9f\x92\xd0\xc6s\x18\xbe\x85\xe0Ul`\xc1\xcdj\xe6?vA\xa1U\"8\xf2\x13\x96&;]\xa2\tIF\x1f\x9b~*\xf5Pb\xfa\xf0a\xf9"
+    transaction: "\x11,\xb1\xdf\xff\xc0\xbe\xbf8\"Y\x00\xb8>\xbb\x0e\xa7d\xac\xd9\xf5=\xc8\xdf_\xff\xbb\\\x8e*̆lK~s#\xf38\xe9\xf9[O\xcf\x1fuf\xfd\x14س\xfc\x18t+\xfa\xdf|\x8aaXz\x03\xe7\xb7H\x16\xb7>Z\xb9\xdcUJ\xbe,\x19\xd4\xc0\xbd\xa7\t\xebv\xfb\xb8\xef#\x04\xca\\d\xdfL\x94\x91t\xfe\xb9o"
   }
 }
 ref_index: 28
-2607
+2638
 kind: REQUEST
 method: "/google.firestore.v1.Firestore/Commit"
 message: {
@@ -1353,7 +1353,7 @@ message: {
         }
       }
     }
-    transaction: "\x11̍\x9a˟ʌ\xe8\"Y\x00\xb8>\xbb\x0e\x9e\xdc+\x93*\xe9\xc8_\xce8\xb67\xa0s\x1c\x0e:Zo\xb0ɻ\x97Tᗢ\x1f\x0bK\x19&\xe3G{6qy&\x11\x9f\x92\xd0\xc6s\x18\xbe\x85\xe0Ul`\xc1\xcdj\xe6?vA\xa1U\"8\xf2\x13\x96&;]\xa2\tIF\x1f\x9b~*\xf5Pb\xfa\xf0a\xf9"
+    transaction: "\x11,\xb1\xdf\xff\xc0\xbe\xbf8\"Y\x00\xb8>\xbb\x0e\xa7d\xac\xd9\xf5=\xc8\xdf_\xff\xbb\\\x8e*̆lK~s#\xf38\xe9\xf9[O\xcf\x1fuf\xfd\x14س\xfc\x18t+\xfa\xdf|\x8aaXz\x03\xe7\xb7H\x16\xb7>Z\xb9\xdcUJ\xbe,\x19\xd4\xc0\xbd\xa7\t\xebv\xfb\xb8\xef#\x04\xca\\d\xdfL\x94\x91t\xfe\xb9o"
   }
 }
 291
@@ -1362,13 +1362,13 @@ message: {
   [type.googleapis.com/google.firestore.v1.CommitResponse]: {
     write_results: {
       update_time: {
-        seconds: 1724187616
-        nanos: 325704000
+        seconds: 1724363493
+        nanos: 997445000
       }
     }
     commit_time: {
-      seconds: 1724187616
-      nanos: 325704000
+      seconds: 1724363493
+      nanos: 997445000
     }
   }
 }
@@ -1390,8 +1390,8 @@ message: {
   [type.googleapis.com/google.firestore.v1.CommitResponse]: {
     write_results: {}
     commit_time: {
-      seconds: 1724187616
-      nanos: 432822000
+      seconds: 1724363494
+      nanos: 147055000
     }
   }
 }
@@ -1404,21 +1404,21 @@ message: {
     database: "projects/oscar-go-1/databases/test"
   }
 }
-393
+407
 kind: RESPONSE
 message: {
   [type.googleapis.com/google.firestore.v1.BeginTransactionResponse]: {
-    transaction: "\x11\xbb6\rj\x11%\x838\"Y\x00\xb8>\xbb\x0eKɖJSb\x90*\xed\xef\x1f-t\xf6\x9aD\xb3K|C\xc8gs\x9e\xbfj\xb8b/\x18D,\x90\xe8<\xb8\x9f\x88\xa2|z\xb7\x910\xd4\xc6\x14\xf0\x1c\x9f\xb9\x159\xbb\xc60\xe0ym\xa3\xf6\x07\x0fF/nF\xf5\xd0\xd6\x1d[\x86\xc8[\x08BNȿߦ\x94L"
+    transaction: "\x11\x10c\x08\x05\xd3P\"\xaa\"Y\x00\xb8>\xbb\x0eZ\x85\x9d\xd6a\x04\u0083\x9bի\x0bŮ\xfcHy\xbe\xfa+\x94\x80\xfb\xe7H:Wm\x1bf\xb9\x1a\x00\xa3\xc6\x15\xafk\xc3J\xcaP\xc3_O\xef\x8aT\xc6*܏\xea\x0b\x8d\xe15\x01x8\xbf\"\xbe\xfey\xa3\x18v<\x96Ķʉ\x7f\xcf\xcd\xc3\xe7AX/\xc33"
   }
 }
 ref_index: 34
-466
+480
 kind: REQUEST
 method: "/google.firestore.v1.Firestore/Commit"
 message: {
   [type.googleapis.com/google.firestore.v1.CommitRequest]: {
     database: "projects/oscar-go-1/databases/test"
-    transaction: "\x11\xbb6\rj\x11%\x838\"Y\x00\xb8>\xbb\x0eKɖJSb\x90*\xed\xef\x1f-t\xf6\x9aD\xb3K|C\xc8gs\x9e\xbfj\xb8b/\x18D,\x90\xe8<\xb8\x9f\x88\xa2|z\xb7\x910\xd4\xc6\x14\xf0\x1c\x9f\xb9\x159\xbb\xc60\xe0ym\xa3\xf6\x07\x0fF/nF\xf5\xd0\xd6\x1d[\x86\xc8[\x08BNȿߦ\x94L"
+    transaction: "\x11\x10c\x08\x05\xd3P\"\xaa\"Y\x00\xb8>\xbb\x0eZ\x85\x9d\xd6a\x04\u0083\x9bի\x0bŮ\xfcHy\xbe\xfa+\x94\x80\xfb\xe7H:Wm\x1bf\xb9\x1a\x00\xa3\xc6\x15\xafk\xc3J\xcaP\xc3_O\xef\x8aT\xc6*܏\xea\x0b\x8d\xe15\x01x8\xbf\"\xbe\xfey\xa3\x18v<\x96Ķʉ\x7f\xcf\xcd\xc3\xe7AX/\xc33"
   }
 }
 105
@@ -1445,8 +1445,8 @@ message: {
   [type.googleapis.com/google.firestore.v1.BatchGetDocumentsResponse]: {
     missing: "projects/oscar-go-1/databases/test/documents/vectorDBs/test/vectors/6170706c6535"
     read_time: {
-      seconds: 1724187616
-      nanos: 432822000
+      seconds: 1724363494
+      nanos: 147055000
     }
   }
 }
@@ -1458,7 +1458,7 @@ ref_index: 38
 70
 kind: CREATE_STREAM
 method: "/google.firestore.v1.Firestore/RunQuery"
-422
+421
 kind: SEND
 message: {
   [type.googleapis.com/google.firestore.v1.RunQueryRequest]: {
@@ -1474,7 +1474,7 @@ message: {
         direction: ASCENDING
       }
       limit: {
-        value: 1000
+        value: 100
       }
     }
   }
@@ -1555,17 +1555,17 @@ message: {
         }
       }
       create_time: {
-        seconds: 1724187616
-        nanos: 148735000
+        seconds: 1724363493
+        nanos: 647245000
       }
       update_time: {
-        seconds: 1724187616
-        nanos: 148735000
+        seconds: 1724363493
+        nanos: 647245000
       }
     }
     read_time: {
-      seconds: 1724187616
-      nanos: 874411000
+      seconds: 1724363494
+      nanos: 582382000
     }
   }
 }
@@ -1645,17 +1645,17 @@ message: {
         }
       }
       create_time: {
-        seconds: 1724187616
-        nanos: 148735000
+        seconds: 1724363493
+        nanos: 647245000
       }
       update_time: {
-        seconds: 1724187616
-        nanos: 148735000
+        seconds: 1724363493
+        nanos: 647245000
       }
     }
     read_time: {
-      seconds: 1724187616
-      nanos: 874411000
+      seconds: 1724363494
+      nanos: 582382000
     }
   }
 }
@@ -1699,22 +1699,22 @@ message: {
         }
       }
       create_time: {
-        seconds: 1724187616
-        nanos: 148735000
+        seconds: 1724363493
+        nanos: 647245000
       }
       update_time: {
-        seconds: 1724187616
-        nanos: 148735000
+        seconds: 1724363493
+        nanos: 647245000
       }
     }
     read_time: {
-      seconds: 1724187616
-      nanos: 874411000
+      seconds: 1724363494
+      nanos: 582382000
     }
   }
 }
 ref_index: 42
-2357
+2355
 kind: RECV
 message: {
   [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
@@ -1789,17 +1789,17 @@ message: {
         }
       }
       create_time: {
-        seconds: 1724187615
-        nanos: 760695000
+        seconds: 1724363493
+        nanos: 54227000
       }
       update_time: {
-        seconds: 1724187615
-        nanos: 760695000
+        seconds: 1724363493
+        nanos: 54227000
       }
     }
     read_time: {
-      seconds: 1724187616
-      nanos: 874411000
+      seconds: 1724363494
+      nanos: 582382000
     }
   }
 }
@@ -1879,17 +1879,17 @@ message: {
         }
       }
       create_time: {
-        seconds: 1724187615
-        nanos: 144126000
+        seconds: 1724363492
+        nanos: 282993000
       }
       update_time: {
-        seconds: 1724187615
-        nanos: 144126000
+        seconds: 1724363492
+        nanos: 282993000
       }
     }
     read_time: {
-      seconds: 1724187616
-      nanos: 874411000
+      seconds: 1724363494
+      nanos: 582382000
     }
   }
 }
@@ -1969,17 +1969,17 @@ message: {
         }
       }
       create_time: {
-        seconds: 1724187616
-        nanos: 148735000
+        seconds: 1724363493
+        nanos: 647245000
       }
       update_time: {
-        seconds: 1724187616
-        nanos: 148735000
+        seconds: 1724363493
+        nanos: 647245000
       }
     }
     read_time: {
-      seconds: 1724187616
-      nanos: 874411000
+      seconds: 1724363494
+      nanos: 582382000
     }
   }
 }
@@ -2075,17 +2075,17 @@ message: {
         }
       }
       create_time: {
-        seconds: 1724187616
-        nanos: 148735000
+        seconds: 1724363493
+        nanos: 647245000
       }
       update_time: {
-        seconds: 1724187616
-        nanos: 148735000
+        seconds: 1724363493
+        nanos: 647245000
       }
     }
     read_time: {
-      seconds: 1724187616
-      nanos: 967304000
+      seconds: 1724363494
+      nanos: 700059000
     }
   }
 }
@@ -2184,7 +2184,7 @@ message: {
   }
 }
 ref_index: 55
-2331
+2332
 kind: RECV
 message: {
   [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
@@ -2259,22 +2259,22 @@ message: {
         }
       }
       create_time: {
-        seconds: 1724187616
-        nanos: 148735000
+        seconds: 1724363493
+        nanos: 647245000
       }
       update_time: {
-        seconds: 1724187616
-        nanos: 148735000
+        seconds: 1724363493
+        nanos: 647245000
       }
     }
     read_time: {
-      seconds: 1724187617
-      nanos: 54239000
+      seconds: 1724363494
+      nanos: 802982000
     }
   }
 }
 ref_index: 55
-2334
+2335
 kind: RECV
 message: {
   [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
@@ -2349,22 +2349,22 @@ message: {
         }
       }
       create_time: {
-        seconds: 1724187616
-        nanos: 148735000
+        seconds: 1724363493
+        nanos: 647245000
       }
       update_time: {
-        seconds: 1724187616
-        nanos: 148735000
+        seconds: 1724363493
+        nanos: 647245000
       }
     }
     read_time: {
-      seconds: 1724187617
-      nanos: 54239000
+      seconds: 1724363494
+      nanos: 802982000
     }
   }
 }
 ref_index: 55
-2356
+2355
 kind: RECV
 message: {
   [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
@@ -2439,22 +2439,22 @@ message: {
         }
       }
       create_time: {
-        seconds: 1724187615
-        nanos: 760695000
+        seconds: 1724363493
+        nanos: 54227000
       }
       update_time: {
-        seconds: 1724187615
-        nanos: 760695000
+        seconds: 1724363493
+        nanos: 54227000
       }
     }
     read_time: {
-      seconds: 1724187617
-      nanos: 54239000
+      seconds: 1724363494
+      nanos: 802982000
     }
   }
 }
 ref_index: 55
-2351
+2352
 kind: RECV
 message: {
   [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
@@ -2529,22 +2529,22 @@ message: {
         }
       }
       create_time: {
-        seconds: 1724187615
-        nanos: 144126000
+        seconds: 1724363492
+        nanos: 282993000
       }
       update_time: {
-        seconds: 1724187615
-        nanos: 144126000
+        seconds: 1724363492
+        nanos: 282993000
       }
     }
     read_time: {
-      seconds: 1724187617
-      nanos: 54239000
+      seconds: 1724363494
+      nanos: 802982000
     }
   }
 }
 ref_index: 55
-2355
+2356
 kind: RECV
 message: {
   [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
@@ -2619,17 +2619,17 @@ message: {
         }
       }
       create_time: {
-        seconds: 1724187616
-        nanos: 148735000
+        seconds: 1724363493
+        nanos: 647245000
       }
       update_time: {
-        seconds: 1724187616
-        nanos: 148735000
+        seconds: 1724363493
+        nanos: 647245000
       }
     }
     read_time: {
-      seconds: 1724187617
-      nanos: 54239000
+      seconds: 1724363494
+      nanos: 802982000
     }
   }
 }
@@ -2650,14 +2650,14 @@ message: {
   }
 }
 ref_index: 63
-251
+249
 kind: RECV
 message: {
   [type.googleapis.com/google.firestore.v1.BatchGetDocumentsResponse]: {
     missing: "projects/oscar-go-1/databases/test/documents/c/d"
     read_time: {
-      seconds: 1724187616
-      nanos: 432822000
+      seconds: 1724363495
+      nanos: 1807000
     }
   }
 }
@@ -2756,7 +2756,7 @@ message: {
   }
 }
 ref_index: 67
-2332
+2331
 kind: RECV
 message: {
   [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
@@ -2831,22 +2831,22 @@ message: {
         }
       }
       create_time: {
-        seconds: 1724187616
-        nanos: 148735000
+        seconds: 1724363493
+        nanos: 647245000
       }
       update_time: {
-        seconds: 1724187616
-        nanos: 148735000
+        seconds: 1724363493
+        nanos: 647245000
       }
     }
     read_time: {
-      seconds: 1724187617
-      nanos: 445999000
+      seconds: 1724363495
+      nanos: 89284000
     }
   }
 }
 ref_index: 67
-2335
+2334
 kind: RECV
 message: {
   [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
@@ -2921,22 +2921,22 @@ message: {
         }
       }
       create_time: {
-        seconds: 1724187616
-        nanos: 148735000
+        seconds: 1724363493
+        nanos: 647245000
       }
       update_time: {
-        seconds: 1724187616
-        nanos: 148735000
+        seconds: 1724363493
+        nanos: 647245000
       }
     }
     read_time: {
-      seconds: 1724187617
-      nanos: 445999000
+      seconds: 1724363495
+      nanos: 89284000
     }
   }
 }
 ref_index: 67
-2357
+2354
 kind: RECV
 message: {
   [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
@@ -3011,17 +3011,17 @@ message: {
         }
       }
       create_time: {
-        seconds: 1724187615
-        nanos: 760695000
+        seconds: 1724363493
+        nanos: 54227000
       }
       update_time: {
-        seconds: 1724187615
-        nanos: 760695000
+        seconds: 1724363493
+        nanos: 54227000
       }
     }
     read_time: {
-      seconds: 1724187617
-      nanos: 445999000
+      seconds: 1724363495
+      nanos: 89284000
     }
   }
 }

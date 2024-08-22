@@ -5,16 +5,10 @@
 package firestore
 
 import (
-	"bytes"
-	"compress/gzip"
 	"context"
 	"fmt"
-	"io"
-	"io/fs"
 	"math/rand/v2"
-	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 	"time"
 
@@ -56,10 +50,11 @@ func TestDB(t *testing.T) {
 	}
 }
 
-func TestDBSlow(t *testing.T) {
+// TestDBLimit checks that [DB.Scan] properly restarts from query limits (see docLimit).
+func TestDBLimit(t *testing.T) {
 	// Re-record with
-	//	OSCAR_PROJECT=oscar-go-1 go test -v -timeout=1h -run=TestDBSlow -grpcrecord=/dbslow
-	rr, project := openRR(t, "testdata/dbslow.grpcrr.gz")
+	//	OSCAR_PROJECT=oscar-go-1 go test -v -run=TestDBLimit -grpcrecord=/dblimit
+	rr, project := openRR(t, "testdata/dblimit.grpcrr")
 	ctx := context.Background()
 
 	db, err := NewDB(ctx, testutil.Slogger(t), project, firestoreTestDatabase, rr.ClientOptions()...)
@@ -70,34 +65,27 @@ func TestDBSlow(t *testing.T) {
 	db.uid = 1
 	defer db.Close()
 
-	// Test that Scan does not die after 60 seconds.
-	// Scan sends back keys in batches, so we have to
-	// write a lot of keys to make sure we cross into
-	// two batches.
-	t.Logf("test slow scan")
 	b := db.Batch()
-	const slowN = 400
-	slowKey := func(n int) string {
-		return fmt.Sprintf("slow2.%09d", n)
+
+	db.fstore.docQueryLimit = 5
+	N := (2 * db.fstore.docQueryLimit) + 1 // ensure we make a few iterations
+	limitKey := func(n int) string {
+		return fmt.Sprintf("limit.%09d", n)
 	}
-	for i := range slowN {
-		b.Set([]byte(slowKey(i)), bytes.Repeat([]byte("A"), 100000))
+	for i := range N {
+		b.Set([]byte(limitKey(i)), []byte("A"))
 		b.MaybeApply()
 	}
 	b.Apply()
 	n := 0
-	for k := range db.Scan([]byte(slowKey(0)), []byte(slowKey(slowN-1))) {
-		if string(k) != slowKey(n) {
-			t.Fatalf("slow read #%d: have %q want %q", n, k, slowKey(n))
-		}
-		if rr.Recording() && n%100 == 0 {
-			t.Logf("scan %s; sleep", k)
-			time.Sleep(90 * time.Second)
+	for k := range db.Scan([]byte(limitKey(0)), []byte(limitKey(N-1))) {
+		if string(k) != limitKey(n) {
+			t.Fatalf("limit read #%d: have %q want %q", n, k, limitKey(n))
 		}
 		n++
 	}
-	if n != slowN {
-		t.Errorf("slow reads: scanned %d keys, want %d", n, slowN)
+	if n != N {
+		t.Errorf("limit reads: scanned %d keys, want %d", n, N)
 	}
 }
 
@@ -217,68 +205,10 @@ func TestErrors(t *testing.T) {
 }
 
 func openRR(t *testing.T, file string) (_ *grpcrr.RecordReplay, projectID string) {
-	check := testutil.Checker(t)
-
-	// If target is a gzip file, decompress (if it exists) into a temp file,
-	// and recompress when test is done if modified.
-	if strings.HasSuffix(file, ".gz") {
-		// Decompress into temp file if it exists.
-		f, err := os.CreateTemp(t.TempDir(), strings.TrimSuffix(filepath.Base(file), "gz"))
-		check(err)
-
-		gzfile := file
-		tmpfile := f.Name()
-		file = tmpfile
-
-		var before fs.FileInfo
-		if zf, err := os.Open(gzfile); err != nil {
-			// File does not exist; remove temp file to avoid "empty replay file" error.
-			f.Close()
-			os.Remove(tmpfile)
-		} else {
-			zr, err := gzip.NewReader(zf)
-			check(err)
-			_, err = io.Copy(f, zr)
-			check(err)
-			zr.Close()
-			zf.Close()
-			before, err = f.Stat()
-			check(err)
-			f.Close()
-		}
-
-		// Recompress back during test cleanup.
-		t.Cleanup(func() {
-			f, err := os.Open(tmpfile)
-			check(err)
-			defer f.Close()
-			after, err := f.Stat()
-			check(err)
-			if before != nil && after.ModTime() == before.ModTime() && after.Size() == before.Size() {
-				// Trace not modified, must have been replaying.
-				return
-			}
-
-			// Recompress trace into gzfile.
-			zf, err := os.Create(gzfile)
-			check(err)
-			zw, err := gzip.NewWriterLevel(zf, gzip.BestCompression)
-			check(err)
-			_, err = io.Copy(zw, f)
-			check(err)
-			check(zw.Close())
-			check(zf.Close())
-		})
+	rr, err := grpcrr.Open(filepath.FromSlash(file))
+	if err != nil {
+		t.Fatalf("grpcrr.Open: %v", err)
 	}
-
-	rr, err := grpcrr.Open(file)
-	check(err)
-
-	t.Cleanup(func() {
-		if err := rr.Close(); err != nil {
-			t.Fatal(err)
-		}
-	})
 
 	if rr.Recording() {
 		projectID = gcpconfig.MustProject(t)

@@ -7,9 +7,7 @@ package firestore
 import (
 	"context"
 	"fmt"
-	"strings"
 	"testing"
-	"time"
 
 	"cloud.google.com/go/firestore"
 	"golang.org/x/oscar/internal/gcp/grpcerrors"
@@ -34,10 +32,11 @@ func TestVectorDB(t *testing.T) {
 	})
 }
 
-func TestVectorDBSlow(t *testing.T) {
+// TestDBLimit checks that [VectorDB.All] properly restarts from query limits (see docLimit).
+func TestVectorDBLimit(t *testing.T) {
 	// Re-record with
-	//	OSCAR_PROJECT=oscar-go-1 go test -v -timeout=1h -run=TestVectorDBSlow -grpcrecord=/vectordbslow
-	rr, project := openRR(t, "testdata/vectordbslow.grpcrr.gz")
+	//	OSCAR_PROJECT=oscar-go-1 go test -v -run=TestVectorDBLimit -grpcrecord=/vectordblimit
+	rr, project := openRR(t, "testdata/vectordblimit.grpcrr")
 	ctx := context.Background()
 	if rr.Recording() {
 		deleteVectorDBs(t, project, firestoreTestDatabase)
@@ -49,39 +48,28 @@ func TestVectorDBSlow(t *testing.T) {
 	}
 	defer vdb.Close()
 
-	const slowN = 5000
+	vdb.fs.docQueryLimit = 5
+	N := (2 * vdb.fs.docQueryLimit) + 1 // ensure we make a few iterations
 	b := vdb.Batch()
-	slowKey := func(n int) string {
-		// The Firestore limit for key names is 1500 bytes
-		// but that includes the whole key path.
-		// Make the key big to reduce the number of keys we need
-		// to create to fill a Scan result,
-		// since we can't make the data values any bigger.
-		// Since we hex-encode keys, our limit is more like 750 bytes.
-		return fmt.Sprintf("slow.%s.%09d", strings.Repeat("A", 730), n)
+	limitKey := func(n int) string {
+		return fmt.Sprintf("limit.%09d", n)
 	}
 	const vecSize = 16 // matches storage.TestVectorDB and test database index config
-	t.Logf("creating %d keys", slowN)
-	for i := range slowN {
-		b.Set(slowKey(i), make(llm.Vector, vecSize))
+	for i := range N {
+		b.Set(limitKey(i), make(llm.Vector, vecSize))
 		b.MaybeApply()
 	}
 	b.Apply()
 
 	n := 0
-	t.Logf("scan all")
 	for k := range vdb.All() {
-		if string(k) != slowKey(n) {
-			t.Fatalf("slow read #%d: have %q want %q", n, k, slowKey(n))
-		}
-		if rr.Recording() && n == 0 {
-			t.Logf("scan %s; sleep", k)
-			time.Sleep(90 * time.Second)
+		if string(k) != limitKey(n) {
+			t.Fatalf("limit read #%d: have %q want %q", n, k, limitKey(n))
 		}
 		n++
 	}
-	if n != slowN {
-		t.Errorf("slow reads: scanned %d keys, want %d", n, slowN)
+	if n != N {
+		t.Errorf("limit reads: scanned %d keys, want %d", n, N)
 	}
 }
 

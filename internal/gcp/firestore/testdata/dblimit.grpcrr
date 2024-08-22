@@ -1,0 +1,681 @@
+RPCReTxt1
+"oscar-go-1"
+79
+kind: CREATE_STREAM
+method: "/google.firestore.v1.Firestore/BatchGetDocuments"
+230
+kind: SEND
+message: {
+  [type.googleapis.com/google.firestore.v1.BatchGetDocumentsRequest]: {
+    database: "projects/oscar-go-1/databases/test"
+    documents: "projects/oscar-go-1/databases/test/documents/c/d"
+  }
+}
+ref_index: 1
+250
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.BatchGetDocumentsResponse]: {
+    missing: "projects/oscar-go-1/databases/test/documents/c/d"
+    read_time: {
+      seconds: 1724363473
+      nanos: 797867000
+    }
+  }
+}
+ref_index: 1
+39
+kind: RECV
+is_error: true
+ref_index: 1
+211
+kind: REQUEST
+method: "/google.firestore.v1.Firestore/BeginTransaction"
+message: {
+  [type.googleapis.com/google.firestore.v1.BeginTransactionRequest]: {
+    database: "projects/oscar-go-1/databases/test"
+  }
+}
+415
+kind: RESPONSE
+message: {
+  [type.googleapis.com/google.firestore.v1.BeginTransactionResponse]: {
+    transaction: "\x11\xba,\x86 ļl\x18\"Y\x00\xb8>\xbb\x0e\xc3\x06\xa6\xc0\x8d\xb9[\xeao\x87\xfe\x01^\xf9e\x92\xc5\xfffs@\xb9ƚ\x0f\xdeĭ^\xed\x03\x03\x93^\x1b\xec\xc1f\xef\x94u\xc1 \x1f\x10\x0b\xb82hX\xbd!\xf7\xa3C\xe2\x7fr\xae\x99\x04\xba0\x02箠\xdc\xee\x84\xe4G4\xbdR\xaei\x87U\x14\x88\x95~8"
+  }
+}
+ref_index: 5
+3239
+kind: REQUEST
+method: "/google.firestore.v1.Firestore/Commit"
+message: {
+  [type.googleapis.com/google.firestore.v1.CommitRequest]: {
+    database: "projects/oscar-go-1/databases/test"
+    writes: {
+      update: {
+        name: "projects/oscar-go-1/databases/test/documents/values/6c696d69742e303030303030303030"
+        fields: {
+          key: "V"
+          value: {
+            bytes_value: "A"
+          }
+        }
+      }
+    }
+    writes: {
+      update: {
+        name: "projects/oscar-go-1/databases/test/documents/values/6c696d69742e303030303030303031"
+        fields: {
+          key: "V"
+          value: {
+            bytes_value: "A"
+          }
+        }
+      }
+    }
+    writes: {
+      update: {
+        name: "projects/oscar-go-1/databases/test/documents/values/6c696d69742e303030303030303032"
+        fields: {
+          key: "V"
+          value: {
+            bytes_value: "A"
+          }
+        }
+      }
+    }
+    writes: {
+      update: {
+        name: "projects/oscar-go-1/databases/test/documents/values/6c696d69742e303030303030303033"
+        fields: {
+          key: "V"
+          value: {
+            bytes_value: "A"
+          }
+        }
+      }
+    }
+    writes: {
+      update: {
+        name: "projects/oscar-go-1/databases/test/documents/values/6c696d69742e303030303030303034"
+        fields: {
+          key: "V"
+          value: {
+            bytes_value: "A"
+          }
+        }
+      }
+    }
+    writes: {
+      update: {
+        name: "projects/oscar-go-1/databases/test/documents/values/6c696d69742e303030303030303035"
+        fields: {
+          key: "V"
+          value: {
+            bytes_value: "A"
+          }
+        }
+      }
+    }
+    writes: {
+      update: {
+        name: "projects/oscar-go-1/databases/test/documents/values/6c696d69742e303030303030303036"
+        fields: {
+          key: "V"
+          value: {
+            bytes_value: "A"
+          }
+        }
+      }
+    }
+    writes: {
+      update: {
+        name: "projects/oscar-go-1/databases/test/documents/values/6c696d69742e303030303030303037"
+        fields: {
+          key: "V"
+          value: {
+            bytes_value: "A"
+          }
+        }
+      }
+    }
+    writes: {
+      update: {
+        name: "projects/oscar-go-1/databases/test/documents/values/6c696d69742e303030303030303038"
+        fields: {
+          key: "V"
+          value: {
+            bytes_value: "A"
+          }
+        }
+      }
+    }
+    writes: {
+      update: {
+        name: "projects/oscar-go-1/databases/test/documents/values/6c696d69742e303030303030303039"
+        fields: {
+          key: "V"
+          value: {
+            bytes_value: "A"
+          }
+        }
+      }
+    }
+    writes: {
+      update: {
+        name: "projects/oscar-go-1/databases/test/documents/values/6c696d69742e303030303030303130"
+        fields: {
+          key: "V"
+          value: {
+            bytes_value: "A"
+          }
+        }
+      }
+    }
+    transaction: "\x11\xba,\x86 ļl\x18\"Y\x00\xb8>\xbb\x0e\xc3\x06\xa6\xc0\x8d\xb9[\xeao\x87\xfe\x01^\xf9e\x92\xc5\xfffs@\xb9ƚ\x0f\xdeĭ^\xed\x03\x03\x93^\x1b\xec\xc1f\xef\x94u\xc1 \x1f\x10\x0b\xb82hX\xbd!\xf7\xa3C\xe2\x7fr\xae\x99\x04\xba0\x02箠\xdc\xee\x84\xe4G4\xbdR\xaei\x87U\x14\x88\x95~8"
+  }
+}
+1380
+kind: RESPONSE
+message: {
+  [type.googleapis.com/google.firestore.v1.CommitResponse]: {
+    write_results: {
+      update_time: {
+        seconds: 1724356547
+        nanos: 247131000
+      }
+    }
+    write_results: {
+      update_time: {
+        seconds: 1724356547
+        nanos: 247131000
+      }
+    }
+    write_results: {
+      update_time: {
+        seconds: 1724356547
+        nanos: 247131000
+      }
+    }
+    write_results: {
+      update_time: {
+        seconds: 1724356547
+        nanos: 247131000
+      }
+    }
+    write_results: {
+      update_time: {
+        seconds: 1724356547
+        nanos: 247131000
+      }
+    }
+    write_results: {
+      update_time: {
+        seconds: 1724356547
+        nanos: 247131000
+      }
+    }
+    write_results: {
+      update_time: {
+        seconds: 1724356547
+        nanos: 247131000
+      }
+    }
+    write_results: {
+      update_time: {
+        seconds: 1724356547
+        nanos: 247131000
+      }
+    }
+    write_results: {
+      update_time: {
+        seconds: 1724356547
+        nanos: 247131000
+      }
+    }
+    write_results: {
+      update_time: {
+        seconds: 1724356547
+        nanos: 247131000
+      }
+    }
+    write_results: {
+      update_time: {
+        seconds: 1724356547
+        nanos: 247131000
+      }
+    }
+    commit_time: {
+      seconds: 1724363474
+      nanos: 480039000
+    }
+  }
+}
+ref_index: 7
+70
+kind: CREATE_STREAM
+method: "/google.firestore.v1.Firestore/RunQuery"
+753
+kind: SEND
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryRequest]: {
+    parent: "projects/oscar-go-1/databases/test/documents"
+    structured_query: {
+      from: {
+        collection_id: "values"
+      }
+      order_by: {
+        field: {
+          field_path: "__name__"
+        }
+        direction: ASCENDING
+      }
+      start_at: {
+        values: {
+          reference_value: "projects/oscar-go-1/databases/test/documents/values/6c696d69742e303030303030303030"
+        }
+        before: true
+      }
+      end_at: {
+        values: {
+          reference_value: "projects/oscar-go-1/databases/test/documents/values/6c696d69742e303030303030303130"
+        }
+      }
+      limit: {
+        value: 5
+      }
+    }
+  }
+}
+ref_index: 9
+555
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
+    document: {
+      name: "projects/oscar-go-1/databases/test/documents/values/6c696d69742e303030303030303030"
+      fields: {
+        key: "V"
+        value: {
+          bytes_value: "A"
+        }
+      }
+      create_time: {
+        seconds: 1724356547
+        nanos: 247131000
+      }
+      update_time: {
+        seconds: 1724356547
+        nanos: 247131000
+      }
+    }
+    read_time: {
+      seconds: 1724363474
+      nanos: 745952000
+    }
+  }
+}
+ref_index: 9
+555
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
+    document: {
+      name: "projects/oscar-go-1/databases/test/documents/values/6c696d69742e303030303030303031"
+      fields: {
+        key: "V"
+        value: {
+          bytes_value: "A"
+        }
+      }
+      create_time: {
+        seconds: 1724356547
+        nanos: 247131000
+      }
+      update_time: {
+        seconds: 1724356547
+        nanos: 247131000
+      }
+    }
+    read_time: {
+      seconds: 1724363474
+      nanos: 745952000
+    }
+  }
+}
+ref_index: 9
+555
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
+    document: {
+      name: "projects/oscar-go-1/databases/test/documents/values/6c696d69742e303030303030303032"
+      fields: {
+        key: "V"
+        value: {
+          bytes_value: "A"
+        }
+      }
+      create_time: {
+        seconds: 1724356547
+        nanos: 247131000
+      }
+      update_time: {
+        seconds: 1724356547
+        nanos: 247131000
+      }
+    }
+    read_time: {
+      seconds: 1724363474
+      nanos: 745952000
+    }
+  }
+}
+ref_index: 9
+555
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
+    document: {
+      name: "projects/oscar-go-1/databases/test/documents/values/6c696d69742e303030303030303033"
+      fields: {
+        key: "V"
+        value: {
+          bytes_value: "A"
+        }
+      }
+      create_time: {
+        seconds: 1724356547
+        nanos: 247131000
+      }
+      update_time: {
+        seconds: 1724356547
+        nanos: 247131000
+      }
+    }
+    read_time: {
+      seconds: 1724363474
+      nanos: 745952000
+    }
+  }
+}
+ref_index: 9
+555
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
+    document: {
+      name: "projects/oscar-go-1/databases/test/documents/values/6c696d69742e303030303030303034"
+      fields: {
+        key: "V"
+        value: {
+          bytes_value: "A"
+        }
+      }
+      create_time: {
+        seconds: 1724356547
+        nanos: 247131000
+      }
+      update_time: {
+        seconds: 1724356547
+        nanos: 247131000
+      }
+    }
+    read_time: {
+      seconds: 1724363474
+      nanos: 745952000
+    }
+  }
+}
+ref_index: 9
+39
+kind: RECV
+is_error: true
+ref_index: 9
+70
+kind: CREATE_STREAM
+method: "/google.firestore.v1.Firestore/RunQuery"
+756
+kind: SEND
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryRequest]: {
+    parent: "projects/oscar-go-1/databases/test/documents"
+    structured_query: {
+      from: {
+        collection_id: "values"
+      }
+      order_by: {
+        field: {
+          field_path: "__name__"
+        }
+        direction: ASCENDING
+      }
+      start_at: {
+        values: {
+          reference_value: "projects/oscar-go-1/databases/test/documents/values/6c696d69742e30303030303030303400"
+        }
+        before: true
+      }
+      end_at: {
+        values: {
+          reference_value: "projects/oscar-go-1/databases/test/documents/values/6c696d69742e303030303030303130"
+        }
+      }
+      limit: {
+        value: 5
+      }
+    }
+  }
+}
+ref_index: 17
+556
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
+    document: {
+      name: "projects/oscar-go-1/databases/test/documents/values/6c696d69742e303030303030303035"
+      fields: {
+        key: "V"
+        value: {
+          bytes_value: "A"
+        }
+      }
+      create_time: {
+        seconds: 1724356547
+        nanos: 247131000
+      }
+      update_time: {
+        seconds: 1724356547
+        nanos: 247131000
+      }
+    }
+    read_time: {
+      seconds: 1724363474
+      nanos: 835594000
+    }
+  }
+}
+ref_index: 17
+556
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
+    document: {
+      name: "projects/oscar-go-1/databases/test/documents/values/6c696d69742e303030303030303036"
+      fields: {
+        key: "V"
+        value: {
+          bytes_value: "A"
+        }
+      }
+      create_time: {
+        seconds: 1724356547
+        nanos: 247131000
+      }
+      update_time: {
+        seconds: 1724356547
+        nanos: 247131000
+      }
+    }
+    read_time: {
+      seconds: 1724363474
+      nanos: 835594000
+    }
+  }
+}
+ref_index: 17
+556
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
+    document: {
+      name: "projects/oscar-go-1/databases/test/documents/values/6c696d69742e303030303030303037"
+      fields: {
+        key: "V"
+        value: {
+          bytes_value: "A"
+        }
+      }
+      create_time: {
+        seconds: 1724356547
+        nanos: 247131000
+      }
+      update_time: {
+        seconds: 1724356547
+        nanos: 247131000
+      }
+    }
+    read_time: {
+      seconds: 1724363474
+      nanos: 835594000
+    }
+  }
+}
+ref_index: 17
+556
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
+    document: {
+      name: "projects/oscar-go-1/databases/test/documents/values/6c696d69742e303030303030303038"
+      fields: {
+        key: "V"
+        value: {
+          bytes_value: "A"
+        }
+      }
+      create_time: {
+        seconds: 1724356547
+        nanos: 247131000
+      }
+      update_time: {
+        seconds: 1724356547
+        nanos: 247131000
+      }
+    }
+    read_time: {
+      seconds: 1724363474
+      nanos: 835594000
+    }
+  }
+}
+ref_index: 17
+556
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
+    document: {
+      name: "projects/oscar-go-1/databases/test/documents/values/6c696d69742e303030303030303039"
+      fields: {
+        key: "V"
+        value: {
+          bytes_value: "A"
+        }
+      }
+      create_time: {
+        seconds: 1724356547
+        nanos: 247131000
+      }
+      update_time: {
+        seconds: 1724356547
+        nanos: 247131000
+      }
+    }
+    read_time: {
+      seconds: 1724363474
+      nanos: 835594000
+    }
+  }
+}
+ref_index: 17
+40
+kind: RECV
+is_error: true
+ref_index: 17
+70
+kind: CREATE_STREAM
+method: "/google.firestore.v1.Firestore/RunQuery"
+756
+kind: SEND
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryRequest]: {
+    parent: "projects/oscar-go-1/databases/test/documents"
+    structured_query: {
+      from: {
+        collection_id: "values"
+      }
+      order_by: {
+        field: {
+          field_path: "__name__"
+        }
+        direction: ASCENDING
+      }
+      start_at: {
+        values: {
+          reference_value: "projects/oscar-go-1/databases/test/documents/values/6c696d69742e30303030303030303900"
+        }
+        before: true
+      }
+      end_at: {
+        values: {
+          reference_value: "projects/oscar-go-1/databases/test/documents/values/6c696d69742e303030303030303130"
+        }
+      }
+      limit: {
+        value: 5
+      }
+    }
+  }
+}
+ref_index: 25
+556
+kind: RECV
+message: {
+  [type.googleapis.com/google.firestore.v1.RunQueryResponse]: {
+    document: {
+      name: "projects/oscar-go-1/databases/test/documents/values/6c696d69742e303030303030303130"
+      fields: {
+        key: "V"
+        value: {
+          bytes_value: "A"
+        }
+      }
+      create_time: {
+        seconds: 1724356547
+        nanos: 247131000
+      }
+      update_time: {
+        seconds: 1724356547
+        nanos: 247131000
+      }
+    }
+    read_time: {
+      seconds: 1724363474
+      nanos: 918040000
+    }
+  }
+}
+ref_index: 25
+40
+kind: RECV
+is_error: true
+ref_index: 25
