@@ -80,6 +80,11 @@ steps:
 
         gcloud run deploy --project $PROJECT_ID $service --image $image --region us-central1
 
+        # If there was a rollback, `gcloud run deploy` will create a revision
+        # but not point traffic to it. The following command ensures that the
+        # new revision will get traffic.
+        gcloud run services update-traffic $service --to-latest --region us-central1
+
 substitutions:
   _ENV: "devel"
   _ENABLE_SYNC: "false"
