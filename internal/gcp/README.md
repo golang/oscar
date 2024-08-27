@@ -62,9 +62,10 @@ where [TRIGGER_NAME] is one of `deploy-gaby-devel` or `deploy-gaby-prod` and [CO
 
 Roll back a service from the UI:
 
-1. Click the service name (gaby-devel or gaby-prod) in Cloud Run.
+1. Click the service name (gaby-devel or gaby-prod) in [Cloud Run](https://console.cloud.google.com/run?project=oscar-go-1).
 2. Click the "REVISIONS" tab.
 3. For the revision you want to roll back, click the "Actions" nav bar, then "Manage Traffic":
+![select Manage Traffic](manage-traffic.png)
 4. Set the traffic for this revision to 0%, and pick a healthy revision (usually the previous one), to direct 100% of traffic to. Click "SAVE".
 
 Or from the command line:
