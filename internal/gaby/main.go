@@ -303,6 +303,9 @@ func (g *Gaby) serveHTTP() {
 		cronCounter.Add(r.Context(), 1)
 	})
 
+	// /search: display a form for vector similarity search.
+	// /search?q=...: perform a search using the value of q as input.
+	http.HandleFunc("/search", g.handleSearch)
 	// Listen in this goroutine so that we can return a synchronous error
 	// if the port is already in use or the address is otherwise invalid.
 	// Run the actual server in a background goroutine.
