@@ -38,8 +38,8 @@ const (
 // This package stores the following key schemas in the database:
 //
 //	["github.SyncProject", Project] => JSON of projectSync structure
-//	["github.Event", Project, Issue, Type, API, ID] => [DBTime, Raw(JSON)]
-//	["github.EventByTime", DBTime, Project, Issue, Type, API, ID] => []
+//	["github.Event", Project, Issue, API, ID] => [DBTime, Raw(JSON)]
+//	["github.EventByTime", DBTime, Project, Issue, API, ID] => []
 //
 // To reconstruct the history of a given issue, scan for keys from
 // ["github.Event", Project, Issue] to ["github.Event", Project, Issue, ordered.Inf].
