@@ -269,7 +269,13 @@ func (g *Gaby) searchLoop() {
 
 // serveHTTP serves HTTP endpoints for Gaby.
 func (g *Gaby) serveHTTP() {
-	cronCounter := g.newCounter("crons", "number of /cron requests")
+	const (
+		cronEndpoint        = "cron"
+		setLevelEndpoint    = "setlevel"
+		githubEventEndpoint = "github-event"
+	)
+	cronEndpointCounter := g.newEndpointCounter(cronEndpoint)
+	githubEventEndpointCounter := g.newEndpointCounter(githubEventEndpoint)
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Gaby\n")
@@ -280,7 +286,7 @@ func (g *Gaby) serveHTTP() {
 
 	// setlevel changes the log level dynamically.
 	// Usage: /setlevel?l=LEVEL
-	http.HandleFunc("/setlevel", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/"+setLevelEndpoint, func(w http.ResponseWriter, r *http.Request) {
 		if err := g.slogLevel.UnmarshalText([]byte(r.FormValue("l"))); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -289,18 +295,36 @@ func (g *Gaby) serveHTTP() {
 		g.slog.Info("log level set", "new-level", g.slogLevel.Level())
 	})
 
-	// cron is called periodically by a Cloud Scheduler job.
-	http.HandleFunc("/cron", func(w http.ResponseWriter, r *http.Request) {
-		g.slog.Info("cron start")
-		defer g.slog.Info("cron end")
+	// cronEndpoint is called periodically by a Cloud Scheduler job.
+	http.HandleFunc("/"+cronEndpoint, func(w http.ResponseWriter, r *http.Request) {
+		g.slog.Info(cronEndpoint + " start")
+		defer g.slog.Info(cronEndpoint + " end")
 
-		g.db.Lock("gabycron")
-		defer g.db.Unlock("gabycron")
+		const cronLock = "gabycron"
+		g.db.Lock(cronLock)
+		defer g.db.Unlock(cronLock)
 
 		for _, cron := range g.crons {
 			cron(g.ctx)
 		}
-		cronCounter.Add(r.Context(), 1)
+		cronEndpointCounter.Add(r.Context(), 1)
+	})
+
+	// githubEventEndpoint is called by a GitHub webhook when a new
+	// event occurs on the golang/go repo.
+	http.HandleFunc("/"+githubEventEndpoint, func(w http.ResponseWriter, r *http.Request) {
+		g.slog.Info(githubEventEndpoint + " start")
+		defer g.slog.Info(githubEventEndpoint + " end")
+
+		const githubEventLock = "gabygithubevent"
+		g.db.Lock(githubEventLock)
+		defer g.db.Unlock(githubEventLock)
+
+		if err := g.handleGitHubEvent(r); err != nil {
+			slog.Warn(githubEventEndpoint, "err", err)
+		}
+
+		githubEventEndpointCounter.Add(r.Context(), 1)
 	})
 
 	// /search: display a form for vector similarity search.

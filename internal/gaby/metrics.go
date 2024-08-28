@@ -6,6 +6,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 
 	"go.opentelemetry.io/otel/attribute"
 	ometric "go.opentelemetry.io/otel/metric"
@@ -21,6 +22,14 @@ func (g *Gaby) newCounter(name, description string) ometric.Int64Counter {
 		panic(err)
 	}
 	return c
+}
+
+// newEndpointCounter creates an integer counter instrument, intended
+// to count the number of times the given endpoint is requested.
+// It panics if the counter cannot be created.
+func (g *Gaby) newEndpointCounter(endpoint string) ometric.Int64Counter {
+	name, desc := fmt.Sprintf("%ss", endpoint), fmt.Sprintf("number of /%s requests", endpoint)
+	return g.newCounter(name, desc)
 }
 
 // registerWatcherMetric adds a metric called "watcher-latest" for the latest times of Watchers.
