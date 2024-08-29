@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 
 	"github.com/google/safehtml/template"
 	"golang.org/x/oscar/internal/llm"
@@ -38,6 +39,7 @@ func (g *Gaby) handleSearch(w http.ResponseWriter, r *http.Request) {
 type searchResult struct {
 	Title   string
 	VResult storage.VectorResult
+	IDIsURL bool // VResult.ID can be parsed as a URL
 }
 
 func (g *Gaby) search(query string) ([]searchResult, error) {
@@ -52,7 +54,8 @@ func (g *Gaby) search(query string) ([]searchResult, error) {
 		if d, ok := g.docs.Get(r.ID); ok {
 			title = d.Title
 		}
-		srs = append(srs, searchResult{title, r})
+		_, err := url.Parse(r.ID)
+		srs = append(srs, searchResult{title, r, err == nil})
 	}
 	return srs, nil
 }
@@ -76,6 +79,8 @@ const searchForm = `
 <html>
   <head>
     <title>Oscar Search</title>
+    <!-- All links open in another tab. -->
+    <base target="_blank">
   </head>
   <body>
     <h1>Vector search</h1>
@@ -95,13 +100,19 @@ var searchResultsTmpl = template.Must(template.New("").Parse(`
   </head>
   <body>
   <h1>Search results for "{{.Query}}"</h1>
-  {{with .Results}}
-	  {{range .Results}}
-	     <p>{{.Title}}: {{.Vresult.ID}} ({{.VResult.Score}})</p>
+  {{- with .Results -}}
+	  {{- range . }}
+	     <p>{{with .Title}}{{.}}: {{end -}}
+	    {{if .IDIsURL -}}
+	      {{with .VResult}}<a href="{{.ID}}">{{.ID}}</a>{{end -}}
+	    {{else -}}
+	      {{.VResult.ID}}
+	    {{end -}}
+	    {{" "}}({{.VResult.Score}})</p>
 	  {{end}}
-  {{else}}
+  {{- else -}}
      No results.
-  {{end}}
+  {{- end}}
   </body>
 </html>
 `))
