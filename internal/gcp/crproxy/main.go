@@ -23,6 +23,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -31,6 +32,8 @@ import (
 	"os"
 	"time"
 
+	"cloud.google.com/go/compute/metadata"
+	"cloud.google.com/go/firestore"
 	"golang.org/x/oscar/internal/gcp/gcphandler"
 	"google.golang.org/api/idtoken"
 )
@@ -58,7 +61,8 @@ func main() {
 	// This App Engine app's service account should have the Cloud Run Invoker role.
 	// The only other piece of the credential is the audience value for the Cloud Run service,
 	// which is just its URL.
-	idClient, err := idtoken.NewClient(context.Background(), "https://"+cloudRunHost)
+	ctx := context.Background()
+	idClient, err := idtoken.NewClient(ctx, "https://"+cloudRunHost)
 	if err != nil {
 		lg.Error("idtoken.NewClient", "err", err)
 		os.Exit(2)
@@ -66,6 +70,29 @@ func main() {
 	target := &url.URL{
 		Scheme: "https",
 		Host:   cloudRunHost,
+	}
+
+	// Create a Firestore client for reading auth information.
+	fsClient, err := firestoreClient(ctx, "")
+	if err != nil {
+		lg.Error("firestore.NewClient", "err", err)
+		os.Exit(2)
+	}
+	defer fsClient.Close()
+
+	// Read the role maps at startup to check if they are valid.
+	if _, _, err := readFirestoreRoles(ctx, fsClient); err != nil {
+		lg.Error("readRoles", "err", err)
+		os.Exit(1)
+	}
+
+	authFunc := func(user, urlPath string) (bool, error) {
+		// Re-Read the role maps each time in case they've been updated.
+		userMap, pathMap, err := readFirestoreRoles(ctx, fsClient)
+		if err != nil {
+			return false, err
+		}
+		return isAuthorized(user, urlPath, userMap, pathMap), nil
 	}
 
 	// Create a reverse proxy to the Cloud Run host.
@@ -80,17 +107,18 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle("/", iapAuth(lg, jwtAudience, rp))
+	mux.Handle("/", iapAuth(lg, jwtAudience, authFunc, rp))
 	lg.Info("listening", "port", port)
 	lg.Error("ListenAndServe", "err", http.ListenAndServe(":"+port, mux))
 	os.Exit(1)
 }
 
-// Copied with minor modifications from from x/website/cmd/adminapp/main.go.
-// It shouldn't be necessary to perform this extra check on App Engine,
-// but it can't hurt.
-func iapAuth(lg *slog.Logger, audience string, h http.Handler) http.Handler {
-	// https://cloud.google.com/iap/docs/signed-headers-howto#verifying_the_jwt_payload
+// iapAuth validates the JWT token passed by IAP.
+// This is required to secure the app. See https://cloud.google.com/iap/docs/identity-howto.
+//
+// Based on x/website/cmd/adminapp/main.go.
+func iapAuth(lg *slog.Logger, audience string, authorized func(string, string) (bool, error), h http.Handler) http.Handler {
+	// See https://cloud.google.com/iap/docs/signed-headers-howto#verifying_the_jwt_payload.
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		jwt := r.Header.Get("x-goog-iap-jwt-assertion")
 		if jwt == "" {
@@ -98,25 +126,61 @@ func iapAuth(lg *slog.Logger, audience string, h http.Handler) http.Handler {
 			fmt.Fprintf(w, "must run under IAP\n")
 			return
 		}
-
-		payload, err := idtoken.Validate(r.Context(), jwt, audience)
+		user, err := validateJWT(r.Context(), jwt, audience)
 		if err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			lg.Warn("JWT validation error", "err", err)
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			lg.Warn("IAP validation", "err", err)
 			return
 		}
-		if payload.Issuer != "https://cloud.google.com/iap" {
-			w.WriteHeader(http.StatusUnauthorized)
-			lg.Warn("Incorrect issuer", "issuer", payload.Issuer)
+		auth, err := authorized(user, r.URL.Path)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			lg.Error("authorizing", "err", err)
 			return
 		}
-		if payload.Expires+30 < time.Now().Unix() || payload.IssuedAt-30 > time.Now().Unix() {
-			w.WriteHeader(http.StatusUnauthorized)
-			lg.Warn("Bad JWT times",
-				"expires", time.Unix(payload.Expires, 0),
-				"issued", time.Unix(payload.IssuedAt, 0))
+		if !auth {
+			http.Error(w, "ACLs forbid access", http.StatusUnauthorized)
 			return
 		}
 		h.ServeHTTP(w, r)
 	})
+}
+
+func firestoreClient(ctx context.Context, projectID string) (*firestore.Client, error) {
+	if projectID == "" {
+		var err error
+		projectID, err = metadata.ProjectIDWithContext(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if projectID == "" {
+			return nil, errors.New("metadata.ProjectID is empty")
+		}
+	}
+	return firestore.NewClient(ctx, projectID)
+}
+
+// validateJWT validates a JWT token.
+// It also checks that IAP issued the token, that its lifetime is valid
+// (it was issued before, and expires after, the current time, with some slack),
+// and that it contains a valid "email" claim.
+func validateJWT(ctx context.Context, jwt, audience string) (string, error) {
+	payload, err := idtoken.Validate(ctx, jwt, audience)
+	if err != nil {
+		return "", fmt.Errorf("idtoken.Validate: %v", err)
+	}
+	if payload.Issuer != "https://cloud.google.com/iap" {
+		return "", fmt.Errorf("incorrect issuer: %q", payload.Issuer)
+	}
+	if payload.Expires+30 < time.Now().Unix() || payload.IssuedAt-30 > time.Now().Unix() {
+		return "", errors.New("bad JWT token times")
+	}
+	user, ok := payload.Claims["email"].(string)
+	if !ok {
+		return "", errors.New("'email' claim not a string")
+	}
+	if user == "" {
+		return "", errors.New("JWT missing 'email' claim")
+	}
+	return user, nil
 }
