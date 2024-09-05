@@ -58,11 +58,12 @@ func init() {
 
 // Gaby holds the state for gaby's execution.
 type Gaby struct {
-	ctx   context.Context
-	cloud bool                    // running on Cloud Run
-	meta  map[string]string       // any metadata we want to expose
-	addr  string                  // address to serve HTTP on
-	crons []func(context.Context) // functions to run every minute or so
+	ctx           context.Context
+	cloud         bool                    // running on Cloud Run
+	meta          map[string]string       // any metadata we want to expose
+	addr          string                  // address to serve HTTP on
+	githubProject string                  // github project to monitor and update
+	actions       []func(context.Context) // functions to run every minute or so, or when triggered by a GitHub event
 
 	slog      *slog.Logger     // slog output to use
 	slogLevel *slog.LevelVar   // slog level, for changing as needed
@@ -81,13 +82,14 @@ func main() {
 
 	level := new(slog.LevelVar)
 	g := &Gaby{
-		ctx:       context.Background(),
-		cloud:     onCloudRun(),
-		meta:      map[string]string{},
-		slog:      slog.New(gcphandler.New(level)),
-		slogLevel: level,
-		http:      http.DefaultClient,
-		addr:      "localhost:4229", // 4229 = gaby on a phone
+		ctx:           context.Background(),
+		cloud:         onCloudRun(),
+		meta:          map[string]string{},
+		slog:          slog.New(gcphandler.New(level)),
+		slogLevel:     level,
+		http:          http.DefaultClient,
+		addr:          "localhost:4229", // 4229 = gaby on a phone
+		githubProject: "golang/go",
 	}
 
 	shutdown := g.initGCP()
@@ -132,7 +134,7 @@ func main() {
 	}
 
 	cf := commentfix.New(g.slog, g.github, "gerritlinks")
-	cf.EnableProject("golang/go")
+	cf.EnableProject(g.githubProject)
 	cf.AutoLink(`\bCL ([0-9]+)\b`, "https://go.dev/cl/$1")
 	cf.ReplaceURL(`\Qhttps://go-review.git.corp.google.com/\E`, "https://go-review.googlesource.com/")
 	cf.EnableEdits()
@@ -140,7 +142,7 @@ func main() {
 	watcherLatests["gerritlinks fix"] = cf.Latest
 
 	rp := related.New(g.slog, g.db, g.github, g.vector, g.docs, "related")
-	rp.EnableProject("golang/go")
+	rp.EnableProject(g.githubProject)
 	rp.SkipBodyContains("— [watchflakes](https://go.dev/wiki/Watchflakes)")
 	rp.SkipTitlePrefix("x/tools/gopls: release version v")
 	rp.SkipTitleSuffix(" backport]")
@@ -149,10 +151,10 @@ func main() {
 	watcherLatests["related"] = rp.Latest
 
 	if flags.enablesync {
-		g.crons = append(g.crons, syncs...)
+		g.actions = append(g.actions, syncs...)
 	}
 	if flags.enablechanges {
-		g.crons = append(g.crons, changes...)
+		g.actions = append(g.actions, changes...)
 	}
 
 	// Install a metric that observes the latest values of the watchers each time metrics are sampled.
@@ -304,14 +306,14 @@ func (g *Gaby) serveHTTP() {
 		g.db.Lock(cronLock)
 		defer g.db.Unlock(cronLock)
 
-		for _, cron := range g.crons {
-			cron(g.ctx)
+		for _, action := range g.actions {
+			action(g.ctx)
 		}
 		cronEndpointCounter.Add(r.Context(), 1)
 	})
 
 	// githubEventEndpoint is called by a GitHub webhook when a new
-	// event occurs on the golang/go repo.
+	// event occurs on the githubProject repo.
 	http.HandleFunc("/"+githubEventEndpoint, func(w http.ResponseWriter, r *http.Request) {
 		g.slog.Info(githubEventEndpoint + " start")
 		defer g.slog.Info(githubEventEndpoint + " end")

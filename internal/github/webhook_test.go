@@ -5,51 +5,159 @@
 package github
 
 import (
-	"bytes"
+	"encoding/json"
 	"errors"
+	"net/http"
+	"reflect"
 	"testing"
 
 	"golang.org/x/oscar/internal/secret"
 )
 
 func TestValidateWebhookRequest(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		for _, tc := range []struct {
+			event   string
+			project string
+			payload any
+		}{
+			{
+				event:   "issues",
+				project: "a/project",
+				payload: &WebhookIssueEvent{
+					Action: WebhookIssueActionOpened,
+					Repository: Repository{
+						Project: "a/project",
+					},
+				},
+			},
+			{
+				event:   "issue_comment",
+				project: "a/project",
+				payload: &WebhookIssueCommentEvent{
+					Action: WebhookIssueCommentActionCreated,
+					Repository: Repository{
+						Project: "a/project",
+					},
+				},
+			},
+		} {
+			t.Run(tc.event, func(t *testing.T) {
+				r, db := ValidWebhookTestdata(t, tc.event, tc.payload)
+				got, err := ValidateWebhookRequest(r, tc.project, db)
+				if err != nil {
+					t.Fatalf("ValidateWebhookRequest err = %s, want nil", err)
+				}
+				want := &WebhookEvent{Payload: tc.payload}
+				if !reflect.DeepEqual(got, want) {
+					t.Errorf("ValidateWebhookRequest = %s, want %s", got, want)
+				}
+			})
+		}
+	})
+
+	t.Run("error", func(t *testing.T) {
+		key := "test-key"
+		db := newWebhookSecretDB(t, key)
+
+		defaultProject := "a/project"
+		defaultEvent := "issues"
+		defaultPayload, err := json.Marshal(WebhookIssueEvent{
+			Action: WebhookIssueActionOpened,
+			Repository: Repository{
+				Project: defaultProject,
+			},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		defaultSignature := computeXHubSignature256(t, defaultPayload, key)
+
+		getRequest, err := http.NewRequest(http.MethodGet, "", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		for _, tc := range []struct {
+			name    string
+			project string
+			r       *http.Request
+			wantErr error
+		}{
+			{
+				name:    "wrong method",
+				project: defaultProject,
+				r:       getRequest,
+				wantErr: errBadHTTPMethod,
+			},
+			{
+				name:    "no payload",
+				project: defaultProject,
+				r:       newWebhookRequest(t, defaultEvent, defaultSignature, nil),
+				wantErr: errNoPayload,
+			},
+			{
+				name:    "unsupported event",
+				project: defaultProject,
+				r:       newWebhookRequest(t, "bad", defaultSignature, defaultPayload),
+				wantErr: errUnknownEvent,
+			},
+			{
+				name:    "invalid signature",
+				project: defaultProject,
+				r:       newWebhookRequest(t, defaultEvent, "sha256=deadbeef", defaultPayload),
+				wantErr: errInvalidHMAC,
+			},
+			{
+				name:    "wrong project",
+				project: "another/project",
+				r:       newWebhookRequest(t, defaultEvent, defaultSignature, defaultPayload),
+				wantErr: errWrongProject,
+			},
+		} {
+			t.Run(tc.name, func(t *testing.T) {
+				_, err := ValidateWebhookRequest(tc.r, tc.project, db)
+				if !errors.Is(err, tc.wantErr) {
+					t.Errorf("ValidateWebhookRequest err = %v, want error %v", err, tc.wantErr)
+				}
+			})
+		}
+	})
+}
+
+func TestValidateWebhookSignature(t *testing.T) {
 	// Example test case from GitHub
 	// (https://docs.github.com/en/webhooks/using-webhooks/validating-webhook-deliveries#testing-the-webhook-payload-validation).
 	defaultHeaderEntry := "sha256=757107ea0eb2509fc211221cce984b8a37570b6d7586c22c46f4379c8b043e17"
-	defaultPayload := "Hello, World!"
+	defaultPayload := []byte("Hello, World!")
 	defaultKey := "It's a Secret to Everybody"
 
 	t.Run("success", func(t *testing.T) {
 		for _, tc := range []struct {
-			name        string
-			headerEntry string
-			payload     string
-			key         string
+			name      string
+			signature string
+			payload   []byte
+			key       string
 		}{
 			{
-				name:        "hardcoded",
-				headerEntry: defaultHeaderEntry,
-				payload:     defaultPayload,
-				key:         defaultKey,
+				name:      "hardcoded",
+				signature: defaultHeaderEntry,
+				payload:   defaultPayload,
+				key:       defaultKey,
 			},
 			{
-				name:        "computed",
-				headerEntry: computeXHubSignature256(t, "a payload", "a key"),
-				payload:     "a payload",
-				key:         "a key",
+				name:      "computed",
+				signature: computeXHubSignature256(t, []byte("a payload"), "a key"),
+				payload:   []byte("a payload"),
+				key:       "a key",
 			},
 		} {
 			t.Run(tc.name, func(t *testing.T) {
-				r := newWebhookRequest(t, tc.headerEntry, tc.payload)
 				db := newWebhookSecretDB(t, tc.key)
 
-				got, err := ValidateWebhookRequest(r, db)
+				err := validateWebhookSignature(tc.payload, tc.signature, db)
 				if err != nil {
-					t.Fatalf("ValidateWebhookRequest err = %s, want nil", err)
-				}
-				want := []byte(tc.payload)
-				if !bytes.Equal(got, want) {
-					t.Errorf("ValidateWebhookRequest = %q, want %q", got, want)
+					t.Fatalf("validateWebhookSignature err = %s, want nil", err)
 				}
 			})
 		}
@@ -57,65 +165,64 @@ func TestValidateWebhookRequest(t *testing.T) {
 
 	t.Run("error", func(t *testing.T) {
 		for _, tc := range []struct {
-			name        string
-			headerEntry string
-			payload     string
-			key         string
-			wantErr     error
+			name      string
+			signature string
+			payload   []byte
+			key       string
+			wantErr   error
 		}{
 			{
-				name:        "no X-Hub-Signature-256 header entry",
-				headerEntry: "",
-				payload:     defaultPayload,
-				key:         defaultKey,
-				wantErr:     errNoHeader,
+				name:      "no X-Hub-Signature-256 header entry",
+				signature: "",
+				payload:   defaultPayload,
+				key:       defaultKey,
+				wantErr:   errNoSignatureHeader,
 			},
 			{
-				name:        "malformed X-Hub-Signature-256 header entry",
-				headerEntry: "sha=757107ea0eb2509fc211221cce984b8a37570b6d7586c22c46f4379c8b043e17",
-				payload:     defaultPayload,
-				key:         defaultKey,
-				wantErr:     errMalformedHeader,
+				name:      "malformed X-Hub-Signature-256 header entry",
+				signature: "sha=757107ea0eb2509fc211221cce984b8a37570b6d7586c22c46f4379c8b043e17",
+				payload:   defaultPayload,
+				key:       defaultKey,
+				wantErr:   errBadSignatureHeader,
 			},
 			{
-				name:        "wrong payload",
-				headerEntry: defaultHeaderEntry,
-				payload:     "a different payload",
-				key:         defaultKey,
-				wantErr:     errInvalidHMAC,
+				name:      "wrong payload",
+				signature: defaultHeaderEntry,
+				payload:   []byte("a different payload"),
+				key:       defaultKey,
+				wantErr:   errInvalidHMAC,
 			},
 			{
-				name:        "wrong key",
-				headerEntry: defaultHeaderEntry,
-				payload:     defaultPayload,
-				key:         "a different key",
-				wantErr:     errInvalidHMAC,
+				name:      "wrong key",
+				signature: defaultHeaderEntry,
+				payload:   defaultPayload,
+				key:       "a different key",
+				wantErr:   errInvalidHMAC,
 			},
 			{
-				name:        "no key",
-				headerEntry: defaultHeaderEntry,
-				payload:     defaultPayload,
-				key:         "",
-				wantErr:     errNoKey,
+				name:      "no key",
+				signature: defaultHeaderEntry,
+				payload:   defaultPayload,
+				key:       "",
+				wantErr:   errNoKey,
 			},
 			{
-				name:        "no payload",
-				headerEntry: defaultHeaderEntry,
-				payload:     "",
-				key:         defaultKey,
-				wantErr:     errNoPayload,
+				name:      "no payload",
+				signature: defaultHeaderEntry,
+				payload:   nil,
+				key:       defaultKey,
+				wantErr:   errInvalidHMAC,
 			},
 		} {
 			t.Run(tc.name, func(t *testing.T) {
-				r := newWebhookRequest(t, tc.headerEntry, tc.payload)
 				db := secret.Empty()
 				if tc.key != "" {
 					db = newWebhookSecretDB(t, tc.key)
 				}
 
-				_, err := ValidateWebhookRequest(r, db)
+				err := validateWebhookSignature(tc.payload, tc.signature, db)
 				if !errors.Is(err, tc.wantErr) {
-					t.Errorf("ValidateWebhookRequest err = %v, want error %v", err, tc.wantErr)
+					t.Errorf("validateWebhookSignature err = %v, want error %v", err, tc.wantErr)
 				}
 			})
 		}

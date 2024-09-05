@@ -5,27 +5,56 @@
 package main
 
 import (
-	"encoding/json"
+	"context"
 	"fmt"
 	"net/http"
 
 	"golang.org/x/oscar/internal/github"
 )
 
-// handleGitHubEvent takes action when an event occurs on GitHub.
-// Currently, the function only logs that it was able to validate
-// and parse the request.
+// handleGitHubEvent handles incoming webhook requests from GitHub.
+//
+// If the incoming request was triggered by a new GitHub issue, it
+// runs the same actions as are peformed by the /cron endpoint.
+//
+// Otherwise, it logs the event and takes no other action.
+//
+// handleGitHubEvent returns an error if the request is invalid, for example:
+//   - the request cannot be verified to come from GitHub
+//   - the event occurred in a GitHub project not supported by this Gaby
+//     instance
+//   - the event type is not supported by this implementation
 func (g *Gaby) handleGitHubEvent(r *http.Request) error {
-	payload, err := github.ValidateWebhookRequest(r, g.secret)
+	event, err := github.ValidateWebhookRequest(r, g.githubProject, g.secret)
 	if err != nil {
 		return fmt.Errorf("invalid request: %w", err)
 	}
 
-	var event map[string]any
-	if err := json.Unmarshal(payload, &event); err != nil {
-		return fmt.Errorf("could not unmarshal payload: %w", err)
+	switch p := event.Payload.(type) {
+	case *github.WebhookIssueEvent:
+		g.handleGithubIssueEvent(r.Context(), p)
+		return nil
+	default:
+		g.slog.Info("ignoring new non-issue GitHub event", "event", event)
 	}
 
-	g.slog.Info("new GitHub event", "event", event)
 	return nil
+}
+
+// handleGitHubIssueEvent handles incoming GitHub "issue" events.
+//
+// If the event corresponds to a new issue, the function runs the
+// same actions as are peformed by the /cron endpoint.
+//
+// Otherwise, it logs the event and takes no other action.
+func (g *Gaby) handleGithubIssueEvent(ctx context.Context, event *github.WebhookIssueEvent) {
+	if event.Action != github.WebhookIssueActionOpened {
+		g.slog.Info("ignoring GitHub issue event (action is not opened)", "event", event, "action", event)
+		return
+	}
+
+	g.slog.Info("handling GitHub issue event", "event", event)
+	for _, action := range g.actions {
+		action(ctx)
+	}
 }

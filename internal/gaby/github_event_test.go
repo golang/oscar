@@ -5,6 +5,7 @@
 package main
 
 import (
+	"context"
 	"log/slog"
 	"testing"
 
@@ -12,17 +13,67 @@ import (
 )
 
 func TestHandleGitHubEvent(t *testing.T) {
-	validPayload := `{"number":1}`
-	r, db := github.ValidWebhookTestdata(t, validPayload)
-	g := &Gaby{secret: db, slog: slog.Default()}
-	if err := g.handleGitHubEvent(r); err != nil {
-		t.Fatalf("handleGitHubEvent err = %v, want nil", err)
-	}
+	t.Run("valid new issue runs actions", func(t *testing.T) {
+		validPayload := &github.WebhookIssueEvent{
+			Action: github.WebhookIssueActionOpened,
+			Repository: github.Repository{
+				Project: "a/project",
+			},
+		}
+		r, db := github.ValidWebhookTestdata(t, "issues", validPayload)
+		ran := false
+		actions := []func(context.Context){
+			func(context.Context) { ran = true },
+		}
+		g := &Gaby{githubProject: "a/project", secret: db, slog: slog.Default(), actions: actions}
+		if err := g.handleGitHubEvent(r); err != nil {
+			t.Fatalf("handleGitHubEvent err = %v, want nil", err)
+		}
+		if !ran {
+			t.Errorf("handleGitHubEvent actions did not run")
+		}
+	})
 
-	invalidPayload := "not JSON"
-	r2, db2 := github.ValidWebhookTestdata(t, invalidPayload)
-	g2 := &Gaby{secret: db2, slog: slog.Default()}
-	if err := g2.handleGitHubEvent(r2); err == nil {
-		t.Fatal("handleGitHubEvent err = nil, want err")
-	}
+	// Valid event that we don't handle yet.
+	t.Run("valid issue comment ignored", func(t *testing.T) {
+		validPayload := &github.WebhookIssueCommentEvent{
+			Action: github.WebhookIssueCommentActionCreated,
+			Repository: github.Repository{
+				Project: "a/project",
+			},
+		}
+		r, db := github.ValidWebhookTestdata(t, "issue_comment", validPayload)
+		ran := false
+		actions := []func(context.Context){
+			func(context.Context) { ran = true },
+		}
+		g := &Gaby{githubProject: "a/project", secret: db, slog: slog.Default(), actions: actions}
+		if err := g.handleGitHubEvent(r); err != nil {
+			t.Fatalf("handleGitHubEvent err = %v, want nil", err)
+		}
+		if ran {
+			t.Errorf("handleGitHubEvent ran actions unexpectedley")
+		}
+	})
+
+	t.Run("error wrong project", func(t *testing.T) {
+		validPayload := &github.WebhookIssueEvent{
+			Action: github.WebhookIssueActionOpened,
+			Repository: github.Repository{
+				Project: "wrong/project",
+			},
+		}
+		r, db := github.ValidWebhookTestdata(t, "issues", validPayload)
+		ran := false
+		actions := []func(context.Context){
+			func(context.Context) { ran = true },
+		}
+		g := &Gaby{githubProject: "a/project", secret: db, slog: slog.Default(), actions: actions}
+		if err := g.handleGitHubEvent(r); err == nil {
+			t.Fatal("handleGitHubEvent err = nil, want err")
+		}
+		if ran {
+			t.Errorf("handleGitHubEvent ran actions unexpectedley")
+		}
+	})
 }
