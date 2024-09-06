@@ -5,40 +5,44 @@
 package main
 
 import (
+	"bytes"
 	"strings"
 	"testing"
 
 	"golang.org/x/oscar/internal/storage"
 )
 
-func TestSearchResultsHTML(t *testing.T) {
-	query := "some query"
-	searchResults := []searchResult{
-		{
-			Title: "t1",
-			VResult: storage.VectorResult{
-				ID:    "https://example.com/x",
-				Score: 0.987654321,
+func TestSearchPageTemplate(t *testing.T) {
+	page := searchPage{
+		Query: "some query",
+		Results: []searchResult{
+			{
+				Title: "t1",
+				VResult: storage.VectorResult{
+					ID:    "https://example.com/x",
+					Score: 0.987654321,
+				},
+				IDIsURL: true,
 			},
-			IDIsURL: true,
-		},
-		{
-			VResult: storage.VectorResult{
-				ID:    "https://example.com/y",
-				Score: 0.876,
+			{
+				VResult: storage.VectorResult{
+					ID:    "https://example.com/y",
+					Score: 0.876,
+				},
+				IDIsURL: false,
 			},
-			IDIsURL: false,
 		},
 	}
-	gotb, err := searchResultsHTML(query, searchResults)
-	if err != nil {
+
+	var buf bytes.Buffer
+	if err := searchPageTmpl.Execute(&buf, page); err != nil {
 		t.Fatal(err)
 	}
-	wants := []string{query}
-	for _, sr := range searchResults {
+	wants := []string{page.Query}
+	for _, sr := range page.Results {
 		wants = append(wants, sr.VResult.ID)
 	}
-	got := string(gotb)
+	got := buf.String()
 	t.Logf("%s", got)
 	for _, w := range wants {
 		if !strings.Contains(got, w) {
