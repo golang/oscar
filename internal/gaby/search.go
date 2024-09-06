@@ -92,10 +92,19 @@ var searchPageTmpl = template.Must(template.New("").Parse(`
   <body>
     <h1>Gaby search</h1>
     <p>Search Gaby's database of GitHub issues and Go documentation.</p>
-    <form action="/search" method="GET">
+    <form id="form" action="/search" method="GET">
       <input type="text" name="q" value="{{.Query}}" required autofocus />
       <input type="submit" value="Search"/>
     </form>
+
+    <div id="working"></div>
+
+    <script>
+    const form = document.getElementById("form");
+    form.addEventListener("submit", (event) => {
+		document.getElementById("working").innerHTML = "<p style='margin-top:1rem'>Working...</p>"
+    })
+    </script>
 
 	{{with .Results -}}
 	  {{- range . -}}
