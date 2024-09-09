@@ -29,14 +29,16 @@ type searchResult struct {
 }
 
 func (g *Gaby) handleSearch(w http.ResponseWriter, r *http.Request) {
-	if err := g.doSearch(w, r); err != nil {
+	data, err := g.doSearch(r)
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+	} else {
+		_, _ = w.Write(data)
 	}
 }
 
-// doSearch displays the vector search page. If an error occurs,
-// it returns the error before writing anything to w.
-func (g *Gaby) doSearch(w http.ResponseWriter, r *http.Request) error {
+// doSearch returns the contents of the vector search page.
+func (g *Gaby) doSearch(r *http.Request) ([]byte, error) {
 	page := searchPage{
 		Query: r.FormValue("q"),
 	}
@@ -44,7 +46,7 @@ func (g *Gaby) doSearch(w http.ResponseWriter, r *http.Request) error {
 		var err error
 		page.Results, err = g.search(page.Query)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		// Round scores to three decimal places.
 		const r = 1e3
@@ -55,10 +57,9 @@ func (g *Gaby) doSearch(w http.ResponseWriter, r *http.Request) error {
 	}
 	var buf bytes.Buffer
 	if err := searchPageTmpl.Execute(&buf, page); err != nil {
-		return err
+		return nil, err
 	}
-	_, _ = w.Write(buf.Bytes())
-	return nil
+	return buf.Bytes(), nil
 }
 
 // Maximum number of search results to return.
