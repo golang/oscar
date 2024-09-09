@@ -66,7 +66,6 @@ cloud.google.com/go/iot v1.7.9/go.mod h1:1fi6x4CexbygNgRPn+tcxCjOZFTl+4G6Adbo6sL
 cloud.google.com/go/kms v1.18.2/go.mod h1:YFz1LYrnGsXARuRePL729oINmN5J/5e7nYijgvfiIeY=
 cloud.google.com/go/language v1.12.7/go.mod h1:4s/11zABvI/gv+li/+ICe+cErIaN9hYmilf9wrc5Py0=
 cloud.google.com/go/lifesciences v0.9.9/go.mod h1:4c8eLVKz7/FPw6lvoHx2/JQX1rVM8+LlYmBp8h5H3MQ=
-cloud.google.com/go/logging v1.10.0/go.mod h1:EHOwcxlltJrYGqMGfghSet736KR3hX1MAj614mrMk9I=
 cloud.google.com/go/managedidentities v1.6.9/go.mod h1:R7+78iH2j/SCTInutWINxGxEY0PH5rpbWt6uRq0Tn+Y=
 cloud.google.com/go/maps v1.11.3/go.mod h1:4iKNrUzFISQ4RoiWCqIFEAAVtgKb2oQ09AVx8GheOUg=
 cloud.google.com/go/mediatranslation v0.8.9/go.mod h1:3MjXTUsEzrMC9My6e9o7TOmgIUGlyrkVAxjzcmxBUdU=
@@ -107,7 +106,6 @@ cloud.google.com/go/storagetransfer v1.10.8/go.mod h1:fEGWYffkV9OYOKms8nxyJWIZA7
 cloud.google.com/go/talent v1.6.10/go.mod h1:q2/qIb2Eb2svmeBfkCGIia/NGmkcScdyYSyNNOgFRLI=
 cloud.google.com/go/texttospeech v1.7.9/go.mod h1:nuo7l7CVWUMvaTgswbn/hhn2Tv73/WbenqGyc236xpo=
 cloud.google.com/go/tpu v1.6.9/go.mod h1:6C7Ed7Le5Y1vWGR+8lQWsh/gmqK6l53lgji0YXBU40o=
-cloud.google.com/go/trace v1.10.9/go.mod h1:vtWRnvEh+d8h2xljwxVwsdxxpoWZkxcNYnJF3FuJUV8=
 cloud.google.com/go/translate v1.10.5/go.mod h1:n9fFca4U/EKr2GzJKrnQXemlYhfo1mT1nSt7Rt4l/VA=
 cloud.google.com/go/video v1.21.2/go.mod h1:UNXGQj3Hdyb70uaF9JeeM8Y8BAmAzLEMSWmyBKY2iVM=
 cloud.google.com/go/videointelligence v1.11.9/go.mod h1:Mv0dgb6U12BfBRPj39nM/7gcAFS1+VVGpTiyMJ/ShPo=
@@ -214,11 +212,14 @@ go.opentelemetry.io/otel/metric v1.24.0/go.mod h1:VYhLe1rFfxuTXLgj4CBiyz+9WYBA8p
 go.opentelemetry.io/otel/trace v1.24.0/go.mod h1:HPc3Xr/cOApsBI154IU0OI0HJexz+aw5uPdbs3UCjNU=
 golang.org/x/crypto v0.0.0-20210921155107-089bfa567519/go.mod h1:GvvjBRRGRdwPK5ydBHafDWAxML/pGHZbMvKqRZ5+Abc=
 golang.org/x/crypto v0.24.0/go.mod h1:Z1PMYSOR5nyMcyAVAIQSKCDwalqy85Aqn1x3Ws4L5DM=
+golang.org/x/crypto v0.27.0 h1:GXm2NjJrPaiv/h1tb2UH8QfgC/hOf/+z0p6PT8o1w7A=
+golang.org/x/crypto v0.27.0/go.mod h1:1Xngt8kV6Dvbssa53Ziq6Eqn0HqbZi5Z6R0ZpwQzt70=
 golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4/go.mod h1:jJ57K6gSWd91VN4djpZkiMVwK6gcyfeH4XE8wZrZaV4=
 golang.org/x/mod v0.13.0/go.mod h1:hTbmBsO62+eylJbnUtE2MGJUyE7QWk4xUqPFrRgJ+7c=
 golang.org/x/mod v0.17.0/go.mod h1:hTbmBsO62+eylJbnUtE2MGJUyE7QWk4xUqPFrRgJ+7c=
 golang.org/x/mod v0.19.0/go.mod h1:hTbmBsO62+eylJbnUtE2MGJUyE7QWk4xUqPFrRgJ+7c=
 golang.org/x/mod v0.20.0/go.mod h1:hTbmBsO62+eylJbnUtE2MGJUyE7QWk4xUqPFrRgJ+7c=
+golang.org/x/mod v0.21.0/go.mod h1:6SkKJ3Xj0I0BrPOZoBy3bdMptDDU9oJrpohJ3eWZ1fY=
 golang.org/x/net v0.0.0-20210226172049-e18ecbb05110/go.mod h1:m0MpNAwzfU5UDzcl9v0D8zg8gWTRqZa9RBIspLL5mdg=
 golang.org/x/net v0.0.0-20220722155237-a158d28d115b/go.mod h1:XRhObCWvk6IyKnWLug+ECip1KBveYUHfp+8e9klMJ9c=
 golang.org/x/net v0.20.0/go.mod h1:z8BVo6PvndSri0LbOE3hAn0apkU+1YvI6E70E9jsnvY=
@@ -241,6 +242,7 @@ golang.org/x/telemetry v0.0.0-20240521205824-bda55230c457/go.mod h1:pRgIJT+bRLFK
 golang.org/x/term v0.0.0-20210927222741-03fcf44c2211/go.mod h1:jbD1KX2456YbFQfuXm/mYQcufACuNUgVhRMnK/tPxf8=
 golang.org/x/term v0.22.0/go.mod h1:F3qCibpT5AMpCRfhfT53vVJwhLtIVHhB9XDjfFvnMI4=
 golang.org/x/term v0.23.0/go.mod h1:DgV24QBUrK6jhZXl+20l6UWznPlwAHm1Q1mGHtydmSk=
+golang.org/x/term v0.24.0/go.mod h1:lOBK/LVxemqiMij05LGJ0tzNr8xlmwBRJ81PX6wVLH8=
 golang.org/x/text v0.3.7/go.mod h1:u+2+/6zg+i71rQMx5EYifcz6MCKuco9NR6JIITiCfzQ=
 golang.org/x/text v0.3.8/go.mod h1:E6s5w1FMmriuDzIBO73fBruAKo1PCIq6d2Q6DHfQ8WQ=
 golang.org/x/text v0.14.0/go.mod h1:18ZOQIKpY8NJVqYksKHtTdi31H5itFRjB5/qKTNYzSU=

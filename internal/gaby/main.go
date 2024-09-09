@@ -279,7 +279,7 @@ func (g *Gaby) serveHTTP() {
 	cronEndpointCounter := g.newEndpointCounter(cronEndpoint)
 	githubEventEndpointCounter := g.newEndpointCounter(githubEventEndpoint)
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Gaby\n")
 		fmt.Fprintf(w, "meta: %+v\n", g.meta)
 		fmt.Fprintf(w, "flags: %+v\n", flags)
@@ -288,7 +288,7 @@ func (g *Gaby) serveHTTP() {
 
 	// setlevel changes the log level dynamically.
 	// Usage: /setlevel?l=LEVEL
-	http.HandleFunc("/"+setLevelEndpoint, func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("GET /"+setLevelEndpoint, func(w http.ResponseWriter, r *http.Request) {
 		if err := g.slogLevel.UnmarshalText([]byte(r.FormValue("l"))); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -298,7 +298,7 @@ func (g *Gaby) serveHTTP() {
 	})
 
 	// cronEndpoint is called periodically by a Cloud Scheduler job.
-	http.HandleFunc("/"+cronEndpoint, func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("GET /"+cronEndpoint, func(w http.ResponseWriter, r *http.Request) {
 		g.slog.Info(cronEndpoint + " start")
 		defer g.slog.Info(cronEndpoint + " end")
 
@@ -314,7 +314,7 @@ func (g *Gaby) serveHTTP() {
 
 	// githubEventEndpoint is called by a GitHub webhook when a new
 	// event occurs on the githubProject repo.
-	http.HandleFunc("/"+githubEventEndpoint, func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("POST /"+githubEventEndpoint, func(w http.ResponseWriter, r *http.Request) {
 		g.slog.Info(githubEventEndpoint + " start")
 		defer g.slog.Info(githubEventEndpoint + " end")
 
@@ -331,7 +331,7 @@ func (g *Gaby) serveHTTP() {
 
 	// /search: display a form for vector similarity search.
 	// /search?q=...: perform a search using the value of q as input.
-	http.HandleFunc("/search", g.handleSearch)
+	http.HandleFunc("GET /search", g.handleSearch)
 	// Listen in this goroutine so that we can return a synchronous error
 	// if the port is already in use or the address is otherwise invalid.
 	// Run the actual server in a background goroutine.
