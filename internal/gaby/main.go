@@ -279,7 +279,7 @@ func (g *Gaby) serveHTTP() {
 	cronEndpointCounter := g.newEndpointCounter(cronEndpoint)
 	githubEventEndpointCounter := g.newEndpointCounter(githubEventEndpoint)
 
-	http.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Gaby\n")
 		fmt.Fprintf(w, "meta: %+v\n", g.meta)
 		fmt.Fprintf(w, "flags: %+v\n", flags)
