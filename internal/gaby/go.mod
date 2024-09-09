@@ -4,8 +4,11 @@ go 1.23
 
 require (
 	cloud.google.com/go/compute/metadata v0.5.0
+	github.com/google/safehtml v0.1.0
+	go.opentelemetry.io/otel v1.28.0
+	go.opentelemetry.io/otel/metric v1.28.0
 	golang.org/x/oscar v0.0.0-20240819200921-b512a4fcd26f
-	golang.org/x/oscar/internal/gcp v0.0.0-20240819200921-b512a4fcd26f
+	golang.org/x/oscar/internal/gcp v0.0.0-20240906165427-0318a0cba7d5
 )
 
 require (
@@ -40,7 +43,6 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/generative-ai-go v0.16.0 // indirect
 	github.com/google/s2a-go v0.1.7 // indirect
-	github.com/google/safehtml v0.1.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.2 // indirect
 	github.com/googleapis/gax-go/v2 v2.13.0 // indirect
@@ -58,8 +60,6 @@ require (
 	go.opentelemetry.io/contrib/detectors/gcp v1.28.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.51.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.51.0 // indirect
-	go.opentelemetry.io/otel v1.28.0 // indirect
-	go.opentelemetry.io/otel/metric v1.28.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.28.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v1.28.0 // indirect
 	go.opentelemetry.io/otel/trace v1.28.0 // indirect
