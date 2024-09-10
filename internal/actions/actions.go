@@ -230,6 +230,46 @@ func get(db storage.DB, dkey []byte) (*Entry, bool) {
 	return toEntry(e), true
 }
 
+// AddDecision adds a Decision to the action referred to by namespace,
+// key and u.
+// It panics if the action does not exist or does not require approval.
+func AddDecision(db storage.DB, namespace string, key []byte, u uint64, d Decision) {
+	dkey := dbKey(namespace, key, u)
+	lockName := logKind + "-" + string(dkey)
+	db.Lock(lockName)
+	defer db.Unlock(lockName)
+
+	te, ok := timed.Get(db, logKind, dkey)
+	if !ok {
+		db.Panic("actions.AddDecision: does not exist", "dkey", dkey)
+	}
+	e := unmarshalTimedEntry(te)
+	if !e.ApprovalRequired {
+		db.Panic("actions.AddDecision: approval not required", "dkey", dkey)
+	}
+	e.Decisions = append(e.Decisions, decision(d))
+	setEntry(db, dkey, e)
+}
+
+// Approved reports whether the Entry represents an action that can be
+// be executed. It returns true for actions that do not require approval
+// and for those that do with at least one Decision and no denials. (In other
+// words, a single denial vetoes the action.)
+func (e *Entry) Approved() bool {
+	if !e.ApprovalRequired {
+		return true
+	}
+	if len(e.Decisions) == 0 {
+		return false
+	}
+	for _, d := range e.Decisions {
+		if !d.Approved {
+			return false
+		}
+	}
+	return true
+}
+
 func unmarshalTimedEntry(te *timed.Entry) *entry {
 	var e entry
 	if err := json.Unmarshal(te.Val, &e); err != nil {
