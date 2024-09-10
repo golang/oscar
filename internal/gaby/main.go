@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/compute/metadata"
+	"cloud.google.com/go/errorreporting"
 	ometric "go.opentelemetry.io/otel/metric"
 	"golang.org/x/oscar/internal/commentfix"
 	"golang.org/x/oscar/internal/crawl"
@@ -65,16 +66,17 @@ type Gaby struct {
 	githubProject string                  // github project to monitor and update
 	actions       []func(context.Context) // functions to run every minute or so, or when triggered by a GitHub event
 
-	slog      *slog.Logger     // slog output to use
-	slogLevel *slog.LevelVar   // slog level, for changing as needed
-	http      *http.Client     // http client to use
-	db        storage.DB       // database to use
-	vector    storage.VectorDB // vector database to use
-	secret    secret.DB        // secret database to use
-	docs      *docs.Corpus     // document corpus to use
-	embed     llm.Embedder     // LLM embedder to use
-	github    *github.Client   // github client to use
-	meter     ometric.Meter    // used to create Open Telemetry instruments
+	slog      *slog.Logger           // slog output to use
+	slogLevel *slog.LevelVar         // slog level, for changing as needed
+	http      *http.Client           // http client to use
+	db        storage.DB             // database to use
+	vector    storage.VectorDB       // vector database to use
+	secret    secret.DB              // secret database to use
+	docs      *docs.Corpus           // document corpus to use
+	embed     llm.Embedder           // LLM embedder to use
+	github    *github.Client         // github client to use
+	meter     ometric.Meter          // used to create Open Telemetry instruments
+	report    *errorreporting.Client // used to report important gaby errors to Cloud Error Reporting service
 }
 
 func main() {
@@ -234,6 +236,15 @@ func (g *Gaby) initGCP() (shutdown func()) {
 	}
 	g.secret = sdb
 
+	// Initialize error reporting.
+	rep, err := errorreporting.NewClient(g.ctx, flags.project, errorreporting.Config{
+		ServiceName: os.Getenv("K_SERVICE"),
+		OnError: func(err error) {
+			g.slog.Error("error reporting", "err", err)
+		},
+	})
+	g.report = rep
+
 	// Initialize metric collection.
 	mp, err := gcpmetrics.NewMeterProvider(g.ctx, g.slog, flags.project)
 	if err != nil {
@@ -279,6 +290,10 @@ func (g *Gaby) serveHTTP() {
 	cronEndpointCounter := g.newEndpointCounter(cronEndpoint)
 	githubEventEndpointCounter := g.newEndpointCounter(githubEventEndpoint)
 
+	report := func(err error) {
+		g.report.Report(errorreporting.Entry{Error: err})
+	}
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Gaby\n")
@@ -291,6 +306,7 @@ func (g *Gaby) serveHTTP() {
 	// Usage: /setlevel?l=LEVEL
 	mux.HandleFunc("GET /"+setLevelEndpoint, func(w http.ResponseWriter, r *http.Request) {
 		if err := g.slogLevel.UnmarshalText([]byte(r.FormValue("l"))); err != nil {
+			report(err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -324,6 +340,7 @@ func (g *Gaby) serveHTTP() {
 		defer g.db.Unlock(githubEventLock)
 
 		if err := g.handleGitHubEvent(r); err != nil {
+			report(err)
 			slog.Warn(githubEventEndpoint, "err", err)
 		}
 
@@ -338,10 +355,14 @@ func (g *Gaby) serveHTTP() {
 	// Run the actual server in a background goroutine.
 	l, err := net.Listen("tcp", g.addr)
 	if err != nil {
+		report(err)
 		log.Fatal(err)
 	}
 	go func() {
-		log.Fatal(http.Serve(l, mux))
+		if err := http.Serve(l, nil); err != nil {
+			report(err)
+			log.Fatal(err)
+		}
 	}()
 }
 

@@ -4,6 +4,7 @@ go 1.23
 
 require (
 	cloud.google.com/go/compute/metadata v0.5.0
+	cloud.google.com/go/errorreporting v0.3.1
 	github.com/google/safehtml v0.1.0
 	go.opentelemetry.io/otel v1.28.0
 	go.opentelemetry.io/otel/metric v1.28.0

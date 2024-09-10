@@ -49,6 +49,7 @@ cloud.google.com/go/dlp v1.14.2/go.mod h1:+uwRt+6wZ3PL0wsmZ1cUAj0Mt9kyeV3WcIKPW0
 cloud.google.com/go/documentai v1.30.3/go.mod h1:aMxiOouLr36hyahLhI3OwAcsy7plOTiXR/RmK+MHbSg=
 cloud.google.com/go/domains v0.9.9/go.mod h1:/ewEPIaNmTrElY7u9BZPcLPnoP1NJJXGvISDDapwVNU=
 cloud.google.com/go/edgecontainer v1.2.3/go.mod h1:gMKe2JfE0OT0WuCJArzIndAmMWDPCIYGSWYIpJ6M7oM=
+cloud.google.com/go/errorreporting v0.3.1 h1:E/gLk+rL7u5JZB9oq72iL1bnhVlLrnfslrgcptjJEUE=
 cloud.google.com/go/errorreporting v0.3.1/go.mod h1:6xVQXU1UuntfAf+bVkFk6nld41+CPyF2NSPCyXE3Ztk=
 cloud.google.com/go/essentialcontacts v1.6.10/go.mod h1:wQlXvEb/0hB0C0d4H6/90P8CiZcYewkvJ3VoUVFPi4E=
 cloud.google.com/go/eventarc v1.13.8/go.mod h1:Xq3SsMoOAn7RmacXgJO7kq818iRLFF0bVhH780qlmTs=
