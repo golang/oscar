@@ -37,6 +37,7 @@ package actions
 
 import (
 	"encoding/json"
+	"iter"
 	"math/rand/v2"
 	"time"
 
@@ -268,6 +269,47 @@ func (e *Entry) Approved() bool {
 		}
 	}
 	return true
+}
+
+// Scan returns an iterator over action log entries with start ≤ key ≤ end.
+// Keys begin with the namespace string, followed by the key provided to [Before],
+// followed by the uint64 returned by Before.
+func Scan(db storage.DB, start, end []byte) iter.Seq[*Entry] {
+	return func(yield func(*Entry) bool) {
+		for te := range timed.Scan(db, logKind, start, end) {
+			if !yield(toEntry(unmarshalTimedEntry(te))) {
+				break
+			}
+		}
+	}
+}
+
+// ScanAfter returns an iterator over action log entries
+// that were started after DBTime t.
+// If filter is non-nil, ScanAfter omits entries for which filter(namespace, key) returns false.
+func ScanAfter(db storage.DB, t timed.DBTime, filter func(namespace string, key []byte) bool) iter.Seq[*Entry] {
+	var tfilter func(key []byte) bool
+	if filter != nil {
+		tfilter = func(key []byte) bool {
+			if filter == nil {
+				return true
+			}
+			var ns string
+			rest, err := ordered.DecodePrefix(key, &ns)
+			if err != nil {
+				db.Panic("actions.ScanAfter: decode", "key", storage.Fmt(key))
+			}
+			return filter(ns, rest)
+		}
+	}
+
+	return func(yield func(*Entry) bool) {
+		for te := range timed.ScanAfter(db, logKind, t, tfilter) {
+			if !yield(toEntry(unmarshalTimedEntry(te))) {
+				break
+			}
+		}
+	}
 }
 
 func unmarshalTimedEntry(te *timed.Entry) *entry {
