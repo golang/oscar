@@ -243,6 +243,9 @@ func (g *Gaby) initGCP() (shutdown func()) {
 			g.slog.Error("error reporting", "err", err)
 		},
 	})
+	if err != nil {
+		log.Fatal(err)
+	}
 	g.report = rep
 
 	// Initialize metric collection.
@@ -359,7 +362,7 @@ func (g *Gaby) serveHTTP() {
 		log.Fatal(err)
 	}
 	go func() {
-		if err := http.Serve(l, nil); err != nil {
+		if err := http.Serve(l, mux); err != nil {
 			report(err)
 			log.Fatal(err)
 		}
