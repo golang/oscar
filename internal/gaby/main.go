@@ -285,6 +285,29 @@ func (g *Gaby) searchLoop() {
 
 // serveHTTP serves HTTP endpoints for Gaby.
 func (g *Gaby) serveHTTP() {
+	report := func(err error) {
+		g.report.Report(errorreporting.Entry{Error: err})
+	}
+	mux := g.newServer(report)
+	// Listen in this goroutine so that we can return a synchronous error
+	// if the port is already in use or the address is otherwise invalid.
+	// Run the actual server in a background goroutine.
+	l, err := net.Listen("tcp", g.addr)
+	if err != nil {
+		report(err)
+		log.Fatal(err)
+	}
+	go func() {
+		if err := http.Serve(l, mux); err != nil {
+			report(err)
+			log.Fatal(err)
+		}
+	}()
+}
+
+// newServer creates a new [http.ServeMux] that uses report to
+// process server creation and endpoint errors.
+func (g *Gaby) newServer(report func(error)) *http.ServeMux {
 	const (
 		cronEndpoint        = "cron"
 		setLevelEndpoint    = "setlevel"
@@ -292,10 +315,6 @@ func (g *Gaby) serveHTTP() {
 	)
 	cronEndpointCounter := g.newEndpointCounter(cronEndpoint)
 	githubEventEndpointCounter := g.newEndpointCounter(githubEventEndpoint)
-
-	report := func(err error) {
-		g.report.Report(errorreporting.Entry{Error: err})
-	}
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
@@ -353,20 +372,7 @@ func (g *Gaby) serveHTTP() {
 	// /search: display a form for vector similarity search.
 	// /search?q=...: perform a search using the value of q as input.
 	mux.HandleFunc("GET /search", g.handleSearch)
-	// Listen in this goroutine so that we can return a synchronous error
-	// if the port is already in use or the address is otherwise invalid.
-	// Run the actual server in a background goroutine.
-	l, err := net.Listen("tcp", g.addr)
-	if err != nil {
-		report(err)
-		log.Fatal(err)
-	}
-	go func() {
-		if err := http.Serve(l, mux); err != nil {
-			report(err)
-			log.Fatal(err)
-		}
-	}()
+	return mux
 }
 
 // localCron simulates Cloud Scheduler by fetching our server's /cron endpoint once per minute.
