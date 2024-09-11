@@ -28,8 +28,8 @@ func TestDB(t *testing.T) {
 	)
 	t.Run("before-after", func(t *testing.T) {
 		db := storage.MemDB()
-		dkey := before(db, namespace, key, action, false)
-		e, ok := get(db, dkey)
+		dkey := Before(db, namespace, key, action, false)
+		e, ok := getEntry(db, dkey)
 		if !ok {
 			t.Fatal("not found")
 		}
@@ -47,8 +47,8 @@ func TestDB(t *testing.T) {
 			t.Errorf("Before:\ngot  %+v\nwant %+v", e, want)
 		}
 
-		after(db, dkey, result, error)
-		e, ok = get(db, dkey)
+		After(db, dkey, result, error)
+		e, ok = getEntry(db, dkey)
 		if !ok {
 			t.Fatal("not found")
 		}
@@ -62,7 +62,7 @@ func TestDB(t *testing.T) {
 	})
 	t.Run("approval", func(t *testing.T) {
 		db := storage.MemDB()
-		dkey := before(db, namespace, key, action, true)
+		dkey := Before(db, namespace, key, action, true)
 		u := extractUnique(dkey, 2)
 		tm := time.Now().Round(0).In(time.UTC)
 		d1 := Decision{Name: "name1", Time: tm, Approved: true}
@@ -97,7 +97,7 @@ func TestDB(t *testing.T) {
 				Key:       ordered.Encode(i),
 				Action:    []byte{byte(-i)},
 			}
-			dkey := before(db, e.Namespace, e.Key, e.Action, false)
+			dkey := Before(db, e.Namespace, e.Key, e.Action, false)
 			e.Unique = extractUnique(dkey, 1)
 			entries = append(entries, e)
 		}

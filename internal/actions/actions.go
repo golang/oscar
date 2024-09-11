@@ -154,22 +154,18 @@ func fromEntry(e *Entry) *entry {
 //
 // If requiresApproval is true, then Approve must be called before the action
 // can be executed.
-// It returns a function that should be called after the action completes with the result
-// and error.
+//
+// Before returns a []byte that is the full database key, incorporating the namespace, user key and random number.
+// It should be passed to [After] after the action completes.
 // Example:
 //
-//	var res []byte
-//	var err error
-//	after := Before(db, "githubIssues", ordered.Encode{"golang/go", 123}, addCommentAction, false)
-//	defer func() { after(res, err) }()
-func Before(db storage.DB, namespace string, key, action []byte, requiresApproval bool) func(result []byte, err error) {
-	dkey := before(db, namespace, key, action, requiresApproval)
-	return func(result []byte, err error) {
-		after(db, dkey, result, err)
-	}
-}
-
-func before(db storage.DB, namespace string, key, action []byte, requiresApproval bool) []byte {
+//	const namespace = "githubIssues"
+//	key := ordered.Encode{"golang/go", 123}
+//	dbkey := actions.Before(db, namespace, key, addCommentAction, false)
+//	res, err := addTheComment()
+//	actions.After(dbkey, res, err)
+//	if err != nil {...}
+func Before(db storage.DB, namespace string, key, action []byte, requiresApproval bool) []byte {
 	u := rand.Uint64()
 	dkey := dbKey(namespace, key, u)
 	e := &entry{
@@ -185,33 +181,33 @@ func before(db storage.DB, namespace string, key, action []byte, requiresApprova
 }
 
 // After records an action's completion in the action log.
-// The namespace and key arguments must match those passed to Before for
-// this action, and u must be the return value of Before.
+// The dbkey argument must come from a call to [Before], or
+// from [Entry.DBKey].
 // The result argument is the result of the action if it succeeded.
 // The err argument is the error returned from attempting the action,
 // or nil for success.
 // After panics if the action does not exist, or if After has already been
 // called on it.
-func after(db storage.DB, dkey, result []byte, err error) {
+func After(db storage.DB, dbkey, result []byte, err error) {
 	// Guard against concurrent calls on the same entry.
-	lock := string(dkey)
+	lock := string(dbkey)
 	db.Lock(lock)
 	defer db.Unlock(lock)
 
-	te, ok := timed.Get(db, logKind, dkey)
+	te, ok := timed.Get(db, logKind, dbkey)
 	if !ok {
-		db.Panic("actions.After: missing action", "dkey", storage.Fmt(dkey))
+		db.Panic("actions.After: missing action", "dkey", storage.Fmt(dbkey))
 	}
 	e := unmarshalTimedEntry(te)
 	if !e.Done.IsZero() {
-		db.Panic("actions.After: already called", "dkey", storage.Fmt(dkey))
+		db.Panic("actions.After: already called", "dkey", storage.Fmt(dbkey))
 	}
 	e.Done = time.Now()
 	e.Result = result
 	if err != nil {
 		e.Error = err.Error()
 	}
-	setEntry(db, dkey, e)
+	setEntry(db, dbkey, e)
 }
 
 // Get looks up the Entry associated with the given arguments.
@@ -219,10 +215,10 @@ func after(db storage.DB, dkey, result []byte, err error) {
 // Otherwise it returns the entry and true.
 func Get(db storage.DB, namespace string, key []byte, unique uint64) (*Entry, bool) {
 	dkey := dbKey(namespace, key, unique)
-	return get(db, dkey)
+	return getEntry(db, dkey)
 }
 
-func get(db storage.DB, dkey []byte) (*Entry, bool) {
+func getEntry(db storage.DB, dkey []byte) (*Entry, bool) {
 	te, ok := timed.Get(db, logKind, dkey)
 	if !ok {
 		return nil, false
@@ -269,6 +265,10 @@ func (e *Entry) Approved() bool {
 		}
 	}
 	return true
+}
+
+func (e *Entry) DBKey() []byte {
+	return dbKey(e.Namespace, e.Key, e.Unique)
 }
 
 // Scan returns an iterator over action log entries with start ≤ key ≤ end.
