@@ -7,6 +7,7 @@ package related
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -157,98 +158,206 @@ func (p *Poster) Run(ctx context.Context) error {
 
 	defer p.watcher.Flush()
 
-Watcher:
 	for e := range p.watcher.Recent() {
-		if !p.projects[e.Project] || e.API != "/issues" {
-			continue
-		}
-		issue := e.Typed.(*github.Issue)
-		if issue.State == "closed" || issue.PullRequest != nil {
-			continue
-		}
-		tm, err := time.Parse(time.RFC3339, issue.CreatedAt)
+		handled, err := p.postIssue(ctx, e)
 		if err != nil {
-			p.slog.Error("triage parse createdat", "CreatedAt", issue.CreatedAt, "err", err)
+			p.slog.Error("related.Poster", "issue", e.Issue, "error", err)
 			continue
 		}
-		if tm.Before(p.timeLimit) {
-			continue
+		if handled {
+			p.watcher.MarkOld(e.DBTime)
+			// Flush immediately to make sure we don't re-post if interrupted later in the loop.
+			p.watcher.Flush()
 		}
-		for _, ig := range p.ignores {
-			if ig(issue) {
-				continue Watcher
-			}
-		}
-
-		// TODO: Perhaps this key should include p.name, but perhaps not.
-		// This makes sure we only ever post to each issue once.
-		posted := ordered.Encode("triage.Posted", e.Project, e.Issue)
-		if _, ok := p.db.Get(posted); ok {
-			continue
-		}
-
-		u := fmt.Sprintf("https://github.com/%s/issues/%d", e.Project, e.Issue)
-		p.slog.Debug("triage client consider", "url", u)
-		vec, ok := p.vdb.Get(u)
-		if !ok {
-			p.slog.Error("triage lookup failed", "url", u)
-			continue
-		}
-		results := p.vdb.Search(vec, p.maxResults+5)
-		if len(results) > 0 && results[0].ID == u {
-			results = results[1:]
-		}
-		for i, r := range results {
-			if r.Score < p.scoreCutoff {
-				results = results[:i]
-				break
-			}
-		}
-		if len(results) > p.maxResults {
-			results = results[:p.maxResults]
-		}
-		if len(results) == 0 {
-			if p.post {
-				p.watcher.MarkOld(e.DBTime)
-			}
-			continue
-		}
-		var comment strings.Builder
-		fmt.Fprintf(&comment, "**Related Issues and Documentation**\n\n")
-		for _, r := range results {
-			title := r.ID
-			if d, ok := p.docs.Get(r.ID); ok {
-				title = d.Title
-			}
-			info := ""
-			if issue, err := p.github.LookupIssueURL(r.ID); err == nil {
-				info = fmt.Sprint(" #", issue.Number)
-				if issue.ClosedAt != "" {
-					info += " (closed)"
-				}
-			}
-			fmt.Fprintf(&comment, " - [%s%s](%s) <!-- score=%.5f -->\n", markdownEscape(title), info, r.ID, r.Score)
-		}
-		fmt.Fprintf(&comment, "\n<sub>(Emoji vote if this was helpful or unhelpful; more detailed feedback welcome in [this discussion](https://github.com/golang/go/discussions/67901).)</sub>\n")
-
-		p.slog.Info("related.Poster post", "name", p.name, "project", e.Project, "issue", e.Issue, "comment", comment.String())
-
-		if !p.post {
-			continue
-		}
-
-		if err := p.github.PostIssueComment(ctx, issue, &github.IssueCommentChanges{Body: comment.String()}); err != nil {
-			p.slog.Error("PostIssueComment", "issue", e.Issue, "err", err)
-			continue
-		}
-		p.db.Set(posted, nil)
-		p.watcher.MarkOld(e.DBTime)
-
-		// Flush immediately to make sure we don't re-post if interrupted later in the loop.
-		p.watcher.Flush()
-		p.db.Flush()
 	}
 	return nil
+}
+
+// Post posts an issue comment for the given GitHub issue.
+//
+// It follows the same logic as [Poster.Run] for a single event, except
+// that it does not rely on or modify the Poster's GitHub issue watcher's
+// incremental cursor.
+// This means that [Poster.Post] can be called on any issue event without
+// affecting the starting point of future calls to [Poster.Run].
+//
+// It requires that there be a database and vector database entry for
+// the given issue.
+func (p *Poster) Post(ctx context.Context, project string, issue int64) error {
+	e := lookupIssueEvent(project, issue, p.github)
+	if e == nil {
+		return fmt.Errorf("related.Poster.Post(project=%s, issue=%d): %w", project, issue, errEventNotFound)
+	}
+	_, err := p.postIssue(ctx, e)
+	return err
+}
+
+var (
+	errEventNotFound          = errors.New("event not found in database")
+	errVectorSearchFailed     = errors.New("vector search failed")
+	errPostIssueCommentFailed = errors.New("post issue comment failed")
+)
+
+// lookupIssueEvent returns the first event for the "/issues" API with
+// the given ID in the database, or nil if not found.
+func lookupIssueEvent(project string, issue int64, gh *github.Client) *github.Event {
+	for event := range gh.Events(project, issue, issue) {
+		if event.API == "/issues" {
+			return event
+		}
+	}
+	return nil
+}
+
+// postIssue posts an issue for the event.
+// handled is true if the event should be considered to have been
+// handled by this run of the function.
+// An issue is handled if
+//   - posting is enabled, AND
+//   - an issue was successfully posted, or no issue was needed
+//     because no related documents were found
+//
+// Skipped issues are not considered handled.
+func (p *Poster) postIssue(ctx context.Context, e *github.Event) (handled bool, _ error) {
+	if p.skip(e) {
+		return false, nil
+	}
+
+	// Lock before checking if an issue was already posted for this event.
+	lock := string(postedKey(e))
+	p.db.Lock(lock)
+	defer p.db.Unlock(lock)
+
+	if p.posted(e) {
+		p.slog.Info("related.Poster already posted", "name", p.name, "project", e.Project, "issue", e.Issue)
+		// Not handled by this run of postIssue.
+		return false, nil
+	}
+
+	u := issueURL(e.Project, e.Issue)
+	p.slog.Debug("related.Poster consider", "url", u)
+	results, ok := p.search(u)
+	if !ok {
+		return false, fmt.Errorf("%w url=%s", errVectorSearchFailed, u)
+	}
+	if len(results) == 0 {
+		// If posting is enabled, an issue with no related documents
+		// should be considered handled, and not looked at again.
+		return p.post, nil
+	}
+	comment := p.comment(results)
+	p.slog.Info("related.Poster post", "name", p.name, "project", e.Project, "issue", e.Issue, "comment", comment)
+
+	if !p.post {
+		// Posting is disabled so we did not handle this issue.
+		return false, nil
+	}
+
+	issue := e.Typed.(*github.Issue)
+	if err := p.github.PostIssueComment(ctx, issue, &github.IssueCommentChanges{Body: comment}); err != nil {
+		return false, fmt.Errorf("%w issue=%d: %v", errPostIssueCommentFailed, issue.Number, err)
+	}
+
+	p.markPosted(e)
+	return true, nil
+}
+
+// issueURL returns the URL of the GitHub issue in the given project.
+func issueURL(project string, issue int64) string {
+	return fmt.Sprintf("https://github.com/%s/issues/%d", project, issue)
+}
+
+// search performs a vector search to find related issues for the given
+// issue URL. It removes any results that don't meet the cutoff in
+// p.scoreCutoff and trims the results list to a max length of p.maxResults.
+// It expects that there is already an entry for the url in the vector
+// database, and returns ok=false if there is no such entry.
+func (p *Poster) search(u string) (_ []storage.VectorResult, ok bool) {
+	vec, ok := p.vdb.Get(u)
+	if !ok {
+		return nil, false
+	}
+	results := p.vdb.Search(vec, p.maxResults+5)
+	if len(results) > 0 && results[0].ID == u {
+		results = results[1:]
+	}
+	for i, r := range results {
+		if r.Score < p.scoreCutoff {
+			results = results[:i]
+			break
+		}
+	}
+	if len(results) > p.maxResults {
+		results = results[:p.maxResults]
+	}
+	return results, true
+}
+
+// comment returns the comment to post to GitHub for the given related
+// issues.
+func (p *Poster) comment(results []storage.VectorResult) string {
+	var comment strings.Builder
+	fmt.Fprintf(&comment, "**Related Issues and Documentation**\n\n")
+	for _, r := range results {
+		title := r.ID
+		if d, ok := p.docs.Get(r.ID); ok {
+			title = d.Title
+		}
+		info := ""
+		if issue, err := p.github.LookupIssueURL(r.ID); err == nil {
+			info = fmt.Sprint(" #", issue.Number)
+			if issue.ClosedAt != "" {
+				info += " (closed)"
+			}
+		}
+		fmt.Fprintf(&comment, " - [%s%s](%s) <!-- score=%.5f -->\n", markdownEscape(title), info, r.ID, r.Score)
+	}
+	fmt.Fprintf(&comment, "\n<sub>(Emoji vote if this was helpful or unhelpful; more detailed feedback welcome in [this discussion](https://github.com/golang/go/discussions/67901).)</sub>\n")
+	return comment.String()
+}
+
+// skip reports whether the event should be skipped.
+func (p *Poster) skip(e *github.Event) bool {
+	if !p.projects[e.Project] || e.API != "/issues" {
+		return true
+	}
+	issue := e.Typed.(*github.Issue)
+	if issue.State == "closed" || issue.PullRequest != nil {
+		return true
+	}
+	tm, err := time.Parse(time.RFC3339, issue.CreatedAt)
+	if err != nil {
+		p.slog.Error("related.Poster parse createdat", "CreatedAt", issue.CreatedAt, "err", err)
+		return true
+	}
+	if tm.Before(p.timeLimit) {
+		return true
+	}
+	for _, ig := range p.ignores {
+		if ig(issue) {
+			return true
+		}
+	}
+	return false
+}
+
+// posted reports whether the event has already been posted.
+func (p *Poster) posted(e *github.Event) bool {
+	_, ok := p.db.Get(postedKey(e))
+	return ok
+}
+
+// markPosted records that the event has been posted.
+func (p *Poster) markPosted(e *github.Event) {
+	p.db.Set(postedKey(e), nil)
+	p.db.Flush()
+}
+
+// postedKey returns the database key to use when marking an event as posted.
+func postedKey(e *github.Event) []byte {
+	// TODO: Perhaps this key should include p.name, but perhaps not.
+	// This makes sure we only ever post to each issue once.
+	return ordered.Encode("triage.Posted", e.Project, e.Issue)
 }
 
 // Latest returns the latest known DBTime marked old by the Poster's Watcher.

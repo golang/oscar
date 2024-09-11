@@ -6,6 +6,7 @@ package related
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"maps"
 	"slices"
@@ -25,7 +26,7 @@ import (
 
 var ctx = context.Background()
 
-func Test(t *testing.T) {
+func TestRun(t *testing.T) {
 	check := testutil.Checker(t)
 	lg := testutil.Slogger(t)
 	db := storage.MemDB()
@@ -112,6 +113,98 @@ func Test(t *testing.T) {
 	check(p.Run(ctx))
 	checkEdits(t, gh.Testing().Edits(), nil)
 	gh.Testing().ClearEdits()
+}
+
+func TestPost(t *testing.T) {
+	t.Run("basic", func(t *testing.T) {
+		p, project, check := newTestPoster(t)
+
+		check(p.Post(ctx, project, 19))
+		check(p.Post(ctx, project, 13))
+		checkEdits(t, p.github.Testing().Edits(), map[int64]string{13: post13, 19: post19})
+	})
+
+	t.Run("double-post", func(t *testing.T) {
+		p, project, check := newTestPoster(t)
+
+		check(p.Post(ctx, project, 13))
+		check(p.Post(ctx, project, 13))
+		checkEdits(t, p.github.Testing().Edits(), map[int64]string{13: post13})
+	})
+
+	t.Run("post-run", func(t *testing.T) {
+		p, project, check := newTestPoster(t)
+
+		// Post does not affect Run's watcher.
+		check(p.Post(ctx, project, 19))
+		check(p.Run(ctx))
+		checkEdits(t, p.github.Testing().Edits(), map[int64]string{13: post13, 19: post19})
+	})
+
+	t.Run("post-run-async", func(t *testing.T) {
+		p, project, check := newTestPoster(t)
+
+		// OK to run Post in the middle of a Run.
+		done := make(chan struct{})
+		go func() {
+			check(p.Run(ctx))
+			done <- struct{}{}
+		}()
+		check(p.Post(ctx, project, 19))
+		<-done
+		checkEdits(t, p.github.Testing().Edits(), map[int64]string{13: post13, 19: post19})
+	})
+}
+
+func TestPostError(t *testing.T) {
+	t.Run("event not in DB", func(t *testing.T) {
+		p, project, _ := newTestPoster(t)
+
+		wantErr := errEventNotFound
+		// issue 42 is not in the project
+		if err := p.Post(ctx, project, 42); !errors.Is(err, wantErr) {
+			t.Fatalf("Post err = %v, want %v", err, wantErr)
+		}
+	})
+
+	t.Run("issue not in Vector DB", func(t *testing.T) {
+		p, project, _ := newTestPoster(t)
+
+		// Vector search will fail if there is no embedding
+		// for the issue.
+		id := int64(19)
+		p.vdb.Delete(issueURL(project, id))
+
+		wantErr := errVectorSearchFailed
+		if err := p.Post(ctx, project, id); !errors.Is(err, wantErr) {
+			t.Fatalf("Post err = %v, want %v", err, wantErr)
+		}
+	})
+}
+
+func newTestPoster(t *testing.T) (_ *Poster, project string, check func(err error)) {
+	t.Helper()
+
+	lg := testutil.Slogger(t)
+	db := storage.MemDB()
+	gh := github.New(lg, db, nil, nil)
+	gh.Testing().LoadTxtar("../testdata/markdown.txt")
+	gh.Testing().LoadTxtar("../testdata/rsctmp.txt")
+
+	dc := docs.New(db)
+	githubdocs.Sync(ctx, lg, dc, gh)
+
+	vdb := storage.MemVectorDB(db, lg, "vecs")
+	embeddocs.Sync(ctx, lg, vdb, llm.QuoteEmbedder(), dc)
+
+	t.Cleanup(gh.Testing().ClearEdits)
+	p := New(lg, db, gh, vdb, dc, t.Name())
+	project = "rsc/markdown"
+	p.EnableProject(project)
+	p.SetTimeLimit(time.Time{})
+	p.EnablePosts()
+
+	return p, project, testutil.Checker(t)
 }
 
 func checkEdits(t *testing.T, edits []*github.TestingEdit, want map[int64]string) {
