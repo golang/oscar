@@ -47,6 +47,7 @@ var flags struct {
 	firestoredb   string
 	enablesync    bool
 	enablechanges bool
+	enablecrawl   bool
 }
 
 func init() {
@@ -54,17 +55,19 @@ func init() {
 	flag.StringVar(&flags.project, "project", "", "name of the Google Cloud Project")
 	flag.StringVar(&flags.firestoredb, "firestoredb", "", "name of the Firestore DB to use")
 	flag.BoolVar(&flags.enablesync, "enablesync", false, "sync the DB with GitHub and other external sources")
+	// TODO(rsc): Crawling is too slow with a remote Firestore database.
+	// Perhaps it will be okay when running on GCP. For now, disable.
 	flag.BoolVar(&flags.enablechanges, "enablechanges", false, "allow changes to GitHub")
+	flag.BoolVar(&flags.enablecrawl, "enablecrawl", false, "allow crawler to run")
 }
 
 // Gaby holds the state for gaby's execution.
 type Gaby struct {
 	ctx           context.Context
-	cloud         bool                          // running on Cloud Run
-	meta          map[string]string             // any metadata we want to expose
-	addr          string                        // address to serve HTTP on
-	githubProject string                        // github project to monitor and update
-	actions       []func(context.Context) error // functions to run every minute or so, or when triggered by a GitHub event
+	cloud         bool              // running on Cloud Run
+	meta          map[string]string // any metadata we want to expose
+	addr          string            // address to serve HTTP on
+	githubProject string            // github project to monitor and update
 
 	slog      *slog.Logger           // slog output to use
 	slogLevel *slog.LevelVar         // slog level, for changing as needed
@@ -75,8 +78,12 @@ type Gaby struct {
 	docs      *docs.Corpus           // document corpus to use
 	embed     llm.Embedder           // LLM embedder to use
 	github    *github.Client         // github client to use
+	crawler   *crawl.Crawler         // web crawler to use
 	meter     ometric.Meter          // used to create Open Telemetry instruments
 	report    *errorreporting.Client // used to report important gaby errors to Cloud Error Reporting service
+
+	relatedPoster *related.Poster   // used to post related issues
+	commentFixer  *commentfix.Fixer // used to fix GitHub comments
 }
 
 func main() {
@@ -97,15 +104,12 @@ func main() {
 	shutdown := g.initGCP()
 	defer shutdown()
 
-	var syncs, changes []func(context.Context) error
 	// Named functions to retrieve latest Watcher times.
 	watcherLatests := map[string]func() timed.DBTime{}
 
 	g.github = github.New(g.slog, g.db, g.secret, g.http)
-	syncs = append(syncs, g.github.Sync)
 
 	g.docs = docs.New(g.db)
-	syncs = append(syncs, func(ctx context.Context) error { return githubdocs.Sync(ctx, g.slog, g.docs, g.github) })
 	watcherLatests["githubdocs"] = func() timed.DBTime { return githubdocs.Latest(g.github) }
 
 	ai, err := gemini.NewClient(g.ctx, g.slog, g.secret, g.http, "text-embedding-004")
@@ -113,7 +117,6 @@ func main() {
 		log.Fatal(err)
 	}
 	g.embed = ai
-	syncs = append(syncs, func(ctx context.Context) error { return embeddocs.Sync(ctx, g.slog, g.vector, g.embed, g.docs) })
 	watcherLatests["embeddocs"] = func() timed.DBTime { return embeddocs.Latest(g.docs) }
 
 	cr := crawl.New(g.slog, g.db, g.http)
@@ -121,12 +124,7 @@ func main() {
 	cr.Allow(godevAllow...)
 	cr.Deny(godevDeny...)
 	cr.Clean(godevClean)
-	// TODO(rsc): Crawling is too slow with a remote Firestore database.
-	// Perhaps it will be okay when running on GCP.
-	// For now, disable.
-	if false {
-		syncs = append(syncs, cr.Run)
-		syncs = append(syncs, func(ctx context.Context) error { return crawldocs.Sync(ctx, g.slog, g.docs, cr) })
+	if flags.enablecrawl {
 		watcherLatests["crawldocs"] = func() timed.DBTime { return crawldocs.Latest(cr) }
 	}
 
@@ -140,7 +138,7 @@ func main() {
 	cf.AutoLink(`\bCL ([0-9]+)\b`, "https://go.dev/cl/$1")
 	cf.ReplaceURL(`\Qhttps://go-review.git.corp.google.com/\E`, "https://go-review.googlesource.com/")
 	cf.EnableEdits()
-	changes = append(changes, cf.Run)
+	g.commentFixer = cf
 	watcherLatests["gerritlinks fix"] = cf.Latest
 
 	rp := related.New(g.slog, g.db, g.github, g.vector, g.docs, "related")
@@ -149,15 +147,8 @@ func main() {
 	rp.SkipTitlePrefix("x/tools/gopls: release version v")
 	rp.SkipTitleSuffix(" backport]")
 	rp.EnablePosts()
-	changes = append(changes, rp.Run)
+	g.relatedPoster = rp
 	watcherLatests["related"] = rp.Latest
-
-	if flags.enablesync {
-		g.actions = append(g.actions, syncs...)
-	}
-	if flags.enablechanges {
-		g.actions = append(g.actions, changes...)
-	}
 
 	// Install a metric that observes the latest values of the watchers each time metrics are sampled.
 	g.registerWatcherMetric(watcherLatests)
@@ -346,8 +337,8 @@ func (g *Gaby) newServer(report func(error)) *http.ServeMux {
 		g.db.Lock(cronLock)
 		defer g.db.Unlock(cronLock)
 
-		for _, action := range g.actions {
-			if err := action(g.ctx); err != nil {
+		if errs := g.syncAndRunAll(g.ctx); len(errs) != 0 {
+			for _, err := range errs {
 				report(err)
 			}
 		}
@@ -376,6 +367,93 @@ func (g *Gaby) newServer(report func(error)) *http.ServeMux {
 	// /search?q=...: perform a search using the value of q as input.
 	mux.HandleFunc("GET /search", g.handleSearch)
 	return mux
+}
+
+// syncAndRunAll runs all syncs (if enablesync is true) and Gaby actions
+// (if enablechanges is true).
+// It treats all errors as non-fatal, returning a slice of all errors
+// that occurred.
+func (g *Gaby) syncAndRunAll(ctx context.Context) (errs []error) {
+	check := func(err error) {
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	if flags.enablesync {
+		// Independent syncs can run in any order.
+		check(g.syncGitHub(ctx))
+		if flags.enablecrawl {
+			check(g.syncCrawl(ctx))
+		}
+
+		// Embed must happen last.
+		check(g.embedAll(ctx))
+	}
+
+	if flags.enablechanges {
+		// Changes can run in any order.
+		check(g.fixAllComments(ctx))
+		check(g.postAllRelated(ctx))
+	}
+
+	return errs
+}
+
+const (
+	gabyGitHubSyncLock = "gabygithubsync"
+	gabyEmbedLock      = "gabyembedsync"
+	gabyCrawlLock      = "gabycrawlsync"
+
+	gabyFixCommentLock  = "gabyfixcommentaction"
+	gabyPostRelatedLock = "gabyrelatedaction"
+)
+
+func (g *Gaby) syncGitHub(ctx context.Context) error {
+	g.db.Lock(gabyGitHubSyncLock)
+	defer g.db.Unlock(gabyGitHubSyncLock)
+
+	// Download new events from all GitHub projects.
+	if err := g.github.Sync(ctx); err != nil {
+		return err
+	}
+	// Store newly downloaded GitHub events in the document
+	// database.
+	return githubdocs.Sync(ctx, g.slog, g.docs, g.github)
+}
+
+// syncCrawl crawls webpages and adds them to the document database.
+func (g *Gaby) syncCrawl(ctx context.Context) error {
+	g.db.Lock(gabyCrawlLock)
+	defer g.db.Unlock(gabyCrawlLock)
+
+	if err := g.crawler.Run(ctx); err != nil {
+		return err
+	}
+	return crawldocs.Sync(ctx, g.slog, g.docs, g.crawler)
+}
+
+// embedAll store embeddings for all new documents in the vector database.
+// This must happen after all other syncs.
+func (g *Gaby) embedAll(ctx context.Context) error {
+	g.db.Lock(gabyEmbedLock)
+	defer g.db.Unlock(gabyEmbedLock)
+
+	return embeddocs.Sync(ctx, g.slog, g.vector, g.embed, g.docs)
+}
+
+func (g *Gaby) fixAllComments(ctx context.Context) error {
+	g.db.Lock(gabyFixCommentLock)
+	defer g.db.Unlock(gabyFixCommentLock)
+
+	return g.commentFixer.Run(ctx)
+}
+
+func (g *Gaby) postAllRelated(ctx context.Context) error {
+	g.db.Lock(gabyPostRelatedLock)
+	defer g.db.Unlock(gabyPostRelatedLock)
+
+	return g.relatedPoster.Run(ctx)
 }
 
 // localCron simulates Cloud Scheduler by fetching our server's /cron endpoint once per minute.

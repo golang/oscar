@@ -5,7 +5,6 @@
 package main
 
 import (
-	"context"
 	"log/slog"
 	"testing"
 
@@ -13,7 +12,7 @@ import (
 )
 
 func TestHandleGitHubEvent(t *testing.T) {
-	t.Run("valid new issue runs actions", func(t *testing.T) {
+	t.Run("valid new issue runs action", func(t *testing.T) {
 		validPayload := &github.WebhookIssueEvent{
 			Action: github.WebhookIssueActionOpened,
 			Repository: github.Repository{
@@ -21,19 +20,9 @@ func TestHandleGitHubEvent(t *testing.T) {
 			},
 		}
 		r, db := github.ValidWebhookTestdata(t, "issues", validPayload)
-		ran := false
-		actions := []func(context.Context) error{
-			func(context.Context) error {
-				ran = true
-				return nil
-			},
-		}
-		g := &Gaby{githubProject: "a/project", secret: db, slog: slog.Default(), actions: actions}
+		g := &Gaby{githubProject: "a/project", secret: db, slog: slog.Default()}
 		if err := g.handleGitHubEvent(r); err != nil {
 			t.Fatalf("handleGitHubEvent err = %v, want nil", err)
-		}
-		if !ran {
-			t.Errorf("handleGitHubEvent actions did not run")
 		}
 	})
 
@@ -46,19 +35,9 @@ func TestHandleGitHubEvent(t *testing.T) {
 			},
 		}
 		r, db := github.ValidWebhookTestdata(t, "issue_comment", validPayload)
-		ran := false
-		actions := []func(context.Context) error{
-			func(context.Context) error {
-				ran = true
-				return nil
-			},
-		}
-		g := &Gaby{githubProject: "a/project", secret: db, slog: slog.Default(), actions: actions}
+		g := &Gaby{githubProject: "a/project", secret: db, slog: slog.Default()}
 		if err := g.handleGitHubEvent(r); err != nil {
 			t.Fatalf("handleGitHubEvent err = %v, want nil", err)
-		}
-		if ran {
-			t.Errorf("handleGitHubEvent ran actions unexpectedley")
 		}
 	})
 
@@ -70,19 +49,9 @@ func TestHandleGitHubEvent(t *testing.T) {
 			},
 		}
 		r, db := github.ValidWebhookTestdata(t, "issues", validPayload)
-		ran := false
-		actions := []func(context.Context) error{
-			func(context.Context) error {
-				ran = true
-				return nil
-			},
-		}
-		g := &Gaby{githubProject: "a/project", secret: db, slog: slog.Default(), actions: actions}
+		g := &Gaby{githubProject: "a/project", secret: db, slog: slog.Default()}
 		if err := g.handleGitHubEvent(r); err == nil {
 			t.Fatal("handleGitHubEvent err = nil, want err")
-		}
-		if ran {
-			t.Errorf("handleGitHubEvent ran actions unexpectedley")
 		}
 	})
 }

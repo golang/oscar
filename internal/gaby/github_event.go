@@ -6,6 +6,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -32,8 +33,7 @@ func (g *Gaby) handleGitHubEvent(r *http.Request) error {
 
 	switch p := event.Payload.(type) {
 	case *github.WebhookIssueEvent:
-		g.handleGithubIssueEvent(r.Context(), p)
-		return nil
+		return g.handleGithubIssueEvent(r.Context(), p)
 	default:
 		g.slog.Info("ignoring new non-issue GitHub event", "event", event)
 	}
@@ -47,14 +47,11 @@ func (g *Gaby) handleGitHubEvent(r *http.Request) error {
 // same actions as are peformed by the /cron endpoint.
 //
 // Otherwise, it logs the event and takes no other action.
-func (g *Gaby) handleGithubIssueEvent(ctx context.Context, event *github.WebhookIssueEvent) {
+func (g *Gaby) handleGithubIssueEvent(ctx context.Context, event *github.WebhookIssueEvent) error {
 	if event.Action != github.WebhookIssueActionOpened {
 		g.slog.Info("ignoring GitHub issue event (action is not opened)", "event", event, "action", event)
-		return
 	}
 
 	g.slog.Info("handling GitHub issue event", "event", event)
-	for _, action := range g.actions {
-		action(ctx)
-	}
+	return errors.Join(g.syncAndRunAll(ctx)...)
 }
