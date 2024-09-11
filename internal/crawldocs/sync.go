@@ -22,7 +22,7 @@ import (
 // Sync logs status and unexpected problems to lg.
 //
 // Sync makes no use of its context.
-func Sync(ctx context.Context, lg *slog.Logger, dc *docs.Corpus, cr *crawl.Crawler) {
+func Sync(ctx context.Context, lg *slog.Logger, dc *docs.Corpus, cr *crawl.Crawler) error {
 	w := cr.PageWatcher("crawldocs")
 	for p := range w.Recent() {
 		lg.Debug("crawldocs sync", "page", p.URL, "dbtime", p.DBTime)
@@ -33,6 +33,7 @@ func Sync(ctx context.Context, lg *slog.Logger, dc *docs.Corpus, cr *crawl.Crawl
 		}
 		w.MarkOld(p.DBTime)
 	}
+	return nil
 }
 
 // Restart restarts the "crawldocs" page watcher,

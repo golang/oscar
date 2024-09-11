@@ -7,6 +7,7 @@ package embeddocs
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 
 	"golang.org/x/oscar/internal/docs"
@@ -22,7 +23,7 @@ import (
 // save its position across multiple calls.
 //
 // Sync logs status and unexpected problems to lg.
-func Sync(ctx context.Context, lg *slog.Logger, vdb storage.VectorDB, embed llm.Embedder, dc *docs.Corpus) {
+func Sync(ctx context.Context, lg *slog.Logger, vdb storage.VectorDB, embed llm.Embedder, dc *docs.Corpus) error {
 	lg.Info("embeddocs sync")
 
 	const batchSize = 100
@@ -33,11 +34,10 @@ func Sync(ctx context.Context, lg *slog.Logger, vdb storage.VectorDB, embed llm.
 	)
 	w := dc.DocWatcher("embeddocs")
 
-	flush := func() bool {
+	flush := func() error {
 		vecs, err := embed.EmbedDocs(ctx, batch)
 		if len(vecs) > len(ids) {
-			lg.Error("embeddocs length mismatch", "batch", len(batch), "vecs", len(vecs), "ids", len(ids))
-			return false
+			return fmt.Errorf("embeddocs length mismatch: batch=%d vecs=%d ids=%d", len(batch), len(vecs), len(ids))
 		}
 		vbatch := vdb.Batch()
 		for i, v := range vecs {
@@ -45,19 +45,17 @@ func Sync(ctx context.Context, lg *slog.Logger, vdb storage.VectorDB, embed llm.
 		}
 		vbatch.Apply()
 		if err != nil {
-			lg.Error("embeddocs EmbedDocs error", "err", err)
-			return false
+			return fmt.Errorf("embeddocs EmbedDocs error: %w", err)
 		}
 		if len(vecs) != len(ids) {
-			lg.Error("embeddocs length mismatch", "batch", len(batch), "vecs", len(vecs), "ids", len(ids))
-			return false
+			return fmt.Errorf("embeddocs length mismatch: batch=%d vecs=%d ids=%d", len(batch), len(vecs), len(ids))
 		}
 		vdb.Flush()
 		w.MarkOld(batchLast)
 		w.Flush()
 		batch = nil
 		ids = nil
-		return true
+		return nil
 	}
 
 	for d := range w.Recent() {
@@ -66,8 +64,8 @@ func Sync(ctx context.Context, lg *slog.Logger, vdb storage.VectorDB, embed llm.
 		ids = append(ids, d.ID)
 		batchLast = d.DBTime
 		if len(batch) >= batchSize {
-			if !flush() {
-				break
+			if err := flush(); err != nil {
+				return err
 			}
 		}
 	}
@@ -76,12 +74,13 @@ func Sync(ctx context.Context, lg *slog.Logger, vdb storage.VectorDB, embed llm.
 		// which has to be called during an iteration over w.Recent.
 		// Start a new iteration just to call flush and then break out.
 		for _ = range w.Recent() {
-			if !flush() {
-				return
+			if err := flush(); err != nil {
+				return err
 			}
 			break
 		}
 	}
+	return nil
 }
 
 // Latest returns the latest known DBTime marked old by the corpus's Watcher.

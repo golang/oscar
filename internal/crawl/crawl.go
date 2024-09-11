@@ -195,7 +195,7 @@ func (c *Crawler) set(b storage.Batch, p *Page) {
 // Run crawls all the pages it can, returning when the entire site has been
 // crawled either during this run or within the crawl duration set by
 // [Crawler.Recrawl].
-func (c *Crawler) Run(ctx context.Context) {
+func (c *Crawler) Run(ctx context.Context) error {
 	// Crawl every page in the database.
 	// The pages-by-time list serves as a work queue,
 	// but if there are link loops we may end up writing a Page
@@ -212,6 +212,7 @@ func (c *Crawler) Run(ctx context.Context) {
 		crawled[p.URL] = true
 		c.crawlPage(ctx, queued, p)
 	}
+	return nil
 }
 
 // crawlPage downloads the content for a page,

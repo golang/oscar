@@ -151,7 +151,7 @@ func (p *Poster) deletePosted() {
 //
 // When [Poster.EnablePosts] has not been called, Run only logs the comments it would post.
 // Future calls to Run will reprocess the same issues and re-log the same comments.
-func (p *Poster) Run(ctx context.Context) {
+func (p *Poster) Run(ctx context.Context) error {
 	p.slog.Info("related.Poster start", "name", p.name)
 	defer p.slog.Info("related.Poster end", "name", p.name)
 
@@ -248,6 +248,7 @@ Watcher:
 		p.watcher.Flush()
 		p.db.Flush()
 	}
+	return nil
 }
 
 // Latest returns the latest known DBTime marked old by the Poster's Watcher.

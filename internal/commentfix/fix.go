@@ -7,6 +7,7 @@ package commentfix
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -274,9 +275,9 @@ func (f *Fixer) ReplaceURL(pattern, repl string) error {
 //
 // Run panics if the Fixer was not constructed by calling [New]
 // with a non-nil [github.Client].
-func (f *Fixer) Run(ctx context.Context) {
+func (f *Fixer) Run(ctx context.Context) error {
 	if f.watcher == nil {
-		panic("commentfix.Fixer: Run missing GitHub client")
+		return errors.New("commentfix.Fixer: Run missing GitHub client")
 	}
 
 	last := timed.DBTime(0)
@@ -326,8 +327,7 @@ func (f *Fixer) Run(ctx context.Context) {
 		live, err := ic.download(ctx, f.github)
 		if err != nil {
 			// unreachable unless github error
-			f.slog.Error("commentfix download error", "project", e.Project, "issue", e.Issue, "url", ic.url(), "err", err)
-			continue
+			return fmt.Errorf("commentfix download error: project=%s issue=%d url=%s err=%w", e.Project, e.Issue, ic.url(), err)
 		}
 		if live.body() != ic.body() {
 			f.slog.Info("commentfix stale", "project", e.Project, "issue", e.Issue, "url", ic.url())
@@ -339,8 +339,7 @@ func (f *Fixer) Run(ctx context.Context) {
 			f.slog.Info("commentfix editing github", "url", ic.url())
 			if err := ic.editBody(ctx, f.github, body); err != nil {
 				// unreachable unless github error
-				f.slog.Error("commentfix edit", "project", e.Project, "issue", e.Issue, "err", err)
-				continue
+				return fmt.Errorf("commentfix edit: project=%s issue=%d err=%w", e.Project, e.Issue, err)
 			}
 
 			// Mark this one old right now, so that we don't consider editing it again.
@@ -365,6 +364,7 @@ func (f *Fixer) Run(ctx context.Context) {
 			break
 		}
 	}
+	return nil
 }
 
 // Latest returns the latest known DBTime marked old by the Fixer's Watcher.

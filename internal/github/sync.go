@@ -136,16 +136,17 @@ func (c *Client) Add(project string) error {
 }
 
 // Sync syncs all projects.
-func (c *Client) Sync(ctx context.Context) {
+func (c *Client) Sync(ctx context.Context) error {
 	for key := range c.db.Scan(o(syncProjectKind), o(syncProjectKind, ordered.Inf)) {
 		var project string
 		if err := ordered.Decode(key, nil, &project); err != nil {
-			c.db.Panic("github client sync decode", "key", storage.Fmt(key), "err", err)
+			return fmt.Errorf("github client sync decode: key=%s err=%w", storage.Fmt(key), err)
 		}
 		if err := c.SyncProject(ctx, project); err != nil {
 			c.slog.Error("github sync error", "project", project, "err", err)
 		}
 	}
+	return nil
 }
 
 // If testFullSyncStop is non-nil, then SyncProject returns this error

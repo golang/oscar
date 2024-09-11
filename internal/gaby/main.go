@@ -60,11 +60,11 @@ func init() {
 // Gaby holds the state for gaby's execution.
 type Gaby struct {
 	ctx           context.Context
-	cloud         bool                    // running on Cloud Run
-	meta          map[string]string       // any metadata we want to expose
-	addr          string                  // address to serve HTTP on
-	githubProject string                  // github project to monitor and update
-	actions       []func(context.Context) // functions to run every minute or so, or when triggered by a GitHub event
+	cloud         bool                          // running on Cloud Run
+	meta          map[string]string             // any metadata we want to expose
+	addr          string                        // address to serve HTTP on
+	githubProject string                        // github project to monitor and update
+	actions       []func(context.Context) error // functions to run every minute or so, or when triggered by a GitHub event
 
 	slog      *slog.Logger           // slog output to use
 	slogLevel *slog.LevelVar         // slog level, for changing as needed
@@ -97,7 +97,7 @@ func main() {
 	shutdown := g.initGCP()
 	defer shutdown()
 
-	var syncs, changes []func(context.Context)
+	var syncs, changes []func(context.Context) error
 	// Named functions to retrieve latest Watcher times.
 	watcherLatests := map[string]func() timed.DBTime{}
 
@@ -105,7 +105,7 @@ func main() {
 	syncs = append(syncs, g.github.Sync)
 
 	g.docs = docs.New(g.db)
-	syncs = append(syncs, func(ctx context.Context) { githubdocs.Sync(ctx, g.slog, g.docs, g.github) })
+	syncs = append(syncs, func(ctx context.Context) error { return githubdocs.Sync(ctx, g.slog, g.docs, g.github) })
 	watcherLatests["githubdocs"] = func() timed.DBTime { return githubdocs.Latest(g.github) }
 
 	ai, err := gemini.NewClient(g.ctx, g.slog, g.secret, g.http, "text-embedding-004")
@@ -113,7 +113,7 @@ func main() {
 		log.Fatal(err)
 	}
 	g.embed = ai
-	syncs = append(syncs, func(ctx context.Context) { embeddocs.Sync(ctx, g.slog, g.vector, g.embed, g.docs) })
+	syncs = append(syncs, func(ctx context.Context) error { return embeddocs.Sync(ctx, g.slog, g.vector, g.embed, g.docs) })
 	watcherLatests["embeddocs"] = func() timed.DBTime { return embeddocs.Latest(g.docs) }
 
 	cr := crawl.New(g.slog, g.db, g.http)
@@ -126,7 +126,7 @@ func main() {
 	// For now, disable.
 	if false {
 		syncs = append(syncs, cr.Run)
-		syncs = append(syncs, func(ctx context.Context) { crawldocs.Sync(ctx, g.slog, g.docs, cr) })
+		syncs = append(syncs, func(ctx context.Context) error { return crawldocs.Sync(ctx, g.slog, g.docs, cr) })
 		watcherLatests["crawldocs"] = func() timed.DBTime { return crawldocs.Latest(cr) }
 	}
 
@@ -286,6 +286,7 @@ func (g *Gaby) searchLoop() {
 // serveHTTP serves HTTP endpoints for Gaby.
 func (g *Gaby) serveHTTP() {
 	report := func(err error) {
+		g.slog.Error("reporting", "err", err)
 		g.report.Report(errorreporting.Entry{Error: err})
 	}
 	mux := g.newServer(report)
@@ -346,7 +347,9 @@ func (g *Gaby) newServer(report func(error)) *http.ServeMux {
 		defer g.db.Unlock(cronLock)
 
 		for _, action := range g.actions {
-			action(g.ctx)
+			if err := action(g.ctx); err != nil {
+				report(err)
+			}
 		}
 		cronEndpointCounter.Add(r.Context(), 1)
 	})

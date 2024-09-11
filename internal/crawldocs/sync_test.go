@@ -34,7 +34,7 @@ func TestSync(t *testing.T) {
 		HTML: nil,
 	})
 
-	Sync(ctx, lg, dc, cr)
+	check(Sync(ctx, lg, dc, cr))
 
 	var want = []string{
 		"https://go.dev/doc/toolchain#GOTOOLCHAIN",
@@ -70,14 +70,14 @@ func TestSync(t *testing.T) {
 	}
 
 	dc.Add(download, "OLD TITLE", "OLD TEXT")
-	Sync(ctx, lg, dc, cr)
+	check(Sync(ctx, lg, dc, cr))
 	d, _ := dc.Get(download)
 	if d.Title != "OLD TITLE" || d.Text != "OLD TEXT" {
 		t.Errorf("Sync rewrote #download: Title=%q Text=%q, want OLD TITLE, OLD TEXT", d.Title, d.Text)
 	}
 
 	Restart(ctx, lg, cr)
-	Sync(ctx, lg, dc, cr)
+	check(Sync(ctx, lg, dc, cr))
 	d, _ = dc.Get(download)
 	if d.Title == "OLD TITLE" || d.Text == "OLD TEXT" {
 		t.Errorf("Restart+Sync did not rewrite #download: Title=%q Text=%q", d.Title, d.Text)

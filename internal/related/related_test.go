@@ -26,6 +26,7 @@ import (
 var ctx = context.Background()
 
 func Test(t *testing.T) {
+	check := testutil.Checker(t)
 	lg := testutil.Slogger(t)
 	db := storage.MemDB()
 	gh := github.New(lg, db, nil, nil)
@@ -42,12 +43,12 @@ func Test(t *testing.T) {
 	p := New(lg, db, gh, vdb, dc, "postname")
 	p.EnableProject("rsc/markdown")
 	p.SetTimeLimit(time.Time{})
-	p.Run(ctx)
+	check(p.Run(ctx))
 	checkEdits(t, gh.Testing().Edits(), nil)
 	gh.Testing().ClearEdits()
 
 	p.EnablePosts()
-	p.Run(ctx)
+	check(p.Run(ctx))
 	checkEdits(t, gh.Testing().Edits(), map[int64]string{13: post13, 19: post19})
 	gh.Testing().ClearEdits()
 
@@ -55,7 +56,7 @@ func Test(t *testing.T) {
 	p.EnableProject("rsc/markdown")
 	p.SetTimeLimit(time.Time{})
 	p.EnablePosts()
-	p.Run(ctx)
+	check(p.Run(ctx))
 	checkEdits(t, gh.Testing().Edits(), nil)
 	gh.Testing().ClearEdits()
 
@@ -76,7 +77,7 @@ func Test(t *testing.T) {
 		}
 		p.EnablePosts()
 		p.deletePosted()
-		p.Run(ctx)
+		check(p.Run(ctx))
 		checkEdits(t, gh.Testing().Edits(), map[int64]string{13: post13})
 		gh.Testing().ClearEdits()
 	}
@@ -87,7 +88,7 @@ func Test(t *testing.T) {
 	p.SetTimeLimit(time.Time{})
 	p.EnablePosts()
 	p.deletePosted()
-	p.Run(ctx)
+	check(p.Run(ctx))
 	checkEdits(t, gh.Testing().Edits(), nil)
 	gh.Testing().ClearEdits()
 
@@ -97,7 +98,7 @@ func Test(t *testing.T) {
 	p.SetTimeLimit(time.Date(2222, 1, 1, 1, 1, 1, 1, time.UTC))
 	p.EnablePosts()
 	p.deletePosted()
-	p.Run(ctx)
+	check(p.Run(ctx))
 	checkEdits(t, gh.Testing().Edits(), nil)
 	gh.Testing().ClearEdits()
 
@@ -108,10 +109,9 @@ func Test(t *testing.T) {
 	p.SetTimeLimit(time.Time{})
 	p.EnablePosts()
 	p.deletePosted()
-	p.Run(ctx)
+	check(p.Run(ctx))
 	checkEdits(t, gh.Testing().Edits(), nil)
 	gh.Testing().ClearEdits()
-
 }
 
 func checkEdits(t *testing.T, edits []*github.TestingEdit, want map[int64]string) {

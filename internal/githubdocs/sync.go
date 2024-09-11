@@ -24,7 +24,7 @@ import (
 // Only the issue body (what looks like the top comment in the UI)
 // is saved as a document.
 // The document ID for each issue is its GitHub URL: "https://github.com/<org>/<repo>/issues/<n>".
-func Sync(ctx context.Context, lg *slog.Logger, dc *docs.Corpus, gh *github.Client) {
+func Sync(ctx context.Context, lg *slog.Logger, dc *docs.Corpus, gh *github.Client) error {
 	w := gh.EventWatcher("githubdocs")
 	for e := range w.Recent() {
 		if e.API != "/issues" {
@@ -37,6 +37,7 @@ func Sync(ctx context.Context, lg *slog.Logger, dc *docs.Corpus, gh *github.Clie
 		dc.Add(fmt.Sprintf("https://github.com/%s/issues/%d", e.Project, e.Issue), title, text)
 		w.MarkOld(e.DBTime)
 	}
+	return nil
 }
 
 // Restart causes the next call to Sync to behave as if

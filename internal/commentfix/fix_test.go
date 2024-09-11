@@ -69,11 +69,10 @@ func TestPanics(t *testing.T) {
 		t.Errorf("EnableProject on zero Fixer did not panic")
 	})
 
-	testutil.StopPanic(func() {
-		var f Fixer
-		f.Run(ctx)
-		t.Errorf("Run on zero Fixer did not panic")
-	})
+	var f Fixer
+	if err := f.Run(ctx); err == nil {
+		t.Errorf("Run on zero Fixer did not err")
+	}
 }
 
 func TestErrors(t *testing.T) {

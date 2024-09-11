@@ -19,6 +19,7 @@ import (
 )
 
 func TestCrawl(t *testing.T) {
+	check := testutil.Checker(t)
 	lg := testutil.Slogger(t)
 	db := storage.MemDB()
 
@@ -40,7 +41,7 @@ func TestCrawl(t *testing.T) {
 		t.Errorf("Add with URL fragment did not panic")
 	})
 
-	c.Run(context.Background())
+	check(c.Run(context.Background()))
 
 	for _, u := range needVisited {
 		if p, ok := c.Get(u); !ok {
@@ -82,7 +83,7 @@ func TestCrawl(t *testing.T) {
 		}),
 	})
 	c.Add("https://go.dev/root2") // not seen yet
-	c.Run(context.Background())
+	check(c.Run(context.Background()))
 	if !didRoot2 {
 		t.Errorf("did not crawl /root2")
 	}
@@ -96,7 +97,7 @@ func TestCrawl(t *testing.T) {
 		}),
 	})
 	c.SetRecrawl(0)
-	c.Run(context.Background())
+	check(c.Run(context.Background()))
 	if n < 3 {
 		t.Fatalf("Run after Recrawl(0) crawled %d pages, want ≥ 3", n)
 	}

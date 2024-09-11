@@ -7,7 +7,7 @@ package embeddocs
 import (
 	"context"
 	"fmt"
-	"strings"
+	"log/slog"
 	"testing"
 
 	"golang.org/x/oscar/internal/docs"
@@ -37,6 +37,7 @@ func checker(t *testing.T) func(error) {
 var ctx = context.Background()
 
 func TestSync(t *testing.T) {
+	check := testutil.Checker(t)
 	lg := testutil.Slogger(t)
 	db := storage.MemDB()
 	vdb := storage.MemVectorDB(db, lg, "step1")
@@ -45,7 +46,7 @@ func TestSync(t *testing.T) {
 		dc.Add(fmt.Sprintf("URL%d", i), "", text)
 	}
 
-	Sync(ctx, lg, vdb, llm.QuoteEmbedder(), dc)
+	check(Sync(ctx, lg, vdb, llm.QuoteEmbedder(), dc))
 	for i, text := range texts {
 		vec, ok := vdb.Get(fmt.Sprintf("URL%d", i))
 		if !ok {
@@ -62,7 +63,7 @@ func TestSync(t *testing.T) {
 		dc.Add(fmt.Sprintf("rot13%d", i), "", testutil.Rot13(text))
 	}
 	vdb2 := storage.MemVectorDB(db, lg, "step2")
-	Sync(ctx, lg, vdb2, llm.QuoteEmbedder(), dc)
+	check(Sync(ctx, lg, vdb2, llm.QuoteEmbedder(), dc))
 	for i, text := range texts {
 		vec, ok := vdb2.Get(fmt.Sprintf("URL%d", i))
 		if ok {
@@ -81,6 +82,7 @@ func TestSync(t *testing.T) {
 func TestBigSync(t *testing.T) {
 	const N = 10000
 
+	check := testutil.Checker(t)
 	lg := testutil.Slogger(t)
 	db := storage.MemDB()
 	vdb := storage.MemVectorDB(db, lg, "vdb")
@@ -89,7 +91,7 @@ func TestBigSync(t *testing.T) {
 		dc.Add(fmt.Sprintf("URL%d", i), "", fmt.Sprintf("Text%d", i))
 	}
 
-	Sync(ctx, lg, vdb, llm.QuoteEmbedder(), dc)
+	check(Sync(ctx, lg, vdb, llm.QuoteEmbedder(), dc))
 	for i := range N {
 		vec, ok := vdb.Get(fmt.Sprintf("URL%d", i))
 		if !ok {
@@ -112,31 +114,26 @@ func TestBadEmbedders(t *testing.T) {
 		dc.Add(fmt.Sprintf("URL%03d", i), "", fmt.Sprintf("Text%d", i))
 	}
 
-	lg, out := testutil.SlogBuffer()
+	lg := slog.Default()
 	db = storage.MemDB()
 	vdb := storage.MemVectorDB(db, lg, "vdb")
-	Sync(ctx, lg, vdb, tooManyEmbed{}, dc)
-	if !strings.Contains(out.String(), "embeddocs length mismatch") {
-		t.Errorf("tooManyEmbed did not report error:\n%s", out)
+	if err := Sync(ctx, lg, vdb, tooManyEmbed{}, dc); err == nil {
+		t.Errorf("tooManyEmbed did not report error")
 	}
 
-	lg, out = testutil.SlogBuffer()
 	db = storage.MemDB()
 	vdb = storage.MemVectorDB(db, lg, "vdb")
-	Sync(ctx, lg, vdb, embedErr{}, dc)
-	if !strings.Contains(out.String(), "EMBED ERROR") {
-		t.Errorf("embedErr did not report error:\n%s", out)
+	if err := Sync(ctx, lg, vdb, embedErr{}, dc); err == nil {
+		t.Errorf("embedErr did not report error")
 	}
 	if _, ok := vdb.Get("URL001"); !ok {
 		t.Errorf("Sync did not write URL001 after embedErr")
 	}
 
-	lg, out = testutil.SlogBuffer()
 	db = storage.MemDB()
 	vdb = storage.MemVectorDB(db, lg, "vdb")
-	Sync(ctx, lg, vdb, embedHalf{}, dc)
-	if !strings.Contains(out.String(), "length mismatch") {
-		t.Errorf("embedHalf did not report error:\n%s", out)
+	if err := Sync(ctx, lg, vdb, embedHalf{}, dc); err == nil {
+		t.Errorf("embedHalf did not report error")
 	}
 	if _, ok := vdb.Get("URL001"); !ok {
 		t.Errorf("Sync did not write URL001 after embedHalf")

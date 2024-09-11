@@ -22,8 +22,11 @@ func TestHandleGitHubEvent(t *testing.T) {
 		}
 		r, db := github.ValidWebhookTestdata(t, "issues", validPayload)
 		ran := false
-		actions := []func(context.Context){
-			func(context.Context) { ran = true },
+		actions := []func(context.Context) error{
+			func(context.Context) error {
+				ran = true
+				return nil
+			},
 		}
 		g := &Gaby{githubProject: "a/project", secret: db, slog: slog.Default(), actions: actions}
 		if err := g.handleGitHubEvent(r); err != nil {
@@ -44,8 +47,11 @@ func TestHandleGitHubEvent(t *testing.T) {
 		}
 		r, db := github.ValidWebhookTestdata(t, "issue_comment", validPayload)
 		ran := false
-		actions := []func(context.Context){
-			func(context.Context) { ran = true },
+		actions := []func(context.Context) error{
+			func(context.Context) error {
+				ran = true
+				return nil
+			},
 		}
 		g := &Gaby{githubProject: "a/project", secret: db, slog: slog.Default(), actions: actions}
 		if err := g.handleGitHubEvent(r); err != nil {
@@ -65,8 +71,11 @@ func TestHandleGitHubEvent(t *testing.T) {
 		}
 		r, db := github.ValidWebhookTestdata(t, "issues", validPayload)
 		ran := false
-		actions := []func(context.Context){
-			func(context.Context) { ran = true },
+		actions := []func(context.Context) error{
+			func(context.Context) error {
+				ran = true
+				return nil
+			},
 		}
 		g := &Gaby{githubProject: "a/project", secret: db, slog: slog.Default(), actions: actions}
 		if err := g.handleGitHubEvent(r); err == nil {
