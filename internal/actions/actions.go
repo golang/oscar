@@ -7,11 +7,10 @@ Package actions implements a log of actions in the database.
 An action is anything that affects the outside world, such as
 edits to GitHub or Gerrit.
 
-The action log uses database keys beginning with "actions.Log"
-and a namespace that describes the rest of the key and the
-format of the action and its result.
+The action log uses database keys beginning with "actions.Log" and an "action kind"
+string that describes the rest of the key and the format of the action and its result.
 All entry keys end with a random ID to ensure they are unique.
-The caller provides the part of the key between the namespace and the random value.
+The caller provides the part of the key between the action kind and the random value.
 For example, GitHub issue keys look like
 
 	["actions.Log", "githubIssue", project, issue, random]
@@ -52,12 +51,12 @@ const (
 
 // An Entry is one entry in the action log.
 type Entry struct {
-	Created   time.Time    // time of the Before call
-	Namespace string       // what the action applies to: GitHub issue, etc.
-	Key       []byte       // user-provided part of the key; arg to Before and After
-	Unique    uint64       // last component of the actual key
-	ModTime   timed.DBTime // set by Get and ScanAfter, used to resume scan
-	Action    []byte       // encoded action
+	Created time.Time    // time of the Before call
+	Kind    string       // determines the format of Key, Action and Result
+	Key     []byte       // user-provided part of the key; arg to Before and After
+	Unique  uint64       // last component of the actual key
+	ModTime timed.DBTime // set by Get and ScanAfter, used to resume scan
+	Action  []byte       // encoded action
 	// Fields set by After
 	Done   time.Time // time of the After call, or 0 if not called
 	Result []byte    // encoded result
@@ -87,7 +86,7 @@ type Decision struct {
 // somehow into a single one to create an Entry).
 type entry struct {
 	Created          time.Time
-	Namespace        string
+	Kind             string
 	Key              []byte
 	Unique           uint64
 	ModTime          timed.DBTime
@@ -111,7 +110,7 @@ type decision struct {
 func toEntry(e *entry) *Entry {
 	e2 := &Entry{
 		Created:          e.Created,
-		Namespace:        e.Namespace,
+		Kind:             e.Kind,
 		Key:              e.Key,
 		Unique:           e.Unique,
 		ModTime:          e.ModTime,
@@ -130,7 +129,7 @@ func toEntry(e *entry) *Entry {
 func fromEntry(e *Entry) *entry {
 	e2 := &entry{
 		Created:          e.Created,
-		Namespace:        e.Namespace,
+		Kind:             e.Kind,
 		Key:              e.Key,
 		Unique:           e.Unique,
 		ModTime:          e.ModTime,
@@ -146,7 +145,7 @@ func fromEntry(e *Entry) *entry {
 	return e2
 }
 
-// Before writes an entry to db's action log with the given namespace,
+// Before writes an entry to db's action log with the given action kind,
 // a representation of the action, and an additional key for the entry.
 // The key must be created with [ordered.Encode].
 // The action can be encoded however the user wishes, but if a string, ordered.Encode
@@ -155,22 +154,23 @@ func fromEntry(e *Entry) *entry {
 // If requiresApproval is true, then Approve must be called before the action
 // can be executed.
 //
-// Before returns a []byte that is the full database key, incorporating the namespace, user key and random number.
+// Before returns a []byte that is the full database key, incorporating the action
+// kind, user key and random number.
 // It should be passed to [After] after the action completes.
 // Example:
 //
-//	const namespace = "githubIssues"
+//	const actionKind = "githubIssues"
 //	key := ordered.Encode{"golang/go", 123}
-//	dbkey := actions.Before(db, namespace, key, addCommentAction, false)
+//	dbkey := actions.Before(db, actionKind, key, addCommentAction, false)
 //	res, err := addTheComment()
 //	actions.After(dbkey, res, err)
 //	if err != nil {...}
-func Before(db storage.DB, namespace string, key, action []byte, requiresApproval bool) []byte {
+func Before(db storage.DB, actionKind string, key, action []byte, requiresApproval bool) []byte {
 	u := rand.Uint64()
-	dkey := dbKey(namespace, key, u)
+	dkey := dbKey(actionKind, key, u)
 	e := &entry{
 		Created:          time.Now(), // wall clock time
-		Namespace:        namespace,
+		Kind:             actionKind,
 		Key:              key,
 		Unique:           u,
 		Action:           action,
@@ -213,8 +213,8 @@ func After(db storage.DB, dbkey, result []byte, err error) {
 // Get looks up the Entry associated with the given arguments.
 // If there is no entry for key in the database, Get returns nil, false.
 // Otherwise it returns the entry and true.
-func Get(db storage.DB, namespace string, key []byte, unique uint64) (*Entry, bool) {
-	dkey := dbKey(namespace, key, unique)
+func Get(db storage.DB, actionKind string, key []byte, unique uint64) (*Entry, bool) {
+	dkey := dbKey(actionKind, key, unique)
 	return getEntry(db, dkey)
 }
 
@@ -227,11 +227,11 @@ func getEntry(db storage.DB, dkey []byte) (*Entry, bool) {
 	return toEntry(e), true
 }
 
-// AddDecision adds a Decision to the action referred to by namespace,
+// AddDecision adds a Decision to the action referred to by actionKind,
 // key and u.
 // It panics if the action does not exist or does not require approval.
-func AddDecision(db storage.DB, namespace string, key []byte, u uint64, d Decision) {
-	dkey := dbKey(namespace, key, u)
+func AddDecision(db storage.DB, actionKind string, key []byte, u uint64, d Decision) {
+	dkey := dbKey(actionKind, key, u)
 	lockName := logKind + "-" + string(dkey)
 	db.Lock(lockName)
 	defer db.Unlock(lockName)
@@ -268,11 +268,11 @@ func (e *Entry) Approved() bool {
 }
 
 func (e *Entry) DBKey() []byte {
-	return dbKey(e.Namespace, e.Key, e.Unique)
+	return dbKey(e.Kind, e.Key, e.Unique)
 }
 
 // Scan returns an iterator over action log entries with start ≤ key ≤ end.
-// Keys begin with the namespace string, followed by the key provided to [Before],
+// Keys begin with the actionKind string, followed by the key provided to [Before],
 // followed by the uint64 returned by Before.
 func Scan(db storage.DB, start, end []byte) iter.Seq[*Entry] {
 	return func(yield func(*Entry) bool) {
@@ -286,8 +286,8 @@ func Scan(db storage.DB, start, end []byte) iter.Seq[*Entry] {
 
 // ScanAfter returns an iterator over action log entries
 // that were started after DBTime t.
-// If filter is non-nil, ScanAfter omits entries for which filter(namespace, key) returns false.
-func ScanAfter(db storage.DB, t timed.DBTime, filter func(namespace string, key []byte) bool) iter.Seq[*Entry] {
+// If filter is non-nil, ScanAfter omits entries for which filter(actionKind, key) returns false.
+func ScanAfter(db storage.DB, t timed.DBTime, filter func(actionKind string, key []byte) bool) iter.Seq[*Entry] {
 	var tfilter func(key []byte) bool
 	if filter != nil {
 		tfilter = func(key []byte) bool {
@@ -327,8 +327,8 @@ func setEntry(db storage.DB, dkey []byte, e *entry) {
 	b.Apply()
 }
 
-func dbKey(namespace string, userKey []byte, u uint64) []byte {
-	k := ordered.Encode(namespace)
+func dbKey(actionKind string, userKey []byte, u uint64) []byte {
+	k := ordered.Encode(actionKind)
 	k = append(k, userKey...)
 	return append(k, ordered.Encode(u)...)
 }

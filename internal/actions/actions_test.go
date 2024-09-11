@@ -20,15 +20,15 @@ import (
 
 func TestDB(t *testing.T) {
 	var (
-		namespace = "test"
-		key       = ordered.Encode("num", 23)
-		action    = []byte("action")
-		result    = []byte("result")
-		error     = errors.New("bad")
+		actionKind = "test"
+		key        = ordered.Encode("num", 23)
+		action     = []byte("action")
+		result     = []byte("result")
+		error      = errors.New("bad")
 	)
 	t.Run("before-after", func(t *testing.T) {
 		db := storage.MemDB()
-		dkey := Before(db, namespace, key, action, false)
+		dkey := Before(db, actionKind, key, action, false)
 		e, ok := getEntry(db, dkey)
 		if !ok {
 			t.Fatal("not found")
@@ -36,7 +36,7 @@ func TestDB(t *testing.T) {
 		unique := extractUnique(dkey, 2)
 		want := &Entry{
 			Created:          e.Created,
-			Namespace:        namespace,
+			Kind:             actionKind,
 			Key:              key,
 			Unique:           unique,
 			Action:           action,
@@ -62,14 +62,14 @@ func TestDB(t *testing.T) {
 	})
 	t.Run("approval", func(t *testing.T) {
 		db := storage.MemDB()
-		dkey := Before(db, namespace, key, action, true)
+		dkey := Before(db, actionKind, key, action, true)
 		u := extractUnique(dkey, 2)
 		tm := time.Now().Round(0).In(time.UTC)
 		d1 := Decision{Name: "name1", Time: tm, Approved: true}
 		d2 := Decision{Name: "name2", Time: tm, Approved: false}
-		AddDecision(db, namespace, key, u, d1)
-		AddDecision(db, namespace, key, u, d2)
-		e, ok := Get(db, namespace, key, u)
+		AddDecision(db, actionKind, key, u, d1)
+		AddDecision(db, actionKind, key, u, d2)
+		e, ok := Get(db, actionKind, key, u)
 
 		if !ok {
 			t.Fatal("not found")
@@ -77,7 +77,7 @@ func TestDB(t *testing.T) {
 		want := &Entry{
 			Created:          e.Created,
 			ModTime:          e.ModTime,
-			Namespace:        namespace,
+			Kind:             actionKind,
 			Key:              key,
 			Unique:           u,
 			Action:           action,
@@ -93,11 +93,11 @@ func TestDB(t *testing.T) {
 		var entries []*Entry
 		for i := 1; i <= 3; i++ {
 			e := &Entry{
-				Namespace: fmt.Sprintf("test-%d", i%2),
-				Key:       ordered.Encode(i),
-				Action:    []byte{byte(-i)},
+				Kind:   fmt.Sprintf("test-%d", i%2),
+				Key:    ordered.Encode(i),
+				Action: []byte{byte(-i)},
 			}
-			dkey := Before(db, e.Namespace, e.Key, e.Action, false)
+			dkey := Before(db, e.Kind, e.Key, e.Action, false)
 			e.Unique = extractUnique(dkey, 1)
 			entries = append(entries, e)
 		}
@@ -105,7 +105,7 @@ func TestDB(t *testing.T) {
 		entriesByKey := slices.Clone(entries)
 		slices.SortFunc(entriesByKey, func(e1, e2 *Entry) int {
 			return cmp.Or(
-				cmp.Compare(e1.Namespace, e2.Namespace),
+				cmp.Compare(e1.Kind, e2.Kind),
 				bytes.Compare(e1.Key, e2.Key),
 				cmp.Compare(e1.Unique, e2.Unique),
 			)
@@ -167,7 +167,7 @@ func TestApproved(t *testing.T) {
 }
 
 // extractUnique extracts the unique value from the key, which is an ordered-encoded
-// value of the form [namespace, k1, k2, ..., u].
+// value of the form [actionKind, k1, k2, ..., u].
 // The keyLen argument is the number of intermediate ki's.
 func extractUnique(dkey []byte, keyLen int) uint64 {
 	args := make([]any, 1+keyLen)
