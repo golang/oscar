@@ -91,12 +91,14 @@ func TestDB(t *testing.T) {
 	t.Run("scan", func(t *testing.T) {
 		db := storage.MemDB()
 		var entries []*Entry
+		start := time.Now()
 		for i := 1; i <= 3; i++ {
 			e := &Entry{
 				Kind:   fmt.Sprintf("test-%d", i%2),
 				Key:    ordered.Encode(i),
 				Action: []byte{byte(-i)},
 			}
+			time.Sleep(50 * time.Millisecond) // ensure each action has a different wall clock time
 			dkey := Before(db, e.Kind, e.Key, e.Action, false)
 			e.Unique = extractUnique(dkey, 1)
 			entries = append(entries, e)
@@ -119,8 +121,20 @@ func TestDB(t *testing.T) {
 		}
 		compareSlices(t, got, entriesByKey)
 
-		got = slices.Collect(ScanAfter(db, 0, nil))
+		got = slices.Collect(ScanAfterDBTime(db, 0, nil))
 		compareSlices(t, got, entries)
+
+		for _, test := range []struct {
+			t    time.Time
+			want []*Entry
+		}{
+			{start, entries},
+			{time.Now(), nil},
+			{entries[0].Created, entries[1:]},
+		} {
+			got := slices.Collect(ScanAfter(db, test.t, nil))
+			compareSlices(t, got, test.want)
+		}
 	})
 }
 

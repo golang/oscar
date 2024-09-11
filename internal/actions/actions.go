@@ -7,13 +7,13 @@ Package actions implements a log of actions in the database.
 An action is anything that affects the outside world, such as
 edits to GitHub or Gerrit.
 
-The action log uses database keys beginning with "actions.Log" and an "action kind"
+The action log uses database keys beginning with "action.Log" and an "action kind"
 string that describes the rest of the key and the format of the action and its result.
 All entry keys end with a random ID to ensure they are unique.
 The caller provides the part of the key between the action kind and the random value.
 For example, GitHub issue keys look like
 
-	["actions.Log", "githubIssue", project, issue, random]
+	["action.Log", "githubIssue", project, issue, random]
 
 Action log values are described by the [Entry] type. Values
 include the parts of the key, an encoded action that provides
@@ -31,12 +31,27 @@ Some actions require approval before they can be executed.
 records whether the action was approved or denied, by whom, and when.
 An action may be approved or denied multiple times.
 Approval is denied if there is at least one denial.
+
+# Other DB entries
+
+This package stores other relationships in the database besides
+the log entries.
+
+Keys beginning with "action.Wallclock" map wall clock times ([time.Time] values)
+to DBTimes. The mapping facilitates common log queries, like "show me the last hour
+of logs." The keys have the form
+
+	["action.Wallclock", time.Time.UnixNanos, DBTime]
+
+The values are nil. Storing both times in the key permits multiple DBTimes for the
+same wall clock time.
 */
 package actions
 
 import (
 	"encoding/json"
 	"iter"
+	"math"
 	"math/rand/v2"
 	"time"
 
@@ -46,7 +61,8 @@ import (
 )
 
 const (
-	logKind = "action.Log"
+	logKind  = "action.Log"
+	wallKind = "action.Wallclock" // mapping from time.Time to timed.DBTime
 )
 
 // An Entry is one entry in the action log.
@@ -284,10 +300,10 @@ func Scan(db storage.DB, start, end []byte) iter.Seq[*Entry] {
 	}
 }
 
-// ScanAfter returns an iterator over action log entries
+// ScanAfterDBTime returns an iterator over action log entries
 // that were started after DBTime t.
-// If filter is non-nil, ScanAfter omits entries for which filter(actionKind, key) returns false.
-func ScanAfter(db storage.DB, t timed.DBTime, filter func(actionKind string, key []byte) bool) iter.Seq[*Entry] {
+// If filter is non-nil, ScanAfterDBTime omits entries for which filter(actionKind, key) returns false.
+func ScanAfterDBTime(db storage.DB, t timed.DBTime, filter func(actionKind string, key []byte) bool) iter.Seq[*Entry] {
 	tfilter := func(key []byte) bool {
 		if filter == nil {
 			return true
@@ -309,6 +325,26 @@ func ScanAfter(db storage.DB, t timed.DBTime, filter func(actionKind string, key
 	}
 }
 
+// ScanAfter returns an iterator over action log entries that were started after time t.
+// If filter is non-nil, ScanAfter omits entries for which filter(actionKind, key) returns false.
+func ScanAfter(db storage.DB, t time.Time, filter func(actionKind string, key []byte) bool) iter.Seq[*Entry] {
+	// Find the first DBTime associated with a time after t.
+	// If there is none, use the maximum DBTime.
+	dbt := math.MaxInt64
+	for key := range db.Scan(ordered.Encode(wallKind, t.UnixNano()+1), ordered.Encode(wallKind, ordered.Inf)) {
+		// The DBTime is the third part of the key, after wallKind and the time.Time.
+		if err := ordered.Decode(key, nil, nil, &dbt); err != nil {
+			// unreachable unless corrupt DB
+			db.Panic("ScanAfter decode", "key", key, "err", err)
+		}
+		break
+	}
+	// dbt is the DBTime corresponding to t+1. Adjust to approximate
+	// the DBTime for t.
+	dbt--
+	return ScanAfterDBTime(db, timed.DBTime(dbt), filter)
+}
+
 func unmarshalTimedEntry(te *timed.Entry) *entry {
 	var e entry
 	if err := json.Unmarshal(te.Val, &e); err != nil {
@@ -320,7 +356,16 @@ func unmarshalTimedEntry(te *timed.Entry) *entry {
 
 func setEntry(db storage.DB, dkey []byte, e *entry) {
 	b := db.Batch()
-	timed.Set(db, b, logKind, dkey, storage.JSON(e))
+	dtime := timed.Set(db, b, logKind, dkey, storage.JSON(e))
+	// Associate the dtime with the entry's done or created times.
+	if e.Created.IsZero() {
+		db.Panic("zero Created", "dkey", storage.Fmt(dkey))
+	}
+	t := e.Created
+	if !e.Done.IsZero() {
+		t = e.Done
+	}
+	b.Set(ordered.Encode(wallKind, t.UnixNano(), int64(dtime)), nil)
 	b.Apply()
 }
 

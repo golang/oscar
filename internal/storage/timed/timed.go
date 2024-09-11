@@ -110,7 +110,8 @@ type Entry struct {
 
 // Set adds to b the database updates to set (kind, key) → val,
 // including updating the time index.
-func Set(db storage.DB, b storage.Batch, kind string, key, val []byte) {
+// It returns the DBTime associated with the entry.
+func Set(db storage.DB, b storage.Batch, kind string, key, val []byte) DBTime {
 	t := now()
 	dkey := append(ordered.Encode(kind), key...)
 	if old, ok := db.Get(dkey); ok {
@@ -123,6 +124,7 @@ func Set(db storage.DB, b storage.Batch, kind string, key, val []byte) {
 	}
 	b.Set(append(ordered.Encode(kind+"ByTime", int64(t)), key...), nil)
 	b.Set(dkey, append(ordered.Encode(int64(t)), val...))
+	return t
 }
 
 // Delete adds to b the database updates to delete the value corresponding to (kind, key), if any.
