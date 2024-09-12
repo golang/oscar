@@ -257,8 +257,10 @@ func (f *Fixer) ReplaceURL(pattern, repl string) error {
 
 // An action has all the information needed to edit a GitHub issue or comment.
 type action struct {
-	ic   *issueOrComment
-	body string // new body of issue or comment
+	project string
+	issue   int64
+	ic      *issueOrComment
+	body    string // new body of issue or comment
 }
 
 // Run applies the configured rewrites to issue texts and comments on GitHub
@@ -306,26 +308,11 @@ func (f *Fixer) Run(ctx context.Context) error {
 		if a == nil {
 			continue
 		}
-		ic := a.ic
-		body := a.body
-		live, err := ic.download(ctx, f.github)
-		if err != nil {
+		if err := f.runAction(ctx, a); err != nil {
 			// unreachable unless github error
-			return fmt.Errorf("commentfix download error: project=%s issue=%d url=%s err=%w", e.Project, e.Issue, ic.url(), err)
+			return err
 		}
-		if live.body() != ic.body() {
-			f.slog.Info("commentfix stale", "project", e.Project, "issue", e.Issue, "url", ic.url())
-			continue
-		}
-		f.slog.Info("commentfix rewrite", "project", e.Project, "issue", e.Issue, "url", ic.url(), "edit", f.edit, "diff", bodyDiff(ic.body(), body))
-		fmt.Fprintf(f.stderr(), "Fix %s:\n%s\n", ic.url(), bodyDiff(ic.body(), body))
 		if f.edit {
-			f.slog.Info("commentfix editing github", "url", ic.url())
-			if err := ic.editBody(ctx, f.github, body); err != nil {
-				// unreachable unless github error
-				return fmt.Errorf("commentfix edit: project=%s issue=%d err=%w", e.Project, e.Issue, err)
-			}
-
 			// Mark this one old right now, so that we don't consider editing it again.
 			f.watcher.MarkOld(e.DBTime)
 			f.watcher.Flush()
@@ -382,7 +369,29 @@ func (f *Fixer) newAction(e *github.Event) *action {
 	if !updated {
 		return nil
 	}
-	return &action{ic: ic, body: body}
+	return &action{project: e.Project, issue: e.Issue, ic: ic, body: body}
+}
+
+func (f *Fixer) runAction(ctx context.Context, a *action) error {
+	live, err := a.ic.download(ctx, f.github)
+	if err != nil {
+		// unreachable unless github error
+		return fmt.Errorf("commentfix download error: project=%s issue=%d url=%s err=%w", a.project, a.issue, a.ic.url(), err)
+	}
+	if live.body() != a.ic.body() {
+		f.slog.Info("commentfix stale", "project", a.project, "issue", a.issue, "url", a.ic.url())
+		return nil
+	}
+	f.slog.Info("commentfix rewrite", "project", a.project, "issue", a.issue, "url", a.ic.url(), "edit", f.edit, "diff", bodyDiff(a.ic.body(), a.body))
+	fmt.Fprintf(f.stderr(), "Fix %s:\n%s\n", a.ic.url(), bodyDiff(a.ic.body(), a.body))
+	if f.edit {
+		f.slog.Info("commentfix editing github", "url", a.ic.url())
+		if err := a.ic.editBody(ctx, f.github, a.body); err != nil {
+			// unreachable unless github error
+			return fmt.Errorf("commentfix edit: project=%s issue=%d err=%w", a.project, a.issue, err)
+		}
+	}
+	return nil
 }
 
 // Latest returns the latest known DBTime marked old by the Fixer's Watcher.
