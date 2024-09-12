@@ -288,19 +288,16 @@ func Scan(db storage.DB, start, end []byte) iter.Seq[*Entry] {
 // that were started after DBTime t.
 // If filter is non-nil, ScanAfter omits entries for which filter(actionKind, key) returns false.
 func ScanAfter(db storage.DB, t timed.DBTime, filter func(actionKind string, key []byte) bool) iter.Seq[*Entry] {
-	var tfilter func(key []byte) bool
-	if filter != nil {
-		tfilter = func(key []byte) bool {
-			if filter == nil {
-				return true
-			}
-			var ns string
-			rest, err := ordered.DecodePrefix(key, &ns)
-			if err != nil {
-				db.Panic("actions.ScanAfter: decode", "key", storage.Fmt(key))
-			}
-			return filter(ns, rest)
+	tfilter := func(key []byte) bool {
+		if filter == nil {
+			return true
 		}
+		var ns string
+		rest, err := ordered.DecodePrefix(key, &ns)
+		if err != nil {
+			db.Panic("actions.ScanAfter: decode", "key", storage.Fmt(key))
+		}
+		return filter(ns, rest)
 	}
 
 	return func(yield func(*Entry) bool) {
