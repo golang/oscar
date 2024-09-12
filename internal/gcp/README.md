@@ -83,6 +83,41 @@ gaby-prod-00004-t9p).
 [Firestore](https://console.cloud.google.com/firestore/databases?project=oscar-go-1)
 [Cloud Run](https://console.cloud.google.com/run?project=oscar-go-1)
 [Cloud Build](https://console.cloud.google.com/cloud-build/builds?project=oscar-go-1)
+[Cloud Error Reporting](https://console.cloud.google.com/errors?project=oscar-go-1).
+
+## GCP error logging and alerting
+
+Oscar errors, failures, and crashes are logged to
+[Cloud Logging](https://console.cloud.google.com/logs?project=oscar-go-1),
+along with other debugging messages.
+
+Major errors and crashes are also organized and reported via
+[Cloud Error Reporting](https://console.cloud.google.com/errors?project=oscar-go-1).
+Notifications about new errors are also sent via email. Click on the
+"Configure Notifications" to manage notifications.
+
+Cloud Build failures can be manually inspected at
+[Cloud Build](https://console.cloud.google.com/cloud-build/builds?project=oscar-go-1)
+dashboard. To create an automatic alert:
+
+1. Go to [Cloud Logging](https://console.cloud.google.com/logs?project=oscar-go-1) page.
+2. Type in the following query
+```
+resource.type= "build"
+logName="projects/oscar-go-1/logs/cloudaudit.googleapis.com%2Factivity"
+resource.labels.build_trigger_id="[TRIGGER_ID]"
+severity="ERROR"
+```
+where [TRIGGER_ID] is the ID of one of the triggers. You can find the trigger
+IDs by inspecting trigger information on
+[Cloud Build](https://console.cloud.google.com/cloud-build/builds?project=oscar-go-1)
+page.
+3. Run the query and make sure the results are as expected.
+4. Click on "Create Alert".
+5. Fill in the information on alert name, description, and notifications.
+
+You can inspect the alert information and results at [Monitoring >
+Alerting](https://console.cloud.google.com/monitoring/alerting?project=oscar-go-1)
 
 ## Secrets and environment variables
 
@@ -93,6 +128,7 @@ OSCAR_PROJECT=oscar-go-1
 The GitHub API token and the Gemini API key are in the GCP Secret Manager, under
 hex-encoded names. You shouldn’t need to look at them. Programs that include the
 internal/gcp/gcpsecret package will be able to access them.
+
 
 ## Terraform
 
