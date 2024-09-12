@@ -255,6 +255,12 @@ func (f *Fixer) ReplaceURL(pattern, repl string) error {
 	return nil
 }
 
+// An action has all the information needed to edit a GitHub issue or comment.
+type action struct {
+	ic   *issueOrComment
+	body string // new body of issue or comment
+}
+
 // Run applies the configured rewrites to issue texts and comments on GitHub
 // that have been updated since the last call to Run for this fixer with edits enabled
 // (including in different program invocations using the same fixer name).
@@ -296,34 +302,12 @@ func (f *Fixer) Run(ctx context.Context) error {
 		}
 		last = e.DBTime
 
-		if !f.projects[e.Project] {
+		a := f.newAction(e)
+		if a == nil {
 			continue
 		}
-		var ic *issueOrComment
-		switch x := e.Typed.(type) {
-		default: // for example, *github.IssueEvent
-			f.slog.Info("fixer skip", "dbtime", e.DBTime, "type", reflect.TypeOf(e.Typed).String())
-			continue
-		case *github.Issue:
-			if x.PullRequest != nil {
-				// Do not edit pull request bodies,
-				// because they turn into commit messages
-				// and cannot contain things like hyperlinks.
-				continue
-			}
-			ic = &issueOrComment{issue: x}
-			f.slog.Info("fixer run issue", "dbtime", e.DBTime, "issue", ic.issue.Number)
-		case *github.IssueComment:
-			ic = &issueOrComment{comment: x}
-			f.slog.Info("fixer run comment", "dbtime", e.DBTime, "url", ic.comment.URL)
-		}
-		if tm, err := time.Parse(time.RFC3339, ic.updatedAt()); err == nil && tm.Before(f.timeLimit) {
-			continue
-		}
-		body, updated := f.Fix(ic.body())
-		if !updated {
-			continue
-		}
+		ic := a.ic
+		body := a.body
 		live, err := ic.download(ctx, f.github)
 		if err != nil {
 			// unreachable unless github error
@@ -365,6 +349,40 @@ func (f *Fixer) Run(ctx context.Context) error {
 		}
 	}
 	return nil
+}
+
+// newAction returns an newAction to take on the issue or comment of the event,
+// or nil if there is nothing to do.
+func (f *Fixer) newAction(e *github.Event) *action {
+	if !f.projects[e.Project] {
+		return nil
+	}
+	var ic *issueOrComment
+	switch x := e.Typed.(type) {
+	default: // for example, *github.IssueEvent
+		f.slog.Info("fixer skip", "dbtime", e.DBTime, "type", reflect.TypeOf(e.Typed).String())
+		return nil
+	case *github.Issue:
+		if x.PullRequest != nil {
+			// Do not edit pull request bodies,
+			// because they turn into commit messages
+			// and cannot contain things like hyperlinks.
+			return nil
+		}
+		ic = &issueOrComment{issue: x}
+		f.slog.Info("fixer run issue", "dbtime", e.DBTime, "issue", ic.issue.Number)
+	case *github.IssueComment:
+		ic = &issueOrComment{comment: x}
+		f.slog.Info("fixer run comment", "dbtime", e.DBTime, "url", ic.comment.URL)
+	}
+	if tm, err := time.Parse(time.RFC3339, ic.updatedAt()); err == nil && tm.Before(f.timeLimit) {
+		return nil
+	}
+	body, updated := f.Fix(ic.body())
+	if !updated {
+		return nil
+	}
+	return &action{ic: ic, body: body}
 }
 
 // Latest returns the latest known DBTime marked old by the Fixer's Watcher.
