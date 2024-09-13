@@ -6,11 +6,11 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 
 	"golang.org/x/oscar/internal/github"
+	"golang.org/x/oscar/internal/githubdocs"
 )
 
 // handleGitHubEvent handles incoming webhook requests from GitHub.
@@ -43,15 +43,54 @@ func (g *Gaby) handleGitHubEvent(r *http.Request) error {
 
 // handleGitHubIssueEvent handles incoming GitHub "issue" events.
 //
-// If the event corresponds to a new issue, the function runs the
-// same actions as are peformed by the /cron endpoint.
+// If the event corresponds to a new issue, the function syncs
+// the corresponding GitHub project, posts related issues for the
+// new GitHub issue, and fixes comments in all new issues.
+// TODO(https://github.com/golang/oscar/issues/19): Run commentfix for
+// the single issue instead of all new issues.
 //
 // Otherwise, it logs the event and takes no other action.
 func (g *Gaby) handleGithubIssueEvent(ctx context.Context, event *github.WebhookIssueEvent) error {
 	if event.Action != github.WebhookIssueActionOpened {
 		g.slog.Info("ignoring GitHub issue event (action is not opened)", "event", event, "action", event)
+		return nil
 	}
 
 	g.slog.Info("handling GitHub issue event", "event", event)
-	return errors.Join(g.syncAndRunAll(ctx)...)
+
+	project := event.Repository.Project
+	if flags.enablesync {
+		if err := g.syncGitHubProject(ctx, project); err != nil {
+			return err
+		}
+		if err := g.embedAll(ctx); err != nil {
+			return err
+		}
+	}
+
+	// Do not attempt changes unless sync is enabled and completely succeeded.
+	if flags.enablechanges && flags.enablesync {
+		// No need to lock; [related.Poster.Post] and [related.Poster.Run] can
+		// happen concurrently.
+		if err := g.relatedPoster.Post(ctx, project, event.Issue.Number); err != nil {
+			return err
+		}
+		if err := g.fixAllComments(ctx); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// syncGitHubProject syncs the document database with respect to a single
+// GitHub project.
+func (g *Gaby) syncGitHubProject(ctx context.Context, project string) error {
+	g.db.Lock(gabyGitHubSyncLock)
+	defer g.db.Unlock(gabyGitHubSyncLock)
+
+	if err := g.github.SyncProject(ctx, project); err != nil {
+		return err
+	}
+	return githubdocs.Sync(ctx, g.slog, g.docs, g.github)
 }

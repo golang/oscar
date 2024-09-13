@@ -131,6 +131,7 @@ func (e *WebhookEvent) Project() string {
 // https://docs.github.com/en/webhooks/webhook-events-and-payloads#issues
 type WebhookIssueEvent struct {
 	Action     WebhookIssueAction `json:"action"`
+	Issue      Issue              `json:"issue"`
 	Repository Repository         `json:"repository"`
 	// Additional fields omitted.
 }
