@@ -10,6 +10,7 @@ import (
 	"io"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"text/template"
 	"time"
@@ -89,45 +90,12 @@ func TestErrors(t *testing.T) {
 }
 
 func TestGitHub(t *testing.T) {
-	testGH := func() *github.Client {
-		db := storage.MemDB()
-		gh := github.New(testutil.Slogger(t), db, nil, nil)
-		gh.Testing().AddIssue("rsc/tmp", &github.Issue{
-			Number:    18,
-			Title:     "spellchecking",
-			Body:      "Contexts are cancelled.",
-			CreatedAt: "2024-06-17T20:16:49-04:00",
-			UpdatedAt: "2024-06-17T20:16:49-04:00",
-		})
-		gh.Testing().AddIssue("rsc/tmp", &github.Issue{
-			Number:      19,
-			Title:       "spellchecking",
-			Body:        "Contexts are cancelled.",
-			CreatedAt:   "2024-06-17T20:16:49-04:00",
-			UpdatedAt:   "2024-06-17T20:16:49-04:00",
-			PullRequest: new(struct{}),
-		})
-
-		gh.Testing().AddIssueComment("rsc/tmp", 18, &github.IssueComment{
-			Body:      "No really, contexts are cancelled.",
-			CreatedAt: "2024-06-17T20:16:49-04:00",
-			UpdatedAt: "2024-06-17T20:16:49-04:00",
-		})
-
-		gh.Testing().AddIssueComment("rsc/tmp", 18, &github.IssueComment{
-			Body:      "Completely unrelated.",
-			CreatedAt: "2024-06-17T20:16:49-04:00",
-			UpdatedAt: "2024-06-17T20:16:49-04:00",
-		})
-
-		return gh
-	}
-
 	// Check for comment with too-new cutoff and edits disabled.
 	// Finds nothing but also no-op.
-	gh := testGH()
+	gh := testGitHub(t)
+	db := storage.MemDB()
 	lg, buf := testutil.SlogBuffer()
-	f := New(lg, gh, "fixer1")
+	f := New(lg, gh, db, "fixer1")
 	f.SetStderr(testutil.LogWriter(t))
 	f.EnableProject("rsc/tmp")
 	f.SetTimeLimit(time.Date(2222, 1, 1, 1, 1, 1, 1, time.UTC))
@@ -140,7 +108,7 @@ func TestGitHub(t *testing.T) {
 
 	// Check again with old enough cutoff.
 	// Finds comment but does not edit, does not advance cursor.
-	f = New(lg, gh, "fixer1")
+	f = New(lg, gh, db, "fixer1")
 	f.SetStderr(testutil.LogWriter(t))
 	f.EnableProject("rsc/tmp")
 	f.SetTimeLimit(time.Time{})
@@ -173,7 +141,7 @@ func TestGitHub(t *testing.T) {
 
 	// Write comment (now using fixer2 to avoid 'marked as old' in fixer1).
 	lg, buf = testutil.SlogBuffer()
-	f = New(lg, gh, "fixer2")
+	f = New(lg, gh, db, "fixer2")
 	f.SetStderr(testutil.LogWriter(t))
 	f.EnableProject("rsc/tmp")
 	f.ReplaceText("cancelled", "canceled")
@@ -202,7 +170,7 @@ func TestGitHub(t *testing.T) {
 
 	// Try again; comment should now be marked old in watcher.
 	lg, buf = testutil.SlogBuffer()
-	f = New(lg, gh, "fixer2")
+	f = New(lg, gh, db, "fixer2")
 	f.SetStderr(testutil.LogWriter(t))
 	f.EnableProject("rsc/tmp")
 	f.ReplaceText("cancelled", "canceled")
@@ -216,7 +184,7 @@ func TestGitHub(t *testing.T) {
 
 	// Check that not enabling the project doesn't edit comments.
 	lg, buf = testutil.SlogBuffer()
-	f = New(lg, gh, "fixer3")
+	f = New(lg, gh, db, "fixer3")
 	f.SetStderr(testutil.LogWriter(t))
 	f.EnableProject("xyz/tmp")
 	f.ReplaceText("cancelled", "canceled")
@@ -230,7 +198,7 @@ func TestGitHub(t *testing.T) {
 
 	// Check that when there's nothing to do, we still mark things old.
 	lg, buf = testutil.SlogBuffer()
-	f = New(lg, gh, "fixer4")
+	f = New(lg, gh, db, "fixer4")
 	f.SetStderr(testutil.LogWriter(t))
 	f.EnableProject("rsc/tmp")
 	f.ReplaceText("zyzzyva", "ZYZZYVA")
@@ -244,7 +212,7 @@ func TestGitHub(t *testing.T) {
 
 	// Reverse the replacement and run again with same name; should not consider any comments.
 	lg, buf = testutil.SlogBuffer()
-	f = New(lg, gh, "fixer4")
+	f = New(lg, gh, db, "fixer4")
 	f.SetStderr(testutil.LogWriter(t))
 	f.EnableProject("rsc/tmp")
 	f.ReplaceText("c", "C")
@@ -255,4 +223,153 @@ func TestGitHub(t *testing.T) {
 	if bytes.Contains(buf.Bytes(), []byte("commentfix rewrite")) {
 		t.Fatalf("logs incorrectly mention rewrite of comment:\n%s", buf.Bytes())
 	}
+}
+
+func TestFixGitHubIssue(t *testing.T) {
+	ctx := context.Background()
+	t.Run("basic", func(t *testing.T) {
+		f, project, buf, check := newFixer(t)
+		check(f.FixGitHubIssue(ctx, project, 18))
+		expect(t, buf, "commentfix rewrite", 2) // fix body and comment
+	})
+
+	t.Run("twice", func(t *testing.T) {
+		f, project, buf, check := newFixer(t)
+		check(f.FixGitHubIssue(ctx, project, 18))
+		expect(t, buf, "commentfix rewrite", 2) // fix body and comment
+
+		// Running Fix again doesn't change anything because fixes were
+		// already applied.
+		check(f.FixGitHubIssue(ctx, project, 18))
+		expect(t, buf, "commentfix rewrite", 2) // nothing new
+		expect(t, buf, "commentfix already applied", 2)
+	})
+
+	t.Run("fix-run", func(t *testing.T) {
+		f, project, buf, check := newFixer(t)
+		check(f.FixGitHubIssue(ctx, project, 20))
+		expect(t, buf, "commentfix rewrite", 1) // fix body of issue 20
+
+		// Run still fixes issue 18 because FixGitHubIssue
+		// doesn't modify Run's watcher.
+		check(f.Run(ctx))
+		expect(t, buf, "commentfix rewrite", 3) // fix body and comment of issue 18
+		expect(t, buf, "commentfix already applied", 1)
+	})
+
+	t.Run("fix-run-concurrent", func(t *testing.T) {
+		f, project, buf, check := newFixer(t)
+
+		var wg sync.WaitGroup
+
+		wg.Add(1)
+		go func() {
+			check(f.FixGitHubIssue(ctx, project, 20))
+			wg.Done()
+		}()
+
+		wg.Add(1)
+		go func() {
+			check(f.Run(ctx))
+			wg.Done()
+		}()
+
+		wg.Add(1)
+		go func() {
+			check(f.FixGitHubIssue(ctx, project, 18))
+			wg.Done()
+		}()
+
+		wg.Wait()
+
+		// Each action is attempted twice.
+		expect(t, buf, "commentfix rewrite", 3)
+		expect(t, buf, "commentfix already applied", 3)
+	})
+
+	t.Run("fix-concurrent", func(t *testing.T) {
+		f, project, buf, check := newFixer(t)
+
+		var wg sync.WaitGroup
+
+		n := 5
+		wg.Add(n)
+		for range n {
+			go func() {
+				check(f.FixGitHubIssue(ctx, project, 20))
+				wg.Done()
+			}()
+		}
+
+		wg.Wait()
+
+		expect(t, buf, "commentfix rewrite", 1)
+		expect(t, buf, "commentfix already applied", n-1)
+	})
+}
+
+func expect(t *testing.T, buf *bytes.Buffer, action string, n int) {
+	t.Helper()
+
+	if mentions := bytes.Count(buf.Bytes(), []byte(action)); mentions != n {
+		t.Errorf("logs mention %q %d times, want %d mentions:\n%s", action, mentions, n, buf.Bytes())
+	}
+}
+
+func newFixer(t *testing.T) (_ *Fixer, project string, _ *bytes.Buffer, check func(error)) {
+	gh := testGitHub(t)
+	db := storage.MemDB()
+	lg, buf := testutil.SlogBuffer()
+	f := New(lg, gh, db, t.Name())
+	f.SetStderr(testutil.LogWriter(t))
+	project = "rsc/tmp"
+	f.EnableProject(project)
+	f.ReplaceText("cancelled", "canceled")
+	f.SetTimeLimit(time.Time{})
+	f.EnableEdits()
+	return f, project, buf, testutil.Checker(t)
+}
+
+func testGitHub(t *testing.T) *github.Client {
+	db := storage.MemDB()
+	gh := github.New(testutil.Slogger(t), db, nil, nil)
+	gh.Testing().AddIssue("rsc/tmp", &github.Issue{
+		Number:    18,
+		Title:     "spellchecking",
+		Body:      "Contexts are cancelled.",
+		CreatedAt: "2024-06-17T20:16:49-04:00",
+		UpdatedAt: "2024-06-17T20:16:49-04:00",
+	})
+
+	// Ignored (pull request).
+	gh.Testing().AddIssue("rsc/tmp", &github.Issue{
+		Number:      19,
+		Title:       "spellchecking",
+		Body:        "Contexts are cancelled.",
+		CreatedAt:   "2024-06-17T20:16:49-04:00",
+		UpdatedAt:   "2024-06-17T20:16:49-04:00",
+		PullRequest: new(struct{}),
+	})
+
+	gh.Testing().AddIssueComment("rsc/tmp", 18, &github.IssueComment{
+		Body:      "No really, contexts are cancelled.",
+		CreatedAt: "2024-06-17T20:16:49-04:00",
+		UpdatedAt: "2024-06-17T20:16:49-04:00",
+	})
+
+	gh.Testing().AddIssueComment("rsc/tmp", 18, &github.IssueComment{
+		Body:      "Completely unrelated.",
+		CreatedAt: "2024-06-17T20:16:49-04:00",
+		UpdatedAt: "2024-06-17T20:16:49-04:00",
+	})
+
+	gh.Testing().AddIssue("rsc/tmp", &github.Issue{
+		Number:    20,
+		Title:     "spellchecking 2",
+		Body:      "Contexts are cancelled.",
+		CreatedAt: "2024-06-17T20:16:49-04:00",
+		UpdatedAt: "2024-06-17T20:16:49-04:00",
+	})
+
+	return gh
 }

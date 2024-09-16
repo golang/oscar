@@ -43,11 +43,9 @@ func (g *Gaby) handleGitHubEvent(r *http.Request) error {
 
 // handleGitHubIssueEvent handles incoming GitHub "issue" events.
 //
-// If the event corresponds to a new issue, the function syncs
-// the corresponding GitHub project, posts related issues for the
-// new GitHub issue, and fixes comments in all new issues.
-// TODO(https://github.com/golang/oscar/issues/19): Run commentfix for
-// the single issue instead of all new issues.
+// If the event is a new issue, the function syncs
+// the corresponding GitHub project, posts related issues for and fixes
+// comments on the new GitHub issue.
 //
 // Otherwise, it logs the event and takes no other action.
 func (g *Gaby) handleGithubIssueEvent(ctx context.Context, event *github.WebhookIssueEvent) error {
@@ -75,7 +73,9 @@ func (g *Gaby) handleGithubIssueEvent(ctx context.Context, event *github.Webhook
 		if err := g.relatedPoster.Post(ctx, project, event.Issue.Number); err != nil {
 			return err
 		}
-		if err := g.fixAllComments(ctx); err != nil {
+		// No need to lock; [commentfix.Fixer.FixGitHubIssue] and
+		// [commentfix.Fixer.Run] can happen concurrently.
+		if err := g.commentFixer.FixGitHubIssue(ctx, project, event.Issue.Number); err != nil {
 			return err
 		}
 	}

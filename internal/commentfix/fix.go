@@ -20,8 +20,10 @@ import (
 
 	"golang.org/x/oscar/internal/diff"
 	"golang.org/x/oscar/internal/github"
+	"golang.org/x/oscar/internal/storage"
 	"golang.org/x/oscar/internal/storage/timed"
 	"rsc.io/markdown"
+	"rsc.io/ordered"
 )
 
 // A Fixer rewrites issue texts and issue comments using a set of rules.
@@ -34,6 +36,7 @@ import (
 //
 // TODO(rsc): Separate the GitHub logic more cleanly from the rewrite logic.
 type Fixer struct {
+	name      string
 	slog      *slog.Logger
 	github    *github.Client
 	watcher   *timed.Watcher[*github.Event]
@@ -41,6 +44,7 @@ type Fixer struct {
 	projects  map[string]bool
 	edit      bool
 	timeLimit time.Time
+	db        storage.DB
 
 	stderrw io.Writer
 }
@@ -70,15 +74,19 @@ func (f *Fixer) SetStderr(w io.Writer) {
 // configured and applied to Markdown using [Fixer.Fix], but calling
 // [Fixer.Run] will panic.
 //
+// The db is the database used to store locks.
+//
 // The name is the handle by which the Fixer's “last position” is retrieved
 // across multiple program invocations; each differently configured
 // Fixer needs a different name.
-func New(lg *slog.Logger, gh *github.Client, name string) *Fixer {
+func New(lg *slog.Logger, gh *github.Client, db storage.DB, name string) *Fixer {
 	f := &Fixer{
+		name:      name,
 		slog:      lg,
 		github:    gh,
 		projects:  make(map[string]bool),
 		timeLimit: time.Now().Add(-30 * 24 * time.Hour),
+		db:        db,
 	}
 	f.init() // set f.slog if lg==nil
 	if gh != nil {
@@ -304,14 +312,15 @@ func (f *Fixer) Run(ctx context.Context) error {
 		}
 		last = e.DBTime
 
-		a := f.newAction(e)
-		if a == nil {
-			continue
-		}
-		if err := f.runAction(ctx, a); err != nil {
+		applied, err := f.fix(ctx, e)
+		if err != nil {
 			// unreachable unless github error
 			return err
 		}
+		if !applied {
+			continue
+		}
+
 		if f.edit {
 			// Mark this one old right now, so that we don't consider editing it again.
 			f.watcher.MarkOld(e.DBTime)
@@ -320,7 +329,7 @@ func (f *Fixer) Run(ctx context.Context) error {
 
 			if !testing.Testing() {
 				// unreachable in tests
-				time.Sleep(1 * time.Second)
+				time.Sleep(sleep)
 			}
 		}
 	}
@@ -336,6 +345,78 @@ func (f *Fixer) Run(ctx context.Context) error {
 		}
 	}
 	return nil
+}
+
+// FixGitHubIssue applies rewrites to the issue body and comments of the
+// specified GitHub issue, following the same logic as [Fixer.Run].
+//
+// It requires that the Fixer's [github.Client] contain one or more events
+// for the issue.
+//
+// It does not affect the watcher used by [Fixer.Run] and can be run
+// concurrently with [Fixer.Run].
+//
+// However, any issues or comments for which fixes were applied will not
+// be fixed again by subsequent calls to [Fixer.Run] or [Fixer.FixGitHubIssue]
+// for a [Fixer] with the same name as this one. This is true even if the
+// issue or comment body has changed since the fix was applied, in order
+// to a prevent a non-idempotent fix from being applied multiple times.
+//
+// It returns an error if any of the fixes cannot be applied or if
+// no events are found for the issue.
+func (f *Fixer) FixGitHubIssue(ctx context.Context, project string, issue int64) error {
+	events := 0
+	for event := range f.github.Events(project, issue, issue) {
+		events++
+		applied, err := f.fix(ctx, event)
+		if err != nil {
+			return err
+		}
+		if applied && !testing.Testing() {
+			time.Sleep(sleep)
+		}
+	}
+	if events == 0 {
+		return fmt.Errorf("%w for project=%s issue=%d", errNoGitHubEvents, project, issue)
+	}
+	return nil
+}
+
+var (
+	sleep             = 1 * time.Second
+	errNoGitHubEvents = errors.New("no GitHub events")
+)
+
+// fix creates and runs the action for the specified event.
+// applied is true if the action was successfully applied by this run.
+// fix returns an error if the action was attempted but could not be applied.
+func (f *Fixer) fix(ctx context.Context, e *github.Event) (applied bool, err error) {
+	a := f.newAction(e)
+	if a == nil {
+		return false, nil
+	}
+	return f.runAction(ctx, a)
+}
+
+// appliedKey returns the db key used to indicate a fix has been
+// applied by this Fixer (identified by [Fixer.name]) for this issue or
+// comment (identified by the URL of the issue/comment).
+func (f *Fixer) appliedKey(a *action) []byte {
+	return ordered.Encode("commentfix.Fixer", f.name, a.ic.url())
+}
+
+// markApplied marks this action as applied by this Fixer
+// (identified by [Fixer.name]).
+func (f *Fixer) markApplied(a *action) {
+	f.db.Set(f.appliedKey(a), nil)
+	f.db.Flush()
+}
+
+// isApplied reports whether the action has been applied by a Fixer
+// with the same name as this one.
+func (f *Fixer) isApplied(a *action) bool {
+	_, ok := f.db.Get(f.appliedKey(a))
+	return ok
 }
 
 // newAction returns an newAction to take on the issue or comment of the event,
@@ -369,18 +450,34 @@ func (f *Fixer) newAction(e *github.Event) *action {
 	if !updated {
 		return nil
 	}
-	return &action{project: e.Project, issue: e.Issue, ic: ic, body: body}
+	return &action{
+		project: e.Project,
+		issue:   e.Issue,
+		ic:      ic,
+		body:    body,
+	}
 }
 
-func (f *Fixer) runAction(ctx context.Context, a *action) error {
+func (f *Fixer) runAction(ctx context.Context, a *action) (applied bool, _ error) {
+	// Do not include this Fixer's name in the lock, so that separate
+	// fixers cannot operate on the same object at the same time.
+	lock := string(ordered.Encode("commentfix", a.ic.url()))
+	f.db.Lock(lock)
+	defer f.db.Unlock(lock)
+
+	if f.isApplied(a) {
+		f.slog.Info("commentfix already applied", "fixer", f.name, "project", a.project, "issue", a.issue, "url", a.ic.url())
+		return false, nil
+	}
+
 	live, err := a.ic.download(ctx, f.github)
 	if err != nil {
 		// unreachable unless github error
-		return fmt.Errorf("commentfix download error: project=%s issue=%d url=%s err=%w", a.project, a.issue, a.ic.url(), err)
+		return false, fmt.Errorf("commentfix download error: project=%s issue=%d url=%s err=%w", a.project, a.issue, a.ic.url(), err)
 	}
 	if live.body() != a.ic.body() {
 		f.slog.Info("commentfix stale", "project", a.project, "issue", a.issue, "url", a.ic.url())
-		return nil
+		return false, nil
 	}
 	f.slog.Info("commentfix rewrite", "project", a.project, "issue", a.issue, "url", a.ic.url(), "edit", f.edit, "diff", bodyDiff(a.ic.body(), a.body))
 	fmt.Fprintf(f.stderr(), "Fix %s:\n%s\n", a.ic.url(), bodyDiff(a.ic.body(), a.body))
@@ -388,10 +485,12 @@ func (f *Fixer) runAction(ctx context.Context, a *action) error {
 		f.slog.Info("commentfix editing github", "url", a.ic.url())
 		if err := a.ic.editBody(ctx, f.github, a.body); err != nil {
 			// unreachable unless github error
-			return fmt.Errorf("commentfix edit: project=%s issue=%d err=%w", a.project, a.issue, err)
+			return false, fmt.Errorf("commentfix edit: project=%s issue=%d err=%w", a.project, a.issue, err)
 		}
+		f.markApplied(a)
+		return true, nil
 	}
-	return nil
+	return false, nil
 }
 
 // Latest returns the latest known DBTime marked old by the Fixer's Watcher.

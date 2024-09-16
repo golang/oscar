@@ -133,7 +133,7 @@ func main() {
 		return
 	}
 
-	cf := commentfix.New(g.slog, g.github, "gerritlinks")
+	cf := commentfix.New(g.slog, g.github, g.db, "gerritlinks")
 	cf.EnableProject(g.githubProject)
 	cf.AutoLink(`\bCL ([0-9]+)\b`, "https://go.dev/cl/$1")
 	cf.ReplaceURL(`\Qhttps://go-review.git.corp.google.com/\E`, "https://go-review.googlesource.com/")
