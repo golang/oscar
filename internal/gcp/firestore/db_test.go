@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"math/rand/v2"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -166,6 +167,32 @@ func TestLock(t *testing.T) {
 			db2.Unlock(name)
 			t.Error("unlock wrong owner did not panic")
 		})
+	})
+
+	t.Run("concurrent", func(t *testing.T) {
+		db, name := newTestDB(t, projectID)
+		db2, _ := newTestDB(t, projectID)
+
+		var wg sync.WaitGroup
+		for range 5 {
+			wg.Add(1)
+			go func() {
+				db.Lock(name)
+				time.Sleep(time.Millisecond)
+				db.Unlock(name)
+				wg.Done()
+			}()
+
+			wg.Add(1)
+			go func() {
+				db2.Lock(name)
+				time.Sleep(time.Millisecond)
+				db2.Unlock(name)
+				wg.Done()
+			}()
+		}
+
+		wg.Wait()
 	})
 }
 

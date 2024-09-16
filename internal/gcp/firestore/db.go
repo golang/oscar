@@ -145,6 +145,10 @@ func (db *DB) lock(name string) bool {
 // by another DB, and not expired.)
 func (db *DB) lockTx(name string) (held bool) {
 	db.runTransaction(func(ctx context.Context, tx *firestore.Transaction) {
+		// Transactions can run multiple times, so explicitly set
+		// held to false in each run.
+		held = false
+
 		uid, createTime, updateTime := db.getLock(tx, name)
 		if createTime.IsZero() {
 			db.setLock(tx, name)
