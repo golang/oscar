@@ -494,6 +494,7 @@ func (g *Gaby) syncAndRunAll(ctx context.Context) (errs []error) {
 	if flags.enablesync {
 		// Independent syncs can run in any order.
 		check(g.syncGitHub(ctx))
+		check(g.syncGerrit(ctx))
 
 		// Embed must happen last.
 		check(g.embedAll(ctx))
