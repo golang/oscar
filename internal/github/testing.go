@@ -165,7 +165,7 @@ func (tc *TestingClient) AddIssueEvent(project string, issue int64, event *Issue
 	tc.addEvent(event.URL, &Event{
 		Project: project,
 		Issue:   issue,
-		API:     "/issues/comments",
+		API:     "/issues/events",
 		ID:      id,
 		Typed:   event,
 	})
