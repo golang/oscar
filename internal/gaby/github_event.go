@@ -17,12 +17,23 @@ import (
 // handleGitHubEvent handles incoming webhook requests from GitHub
 // and reports whether the request was handled.
 //
-// If the incoming request was triggered by a new GitHub issue, it syncs
-// its state and takes actions on the issue.
+// If the incoming request was triggered by supported event, and sync
+// is enabled, it syncs its relevant state. If changes are enabled,
+// it takes relevant actions in response to the event.
 //
-// Otherwise, it logs the event and takes no other action.
+// Otherwise, it logs the event and returns (false, nil).
 //
-// handleGitHubEvent returns an error if the request is invalid, for example:
+// The supported events are:
+//   - new GitHub issue (see [Gaby.handleGitHubIssueEvent])
+//   - new GitHub issue comment (see [Gaby.handleGitHubIssueCommentEvent])
+//
+// handled is true if all appropriate syncs and actions were performed
+// in response to the event, and false if the event was skipped or an
+// error occurred. (handled is also false if either of [gabyFlags.enablesync]
+// or [gabyFlags.enablechanges] is false.)
+//
+// handleGitHubEvent returns an error if any of the syncs or actions fails,
+// of if the webhook request is invalid, for example:
 //   - the request cannot be verified to come from GitHub
 //   - the event type is not supported by this implementation
 func (g *Gaby) handleGitHubEvent(r *http.Request, fl *gabyFlags) (handled bool, err error) {
@@ -38,9 +49,11 @@ func (g *Gaby) handleGitHubEvent(r *http.Request, fl *gabyFlags) (handled bool, 
 
 	switch p := event.Payload.(type) {
 	case *github.WebhookIssueEvent:
-		return g.handleGithubIssueEvent(r.Context(), p, fl)
+		return g.handleGitHubIssueEvent(r.Context(), p, fl)
+	case *github.WebhookIssueCommentEvent:
+		return g.handleGitHubIssueCommentEvent(r.Context(), p, fl)
 	default:
-		g.slog.Info("ignoring new non-issue GitHub event", "event", event)
+		g.slog.Info("ignoring new non-issue, non-comment GitHub event", "event", event)
 	}
 
 	return false, nil
@@ -48,20 +61,23 @@ func (g *Gaby) handleGitHubEvent(r *http.Request, fl *gabyFlags) (handled bool, 
 
 var errInvalidWebhookRequest = errors.New("invalid webhook request")
 
-// handleGitHubIssueEvent handles incoming GitHub "issue" events.
+// handleGitHubIssueEvent handles an incoming GitHub "issue" event and
+// reports whether the event was handled.
 //
-// If the event is a new issue, the function syncs
-// the corresponding GitHub project, posts related issues for and fixes
-// comments on the new GitHub issue.
+// If the event is a new issue, and sync is enabled, the function
+// syncs the corresponding GitHub project. If changes are also enabled,
+// it posts related issues and fixes the body and comments of the issue.
 //
-// Otherwise, it logs the event and takes no other action.
-func (g *Gaby) handleGithubIssueEvent(ctx context.Context, event *github.WebhookIssueEvent, fl *gabyFlags) (bool, error) {
+// It returns an error immediately if any of the syncs or actions fails.
+//
+// Otherwise, it logs the event and returns (false, nil).
+func (g *Gaby) handleGitHubIssueEvent(ctx context.Context, event *github.WebhookIssueEvent, fl *gabyFlags) (handled bool, _ error) {
 	if event.Action != github.WebhookIssueActionOpened {
 		g.slog.Info("ignoring GitHub issue event (action is not opened)", "event", event, "action", event)
 		return false, nil
 	}
 
-	g.slog.Info("handling GitHub issue event", "event", event)
+	g.slog.Info("handling GitHub issue", "event", event)
 
 	project := event.Repository.Project
 	if fl.enablesync {
@@ -91,7 +107,47 @@ func (g *Gaby) handleGithubIssueEvent(ctx context.Context, event *github.Webhook
 	return false, nil
 }
 
-// syncGitHubProject syncs the document database with respect to a single
+// handleGitHubIssueCommentEvent handles an incoming GitHub "issue comment" event
+// and reports whether the event was handled.
+//
+// If the event is a new issue comment, and sync is enabled, the function
+// syncs the corresponding GitHub project. If changes are also enabled,
+// it fixes the body and comments of the issue to which the comment
+// was posted.
+//
+// It returns an error immediately if any of the syncs or actions fails.
+//
+// Otherwise, it logs the event and returns (false, nil).
+func (g *Gaby) handleGitHubIssueCommentEvent(ctx context.Context, event *github.WebhookIssueCommentEvent, fl *gabyFlags) (handled bool, _ error) {
+	if event.Action != github.WebhookIssueCommentActionCreated {
+		g.slog.Info("ignoring GitHub issue comment event (action is not created)", "event", event, "action", event.Action)
+		return false, nil
+	}
+
+	g.slog.Info("handling GitHub issue comment", "event", event)
+
+	project := event.Repository.Project
+	if fl.enablesync {
+		if err := g.syncGitHubProject(ctx, project); err != nil {
+			return false, err
+		}
+		// Embeddings are not needed to apply fixes.
+	}
+
+	// Do not attempt changes unless sync is enabled and completely succeeded.
+	if fl.enablechanges && fl.enablesync {
+		// No need to lock; [commentfix.Fixer.FixGitHubIssue] and
+		// [commentfix.Fixer.Run] can happen concurrently.
+		if err := g.commentFixer.FixGitHubIssue(ctx, project, event.Issue.Number); err != nil {
+			return false, err
+		}
+		return true, nil
+	}
+
+	return false, nil
+}
+
+// syncGitHubProject syncs the document corpus with respect to a single
 // GitHub project.
 func (g *Gaby) syncGitHubProject(ctx context.Context, project string) error {
 	g.db.Lock(gabyGitHubSyncLock)

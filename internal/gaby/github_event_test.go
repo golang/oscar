@@ -67,7 +67,7 @@ func TestHandleGitHubEvent(t *testing.T) {
 			wantHandled: false,
 		},
 		{
-			// Issue comments are ignored.
+			// New issue comments are handled.
 			name: "new issue comment",
 			payload: &github.WebhookIssueCommentEvent{
 				Action: github.WebhookIssueCommentActionCreated,
@@ -79,7 +79,7 @@ func TestHandleGitHubEvent(t *testing.T) {
 				},
 			},
 			payloadType: "issue_comment",
-			wantHandled: false,
+			wantHandled: true,
 		},
 		{
 			// Incorrect project warns but doesn't return an error.
