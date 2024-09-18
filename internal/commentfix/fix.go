@@ -312,22 +312,23 @@ func (f *Fixer) Run(ctx context.Context) error {
 		}
 		last = e.DBTime
 
-		applied, err := f.fix(ctx, e)
+		applied, advance, err := f.fix(ctx, e)
 		if err != nil {
 			// unreachable unless github error
 			return err
 		}
-		if !applied {
+		if !applied && !advance {
 			continue
 		}
-
 		if f.edit {
-			// Mark this one old right now, so that we don't consider editing it again.
-			f.watcher.MarkOld(e.DBTime)
-			f.watcher.Flush()
-			old = 0
+			if advance {
+				// Mark this one old right now, so that we don't consider editing it again.
+				f.watcher.MarkOld(e.DBTime)
+				f.watcher.Flush()
+				old = 0
+			}
 
-			if !testing.Testing() {
+			if applied && !testing.Testing() {
 				// unreachable in tests
 				time.Sleep(sleep)
 			}
@@ -368,11 +369,11 @@ func (f *Fixer) FixGitHubIssue(ctx context.Context, project string, issue int64)
 	events := 0
 	for event := range f.github.Events(project, issue, issue) {
 		events++
-		applied, err := f.fix(ctx, event)
+		applied, _, err := f.fix(ctx, event)
 		if err != nil {
 			return err
 		}
-		if applied && !testing.Testing() {
+		if applied && testing.Testing() {
 			time.Sleep(sleep)
 		}
 	}
@@ -388,12 +389,15 @@ var (
 )
 
 // fix creates and runs the action for the specified event.
-// applied is true if the action was successfully applied by this run.
+// advance is true if the Fixer has edits enabled, and the action was
+// successfully applied by this run or a previous one, indicating that
+// the Fixer's watcher can be advanced. applied is true if the action
+// was applied by this run of fix.
 // fix returns an error if the action was attempted but could not be applied.
-func (f *Fixer) fix(ctx context.Context, e *github.Event) (applied bool, err error) {
+func (f *Fixer) fix(ctx context.Context, e *github.Event) (applied, advance bool, err error) {
 	a := f.newAction(e)
 	if a == nil {
-		return false, nil
+		return false, false, nil
 	}
 	return f.runAction(ctx, a)
 }
@@ -458,7 +462,9 @@ func (f *Fixer) newAction(e *github.Event) *action {
 	}
 }
 
-func (f *Fixer) runAction(ctx context.Context, a *action) (applied bool, _ error) {
+// runAction runs the given action and reports whether it was applied by this run,
+// and whether to advance the Fixer's watcher.
+func (f *Fixer) runAction(ctx context.Context, a *action) (applied, advance bool, _ error) {
 	// Do not include this Fixer's name in the lock, so that separate
 	// fixers cannot operate on the same object at the same time.
 	lock := string(ordered.Encode("commentfix", a.ic.url()))
@@ -467,30 +473,33 @@ func (f *Fixer) runAction(ctx context.Context, a *action) (applied bool, _ error
 
 	if f.isApplied(a) {
 		f.slog.Info("commentfix already applied", "fixer", f.name, "project", a.project, "issue", a.issue, "url", a.ic.url())
-		return false, nil
+		// Watcher can be advanced (in edit mode) if a fix was already applied.
+		return false, f.edit, nil
 	}
 
 	live, err := a.ic.download(ctx, f.github)
 	if err != nil {
 		// unreachable unless github error
-		return false, fmt.Errorf("commentfix download error: project=%s issue=%d url=%s err=%w", a.project, a.issue, a.ic.url(), err)
+		return false, false, fmt.Errorf("commentfix download error: project=%s issue=%d url=%s err=%w", a.project, a.issue, a.ic.url(), err)
 	}
 	if live.body() != a.ic.body() {
 		f.slog.Info("commentfix stale", "project", a.project, "issue", a.issue, "url", a.ic.url())
-		return false, nil
+		return false, false, nil
 	}
 	f.slog.Info("commentfix rewrite", "project", a.project, "issue", a.issue, "url", a.ic.url(), "edit", f.edit, "diff", bodyDiff(a.ic.body(), a.body))
 	fmt.Fprintf(f.stderr(), "Fix %s:\n%s\n", a.ic.url(), bodyDiff(a.ic.body(), a.body))
-	if f.edit {
-		f.slog.Info("commentfix editing github", "url", a.ic.url())
-		if err := a.ic.editBody(ctx, f.github, a.body); err != nil {
-			// unreachable unless github error
-			return false, fmt.Errorf("commentfix edit: project=%s issue=%d err=%w", a.project, a.issue, err)
-		}
-		f.markApplied(a)
-		return true, nil
+
+	if !f.edit {
+		return false, false, nil
 	}
-	return false, nil
+
+	f.slog.Info("commentfix editing github", "url", a.ic.url())
+	if err := a.ic.editBody(ctx, f.github, a.body); err != nil {
+		// unreachable unless github error
+		return false, false, fmt.Errorf("commentfix edit: project=%s issue=%d err=%w", a.project, a.issue, err)
+	}
+	f.markApplied(a)
+	return true, true, nil
 }
 
 // Latest returns the latest known DBTime marked old by the Fixer's Watcher.

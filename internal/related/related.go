@@ -159,12 +159,12 @@ func (p *Poster) Run(ctx context.Context) error {
 	defer p.watcher.Flush()
 
 	for e := range p.watcher.Recent() {
-		handled, err := p.postIssue(ctx, e)
+		advance, err := p.postIssue(ctx, e)
 		if err != nil {
 			p.slog.Error("related.Poster", "issue", e.Issue, "error", err)
 			continue
 		}
-		if handled {
+		if advance {
 			p.watcher.MarkOld(e.DBTime)
 			// Flush immediately to make sure we don't re-post if interrupted later in the loop.
 			p.watcher.Flush()
@@ -210,15 +210,16 @@ func lookupIssueEvent(project string, issue int64, gh *github.Client) *github.Ev
 }
 
 // postIssue posts an issue for the event.
-// handled is true if the event should be considered to have been
-// handled by this run of the function.
+// advance is true if the event should be considered to have been
+// handled by this or a previous run function, indicating
+// that the Poster's watcher can be advanced.
 // An issue is handled if
 //   - posting is enabled, AND
 //   - an issue was successfully posted, or no issue was needed
 //     because no related documents were found
 //
 // Skipped issues are not considered handled.
-func (p *Poster) postIssue(ctx context.Context, e *github.Event) (handled bool, _ error) {
+func (p *Poster) postIssue(ctx context.Context, e *github.Event) (advance bool, _ error) {
 	if skip, reason := p.skip(e); skip {
 		p.slog.Info("related.Poster skip", "name", p.name, "project",
 			e.Project, "issue", e.Issue, "reason", reason)
@@ -232,8 +233,9 @@ func (p *Poster) postIssue(ctx context.Context, e *github.Event) (handled bool, 
 
 	if p.posted(e) {
 		p.slog.Info("related.Poster already posted", "name", p.name, "project", e.Project, "issue", e.Issue)
-		// Not handled by this run of postIssue.
-		return false, nil
+		// If posting is enabled, we can advance the watcher because
+		// a comment has already been posted for this issue.
+		return p.post, nil
 	}
 
 	u := issueURL(e.Project, e.Issue)

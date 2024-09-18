@@ -257,6 +257,24 @@ func TestFixGitHubIssue(t *testing.T) {
 		expect(t, buf, "commentfix already applied", 1)
 	})
 
+	t.Run("fix-run-watcher", func(t *testing.T) {
+		f, project, buf, check := newFixer(t)
+		check(f.FixGitHubIssue(ctx, project, 18))
+		check(f.FixGitHubIssue(ctx, project, 20))
+		expect(t, buf, "commentfix rewrite", 3) // fix body of issue 20
+
+		// Run sees that fixes have already been applied and advances
+		// watcher.
+		check(f.Run(ctx))
+		expect(t, buf, "commentfix rewrite", 3) // no change
+		expect(t, buf, "commentfix already applied", 3)
+
+		// Run doesn't do anything because its watcher has been advanced.
+		check(f.Run(ctx))
+		expect(t, buf, "commentfix rewrite", 3)         // no change
+		expect(t, buf, "commentfix already applied", 3) // no change
+	})
+
 	t.Run("fix-run-concurrent", func(t *testing.T) {
 		f, project, buf, check := newFixer(t)
 

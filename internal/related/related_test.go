@@ -5,6 +5,7 @@
 package related
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -117,7 +118,7 @@ func TestRun(t *testing.T) {
 
 func TestPost(t *testing.T) {
 	t.Run("basic", func(t *testing.T) {
-		p, project, check := newTestPoster(t)
+		p, _, project, check := newTestPoster(t)
 
 		check(p.Post(ctx, project, 19))
 		check(p.Post(ctx, project, 13))
@@ -125,24 +126,38 @@ func TestPost(t *testing.T) {
 	})
 
 	t.Run("double-post", func(t *testing.T) {
-		p, project, check := newTestPoster(t)
+		p, buf, project, check := newTestPoster(t)
 
 		check(p.Post(ctx, project, 13))
 		check(p.Post(ctx, project, 13))
 		checkEdits(t, p.github.Testing().Edits(), map[int64]string{13: post13})
+
+		expect(t, buf, "already posted", 1) // issue 13
 	})
 
 	t.Run("post-run", func(t *testing.T) {
-		p, project, check := newTestPoster(t)
+		p, buf, project, check := newTestPoster(t)
 
-		// Post does not affect Run's watcher.
 		check(p.Post(ctx, project, 19))
+		checkEdits(t, p.github.Testing().Edits(), map[int64]string{19: post19})
+
+		p.github.Testing().ClearEdits()
+
+		// Post does not advance Run's watcher, so it operates on all issues.
 		check(p.Run(ctx))
-		checkEdits(t, p.github.Testing().Edits(), map[int64]string{13: post13, 19: post19})
+		checkEdits(t, p.github.Testing().Edits(), map[int64]string{13: post13})
+		expect(t, buf, "already posted", 1) // issue 19
+
+		p.github.Testing().ClearEdits()
+
+		// Run is a no-op because previous call to run advanced watcher past issue 19.
+		check(p.Run(ctx))
+		checkEdits(t, p.github.Testing().Edits(), nil)
+		expect(t, buf, "already posted", 1) // no change
 	})
 
 	t.Run("post-run-async", func(t *testing.T) {
-		p, project, check := newTestPoster(t)
+		p, buf, project, check := newTestPoster(t)
 
 		// OK to run Post in the middle of a Run.
 		done := make(chan struct{})
@@ -153,12 +168,14 @@ func TestPost(t *testing.T) {
 		check(p.Post(ctx, project, 19))
 		<-done
 		checkEdits(t, p.github.Testing().Edits(), map[int64]string{13: post13, 19: post19})
+
+		expect(t, buf, "already posted", 1) // issue 19
 	})
 }
 
 func TestPostError(t *testing.T) {
 	t.Run("event not in DB", func(t *testing.T) {
-		p, project, _ := newTestPoster(t)
+		p, _, project, _ := newTestPoster(t)
 
 		wantErr := errEventNotFound
 		// issue 42 is not in the project
@@ -168,7 +185,7 @@ func TestPostError(t *testing.T) {
 	})
 
 	t.Run("issue not in Vector DB", func(t *testing.T) {
-		p, project, _ := newTestPoster(t)
+		p, _, project, _ := newTestPoster(t)
 
 		// Vector search will fail if there is no embedding
 		// for the issue.
@@ -182,10 +199,10 @@ func TestPostError(t *testing.T) {
 	})
 }
 
-func newTestPoster(t *testing.T) (_ *Poster, project string, check func(err error)) {
+func newTestPoster(t *testing.T) (_ *Poster, out *bytes.Buffer, project string, check func(err error)) {
 	t.Helper()
 
-	lg := testutil.Slogger(t)
+	lg, out := testutil.SlogBuffer()
 	db := storage.MemDB()
 	gh := github.New(lg, db, nil, nil)
 	gh.Testing().LoadTxtar("../testdata/markdown.txt")
@@ -204,7 +221,7 @@ func newTestPoster(t *testing.T) (_ *Poster, project string, check func(err erro
 	p.SetTimeLimit(time.Time{})
 	p.EnablePosts()
 
-	return p, project, testutil.Checker(t)
+	return p, out, project, testutil.Checker(t)
 }
 
 func checkEdits(t *testing.T, edits []*github.TestingEdit, want map[int64]string) {
@@ -234,6 +251,14 @@ func checkEdits(t *testing.T, edits []*github.TestingEdit, want map[int64]string
 	}
 	if t.Failed() {
 		t.FailNow()
+	}
+}
+
+func expect(t *testing.T, buf *bytes.Buffer, action string, n int) {
+	t.Helper()
+
+	if mentions := bytes.Count(buf.Bytes(), []byte(action)); mentions != n {
+		t.Errorf("logs mention %q %d times, want %d mentions:\n%s", action, mentions, n, buf.Bytes())
 	}
 }
 
