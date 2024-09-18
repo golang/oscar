@@ -99,7 +99,7 @@ type ChangeInfo struct {
 
 	// The labels of the change as a map that maps the label names
 	// to LabelInfo entries.
-	Labels map[string]LabelInfo `json:"labels,omitempty"`
+	Labels map[string]*LabelInfo `json:"labels,omitempty"`
 
 	// The reviewers as a map that maps a reviewer state to a list
 	// of AccountInfo entities. Possible reviewer states are:
@@ -341,7 +341,7 @@ type LabelInfo struct {
 // This describes Gerrit JSON data.
 type ApprovalInfo struct {
 	// The account that approved.
-	AccountInfo
+	*AccountInfo
 	// The vote that the user has given for the label. If present
 	// and zero, the user is permitted to vote on the label. If
 	// absent, the user is not permitted to vote on that label.

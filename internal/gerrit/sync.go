@@ -81,6 +81,8 @@ type Client struct {
 
 	flushRequested atomic.Bool // flush database to disk when convenient
 
+	ac accountCache
+
 	testing bool
 }
 

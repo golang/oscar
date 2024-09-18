@@ -5,6 +5,7 @@
 package gerrit
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"iter"
@@ -28,7 +29,10 @@ func (c *Client) ChangeNumbers(project string) iter.Seq2[int, func() *Change] {
 				c.db.Panic("gerrit client change decode", "key", storage.Fmt(key), "err", err)
 			}
 			cfn := func() *Change {
-				return &Change{changeNum, fn()}
+				return &Change{
+					num:  changeNum,
+					data: bytes.Clone(fn()),
+				}
 			}
 			if !yield(changeNum, cfn) {
 				return
@@ -44,7 +48,10 @@ func (c *Client) Change(project string, changeNum int) *Change {
 	if !ok {
 		return nil
 	}
-	return &Change{changeNum, val}
+	return &Change{
+		num:  changeNum,
+		data: val,
+	}
 }
 
 // Comments returns the comments on a change, if any. These are the
