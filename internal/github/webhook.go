@@ -148,6 +148,7 @@ const (
 // https://docs.github.com/en/webhooks/webhook-events-and-payloads#issue_comment
 type WebhookIssueCommentEvent struct {
 	Action     WebhookIssueCommentAction `json:"action"`
+	Issue      Issue                     `json:"issue"`
 	Repository Repository                `json:"repository"`
 	// Additional fields omitted.
 }

@@ -6,6 +6,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -13,10 +14,11 @@ import (
 	"golang.org/x/oscar/internal/githubdocs"
 )
 
-// handleGitHubEvent handles incoming webhook requests from GitHub.
+// handleGitHubEvent handles incoming webhook requests from GitHub
+// and reports whether the request was handled.
 //
-// If the incoming request was triggered by a new GitHub issue, it
-// runs the same actions as are peformed by the /cron endpoint.
+// If the incoming request was triggered by a new GitHub issue, it syncs
+// its state and takes actions on the issue.
 //
 // Otherwise, it logs the event and takes no other action.
 //
@@ -25,21 +27,23 @@ import (
 //   - the event occurred in a GitHub project not supported by this Gaby
 //     instance
 //   - the event type is not supported by this implementation
-func (g *Gaby) handleGitHubEvent(r *http.Request) error {
+func (g *Gaby) handleGitHubEvent(r *http.Request, fl *gabyFlags) (handled bool, err error) {
 	event, err := github.ValidateWebhookRequest(r, g.githubProject, g.secret)
 	if err != nil {
-		return fmt.Errorf("invalid request: %w", err)
+		return false, fmt.Errorf("%w: %v", errInvalidWebhookRequest, err)
 	}
 
 	switch p := event.Payload.(type) {
 	case *github.WebhookIssueEvent:
-		return g.handleGithubIssueEvent(r.Context(), p)
+		return g.handleGithubIssueEvent(r.Context(), p, fl)
 	default:
 		g.slog.Info("ignoring new non-issue GitHub event", "event", event)
 	}
 
-	return nil
+	return false, nil
 }
+
+var errInvalidWebhookRequest = errors.New("invalid webhook request")
 
 // handleGitHubIssueEvent handles incoming GitHub "issue" events.
 //
@@ -48,39 +52,40 @@ func (g *Gaby) handleGitHubEvent(r *http.Request) error {
 // comments on the new GitHub issue.
 //
 // Otherwise, it logs the event and takes no other action.
-func (g *Gaby) handleGithubIssueEvent(ctx context.Context, event *github.WebhookIssueEvent) error {
+func (g *Gaby) handleGithubIssueEvent(ctx context.Context, event *github.WebhookIssueEvent, fl *gabyFlags) (bool, error) {
 	if event.Action != github.WebhookIssueActionOpened {
 		g.slog.Info("ignoring GitHub issue event (action is not opened)", "event", event, "action", event)
-		return nil
+		return false, nil
 	}
 
 	g.slog.Info("handling GitHub issue event", "event", event)
 
 	project := event.Repository.Project
-	if flags.enablesync {
+	if fl.enablesync {
 		if err := g.syncGitHubProject(ctx, project); err != nil {
-			return err
+			return false, err
 		}
 		if err := g.embedAll(ctx); err != nil {
-			return err
+			return false, err
 		}
 	}
 
 	// Do not attempt changes unless sync is enabled and completely succeeded.
-	if flags.enablechanges && flags.enablesync {
+	if fl.enablechanges && fl.enablesync {
 		// No need to lock; [related.Poster.Post] and [related.Poster.Run] can
 		// happen concurrently.
 		if err := g.relatedPoster.Post(ctx, project, event.Issue.Number); err != nil {
-			return err
+			return false, err
 		}
 		// No need to lock; [commentfix.Fixer.FixGitHubIssue] and
 		// [commentfix.Fixer.Run] can happen concurrently.
 		if err := g.commentFixer.FixGitHubIssue(ctx, project, event.Issue.Number); err != nil {
-			return err
+			return false, err
 		}
+		return true, nil
 	}
 
-	return nil
+	return false, nil
 }
 
 // syncGitHubProject syncs the document database with respect to a single

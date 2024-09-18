@@ -5,53 +5,168 @@
 package main
 
 import (
+	"errors"
+	"fmt"
 	"log/slog"
+	"net/http"
+	"os"
+	"path/filepath"
 	"testing"
 
+	"golang.org/x/oscar/internal/commentfix"
+	"golang.org/x/oscar/internal/docs"
 	"golang.org/x/oscar/internal/github"
+	"golang.org/x/oscar/internal/httprr"
+	"golang.org/x/oscar/internal/llm"
+	"golang.org/x/oscar/internal/related"
+	"golang.org/x/oscar/internal/secret"
+	"golang.org/x/oscar/internal/storage"
+	"golang.org/x/oscar/internal/testutil"
 )
 
+const testProject = "rsc/tmp"
+
 func TestHandleGitHubEvent(t *testing.T) {
-	t.Run("valid new issue runs action", func(t *testing.T) {
-		validPayload := &github.WebhookIssueEvent{
-			Action: github.WebhookIssueActionOpened,
-			Repository: github.Repository{
-				Project: "a/project",
-			},
-		}
-		r, db := github.ValidWebhookTestdata(t, "issues", validPayload)
-		g := &Gaby{githubProject: "a/project", secret: db, slog: slog.Default()}
-		if err := g.handleGitHubEvent(r); err != nil {
-			t.Fatalf("handleGitHubEvent err = %v, want nil", err)
-		}
-	})
+	fl := &gabyFlags{
+		enablechanges: true,
+		enablesync:    true,
+	}
 
-	// Valid event that we don't handle yet.
-	t.Run("valid issue comment ignored", func(t *testing.T) {
-		validPayload := &github.WebhookIssueCommentEvent{
-			Action: github.WebhookIssueCommentActionCreated,
-			Repository: github.Repository{
-				Project: "a/project",
+	for _, tc := range []struct {
+		name        string
+		payload     any
+		payloadType string
+		wantHandled bool
+		wantErr     error
+	}{
+		{
+			// Newly opened issues are handled.
+			name: "new issue",
+			payload: &github.WebhookIssueEvent{
+				Action: github.WebhookIssueActionOpened,
+				Issue: github.Issue{
+					Number: 4,
+				},
+				Repository: github.Repository{
+					Project: testProject,
+				},
 			},
-		}
-		r, db := github.ValidWebhookTestdata(t, "issue_comment", validPayload)
-		g := &Gaby{githubProject: "a/project", secret: db, slog: slog.Default()}
-		if err := g.handleGitHubEvent(r); err != nil {
-			t.Fatalf("handleGitHubEvent err = %v, want nil", err)
-		}
-	})
+			payloadType: "issues",
+			wantHandled: true,
+		},
+		{
+			// Reopened issues are ignored.
+			name: "reopened issue",
+			payload: &github.WebhookIssueEvent{
+				Action: github.WebhookIssueAction("reopened"),
+				Repository: github.Repository{
+					Project: testProject,
+				},
+			},
+			payloadType: "issues",
+			wantHandled: false,
+		},
+		{
+			// Issue comments are ignored.
+			name: "new issue comment",
+			payload: &github.WebhookIssueCommentEvent{
+				Action: github.WebhookIssueCommentActionCreated,
+				Issue: github.Issue{
+					Number: 4,
+				},
+				Repository: github.Repository{
+					Project: testProject,
+				},
+			},
+			payloadType: "issue_comment",
+			wantHandled: false,
+		},
+		{
+			// Incorrect project returns an error.
+			name: "wrong project",
+			payload: &github.WebhookIssueEvent{
+				Action: github.WebhookIssueActionOpened,
+				Repository: github.Repository{
+					Project: "wrong/project",
+				},
+			},
+			payloadType: "issues",
+			wantHandled: false,
+			wantErr:     errInvalidWebhookRequest,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			r, secret := github.ValidWebhookTestdata(t, tc.payloadType, tc.payload)
+			g := testGaby(t, secret)
+			handled, err := g.handleGitHubEvent(r, fl)
+			if !errors.Is(err, tc.wantErr) {
+				t.Errorf("handleGitHubEvent err = %v, want %v", err, tc.wantErr)
+			}
+			if handled != tc.wantHandled {
+				t.Errorf("handleGitHubEvent handled = %t, want %t", handled, tc.wantHandled)
+			}
+		})
+	}
+}
 
-	t.Run("error wrong project", func(t *testing.T) {
-		validPayload := &github.WebhookIssueEvent{
-			Action: github.WebhookIssueActionOpened,
-			Repository: github.Repository{
-				Project: "wrong/project",
-			},
-		}
-		r, db := github.ValidWebhookTestdata(t, "issues", validPayload)
-		g := &Gaby{githubProject: "a/project", secret: db, slog: slog.Default()}
-		if err := g.handleGitHubEvent(r); err == nil {
-			t.Fatal("handleGitHubEvent err = nil, want err")
-		}
-	})
+// testGaby returns a Gaby instance for testing the GitHub webhook.
+// secret should contain a secret for validating the webhook response.
+func testGaby(t *testing.T, secret secret.DB) *Gaby {
+	t.Helper()
+	check := testutil.Checker(t)
+
+	lg := testutil.Slogger(t)
+	db := storage.MemDB()
+	dc := docs.New(db)
+
+	gh := testGHClient(t, check, lg, db)
+
+	vdb := storage.MemVectorDB(db, lg, "vecs")
+	emb := llm.QuoteEmbedder()
+
+	rp := related.New(lg, db, gh, vdb, dc, "related")
+	rp.EnableProject(testProject)
+	rp.EnablePosts()
+
+	cf := commentfix.New(lg, gh, db, "fix")
+	cf.EnableProject(testProject)
+	// No fixes yet.
+	cf.EnableEdits()
+
+	return &Gaby{
+		githubProject: testProject,
+		github:        gh,
+		vector:        vdb,
+		secret:        secret,
+		db:            db,
+		slog:          lg,
+		embed:         emb,
+		docs:          dc,
+		commentFixer:  cf,
+		relatedPoster: rp,
+	}
+}
+
+func testGHClient(t *testing.T, check func(error), lg *slog.Logger, db storage.DB) *github.Client {
+	t.Helper()
+
+	fname := fmt.Sprintf("testdata/webhook/%s.httprr", t.Name())
+	if _, err := os.Stat(fname); err != nil {
+		dir := filepath.Dir(fname)
+		check(os.MkdirAll(dir, os.ModePerm))
+		_, err := os.Create(fname)
+		check(err)
+	}
+
+	rr, err := httprr.Open(fname, http.DefaultTransport)
+	check(err)
+	rr.Scrub(github.Scrub)
+	sdb := secret.DB(secret.Map{"api.github.com": "user:pass"})
+	if rr.Recording() {
+		sdb = secret.Netrc()
+	}
+	c := github.New(lg, db, sdb, rr.Client())
+	check(c.Add(testProject))
+
+	return c
 }

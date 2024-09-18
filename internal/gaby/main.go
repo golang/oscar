@@ -41,7 +41,7 @@ import (
 	"golang.org/x/oscar/internal/storage/timed"
 )
 
-var flags struct {
+type gabyFlags struct {
 	search        bool
 	project       string
 	firestoredb   string
@@ -49,6 +49,8 @@ var flags struct {
 	enablechanges bool
 	enablecrawl   bool
 }
+
+var flags gabyFlags
 
 func init() {
 	flag.BoolVar(&flags.search, "search", false, "run in interactive search mode")
@@ -355,9 +357,13 @@ func (g *Gaby) newServer(report func(error)) *http.ServeMux {
 		g.db.Lock(githubEventLock)
 		defer g.db.Unlock(githubEventLock)
 
-		if err := g.handleGitHubEvent(r); err != nil {
+		if handled, err := g.handleGitHubEvent(r, &flags); err != nil {
 			report(err)
 			slog.Warn(githubEventEndpoint, "err", err)
+		} else if handled {
+			slog.Info(githubEventEndpoint + " success")
+		} else {
+			slog.Debug(githubEventEndpoint + " skipped event")
 		}
 
 		githubEventEndpointCounter.Add(r.Context(), 1)
