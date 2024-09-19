@@ -47,7 +47,6 @@ type gabyFlags struct {
 	firestoredb   string
 	enablesync    bool
 	enablechanges bool
-	enablecrawl   bool
 }
 
 var flags gabyFlags
@@ -57,10 +56,7 @@ func init() {
 	flag.StringVar(&flags.project, "project", "", "name of the Google Cloud Project")
 	flag.StringVar(&flags.firestoredb, "firestoredb", "", "name of the Firestore DB to use")
 	flag.BoolVar(&flags.enablesync, "enablesync", false, "sync the DB with GitHub and other external sources")
-	// TODO(rsc): Crawling is too slow with a remote Firestore database.
-	// Perhaps it will be okay when running on GCP. For now, disable.
 	flag.BoolVar(&flags.enablechanges, "enablechanges", false, "allow changes to GitHub")
-	flag.BoolVar(&flags.enablecrawl, "enablecrawl", false, "allow crawler to run")
 }
 
 // Gaby holds the state for gaby's execution.
@@ -126,9 +122,8 @@ func main() {
 	cr.Allow(godevAllow...)
 	cr.Deny(godevDeny...)
 	cr.Clean(godevClean)
-	if flags.enablecrawl {
-		watcherLatests["crawldocs"] = func() timed.DBTime { return crawldocs.Latest(cr) }
-	}
+	g.crawler = cr
+	watcherLatests["crawldocs"] = func() timed.DBTime { return crawldocs.Latest(cr) }
 
 	if flags.search {
 		g.searchLoop()
@@ -306,8 +301,10 @@ func (g *Gaby) newServer(report func(error)) *http.ServeMux {
 		cronEndpoint        = "cron"
 		setLevelEndpoint    = "setlevel"
 		githubEventEndpoint = "github-event"
+		crawlEndpoint       = "crawl"
 	)
 	cronEndpointCounter := g.newEndpointCounter(cronEndpoint)
+	crawlEndpointCounter := g.newEndpointCounter(crawlEndpoint)
 	githubEventEndpointCounter := g.newEndpointCounter(githubEventEndpoint)
 
 	mux := http.NewServeMux()
@@ -347,6 +344,24 @@ func (g *Gaby) newServer(report func(error)) *http.ServeMux {
 		cronEndpointCounter.Add(r.Context(), 1)
 	})
 
+	// crawlEndpoint triggers the web crawl configured in [Gaby.crawler].
+	// It is intended to be triggered by a Cloud Scheduler job (or similar)
+	// to run periodically.
+	mux.HandleFunc("GET /"+crawlEndpoint, func(w http.ResponseWriter, r *http.Request) {
+		g.slog.Info(crawlEndpoint + " start")
+		defer g.slog.Info(crawlEndpoint + " end")
+
+		const lock = "gabycrawl"
+		g.db.Lock(lock)
+		defer g.db.Unlock(lock)
+
+		if err := g.crawl(r.Context()); err != nil {
+			report(err)
+		}
+
+		crawlEndpointCounter.Add(r.Context(), 1)
+	})
+
 	// githubEventEndpoint is called by a GitHub webhook when a new
 	// event occurs on the githubProject repo.
 	mux.HandleFunc("POST /"+githubEventEndpoint, func(w http.ResponseWriter, r *http.Request) {
@@ -375,8 +390,35 @@ func (g *Gaby) newServer(report func(error)) *http.ServeMux {
 	return mux
 }
 
-// syncAndRunAll runs all syncs (if enablesync is true) and Gaby actions
+// crawl crawls the webpages configured in [Gaby.crawler], adds them
+// to the documents corpus [Gaby.docs], and stores their embeddings
+// in the vector database [Gaby.vector].
+// if flags.enablesync is false, it is a no-op.
+func (g *Gaby) crawl(ctx context.Context) error {
+	if !flags.enablesync {
+		return nil
+	}
+	if err := g.syncCrawl(ctx); err != nil {
+		return err
+	}
+	return g.embedAll(ctx)
+}
+
+// syncCrawl crawls webpages and adds them to the document corpus.
+func (g *Gaby) syncCrawl(ctx context.Context) error {
+	g.db.Lock(gabyCrawlLock)
+	defer g.db.Unlock(gabyCrawlLock)
+
+	if err := g.crawler.Run(ctx); err != nil {
+		return err
+	}
+	return crawldocs.Sync(ctx, g.slog, g.docs, g.crawler)
+}
+
+// syncAndRunAll runs all fast syncs (if enablesync is true) and Gaby actions
 // (if enablechanges is true).
+// It does not perform slow syncs, such as crawling, which must be triggered
+// separately.
 // It treats all errors as non-fatal, returning a slice of all errors
 // that occurred.
 func (g *Gaby) syncAndRunAll(ctx context.Context) (errs []error) {
@@ -389,9 +431,6 @@ func (g *Gaby) syncAndRunAll(ctx context.Context) (errs []error) {
 	if flags.enablesync {
 		// Independent syncs can run in any order.
 		check(g.syncGitHub(ctx))
-		if flags.enablecrawl {
-			check(g.syncCrawl(ctx))
-		}
 
 		// Embed must happen last.
 		check(g.embedAll(ctx))
@@ -426,17 +465,6 @@ func (g *Gaby) syncGitHub(ctx context.Context) error {
 	// Store newly downloaded GitHub events in the document
 	// database.
 	return githubdocs.Sync(ctx, g.slog, g.docs, g.github)
-}
-
-// syncCrawl crawls webpages and adds them to the document database.
-func (g *Gaby) syncCrawl(ctx context.Context) error {
-	g.db.Lock(gabyCrawlLock)
-	defer g.db.Unlock(gabyCrawlLock)
-
-	if err := g.crawler.Run(ctx); err != nil {
-		return err
-	}
-	return crawldocs.Sync(ctx, g.slog, g.docs, g.crawler)
 }
 
 // embedAll store embeddings for all new documents in the vector database.
