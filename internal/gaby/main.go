@@ -31,6 +31,7 @@ import (
 	"golang.org/x/oscar/internal/gcp/gcpmetrics"
 	"golang.org/x/oscar/internal/gcp/gcpsecret"
 	"golang.org/x/oscar/internal/gcp/gemini"
+	"golang.org/x/oscar/internal/gerrit"
 	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/githubdocs"
 	"golang.org/x/oscar/internal/llm"
@@ -62,11 +63,12 @@ func init() {
 
 // Gaby holds the state for gaby's execution.
 type Gaby struct {
-	ctx           context.Context
-	cloud         bool              // running on Cloud Run
-	meta          map[string]string // any metadata we want to expose
-	addr          string            // address to serve HTTP on
-	githubProject string            // github project to monitor and update
+	ctx            context.Context
+	cloud          bool              // running on Cloud Run
+	meta           map[string]string // any metadata we want to expose
+	addr           string            // address to serve HTTP on
+	githubProject  string            // github project to monitor and update
+	gerritProjects []string          // gerrit projects to monitor and update
 
 	slog      *slog.Logger           // slog output to use
 	slogLevel *slog.LevelVar         // slog level, for changing as needed
@@ -77,6 +79,7 @@ type Gaby struct {
 	docs      *docs.Corpus           // document corpus to use
 	embed     llm.Embedder           // LLM embedder to use
 	github    *github.Client         // github client to use
+	gerrit    *gerrit.Client         // gerrit client to use
 	crawler   *crawl.Crawler         // web crawler to use
 	meter     ometric.Meter          // used to create Open Telemetry instruments
 	report    *errorreporting.Client // used to report important gaby errors to Cloud Error Reporting service
@@ -90,14 +93,15 @@ func main() {
 
 	level := new(slog.LevelVar)
 	g := &Gaby{
-		ctx:           context.Background(),
-		cloud:         onCloudRun(),
-		meta:          map[string]string{},
-		slog:          slog.New(gcphandler.New(level)),
-		slogLevel:     level,
-		http:          http.DefaultClient,
-		addr:          "localhost:4229", // 4229 = gaby on a phone
-		githubProject: "golang/go",
+		ctx:            context.Background(),
+		cloud:          onCloudRun(),
+		meta:           map[string]string{},
+		slog:           slog.New(gcphandler.New(level)),
+		slogLevel:      level,
+		http:           http.DefaultClient,
+		addr:           "localhost:4229", // 4229 = gaby on a phone
+		githubProject:  "golang/go",
+		gerritProjects: []string{"go"},
 	}
 
 	shutdown := g.initGCP()
@@ -107,6 +111,11 @@ func main() {
 	watcherLatests := map[string]func() timed.DBTime{}
 
 	g.github = github.New(g.slog, g.db, g.secret, g.http)
+
+	g.gerrit = gerrit.New("go-review.googlesource.com", g.slog, g.db, g.secret, g.http)
+	for _, project := range g.gerritProjects {
+		g.gerrit.Add(project) // in principle needed only once per g.db lifetime
+	}
 
 	g.docs = docs.New(g.slog, g.db)
 	watcherLatests["githubdocs"] = func() timed.DBTime { return githubdocs.Latest(g.github) }
@@ -390,7 +399,7 @@ func (g *Gaby) newServer(report func(error)) *http.ServeMux {
 
 	// syncEndpoint is called manually to invoke a specific sync job.
 	// It performs a sync if enablesync is true.
-	// Usage: /sync?job={github | crawl}
+	// Usage: /sync?job={github | crawl | gerrit}
 	mux.HandleFunc("GET /"+syncEndpoint, func(w http.ResponseWriter, r *http.Request) {
 		g.slog.Info(syncEndpoint + " start")
 		defer g.slog.Info(syncEndpoint + " end")
@@ -411,6 +420,8 @@ func (g *Gaby) newServer(report func(error)) *http.ServeMux {
 			err = g.syncGitHub(g.ctx)
 		case "crawl":
 			err = g.syncCrawl(g.ctx)
+		case "gerrit":
+			err = g.syncGerrit(g.ctx)
 		default:
 			err = fmt.Errorf("unrecognized sync job %s", job)
 		}
@@ -496,6 +507,7 @@ func (g *Gaby) syncAndRunAll(ctx context.Context) (errs []error) {
 
 const (
 	gabyGitHubSyncLock = "gabygithubsync"
+	gabyGerritSyncLock = "gabygerritsync"
 	gabyEmbedLock      = "gabyembedsync"
 	gabyCrawlLock      = "gabycrawlsync"
 
@@ -514,6 +526,14 @@ func (g *Gaby) syncGitHub(ctx context.Context) error {
 	// Store newly downloaded GitHub events in the document
 	// database.
 	return githubdocs.Sync(ctx, g.slog, g.docs, g.github)
+}
+
+func (g *Gaby) syncGerrit(ctx context.Context) error {
+	g.db.Lock(gabyGerritSyncLock)
+	defer g.db.Unlock(gabyGerritSyncLock)
+
+	// Download new events from all gerrit projects.
+	return g.gerrit.Sync(ctx)
 }
 
 // embedAll store embeddings for all new documents in the vector database.
