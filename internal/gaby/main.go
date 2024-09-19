@@ -299,6 +299,7 @@ func (g *Gaby) serveHTTP() {
 func (g *Gaby) newServer(report func(error)) *http.ServeMux {
 	const (
 		cronEndpoint        = "cron"
+		syncEndpoint        = "sync"
 		setLevelEndpoint    = "setlevel"
 		githubEventEndpoint = "github-event"
 		crawlEndpoint       = "crawl"
@@ -382,6 +383,43 @@ func (g *Gaby) newServer(report func(error)) *http.ServeMux {
 		}
 
 		githubEventEndpointCounter.Add(r.Context(), 1)
+	})
+
+	// syncEndpoint is called manually to invoke a specific sync job.
+	// It performs a sync if enablesync is true.
+	// Usage: /sync?job={github | crawl}
+	mux.HandleFunc("GET /"+syncEndpoint, func(w http.ResponseWriter, r *http.Request) {
+		g.slog.Info(syncEndpoint + " start")
+		defer g.slog.Info(syncEndpoint + " end")
+
+		if !flags.enablesync {
+			fmt.Fprint(w, "exiting: sync is not enabled")
+			return
+		}
+
+		const syncLock = "gabysync"
+		g.db.Lock(syncLock)
+		defer g.db.Unlock(syncLock)
+
+		job := r.FormValue("job")
+		var err error
+		switch job {
+		case "github":
+			err = g.syncGitHub(g.ctx)
+		case "crawl":
+			err = g.syncCrawl(g.ctx)
+		default:
+			err = fmt.Errorf("unrecognized sync job %s", job)
+		}
+
+		if err == nil { // embed only if sync succeeded
+			err = g.embedAll(g.ctx)
+		}
+
+		if err != nil {
+			http.Error(w, fmt.Sprintf("sync: error %v for %s", err, job), 500)
+			g.slog.Error("sync", "job", job, "error", err)
+		}
 	})
 
 	// /search: display a form for vector similarity search.
