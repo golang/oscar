@@ -219,7 +219,9 @@ func lookupIssueEvent(project string, issue int64, gh *github.Client) *github.Ev
 //
 // Skipped issues are not considered handled.
 func (p *Poster) postIssue(ctx context.Context, e *github.Event) (handled bool, _ error) {
-	if p.skip(e) {
+	if skip, reason := p.skip(e); skip {
+		p.slog.Info("related.Poster skip", "name", p.name, "project",
+			e.Project, "issue", e.Issue, "reason", reason)
 		return false, nil
 	}
 
@@ -241,6 +243,7 @@ func (p *Poster) postIssue(ctx context.Context, e *github.Event) (handled bool, 
 		return false, fmt.Errorf("%w url=%s", errVectorSearchFailed, u)
 	}
 	if len(results) == 0 {
+		p.slog.Info("related.Poster found no related documents", "name", p.name, "project", e.Project, "issue", e.Issue)
 		// If posting is enabled, an issue with no related documents
 		// should be considered handled, and not looked at again.
 		return p.post, nil
@@ -316,29 +319,35 @@ func (p *Poster) comment(results []storage.VectorResult) string {
 	return comment.String()
 }
 
-// skip reports whether the event should be skipped.
-func (p *Poster) skip(e *github.Event) bool {
-	if !p.projects[e.Project] || e.API != "/issues" {
-		return true
+// skip reports whether the event should be skipped and why.
+func (p *Poster) skip(e *github.Event) (_ bool, reason string) {
+	if !p.projects[e.Project] {
+		return true, fmt.Sprintf("project %s not enabled for this Poster", e.Project)
+	}
+	if e.API != "/issues" {
+		return true, fmt.Sprintf("wrong API %s (expected %s)", e.API, "/issues")
 	}
 	issue := e.Typed.(*github.Issue)
-	if issue.State == "closed" || issue.PullRequest != nil {
-		return true
+	if issue.State == "closed" {
+		return true, "issue is closed"
+	}
+	if issue.PullRequest != nil {
+		return true, "pull request"
 	}
 	tm, err := time.Parse(time.RFC3339, issue.CreatedAt)
 	if err != nil {
 		p.slog.Error("related.Poster parse createdat", "CreatedAt", issue.CreatedAt, "err", err)
-		return true
+		return true, "could not parse createdat"
 	}
 	if tm.Before(p.timeLimit) {
-		return true
+		return true, fmt.Sprintf("created=%s before time limit=%s", tm, p.timeLimit)
 	}
-	for _, ig := range p.ignores {
+	for i, ig := range p.ignores {
 		if ig(issue) {
-			return true
+			return true, fmt.Sprintf("ignored by function ignores[%d]", i)
 		}
 	}
-	return false
+	return false, ""
 }
 
 // posted reports whether the event has already been posted.
