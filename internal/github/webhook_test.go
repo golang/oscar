@@ -17,11 +17,11 @@ import (
 func TestValidateWebhookRequest(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		for _, tc := range []struct {
-			event   string
+			event   WebhookEventType
 			payload any
 		}{
 			{
-				event: "issues",
+				event: WebhookEventTypeIssue,
 				payload: &WebhookIssueEvent{
 					Action: WebhookIssueActionOpened,
 					Repository: Repository{
@@ -30,7 +30,7 @@ func TestValidateWebhookRequest(t *testing.T) {
 				},
 			},
 			{
-				event: "issue_comment",
+				event: WebhookEventTypeIssueComment,
 				payload: &WebhookIssueCommentEvent{
 					Action: WebhookIssueCommentActionCreated,
 					Repository: Repository{
@@ -38,14 +38,18 @@ func TestValidateWebhookRequest(t *testing.T) {
 					},
 				},
 			},
+			{
+				event:   WebhookEventType("other"),
+				payload: json.RawMessage([]byte(`{"hello":"world"}`)),
+			},
 		} {
-			t.Run(tc.event, func(t *testing.T) {
+			t.Run(string(tc.event), func(t *testing.T) {
 				r, db := ValidWebhookTestdata(t, tc.event, tc.payload)
 				got, err := ValidateWebhookRequest(r, db)
 				if err != nil {
 					t.Fatalf("ValidateWebhookRequest err = %s, want nil", err)
 				}
-				want := &WebhookEvent{Payload: tc.payload}
+				want := &WebhookEvent{Type: tc.event, Payload: tc.payload}
 				if !reflect.DeepEqual(got, want) {
 					t.Errorf("ValidateWebhookRequest = %s, want %s", got, want)
 				}
@@ -58,7 +62,7 @@ func TestValidateWebhookRequest(t *testing.T) {
 		db := newWebhookSecretDB(t, key)
 
 		defaultProject := "a/project"
-		defaultEvent := "issues"
+		defaultEvent := WebhookEventTypeIssue
 		defaultPayload, err := json.Marshal(WebhookIssueEvent{
 			Action: WebhookIssueActionOpened,
 			Repository: Repository{
@@ -91,9 +95,9 @@ func TestValidateWebhookRequest(t *testing.T) {
 				wantErr: errNoPayload,
 			},
 			{
-				name:    "unsupported event",
-				r:       newWebhookRequest(t, "bad", defaultSignature, defaultPayload),
-				wantErr: errUnknownEvent,
+				name:    "no event",
+				r:       newWebhookRequest(t, "", defaultSignature, defaultPayload),
+				wantErr: errNoEventType,
 			},
 			{
 				name:    "invalid signature",

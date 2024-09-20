@@ -29,10 +29,10 @@ import (
 //
 // It expects:
 //   - a POST request
-//   - an "X-GitHub-Event" header entry with a supported event type
-//     ("issues" or "issue_comment")
+//   - an "X-GitHub-Event" header entry with a non-empty event type
+//     (see [WebhookEventType])
 //   - a non-empty request body containing valid JSON representing an event
-//     of the specified event type in the expected GitHub project (e.g. "golang/go")
+//     of the specified event type
 //   - an "X-Hub-Signature-256" header entry of the form
 //     "sha256=HMAC", where HMAC is a valid hex-encoded HMAC tag of the
 //     request body computed with the key in db named "github-webhook"
@@ -61,7 +61,7 @@ func ValidateWebhookRequest(r *http.Request, db secret.DB) (*WebhookEvent, error
 		return nil, err
 	}
 
-	event, err := toWebhookEvent(r.Header.Get(xGitHubEventHeader), body)
+	event, err := toWebhookEvent(WebhookEventType(r.Header.Get(xGitHubEventHeader)), body)
 	if err != nil {
 		return nil, err
 	}
@@ -95,16 +95,32 @@ func validateWebhookSignature(payload []byte, signature string, db secret.DB) er
 // WebhookEvent contains the data sent in a GitHub webhook request that
 // is relevant for responding to the event.
 type WebhookEvent struct {
+	// Type specifies the type of event's Payload.
+	Type WebhookEventType
 	// Payload is the unmarshaled JSON payload of the webhook event,
-	// with type corresponding to event as follows:
-	//  - "issues": *WebhookIssueEvent
-	//  - "issue_comment": *WebhookIssueCommentEvent
+	// of the Go type specified by Type.
 	//
-	// Many event types are not supported.
-	// See https://docs.github.com/en/webhooks/webhook-events-and-payloads
-	// for all possible event types.
+	// Event types that are not implemented use Go type [json.RawMessage].
 	Payload any
 }
+
+// WebhookEventType is the name GitHub uses to refer to a type of
+// GitHub webhook event.
+//
+// Event types that are not implemented use Go type [json.RawMessage].
+//
+// See https://docs.github.com/en/webhooks/webhook-events-and-payloads
+// for all possible event types.
+type WebhookEventType string
+
+const (
+	// An issue event.
+	// Corresponds to Go type [*WebhookIssueEvent].
+	WebhookEventTypeIssue WebhookEventType = "issues"
+	// An issue comment event.
+	// Corresponds to Go type [*WebhookIssueCommentEvent].
+	WebhookEventTypeIssueComment WebhookEventType = "issue_comment"
+)
 
 // Project returns the GitHub project (e.g., "golang/go") for the event,
 // or an empty string if the project cannot be determined.
@@ -163,20 +179,26 @@ type Repository struct {
 }
 
 // toWebhookEvent converts data into a WebhookEvent with a Payload of the
-// type corresponding to event.
+// type corresponding to eventType, or [json.RawMessage] if the type
+// is not supported.
 //
 // It returns an error if the payload cannot be unmarshaled into the
-// event type, or the event type is unrecognized.
-func toWebhookEvent(event string, data []byte) (*WebhookEvent, error) {
-	w := &WebhookEvent{}
+// expected event type.
+func toWebhookEvent(eventType WebhookEventType, data []byte) (*WebhookEvent, error) {
+	w := &WebhookEvent{
+		Type: eventType,
+	}
 
-	switch event {
-	case "issues":
+	switch eventType {
+	case "":
+		return nil, errNoEventType
+	case WebhookEventTypeIssue:
 		w.Payload = new(WebhookIssueEvent)
-	case "issue_comment":
+	case WebhookEventTypeIssueComment:
 		w.Payload = new(WebhookIssueCommentEvent)
 	default:
-		return nil, fmt.Errorf("%w: %s", errUnknownEvent, event)
+		w.Payload = json.RawMessage(data)
+		return w, nil
 	}
 
 	if err := json.Unmarshal(data, w.Payload); err != nil {
@@ -197,9 +219,8 @@ var (
 	errInvalidHMAC        = errors.New("invalid HMAC")
 	errNoSignatureHeader  = fmt.Errorf("missing %q header entry", xHubSignature256Header)
 	errBadSignatureHeader = fmt.Errorf("malformed %q header entry", xHubSignature256Header)
-	errUnknownEvent       = errors.New("unrecognized GitHub event type")
 	errBadHTTPMethod      = errors.New("unexpected HTTP method")
-	errWrongProject       = errors.New("unexpected GitHub project")
+	errNoEventType        = errors.New("no GitHub event type")
 )
 
 // parseMAC reads the value of the SHA-256 HMAC tag from the
@@ -240,7 +261,7 @@ func validMAC(message, messageMAC, key []byte) bool {
 // payload is marshaled into JSON as the body of the returned request.
 //
 // For testing.
-func ValidWebhookTestdata(t *testing.T, event string, payload any) (*http.Request, secret.DB) {
+func ValidWebhookTestdata(t *testing.T, event WebhookEventType, payload any) (*http.Request, secret.DB) {
 	key := "test-key"
 	body, err := json.Marshal(payload)
 	if err != nil {
@@ -280,7 +301,7 @@ func newWebhookSecretDB(t *testing.T, key string) secret.DB {
 // and the "X-Hub-Signature-256" header entry set to xHubSignature256.
 //
 // For testing.
-func newWebhookRequest(t *testing.T, event, xHubSignature256 string, payload []byte) *http.Request {
+func newWebhookRequest(t *testing.T, event WebhookEventType, xHubSignature256 string, payload []byte) *http.Request {
 	t.Helper()
 
 	r, err := http.NewRequest(http.MethodPost, "", bytes.NewReader(payload))
@@ -291,7 +312,7 @@ func newWebhookRequest(t *testing.T, event, xHubSignature256 string, payload []b
 		r.Header.Set(xHubSignature256Header, xHubSignature256)
 	}
 	if event != "" {
-		r.Header.Set(xGitHubEventHeader, event)
+		r.Header.Set(xGitHubEventHeader, string(event))
 	}
 	return r
 }

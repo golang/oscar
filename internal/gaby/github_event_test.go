@@ -35,7 +35,7 @@ func TestHandleGitHubEvent(t *testing.T) {
 	for _, tc := range []struct {
 		name        string
 		payload     any
-		payloadType string
+		payloadType github.WebhookEventType
 		wantHandled bool
 		wantErr     error
 	}{
@@ -78,11 +78,11 @@ func TestHandleGitHubEvent(t *testing.T) {
 					Project: testProject,
 				},
 			},
-			payloadType: "issue_comment",
+			payloadType: github.WebhookEventTypeIssueComment,
 			wantHandled: true,
 		},
 		{
-			// Incorrect project warns but doesn't return an error.
+			// Incorrect project skips the event but doesn't return an error.
 			name: "wrong project",
 			payload: &github.WebhookIssueEvent{
 				Action: github.WebhookIssueActionOpened,
@@ -90,7 +90,7 @@ func TestHandleGitHubEvent(t *testing.T) {
 					Project: "wrong/project",
 				},
 			},
-			payloadType: "issues",
+			payloadType: github.WebhookEventTypeIssue,
 			wantHandled: false,
 		},
 	} {

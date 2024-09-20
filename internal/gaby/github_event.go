@@ -33,9 +33,7 @@ import (
 // or [gabyFlags.enablechanges] is false.)
 //
 // handleGitHubEvent returns an error if any of the syncs or actions fails,
-// of if the webhook request is invalid, for example:
-//   - the request cannot be verified to come from GitHub
-//   - the event type is not supported by this implementation
+// of if the webhook request is invalid according to [github.ValidateWebhookRequest].
 func (g *Gaby) handleGitHubEvent(r *http.Request, fl *gabyFlags) (handled bool, err error) {
 	event, err := github.ValidateWebhookRequest(r, g.secret)
 	if err != nil {
@@ -53,7 +51,7 @@ func (g *Gaby) handleGitHubEvent(r *http.Request, fl *gabyFlags) (handled bool, 
 	case *github.WebhookIssueCommentEvent:
 		return g.handleGitHubIssueCommentEvent(r.Context(), p, fl)
 	default:
-		g.slog.Info("ignoring new non-issue, non-comment GitHub event", "event", event)
+		g.slog.Info("ignoring GitHub event", "type", event.Type, "event", event)
 	}
 
 	return false, nil
@@ -73,7 +71,7 @@ var errInvalidWebhookRequest = errors.New("invalid webhook request")
 // Otherwise, it logs the event and returns (false, nil).
 func (g *Gaby) handleGitHubIssueEvent(ctx context.Context, event *github.WebhookIssueEvent, fl *gabyFlags) (handled bool, _ error) {
 	if event.Action != github.WebhookIssueActionOpened {
-		g.slog.Info("ignoring GitHub issue event (action is not opened)", "event", event, "action", event)
+		g.slog.Info("ignoring GitHub issue event (action is not opened)", "event", event, "action", event.Action)
 		return false, nil
 	}
 
