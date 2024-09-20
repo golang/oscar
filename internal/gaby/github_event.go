@@ -24,13 +24,16 @@ import (
 //
 // handleGitHubEvent returns an error if the request is invalid, for example:
 //   - the request cannot be verified to come from GitHub
-//   - the event occurred in a GitHub project not supported by this Gaby
-//     instance
 //   - the event type is not supported by this implementation
 func (g *Gaby) handleGitHubEvent(r *http.Request, fl *gabyFlags) (handled bool, err error) {
-	event, err := github.ValidateWebhookRequest(r, g.githubProject, g.secret)
+	event, err := github.ValidateWebhookRequest(r, g.secret)
 	if err != nil {
 		return false, fmt.Errorf("%w: %v", errInvalidWebhookRequest, err)
+	}
+
+	if event.Project() != g.githubProject {
+		g.slog.Warn("unexpected webhook request", "webhook_project", event.Project(), "gaby_project", g.githubProject, "event", event)
+		return false, nil
 	}
 
 	switch p := event.Payload.(type) {

@@ -82,7 +82,7 @@ func TestHandleGitHubEvent(t *testing.T) {
 			wantHandled: false,
 		},
 		{
-			// Incorrect project returns an error.
+			// Incorrect project warns but doesn't return an error.
 			name: "wrong project",
 			payload: &github.WebhookIssueEvent{
 				Action: github.WebhookIssueActionOpened,
@@ -92,7 +92,6 @@ func TestHandleGitHubEvent(t *testing.T) {
 			},
 			payloadType: "issues",
 			wantHandled: false,
-			wantErr:     errInvalidWebhookRequest,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

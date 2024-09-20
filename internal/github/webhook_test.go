@@ -18,12 +18,10 @@ func TestValidateWebhookRequest(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		for _, tc := range []struct {
 			event   string
-			project string
 			payload any
 		}{
 			{
-				event:   "issues",
-				project: "a/project",
+				event: "issues",
 				payload: &WebhookIssueEvent{
 					Action: WebhookIssueActionOpened,
 					Repository: Repository{
@@ -32,8 +30,7 @@ func TestValidateWebhookRequest(t *testing.T) {
 				},
 			},
 			{
-				event:   "issue_comment",
-				project: "a/project",
+				event: "issue_comment",
 				payload: &WebhookIssueCommentEvent{
 					Action: WebhookIssueCommentActionCreated,
 					Repository: Repository{
@@ -44,7 +41,7 @@ func TestValidateWebhookRequest(t *testing.T) {
 		} {
 			t.Run(tc.event, func(t *testing.T) {
 				r, db := ValidWebhookTestdata(t, tc.event, tc.payload)
-				got, err := ValidateWebhookRequest(r, tc.project, db)
+				got, err := ValidateWebhookRequest(r, db)
 				if err != nil {
 					t.Fatalf("ValidateWebhookRequest err = %s, want nil", err)
 				}
@@ -80,43 +77,32 @@ func TestValidateWebhookRequest(t *testing.T) {
 
 		for _, tc := range []struct {
 			name    string
-			project string
 			r       *http.Request
 			wantErr error
 		}{
 			{
 				name:    "wrong method",
-				project: defaultProject,
 				r:       getRequest,
 				wantErr: errBadHTTPMethod,
 			},
 			{
 				name:    "no payload",
-				project: defaultProject,
 				r:       newWebhookRequest(t, defaultEvent, defaultSignature, nil),
 				wantErr: errNoPayload,
 			},
 			{
 				name:    "unsupported event",
-				project: defaultProject,
 				r:       newWebhookRequest(t, "bad", defaultSignature, defaultPayload),
 				wantErr: errUnknownEvent,
 			},
 			{
 				name:    "invalid signature",
-				project: defaultProject,
 				r:       newWebhookRequest(t, defaultEvent, "sha256=deadbeef", defaultPayload),
 				wantErr: errInvalidHMAC,
 			},
-			{
-				name:    "wrong project",
-				project: "another/project",
-				r:       newWebhookRequest(t, defaultEvent, defaultSignature, defaultPayload),
-				wantErr: errWrongProject,
-			},
 		} {
 			t.Run(tc.name, func(t *testing.T) {
-				_, err := ValidateWebhookRequest(tc.r, tc.project, db)
+				_, err := ValidateWebhookRequest(tc.r, db)
 				if !errors.Is(err, tc.wantErr) {
 					t.Errorf("ValidateWebhookRequest err = %v, want error %v", err, tc.wantErr)
 				}

@@ -22,8 +22,7 @@ import (
 
 // ValidateWebhookRequest verifies that the request's payload matches
 // the HMAC tag in the header and returns a WebhookEvent containing the
-// unmarshaled payload. The project argument is the expected GitHub
-// project (e.g. "golang/go") for the request.
+// unmarshaled payload.
 //
 // The function is intended to validate authenticated POST requests
 // received from GitHub webhooks.
@@ -39,7 +38,7 @@ import (
 //     request body computed with the key in db named "github-webhook"
 //
 // The function returns an error if any of these conditions is not met.
-func ValidateWebhookRequest(r *http.Request, project string, db secret.DB) (*WebhookEvent, error) {
+func ValidateWebhookRequest(r *http.Request, db secret.DB) (*WebhookEvent, error) {
 	if r.Method != http.MethodPost {
 		return nil, fmt.Errorf("%w %s, want %s", errBadHTTPMethod, r.Method, http.MethodPost)
 	}
@@ -65,10 +64,6 @@ func ValidateWebhookRequest(r *http.Request, project string, db secret.DB) (*Web
 	event, err := toWebhookEvent(r.Header.Get(xGitHubEventHeader), body)
 	if err != nil {
 		return nil, err
-	}
-
-	if event.Project() != project {
-		return nil, fmt.Errorf("%w (got %s, want %s)", errWrongProject, event.Project(), project)
 	}
 
 	return event, nil
