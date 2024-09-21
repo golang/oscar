@@ -7,10 +7,14 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"math"
 	"net/http"
 	"net/url"
+	"path"
+	"strings"
 
 	"github.com/google/safehtml/template"
 	"golang.org/x/oscar/internal/llm"
@@ -20,12 +24,6 @@ import (
 type searchPage struct {
 	Query   string
 	Results []searchResult
-}
-
-type searchResult struct {
-	Title   string
-	VResult storage.VectorResult
-	IDIsURL bool // VResult.ID can be parsed as a URL
 }
 
 func (g *Gaby) handleSearch(w http.ResponseWriter, r *http.Request) {
@@ -44,15 +42,12 @@ func (g *Gaby) doSearch(r *http.Request) ([]byte, error) {
 	}
 	if page.Query != "" {
 		var err error
-		page.Results, err = g.search(page.Query)
+		page.Results, err = g.search(r.Context(), &searchRequest{EmbedDoc: llm.EmbedDoc{Text: page.Query}})
 		if err != nil {
 			return nil, err
 		}
-		// Round scores to three decimal places.
-		const r = 1e3
 		for i := range page.Results {
-			sp := &page.Results[i].VResult.Score
-			*sp = math.Round(*sp*r) / r
+			page.Results[i].round()
 		}
 	}
 	var buf bytes.Buffer
@@ -62,28 +57,90 @@ func (g *Gaby) doSearch(r *http.Request) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// Maximum number of search results to return.
-const maxResults = 20
+type searchRequest struct {
+	Threshold float64 // lowest score to keep; default 0. Max is 1.
+	Limit     int     // max results (fewer if Threshold is set); 0 means no limit
+	llm.EmbedDoc
+}
+type searchResult struct {
+	Kind  string // kind of document: issue, doc page, etc.
+	Title string
+	storage.VectorResult
+}
+
+// Round rounds r.Score to three decimal places.
+func (r *searchResult) round() {
+	r.Score = math.Round(r.Score*1e3) / 1e3
+}
+
+// Maximum number of search results to return by default.
+const defaultLimit = 20
 
 // search does a search for query over Gaby's vector database.
-func (g *Gaby) search(query string) ([]searchResult, error) {
-	vecs, err := g.embed.EmbedDocs(context.Background(), []llm.EmbedDoc{{Title: "", Text: query}})
+func (g *Gaby) search(ctx context.Context, sreq *searchRequest) ([]searchResult, error) {
+	vecs, err := g.embed.EmbedDocs(ctx, []llm.EmbedDoc{sreq.EmbedDoc})
 	if err != nil {
 		return nil, fmt.Errorf("EmbedDocs: %w", err)
 	}
 	vec := vecs[0]
+
+	limit := defaultLimit
+	if sreq.Limit > 0 {
+		limit = sreq.Limit
+	}
+	// Search uses normalized dot product, so higher numbers are better.
+	// Max is 1, min is 0.
+	threshold := 0.0
+	if sreq.Threshold > 0 {
+		threshold = sreq.Threshold
+	}
+
 	var srs []searchResult
-	for _, r := range g.vector.Search(vec, maxResults) {
-		title := "?"
+	for _, r := range g.vector.Search(vec, limit) {
+		if r.Score < threshold {
+			break
+		}
+		title := ""
 		if d, ok := g.docs.Get(r.ID); ok {
 			title = d.Title
 		}
-		_, err := url.Parse(r.ID)
-		srs = append(srs, searchResult{title, r, err == nil})
+		srs = append(srs, searchResult{
+			Kind:         docIDKind(r.ID),
+			Title:        title,
+			VectorResult: r,
+		})
 	}
 	return srs, nil
 }
 
+// docIDKind determines the kind of document from its ID.
+// It returns the empty string if it cannot do so.
+func docIDKind(id string) string {
+	u, err := url.Parse(id)
+	if err != nil {
+		return ""
+	}
+	hp := path.Join(u.Host, u.Path)
+	switch {
+	case strings.HasPrefix(hp, "github.com/golang/go/issues/"):
+		return "GitHubIssue"
+	case strings.HasPrefix(hp, "go.dev/wiki/"):
+		return "GoWiki"
+	case strings.HasPrefix(hp, "go.dev/doc/"):
+		return "GoDocumentation"
+	case strings.HasPrefix(hp, "go.dev/ref/"):
+		return "GoReference"
+	case strings.HasPrefix(hp, "go.dev/blog/"):
+		return "GoBlog"
+	case strings.HasPrefix(hp, "go.dev/"):
+		return "GoDevPage"
+	default:
+		return ""
+	}
+}
+
+// This template assumes that if a result's Kind is non-empty, it is a URL,
+// and vice versa.
 var searchPageTmpl = template.Must(template.New("").Parse(`
 <!doctype html>
 <html>
@@ -110,12 +167,12 @@ var searchPageTmpl = template.Must(template.New("").Parse(`
 	{{with .Results -}}
 	  {{- range . -}}
 	    <p>{{with .Title}}{{.}}: {{end -}}
-	    {{if .IDIsURL -}}
-	      {{with .VResult}}<a href="{{.ID}}">{{.ID}}</a>{{end -}}
+	    {{if .Kind -}}
+	      <a href="{{.ID}}">{{.ID}}</a>
 	    {{else -}}
-	      {{.VResult.ID -}}
+	      {{.ID -}}
 	    {{end -}}
-	    {{" "}}({{.VResult.Score}})</p>
+	    {{" "}}({{.Score}})</p>
 	  {{end}}
 	{{- else -}}
 	 {{if .Query}}No results.{{end}}
@@ -123,3 +180,37 @@ var searchPageTmpl = template.Must(template.New("").Parse(`
   </body>
 </html>
 `))
+
+func (g *Gaby) handleSearchAPI(w http.ResponseWriter, r *http.Request) {
+	sreq, err := readJSONBody[searchRequest](r)
+	if err != nil {
+		// The error could also come from failing to read the body, but then the
+		// connection is probably broken so it doesn't matter what status we send.
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	sres, err := g.search(r.Context(), sreq)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	data, err := json.Marshal(sres)
+	if err != nil {
+		http.Error(w, "json.Marshal: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	_, _ = w.Write(data)
+}
+
+func readJSONBody[T any](r *http.Request) (*T, error) {
+	defer r.Body.Close()
+	data, err := io.ReadAll(r.Body)
+	if err != nil {
+		return nil, err
+	}
+	t := new(T)
+	if err := json.Unmarshal(data, t); err != nil {
+		return nil, err
+	}
+	return t, nil
+}

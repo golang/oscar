@@ -387,6 +387,11 @@ func (g *Gaby) newServer(report func(error)) *http.ServeMux {
 	// /search: display a form for vector similarity search.
 	// /search?q=...: perform a search using the value of q as input.
 	mux.HandleFunc("GET /search", g.handleSearch)
+
+	// /api/search: perform a vector similarity search.
+	// POST because the arguments to the request are in the body.
+	mux.HandleFunc("POST /api/search", g.handleSearchAPI)
+
 	return mux
 }
 
