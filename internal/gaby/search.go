@@ -59,7 +59,7 @@ func (g *Gaby) doSearch(r *http.Request) ([]byte, error) {
 
 type searchRequest struct {
 	Threshold float64 // lowest score to keep; default 0. Max is 1.
-	Limit     int     // max results (fewer if Threshold is set); 0 means no limit
+	Limit     int     // max results (fewer if Threshold is set); 0 means use a fixed default
 	llm.EmbedDoc
 }
 type searchResult struct {
