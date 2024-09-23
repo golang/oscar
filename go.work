@@ -5,4 +5,5 @@ use (
 	./internal/gaby
 	./internal/gcp
 	./internal/syncdb
+	./internal/devtools
 )
