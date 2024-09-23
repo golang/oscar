@@ -140,20 +140,23 @@ func TestPost(t *testing.T) {
 
 		check(p.Post(ctx, project, 19))
 		checkEdits(t, p.github.Testing().Edits(), map[int64]string{19: post19})
+		testutil.ExpectLog(t, buf, "advanced watcher", 0)
 
 		p.github.Testing().ClearEdits()
 
 		// Post does not advance Run's watcher, so it operates on all issues.
 		check(p.Run(ctx))
 		checkEdits(t, p.github.Testing().Edits(), map[int64]string{13: post13})
-		testutil.ExpectLog(t, buf, "already posted", 1) // issue 19
+		testutil.ExpectLog(t, buf, "already posted", 1)   // issue 19
+		testutil.ExpectLog(t, buf, "advanced watcher", 2) // issue 13 and 19 both advance watcher
 
 		p.github.Testing().ClearEdits()
 
 		// Run is a no-op because previous call to run advanced watcher past issue 19.
 		check(p.Run(ctx))
 		checkEdits(t, p.github.Testing().Edits(), nil)
-		testutil.ExpectLog(t, buf, "already posted", 1) // no change
+		testutil.ExpectLog(t, buf, "already posted", 1)   // no change
+		testutil.ExpectLog(t, buf, "advanced watcher", 2) // no change
 	})
 
 	t.Run("post-run-async", func(t *testing.T) {

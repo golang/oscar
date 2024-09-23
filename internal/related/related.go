@@ -153,21 +153,25 @@ func (p *Poster) deletePosted() {
 // When [Poster.EnablePosts] has not been called, Run only logs the comments it would post.
 // Future calls to Run will reprocess the same issues and re-log the same comments.
 func (p *Poster) Run(ctx context.Context) error {
-	p.slog.Info("related.Poster start", "name", p.name)
-	defer p.slog.Info("related.Poster end", "name", p.name)
+	p.slog.Info("related.Poster start", "name", p.name, "post", p.post, "latest", p.watcher.Latest())
+	defer func() {
+		p.slog.Info("related.Poster end", "name", p.name, "latest", p.watcher.Latest())
+	}()
 
 	defer p.watcher.Flush()
-
 	for e := range p.watcher.Recent() {
 		advance, err := p.postIssue(ctx, e)
 		if err != nil {
-			p.slog.Error("related.Poster", "issue", e.Issue, "error", err)
+			p.slog.Error("related.Poster", "issue", e.Issue, "event", e, "error", err)
 			continue
 		}
 		if advance {
 			p.watcher.MarkOld(e.DBTime)
 			// Flush immediately to make sure we don't re-post if interrupted later in the loop.
 			p.watcher.Flush()
+			p.slog.Info("related.Poster advanced watcher", "latest", p.watcher.Latest(), "event", e)
+		} else {
+			p.slog.Info("related.Poster watcher not advanced", "latest", p.watcher.Latest(), "event", e)
 		}
 	}
 	return nil
@@ -222,7 +226,7 @@ func lookupIssueEvent(project string, issue int64, gh *github.Client) *github.Ev
 func (p *Poster) postIssue(ctx context.Context, e *github.Event) (advance bool, _ error) {
 	if skip, reason := p.skip(e); skip {
 		p.slog.Info("related.Poster skip", "name", p.name, "project",
-			e.Project, "issue", e.Issue, "reason", reason)
+			e.Project, "issue", e.Issue, "reason", reason, "event", e)
 		return false, nil
 	}
 
@@ -232,7 +236,7 @@ func (p *Poster) postIssue(ctx context.Context, e *github.Event) (advance bool, 
 	defer p.db.Unlock(lock)
 
 	if p.posted(e) {
-		p.slog.Info("related.Poster already posted", "name", p.name, "project", e.Project, "issue", e.Issue)
+		p.slog.Info("related.Poster already posted", "name", p.name, "project", e.Project, "issue", e.Issue, "event", e)
 		// If posting is enabled, we can advance the watcher because
 		// a comment has already been posted for this issue.
 		return p.post, nil
@@ -245,7 +249,7 @@ func (p *Poster) postIssue(ctx context.Context, e *github.Event) (advance bool, 
 		return false, fmt.Errorf("%w url=%s", errVectorSearchFailed, u)
 	}
 	if len(results) == 0 {
-		p.slog.Info("related.Poster found no related documents", "name", p.name, "project", e.Project, "issue", e.Issue)
+		p.slog.Info("related.Poster found no related documents", "name", p.name, "project", e.Project, "issue", e.Issue, "event", e)
 		// If posting is enabled, an issue with no related documents
 		// should be considered handled, and not looked at again.
 		return p.post, nil
