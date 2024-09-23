@@ -9,11 +9,10 @@ edits to GitHub or Gerrit.
 
 The action log uses database keys beginning with "action.Log" and an "action kind"
 string that describes the rest of the key and the format of the action and its result.
-All entry keys end with a random ID to ensure they are unique.
-The caller provides the part of the key between the action kind and the random value.
+The caller provides the rest of the key.
 For example, GitHub issue keys look like
 
-	["action.Log", "githubIssue", project, issue, random]
+	["action.Log", "githubIssue", project, issue]
 
 Action log values are described by the [Entry] type. Values
 include the parts of the key, an encoded action that provides
@@ -53,7 +52,6 @@ import (
 	"iter"
 	"log/slog"
 	"math"
-	"math/rand/v2"
 	"time"
 
 	"golang.org/x/oscar/internal/storage"
@@ -71,7 +69,6 @@ type Entry struct {
 	Created time.Time    // time of the Before call
 	Kind    string       // determines the format of Key, Action and Result
 	Key     []byte       // user-provided part of the key; arg to Before and After
-	Unique  uint64       // last component of the actual key
 	ModTime timed.DBTime // set by Get and ScanAfter, used to resume scan
 	Action  []byte       // encoded action
 	// Fields set by After
@@ -105,7 +102,6 @@ type entry struct {
 	Created          time.Time
 	Kind             string
 	Key              []byte
-	Unique           uint64
 	ModTime          timed.DBTime
 	Action           []byte
 	Done             time.Time
@@ -129,7 +125,6 @@ func toEntry(e *entry) *Entry {
 		Created:          e.Created,
 		Kind:             e.Kind,
 		Key:              e.Key,
-		Unique:           e.Unique,
 		ModTime:          e.ModTime,
 		Action:           e.Action,
 		Done:             e.Done,
@@ -148,7 +143,6 @@ func fromEntry(e *Entry) *entry {
 		Created:          e.Created,
 		Kind:             e.Kind,
 		Key:              e.Key,
-		Unique:           e.Unique,
 		ModTime:          e.ModTime,
 		Action:           e.Action,
 		Done:             e.Done,
@@ -172,7 +166,7 @@ func fromEntry(e *Entry) *entry {
 // can be executed.
 //
 // Before returns a []byte that is the full database key, incorporating the action
-// kind, user key and random number.
+// kind and user key.
 // It should be passed to [After] after the action completes.
 // Example:
 //
@@ -183,13 +177,11 @@ func fromEntry(e *Entry) *entry {
 //	actions.After(dbkey, res, err)
 //	if err != nil {...}
 func Before(db storage.DB, actionKind string, key, action []byte, requiresApproval bool) []byte {
-	u := rand.Uint64()
-	dkey := dbKey(actionKind, key, u)
+	dkey := dbKey(actionKind, key)
 	e := &entry{
 		Created:          time.Now(), // wall clock time
 		Kind:             actionKind,
 		Key:              key,
-		Unique:           u,
 		Action:           action,
 		ApprovalRequired: requiresApproval,
 	}
@@ -230,8 +222,8 @@ func After(db storage.DB, dbkey, result []byte, err error) {
 // Get looks up the Entry associated with the given arguments.
 // If there is no entry for key in the database, Get returns nil, false.
 // Otherwise it returns the entry and true.
-func Get(db storage.DB, actionKind string, key []byte, unique uint64) (*Entry, bool) {
-	dkey := dbKey(actionKind, key, unique)
+func Get(db storage.DB, actionKind string, key []byte) (*Entry, bool) {
+	dkey := dbKey(actionKind, key)
 	return getEntry(db, dkey)
 }
 
@@ -247,8 +239,8 @@ func getEntry(db storage.DB, dkey []byte) (*Entry, bool) {
 // AddDecision adds a Decision to the action referred to by actionKind,
 // key and u.
 // It panics if the action does not exist or does not require approval.
-func AddDecision(db storage.DB, actionKind string, key []byte, u uint64, d Decision) {
-	dkey := dbKey(actionKind, key, u)
+func AddDecision(db storage.DB, actionKind string, key []byte, d Decision) {
+	dkey := dbKey(actionKind, key)
 	lockName := logKind + "-" + string(dkey)
 	db.Lock(lockName)
 	defer db.Unlock(lockName)
@@ -285,7 +277,7 @@ func (e *Entry) Approved() bool {
 }
 
 func (e *Entry) DBKey() []byte {
-	return dbKey(e.Kind, e.Key, e.Unique)
+	return dbKey(e.Kind, e.Key)
 }
 
 // Scan returns an iterator over action log entries with start ≤ key ≤ end.
@@ -370,8 +362,7 @@ func setEntry(db storage.DB, dkey []byte, e *entry) {
 	b.Apply()
 }
 
-func dbKey(actionKind string, userKey []byte, u uint64) []byte {
+func dbKey(actionKind string, userKey []byte) []byte {
 	k := ordered.Encode(actionKind)
-	k = append(k, userKey...)
-	return append(k, ordered.Encode(u)...)
+	return append(k, userKey...)
 }

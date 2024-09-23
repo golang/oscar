@@ -34,12 +34,10 @@ func TestDB(t *testing.T) {
 		if !ok {
 			t.Fatal("not found")
 		}
-		unique := extractUnique(dkey, 2)
 		want := &Entry{
 			Created:          e.Created,
 			Kind:             actionKind,
 			Key:              key,
-			Unique:           unique,
 			Action:           action,
 			ApprovalRequired: false,
 			ModTime:          e.ModTime,
@@ -63,14 +61,13 @@ func TestDB(t *testing.T) {
 	})
 	t.Run("approval", func(t *testing.T) {
 		db := storage.MemDB()
-		dkey := Before(db, actionKind, key, action, true)
-		u := extractUnique(dkey, 2)
+		Before(db, actionKind, key, action, true)
 		tm := time.Now().Round(0).In(time.UTC)
 		d1 := Decision{Name: "name1", Time: tm, Approved: true}
 		d2 := Decision{Name: "name2", Time: tm, Approved: false}
-		AddDecision(db, actionKind, key, u, d1)
-		AddDecision(db, actionKind, key, u, d2)
-		e, ok := Get(db, actionKind, key, u)
+		AddDecision(db, actionKind, key, d1)
+		AddDecision(db, actionKind, key, d2)
+		e, ok := Get(db, actionKind, key)
 
 		if !ok {
 			t.Fatal("not found")
@@ -80,7 +77,6 @@ func TestDB(t *testing.T) {
 			ModTime:          e.ModTime,
 			Kind:             actionKind,
 			Key:              key,
-			Unique:           u,
 			Action:           action,
 			ApprovalRequired: true,
 			Decisions:        []Decision{d1, d2},
@@ -101,8 +97,7 @@ func TestDB(t *testing.T) {
 				Action: []byte{byte(-i)},
 			}
 			time.Sleep(50 * time.Millisecond) // ensure each action has a different wall clock time
-			dkey := Before(db, e.Kind, e.Key, e.Action, false)
-			e.Unique = extractUnique(dkey, 1)
+			Before(db, e.Kind, e.Key, e.Action, false)
 			entries = append(entries, e)
 		}
 
@@ -111,7 +106,6 @@ func TestDB(t *testing.T) {
 			return cmp.Or(
 				cmp.Compare(e1.Kind, e2.Kind),
 				bytes.Compare(e1.Key, e2.Key),
-				cmp.Compare(e1.Unique, e2.Unique),
 			)
 		})
 		got := slices.Collect(Scan(db, nil, ordered.Encode(ordered.Inf)))
