@@ -204,7 +204,7 @@ func (c *Crawler) Run(ctx context.Context) error {
 	// We use the queued map to make sure we only queue each found link at most once.
 	crawled := make(map[string]bool)
 	queued := make(map[string]bool)
-	for e := range timed.ScanAfter(c.db, crawlKind, 0, nil) {
+	for e := range timed.ScanAfter(c.slog, c.db, crawlKind, 0, nil) {
 		p := c.decodePage(e)
 		if time.Since(p.LastCrawl) < c.recrawl || crawled[p.URL] {
 			continue
@@ -538,5 +538,5 @@ func (c *Crawler) clean(u *url.URL) error {
 // PageWatcher returns a timed.Watcher over Pages that the Crawler
 // has stored in its database.
 func (c *Crawler) PageWatcher(name string) *timed.Watcher[*Page] {
-	return timed.NewWatcher(c.db, name, crawlKind, c.decodePage)
+	return timed.NewWatcher(c.slog, c.db, name, crawlKind, c.decodePage)
 }

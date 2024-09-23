@@ -101,7 +101,7 @@ func (c *Client) EventsAfter(t timed.DBTime, project string) iter.Seq[*Event] {
 	}
 
 	return func(yield func(*Event) bool) {
-		for e := range timed.ScanAfter(c.db, eventKind, t, filter) {
+		for e := range timed.ScanAfter(c.slog, c.db, eventKind, t, filter) {
 			if !yield(c.decodeEvent(e)) {
 				return
 			}
@@ -142,7 +142,7 @@ func (c *Client) decodeEvent(t *timed.Entry) *Event {
 // EventWatcher returns a new [timed.Watcher] with the given name.
 // It picks up where any previous Watcher of the same name left off.
 func (c *Client) EventWatcher(name string) *timed.Watcher[*Event] {
-	return timed.NewWatcher(c.db, name, eventKind, c.decodeEvent)
+	return timed.NewWatcher(c.slog, c.db, name, eventKind, c.decodeEvent)
 }
 
 // IssueEvent is the GitHub JSON structure for an issue metadata event.

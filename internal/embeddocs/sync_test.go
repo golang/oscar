@@ -7,7 +7,6 @@ package embeddocs
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"testing"
 
 	"golang.org/x/oscar/internal/docs"
@@ -41,7 +40,7 @@ func TestSync(t *testing.T) {
 	lg := testutil.Slogger(t)
 	db := storage.MemDB()
 	vdb := storage.MemVectorDB(db, lg, "step1")
-	dc := docs.New(db)
+	dc := docs.New(lg, db)
 	for i, text := range texts {
 		dc.Add(fmt.Sprintf("URL%d", i), "", text)
 	}
@@ -86,7 +85,7 @@ func TestBigSync(t *testing.T) {
 	lg := testutil.Slogger(t)
 	db := storage.MemDB()
 	vdb := storage.MemVectorDB(db, lg, "vdb")
-	dc := docs.New(db)
+	dc := docs.New(lg, db)
 	for i := range N {
 		dc.Add(fmt.Sprintf("URL%d", i), "", fmt.Sprintf("Text%d", i))
 	}
@@ -108,13 +107,13 @@ func TestBigSync(t *testing.T) {
 
 func TestBadEmbedders(t *testing.T) {
 	const N = 150
+	lg := testutil.Slogger(t)
 	db := storage.MemDB()
-	dc := docs.New(db)
+	dc := docs.New(lg, db)
 	for i := range N {
 		dc.Add(fmt.Sprintf("URL%03d", i), "", fmt.Sprintf("Text%d", i))
 	}
 
-	lg := slog.Default()
 	db = storage.MemDB()
 	vdb := storage.MemVectorDB(db, lg, "vdb")
 	if err := Sync(ctx, lg, vdb, tooManyEmbed{}, dc); err == nil {

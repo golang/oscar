@@ -203,7 +203,7 @@ func DeleteRange(db storage.DB, b storage.Batch, kind string, start, end []byte)
 // of the given kind that were set after DBTime t.
 // If filter is non-nil, ScanAfter omits entries for which filter(e.Key) returns false
 // and avoids the overhead of loading e.Val for those entries.
-func ScanAfter(db storage.DB, kind string, t DBTime, filter func(key []byte) bool) iter.Seq[*Entry] {
+func ScanAfter(lg *slog.Logger, db storage.DB, kind string, t DBTime, filter func(key []byte) bool) iter.Seq[*Entry] {
 	return func(yield func(*Entry) bool) {
 		start, end := ordered.Encode(kind+"ByTime", int64(t+1)), ordered.Encode(kind+"ByTime", ordered.Inf)
 		for tkey := range db.Scan(start, end) {
@@ -222,7 +222,7 @@ func ScanAfter(db storage.DB, kind string, t DBTime, filter func(key []byte) boo
 				// Stale entries might happen if Set is called multiple times
 				// for the same key in a single batch, along with a later Delete,
 				// or Set+Delete in a single batch. Ignore.
-				slog.Info("timed stale missing", "tkey", storage.Fmt(tkey), "dkey", storage.Fmt(dkey))
+				lg.Info("timed stale missing", "tkey", storage.Fmt(tkey), "dkey", storage.Fmt(dkey))
 				continue
 			}
 			var t2 int64
@@ -237,7 +237,7 @@ func ScanAfter(db storage.DB, kind string, t DBTime, filter func(key []byte) boo
 				// The second Set will not see the first one's time entry to delete it.
 				// These should be rare.
 				// Skip this one and wait until we see the index entry for t2.
-				slog.Info("timed stale out of order", "tkey", storage.Fmt(tkey), "dkey", storage.Fmt(dkey), "dval-time", t2)
+				lg.Info("timed stale out of order", "tkey", storage.Fmt(tkey), "dkey", storage.Fmt(dkey), "dval-time", t2)
 				continue
 			}
 			if t > t2 {
@@ -270,6 +270,7 @@ func ScanAfter(db storage.DB, kind string, t DBTime, filter func(key []byte) boo
 // and while a Watcher is iterating, it locks a database lock
 // with the same name as that key.
 type Watcher[T any] struct {
+	slog   *slog.Logger
 	db     storage.DB
 	dkey   []byte
 	kind   string
@@ -286,8 +287,9 @@ type Watcher[T any] struct {
 //
 // The Watcher applies decode(e) to each time-stamped Entry to obtain the T returned
 // in the iteration.
-func NewWatcher[T any](db storage.DB, name, kind string, decode func(*Entry) T) *Watcher[T] {
+func NewWatcher[T any](lg *slog.Logger, db storage.DB, name, kind string, decode func(*Entry) T) *Watcher[T] {
 	return &Watcher[T]{
+		slog:   lg,
 		db:     db,
 		dkey:   ordered.Encode(kind+"Watcher", name),
 		kind:   kind,
@@ -353,7 +355,7 @@ func (w *Watcher[T]) Recent() iter.Seq[T] {
 			w.unlock()
 		}()
 
-		for t := range ScanAfter(w.db, w.kind, w.cutoff(), nil) {
+		for t := range ScanAfter(w.slog, w.db, w.kind, w.cutoff(), nil) {
 			if !yield(w.decode(t)) {
 				return
 			}

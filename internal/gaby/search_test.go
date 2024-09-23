@@ -83,7 +83,7 @@ func TestSearch(t *testing.T) {
 	embedder := llm.QuoteEmbedder()
 	db := storage.MemDB()
 	vdb := storage.MemVectorDB(db, lg, "")
-	corpus := docs.New(db)
+	corpus := docs.New(lg, db)
 
 	for i := 0; i < 10; i++ {
 		id := fmt.Sprintf("id%d", i)

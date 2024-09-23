@@ -16,6 +16,7 @@ import (
 func Test(t *testing.T) {
 	db := storage.MemDB()
 	b := db.Batch()
+	lg := testutil.Slogger(t)
 
 	Set(db, b, "kind", []byte("key"), []byte("val"))
 	if e, ok := Get(db, "kind", []byte("key")); e != nil || ok != false {
@@ -104,7 +105,7 @@ func Test(t *testing.T) {
 	// Timed iteration.
 	last = 0
 	keys = nil
-	for e := range ScanAfter(db, "kind", 0, nil) {
+	for e := range ScanAfter(lg, db, "kind", 0, nil) {
 		do(e)
 	}
 	if want := []string{"k1", "k3", "k2"}; !slices.Equal(keys, want) {
@@ -115,7 +116,7 @@ func Test(t *testing.T) {
 	// Watcher.
 	last = 0
 	keys = nil
-	w := NewWatcher(db, "name", "kind", func(e *Entry) *Entry { return e })
+	w := NewWatcher(lg, db, "name", "kind", func(e *Entry) *Entry { return e })
 	if latest, want := w.Latest(), DBTime(0); latest != want {
 		t.Errorf("Watcher.Latest() = %d, want %d", latest, want)
 	}
@@ -135,7 +136,7 @@ func Test(t *testing.T) {
 	// Timed iteration with break.
 	last = 0
 	keys = nil
-	for e := range ScanAfter(db, "kind", 0, nil) {
+	for e := range ScanAfter(lg, db, "kind", 0, nil) {
 		do(e)
 		break
 	}
@@ -152,7 +153,7 @@ func Test(t *testing.T) {
 	// Check full scan.
 	last = 0
 	keys = nil
-	for e := range ScanAfter(db, "kind", 0, nil) {
+	for e := range ScanAfter(lg, db, "kind", 0, nil) {
 		do(e)
 	}
 	if want := []string{"k1", "k3", "k5", "k4", "k2"}; !slices.Equal(keys, want) {
@@ -162,7 +163,7 @@ func Test(t *testing.T) {
 	// Check incremental scan.
 	last = 0
 	keys = nil
-	for e := range ScanAfter(db, "kind", t123, nil) {
+	for e := range ScanAfter(lg, db, "kind", t123, nil) {
 		do(e)
 	}
 	if want := []string{"k5", "k4", "k2"}; !slices.Equal(keys, want) {
@@ -172,7 +173,7 @@ func Test(t *testing.T) {
 	// Full (new) watcher.
 	last = 0
 	keys = nil
-	w = NewWatcher(db, "name2", "kind", func(e *Entry) *Entry { return e })
+	w = NewWatcher(lg, db, "name2", "kind", func(e *Entry) *Entry { return e })
 	for e := range w.Recent() {
 		do(e)
 	}
@@ -183,7 +184,7 @@ func Test(t *testing.T) {
 	// Watcher with break
 	last = 0
 	keys = nil
-	w = NewWatcher(db, "name2", "kind", func(e *Entry) *Entry { return e })
+	w = NewWatcher(lg, db, "name2", "kind", func(e *Entry) *Entry { return e })
 	for e := range w.Recent() {
 		do(e)
 		break
@@ -195,7 +196,7 @@ func Test(t *testing.T) {
 	// Incremental (old) watcher.
 	last = 0
 	keys = nil
-	w = NewWatcher(db, "name", "kind", func(e *Entry) *Entry { return e })
+	w = NewWatcher(lg, db, "name", "kind", func(e *Entry) *Entry { return e })
 	for e := range w.Recent() {
 		do(e)
 	}
@@ -218,7 +219,7 @@ func Test(t *testing.T) {
 	last = 0
 	keys = nil
 	filter := func(key []byte) bool { return strings.HasSuffix(string(key), "3") }
-	for e := range ScanAfter(db, "kind", 0, filter) {
+	for e := range ScanAfter(lg, db, "kind", 0, filter) {
 		do(e)
 	}
 	if want := []string{"k3"}; !slices.Equal(keys, want) {
@@ -234,7 +235,7 @@ func Test(t *testing.T) {
 	// Stale timestamp should not result in multiple k3 visits.
 	last = 0
 	keys = nil
-	for e := range ScanAfter(db, "kind", 0, nil) {
+	for e := range ScanAfter(lg, db, "kind", 0, nil) {
 		do(e)
 	}
 	if want := []string{"k1", "k5", "k4", "k2", "k3"}; !slices.Equal(keys, want) {
@@ -249,7 +250,7 @@ func Test(t *testing.T) {
 	// Stale timestamp should not crash on k3.
 	last = 0
 	keys = nil
-	for e := range ScanAfter(db, "kind", 0, nil) {
+	for e := range ScanAfter(lg, db, "kind", 0, nil) {
 		do(e)
 	}
 	if want := []string{"k1", "k5", "k4", "k2"}; !slices.Equal(keys, want) {
@@ -271,7 +272,7 @@ func Test(t *testing.T) {
 
 	last = 0
 	keys = nil
-	for e := range ScanAfter(db, "kind", 0, nil) {
+	for e := range ScanAfter(lg, db, "kind", 0, nil) {
 		do(e)
 	}
 	if want := []string{"k1", "k5", "k4"}; !slices.Equal(keys, want) {
@@ -283,12 +284,13 @@ func Test(t *testing.T) {
 }
 
 func TestLocking(t *testing.T) {
+	lg := testutil.Slogger(t)
 	db := storage.MemDB()
 	b := db.Batch()
 	Set(db, b, "kind", []byte("key"), []byte("val"))
 	b.Apply()
 
-	w := NewWatcher(db, "name", "kind", func(e *Entry) *Entry { return e })
+	w := NewWatcher(lg, db, "name", "kind", func(e *Entry) *Entry { return e })
 
 	w.lock()
 	testutil.StopPanic(func() {

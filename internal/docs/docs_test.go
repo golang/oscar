@@ -10,12 +10,14 @@ import (
 	"testing"
 
 	"golang.org/x/oscar/internal/storage"
+	"golang.org/x/oscar/internal/testutil"
 )
 
 func TestCorpus(t *testing.T) {
+	lg := testutil.Slogger(t)
 	db := storage.MemDB()
 
-	corpus := New(db)
+	corpus := New(lg, db)
 	corpus.Add("id1", "Title1", "text1")
 	corpus.Add("id3", "Title3", "text3")
 	corpus.Add("id2", "Title2", "text2")

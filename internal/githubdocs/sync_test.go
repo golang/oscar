@@ -23,7 +23,7 @@ func TestMarkdown(t *testing.T) {
 	gh := github.New(lg, db, nil, nil)
 	check(gh.Testing().LoadTxtar("../testdata/markdown.txt"))
 
-	dc := docs.New(db)
+	dc := docs.New(lg, db)
 	check(Sync(ctx, lg, dc, gh))
 
 	var want = []string{

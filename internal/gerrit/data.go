@@ -83,7 +83,7 @@ type ChangeEvent struct {
 // ChangeWatcher returns a new [timed.Watcher] with the given name.
 // It picks up where any previous Watcher of the same name left odd.
 func (c *Client) ChangeWatcher(name string) *timed.Watcher[ChangeEvent] {
-	return timed.NewWatcher(c.db, name, changeUpdateKind, c.decodeChangeEvent)
+	return timed.NewWatcher(c.slog, c.db, name, changeUpdateKind, c.decodeChangeEvent)
 }
 
 // decodeChangeUpdateEntry decodes a changeUpdateKind [timed.Entry] into

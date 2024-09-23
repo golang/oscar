@@ -116,7 +116,7 @@ func testGaby(t *testing.T, secret secret.DB) *Gaby {
 
 	lg := testutil.Slogger(t)
 	db := storage.MemDB()
-	dc := docs.New(db)
+	dc := docs.New(lg, db)
 
 	gh := testGHClient(t, check, lg, db)
 

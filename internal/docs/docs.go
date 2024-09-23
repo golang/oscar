@@ -9,6 +9,7 @@ package docs
 
 import (
 	"iter"
+	"log/slog"
 	"strings"
 
 	"golang.org/x/oscar/internal/storage"
@@ -30,12 +31,13 @@ const docsKind = "docs.Doc"
 
 // A Corpus is the collection of documents stored in a database.
 type Corpus struct {
-	db storage.DB
+	slog *slog.Logger
+	db   storage.DB
 }
 
 // New returns a new Corpus representing the documents stored in db.
-func New(db storage.DB) *Corpus {
-	return &Corpus{db}
+func New(lg *slog.Logger, db storage.DB) *Corpus {
+	return &Corpus{lg, db}
 }
 
 // A Doc is a single document in the Corpus.
@@ -116,7 +118,7 @@ func (c *Corpus) DocsAfter(dbtime timed.DBTime, prefix string) iter.Seq[*Doc] {
 		return strings.HasPrefix(id, prefix)
 	}
 	return func(yield func(*Doc) bool) {
-		for t := range timed.ScanAfter(c.db, docsKind, dbtime, filter) {
+		for t := range timed.ScanAfter(c.slog, c.db, docsKind, dbtime, filter) {
 			if !yield(c.decodeDoc(t)) {
 				return
 			}
@@ -127,5 +129,5 @@ func (c *Corpus) DocsAfter(dbtime timed.DBTime, prefix string) iter.Seq[*Doc] {
 // DocWatcher returns a new [storage.Watcher] with the given name.
 // It picks up where any previous Watcher of the same name left off.
 func (c *Corpus) DocWatcher(name string) *timed.Watcher[*Doc] {
-	return timed.NewWatcher(c.db, name, docsKind, c.decodeDoc)
+	return timed.NewWatcher(c.slog, c.db, name, docsKind, c.decodeDoc)
 }

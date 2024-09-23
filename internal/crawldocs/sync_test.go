@@ -23,7 +23,7 @@ func TestSync(t *testing.T) {
 
 	data, err := os.ReadFile("testdata/toolchain.html")
 	check(err)
-	dc := docs.New(db)
+	dc := docs.New(lg, db)
 	cr := crawl.New(lg, db, nil)
 	cr.Set(&crawl.Page{
 		URL:  "https://go.dev/doc/toolchain",

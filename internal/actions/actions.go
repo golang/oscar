@@ -51,6 +51,7 @@ package actions
 import (
 	"encoding/json"
 	"iter"
+	"log/slog"
 	"math"
 	"math/rand/v2"
 	"time"
@@ -303,7 +304,7 @@ func Scan(db storage.DB, start, end []byte) iter.Seq[*Entry] {
 // ScanAfterDBTime returns an iterator over action log entries
 // that were started after DBTime t.
 // If filter is non-nil, ScanAfterDBTime omits entries for which filter(actionKind, key) returns false.
-func ScanAfterDBTime(db storage.DB, t timed.DBTime, filter func(actionKind string, key []byte) bool) iter.Seq[*Entry] {
+func ScanAfterDBTime(lg *slog.Logger, db storage.DB, t timed.DBTime, filter func(actionKind string, key []byte) bool) iter.Seq[*Entry] {
 	tfilter := func(key []byte) bool {
 		if filter == nil {
 			return true
@@ -317,7 +318,7 @@ func ScanAfterDBTime(db storage.DB, t timed.DBTime, filter func(actionKind strin
 	}
 
 	return func(yield func(*Entry) bool) {
-		for te := range timed.ScanAfter(db, logKind, t, tfilter) {
+		for te := range timed.ScanAfter(lg, db, logKind, t, tfilter) {
 			if !yield(toEntry(unmarshalTimedEntry(te))) {
 				break
 			}
@@ -327,7 +328,7 @@ func ScanAfterDBTime(db storage.DB, t timed.DBTime, filter func(actionKind strin
 
 // ScanAfter returns an iterator over action log entries that were started after time t.
 // If filter is non-nil, ScanAfter omits entries for which filter(actionKind, key) returns false.
-func ScanAfter(db storage.DB, t time.Time, filter func(actionKind string, key []byte) bool) iter.Seq[*Entry] {
+func ScanAfter(lg *slog.Logger, db storage.DB, t time.Time, filter func(actionKind string, key []byte) bool) iter.Seq[*Entry] {
 	// Find the first DBTime associated with a time after t.
 	// If there is none, use the maximum DBTime.
 	dbt := math.MaxInt64
@@ -342,7 +343,7 @@ func ScanAfter(db storage.DB, t time.Time, filter func(actionKind string, key []
 	// dbt is the DBTime corresponding to t+1. Adjust to approximate
 	// the DBTime for t.
 	dbt--
-	return ScanAfterDBTime(db, timed.DBTime(dbt), filter)
+	return ScanAfterDBTime(lg, db, timed.DBTime(dbt), filter)
 }
 
 func unmarshalTimedEntry(te *timed.Entry) *entry {

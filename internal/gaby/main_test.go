@@ -15,12 +15,13 @@ import (
 	"testing"
 
 	"go.opentelemetry.io/otel/metric/noop"
+	"golang.org/x/oscar/internal/testutil"
 )
 
 func TestNewServer(t *testing.T) {
 	g := &Gaby{
 		ctx:       context.Background(),
-		slog:      slog.Default(),
+		slog:      testutil.Slogger(t),
 		slogLevel: new(slog.LevelVar),
 		meter:     noop.Meter{},
 	}

@@ -13,6 +13,7 @@ import (
 
 	"golang.org/x/oscar/internal/llm"
 	"golang.org/x/oscar/internal/storage"
+	"golang.org/x/oscar/internal/testutil"
 	"rsc.io/ordered"
 )
 
@@ -58,6 +59,7 @@ func TestSyncDB(t *testing.T) {
 }
 
 func TestSyncVecDB(t *testing.T) {
+	lg := testutil.Slogger(t)
 	// Check every pair of maps.
 	for _, sm := range testMaps {
 		for _, dm := range testMaps {
@@ -65,12 +67,12 @@ func TestSyncVecDB(t *testing.T) {
 			// These should not be copied to dst.
 			src.Set(ordered.Encode("x"), []byte("1"))
 			src.Set(ordered.Encode("w"), []byte("2"))
-			sv := mapToVecDB(src, dm)
+			sv := mapToVecDB(lg, src, dm)
 			dst := storage.MemDB()
 			// These should not be deleted from dst.
 			dst.Set(ordered.Encode("y"), []byte("3"))
 			dst.Set(ordered.Encode("z"), []byte("4"))
-			dv := mapToVecDB(dst, sm)
+			dv := mapToVecDB(lg, dst, sm)
 
 			srcNonVec, srcVec := split(t, src)
 			dstNonVec, dstVec := split(t, dst)
@@ -143,8 +145,8 @@ func mapToDB(m map[string]int) storage.DB {
 	return db
 }
 
-func mapToVecDB(db storage.DB, m map[string]int) storage.VectorDB {
-	vdb := storage.MemVectorDB(db, slog.Default(), "")
+func mapToVecDB(lg *slog.Logger, db storage.DB, m map[string]int) storage.VectorDB {
+	vdb := storage.MemVectorDB(db, lg, "")
 	for k, v := range m {
 		vdb.Set(k, []float32{float32(v)})
 	}

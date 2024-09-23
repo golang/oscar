@@ -35,7 +35,7 @@ func TestRun(t *testing.T) {
 	gh.Testing().LoadTxtar("../testdata/markdown.txt")
 	gh.Testing().LoadTxtar("../testdata/rsctmp.txt")
 
-	dc := docs.New(db)
+	dc := docs.New(lg, db)
 	githubdocs.Sync(ctx, lg, dc, gh)
 
 	vdb := storage.MemVectorDB(db, lg, "vecs")
@@ -211,7 +211,7 @@ func newTestPoster(t *testing.T) (_ *Poster, out *bytes.Buffer, project string, 
 	gh.Testing().LoadTxtar("../testdata/markdown.txt")
 	gh.Testing().LoadTxtar("../testdata/rsctmp.txt")
 
-	dc := docs.New(db)
+	dc := docs.New(lg, db)
 	githubdocs.Sync(ctx, lg, dc, gh)
 
 	vdb := storage.MemVectorDB(db, lg, "vecs")

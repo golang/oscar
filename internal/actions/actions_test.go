@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"golang.org/x/oscar/internal/storage"
+	"golang.org/x/oscar/internal/testutil"
 	"rsc.io/ordered"
 )
 
@@ -90,6 +91,7 @@ func TestDB(t *testing.T) {
 	})
 	t.Run("scan", func(t *testing.T) {
 		db := storage.MemDB()
+		lg := testutil.Slogger(t)
 		var entries []*Entry
 		start := time.Now()
 		for i := 1; i <= 3; i++ {
@@ -121,7 +123,7 @@ func TestDB(t *testing.T) {
 		}
 		compareSlices(t, got, entriesByKey)
 
-		got = slices.Collect(ScanAfterDBTime(db, 0, nil))
+		got = slices.Collect(ScanAfterDBTime(lg, db, 0, nil))
 		compareSlices(t, got, entries)
 
 		for _, test := range []struct {
@@ -132,7 +134,7 @@ func TestDB(t *testing.T) {
 			{time.Now(), nil},
 			{entries[0].Created, entries[1:]},
 		} {
-			got := slices.Collect(ScanAfter(db, test.t, nil))
+			got := slices.Collect(ScanAfter(lg, db, test.t, nil))
 			compareSlices(t, got, test.want)
 		}
 	})

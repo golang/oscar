@@ -107,7 +107,7 @@ func main() {
 
 	g.github = github.New(g.slog, g.db, g.secret, g.http)
 
-	g.docs = docs.New(g.db)
+	g.docs = docs.New(g.slog, g.db)
 	watcherLatests["githubdocs"] = func() timed.DBTime { return githubdocs.Latest(g.github) }
 
 	ai, err := gemini.NewClient(g.ctx, g.slog, g.secret, g.http, "text-embedding-004")
