@@ -132,7 +132,7 @@ func TestPost(t *testing.T) {
 		check(p.Post(ctx, project, 13))
 		checkEdits(t, p.github.Testing().Edits(), map[int64]string{13: post13})
 
-		expect(t, buf, "already posted", 1) // issue 13
+		testutil.ExpectLog(t, buf, "already posted", 1) // issue 13
 	})
 
 	t.Run("post-run", func(t *testing.T) {
@@ -146,14 +146,14 @@ func TestPost(t *testing.T) {
 		// Post does not advance Run's watcher, so it operates on all issues.
 		check(p.Run(ctx))
 		checkEdits(t, p.github.Testing().Edits(), map[int64]string{13: post13})
-		expect(t, buf, "already posted", 1) // issue 19
+		testutil.ExpectLog(t, buf, "already posted", 1) // issue 19
 
 		p.github.Testing().ClearEdits()
 
 		// Run is a no-op because previous call to run advanced watcher past issue 19.
 		check(p.Run(ctx))
 		checkEdits(t, p.github.Testing().Edits(), nil)
-		expect(t, buf, "already posted", 1) // no change
+		testutil.ExpectLog(t, buf, "already posted", 1) // no change
 	})
 
 	t.Run("post-run-async", func(t *testing.T) {
@@ -169,7 +169,7 @@ func TestPost(t *testing.T) {
 		<-done
 		checkEdits(t, p.github.Testing().Edits(), map[int64]string{13: post13, 19: post19})
 
-		expect(t, buf, "already posted", 1) // issue 19
+		testutil.ExpectLog(t, buf, "already posted", 1) // issue 19
 	})
 }
 
@@ -251,14 +251,6 @@ func checkEdits(t *testing.T, edits []*github.TestingEdit, want map[int64]string
 	}
 	if t.Failed() {
 		t.FailNow()
-	}
-}
-
-func expect(t *testing.T, buf *bytes.Buffer, action string, n int) {
-	t.Helper()
-
-	if mentions := bytes.Count(buf.Bytes(), []byte(action)); mentions != n {
-		t.Errorf("logs mention %q %d times, want %d mentions:\n%s", action, mentions, n, buf.Bytes())
 	}
 }
 

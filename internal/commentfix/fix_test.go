@@ -230,49 +230,49 @@ func TestFixGitHubIssue(t *testing.T) {
 	t.Run("basic", func(t *testing.T) {
 		f, project, buf, check := newFixer(t)
 		check(f.FixGitHubIssue(ctx, project, 18))
-		expect(t, buf, "commentfix rewrite", 2) // fix body and comment
+		testutil.ExpectLog(t, buf, "commentfix rewrite", 2) // fix body and comment
 	})
 
 	t.Run("twice", func(t *testing.T) {
 		f, project, buf, check := newFixer(t)
 		check(f.FixGitHubIssue(ctx, project, 18))
-		expect(t, buf, "commentfix rewrite", 2) // fix body and comment
+		testutil.ExpectLog(t, buf, "commentfix rewrite", 2) // fix body and comment
 
 		// Running Fix again doesn't change anything because fixes were
 		// already applied.
 		check(f.FixGitHubIssue(ctx, project, 18))
-		expect(t, buf, "commentfix rewrite", 2) // nothing new
-		expect(t, buf, "commentfix already applied", 2)
+		testutil.ExpectLog(t, buf, "commentfix rewrite", 2) // nothing new
+		testutil.ExpectLog(t, buf, "commentfix already applied", 2)
 	})
 
 	t.Run("fix-run", func(t *testing.T) {
 		f, project, buf, check := newFixer(t)
 		check(f.FixGitHubIssue(ctx, project, 20))
-		expect(t, buf, "commentfix rewrite", 1) // fix body of issue 20
+		testutil.ExpectLog(t, buf, "commentfix rewrite", 1) // fix body of issue 20
 
 		// Run still fixes issue 18 because FixGitHubIssue
 		// doesn't modify Run's watcher.
 		check(f.Run(ctx))
-		expect(t, buf, "commentfix rewrite", 3) // fix body and comment of issue 18
-		expect(t, buf, "commentfix already applied", 1)
+		testutil.ExpectLog(t, buf, "commentfix rewrite", 3) // fix body and comment of issue 18
+		testutil.ExpectLog(t, buf, "commentfix already applied", 1)
 	})
 
 	t.Run("fix-run-watcher", func(t *testing.T) {
 		f, project, buf, check := newFixer(t)
 		check(f.FixGitHubIssue(ctx, project, 18))
 		check(f.FixGitHubIssue(ctx, project, 20))
-		expect(t, buf, "commentfix rewrite", 3) // fix body of issue 20
+		testutil.ExpectLog(t, buf, "commentfix rewrite", 3) // fix body of issue 20
 
 		// Run sees that fixes have already been applied and advances
 		// watcher.
 		check(f.Run(ctx))
-		expect(t, buf, "commentfix rewrite", 3) // no change
-		expect(t, buf, "commentfix already applied", 3)
+		testutil.ExpectLog(t, buf, "commentfix rewrite", 3) // no change
+		testutil.ExpectLog(t, buf, "commentfix already applied", 3)
 
 		// Run doesn't do anything because its watcher has been advanced.
 		check(f.Run(ctx))
-		expect(t, buf, "commentfix rewrite", 3)         // no change
-		expect(t, buf, "commentfix already applied", 3) // no change
+		testutil.ExpectLog(t, buf, "commentfix rewrite", 3)         // no change
+		testutil.ExpectLog(t, buf, "commentfix already applied", 3) // no change
 	})
 
 	t.Run("fix-run-concurrent", func(t *testing.T) {
@@ -301,8 +301,8 @@ func TestFixGitHubIssue(t *testing.T) {
 		wg.Wait()
 
 		// Each action is attempted twice.
-		expect(t, buf, "commentfix rewrite", 3)
-		expect(t, buf, "commentfix already applied", 3)
+		testutil.ExpectLog(t, buf, "commentfix rewrite", 3)
+		testutil.ExpectLog(t, buf, "commentfix already applied", 3)
 	})
 
 	t.Run("fix-concurrent", func(t *testing.T) {
@@ -321,17 +321,9 @@ func TestFixGitHubIssue(t *testing.T) {
 
 		wg.Wait()
 
-		expect(t, buf, "commentfix rewrite", 1)
-		expect(t, buf, "commentfix already applied", n-1)
+		testutil.ExpectLog(t, buf, "commentfix rewrite", 1)
+		testutil.ExpectLog(t, buf, "commentfix already applied", n-1)
 	})
-}
-
-func expect(t *testing.T, buf *bytes.Buffer, action string, n int) {
-	t.Helper()
-
-	if mentions := bytes.Count(buf.Bytes(), []byte(action)); mentions != n {
-		t.Errorf("logs mention %q %d times, want %d mentions:\n%s", action, mentions, n, buf.Bytes())
-	}
 }
 
 func newFixer(t *testing.T) (_ *Fixer, project string, _ *bytes.Buffer, check func(error)) {

@@ -80,3 +80,12 @@ func Rot13(s string) string {
 	}
 	return string(b)
 }
+
+// ExpectLog checks if the message is present in buf exactly n times,
+// and calls t.Error if not.
+func ExpectLog(t *testing.T, buf *bytes.Buffer, message string, n int) {
+	t.Helper()
+	if mentions := bytes.Count(buf.Bytes(), []byte(message)); mentions != n {
+		t.Errorf("logs mention %q %d times, want %d mentions:\n%s", message, mentions, n, buf.Bytes())
+	}
+}
