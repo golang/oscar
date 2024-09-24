@@ -265,10 +265,10 @@ func (f *Fixer) ReplaceURL(pattern, repl string) error {
 
 // An action has all the information needed to edit a GitHub issue or comment.
 type action struct {
-	project string
-	issue   int64
-	ic      *issueOrComment
-	body    string // new body of issue or comment
+	Project string
+	Issue   int64
+	IC      *issueOrComment
+	Body    string // new body of issue or comment
 }
 
 // Run applies the configured rewrites to issue texts and comments on GitHub
@@ -406,7 +406,7 @@ func (f *Fixer) fix(ctx context.Context, e *github.Event) (applied, advance bool
 // applied by this Fixer (identified by [Fixer.name]) for this issue or
 // comment (identified by the URL of the issue/comment).
 func (f *Fixer) appliedKey(a *action) []byte {
-	return ordered.Encode("commentfix.Fixer", f.name, a.ic.url())
+	return ordered.Encode("commentfix.Fixer", f.name, a.IC.url())
 }
 
 // markApplied marks this action as applied by this Fixer
@@ -441,11 +441,11 @@ func (f *Fixer) newAction(e *github.Event) *action {
 			// and cannot contain things like hyperlinks.
 			return nil
 		}
-		ic = &issueOrComment{issue: x}
-		f.slog.Info("fixer run issue", "dbtime", e.DBTime, "issue", ic.issue.Number)
+		ic = &issueOrComment{Issue: x}
+		f.slog.Info("fixer run issue", "dbtime", e.DBTime, "issue", ic.Issue.Number)
 	case *github.IssueComment:
-		ic = &issueOrComment{comment: x}
-		f.slog.Info("fixer run comment", "dbtime", e.DBTime, "url", ic.comment.URL)
+		ic = &issueOrComment{Comment: x}
+		f.slog.Info("fixer run comment", "dbtime", e.DBTime, "url", ic.Comment.URL)
 	}
 	if tm, err := time.Parse(time.RFC3339, ic.updatedAt()); err == nil && tm.Before(f.timeLimit) {
 		return nil
@@ -455,10 +455,10 @@ func (f *Fixer) newAction(e *github.Event) *action {
 		return nil
 	}
 	return &action{
-		project: e.Project,
-		issue:   e.Issue,
-		ic:      ic,
-		body:    body,
+		Project: e.Project,
+		Issue:   e.Issue,
+		IC:      ic,
+		Body:    body,
 	}
 }
 
@@ -467,36 +467,36 @@ func (f *Fixer) newAction(e *github.Event) *action {
 func (f *Fixer) runAction(ctx context.Context, a *action) (applied, advance bool, _ error) {
 	// Do not include this Fixer's name in the lock, so that separate
 	// fixers cannot operate on the same object at the same time.
-	lock := string(ordered.Encode("commentfix", a.ic.url()))
+	lock := string(ordered.Encode("commentfix", a.IC.url()))
 	f.db.Lock(lock)
 	defer f.db.Unlock(lock)
 
 	if f.isApplied(a) {
-		f.slog.Info("commentfix already applied", "fixer", f.name, "project", a.project, "issue", a.issue, "url", a.ic.url())
+		f.slog.Info("commentfix already applied", "fixer", f.name, "project", a.Project, "issue", a.Issue, "url", a.IC.url())
 		// Watcher can be advanced (in edit mode) if a fix was already applied.
 		return false, f.edit, nil
 	}
 
-	live, err := a.ic.download(ctx, f.github)
+	live, err := a.IC.download(ctx, f.github)
 	if err != nil {
 		// unreachable unless github error
-		return false, false, fmt.Errorf("commentfix download error: project=%s issue=%d url=%s err=%w", a.project, a.issue, a.ic.url(), err)
+		return false, false, fmt.Errorf("commentfix download error: project=%s issue=%d url=%s err=%w", a.Project, a.Issue, a.IC.url(), err)
 	}
-	if live.body() != a.ic.body() {
-		f.slog.Info("commentfix stale", "project", a.project, "issue", a.issue, "url", a.ic.url())
+	if live.body() != a.IC.body() {
+		f.slog.Info("commentfix stale", "project", a.Project, "issue", a.Issue, "url", a.IC.url())
 		return false, false, nil
 	}
-	f.slog.Info("commentfix rewrite", "project", a.project, "issue", a.issue, "url", a.ic.url(), "edit", f.edit, "diff", bodyDiff(a.ic.body(), a.body))
-	fmt.Fprintf(f.stderr(), "Fix %s:\n%s\n", a.ic.url(), bodyDiff(a.ic.body(), a.body))
+	f.slog.Info("commentfix rewrite", "project", a.Project, "issue", a.Issue, "url", a.IC.url(), "edit", f.edit, "diff", bodyDiff(a.IC.body(), a.Body))
+	fmt.Fprintf(f.stderr(), "Fix %s:\n%s\n", a.IC.url(), bodyDiff(a.IC.body(), a.Body))
 
 	if !f.edit {
 		return false, false, nil
 	}
 
-	f.slog.Info("commentfix editing github", "url", a.ic.url())
-	if err := a.ic.editBody(ctx, f.github, a.body); err != nil {
+	f.slog.Info("commentfix editing github", "url", a.IC.url())
+	if err := a.IC.editBody(ctx, f.github, a.Body); err != nil {
 		// unreachable unless github error
-		return false, false, fmt.Errorf("commentfix edit: project=%s issue=%d err=%w", a.project, a.issue, err)
+		return false, false, fmt.Errorf("commentfix edit: project=%s issue=%d err=%w", a.Project, a.Issue, err)
 	}
 	f.markApplied(a)
 	return true, true, nil
@@ -508,45 +508,45 @@ func (f *Fixer) Latest() timed.DBTime {
 }
 
 type issueOrComment struct {
-	issue   *github.Issue
-	comment *github.IssueComment
+	Issue   *github.Issue
+	Comment *github.IssueComment
 }
 
 func (ic *issueOrComment) updatedAt() string {
-	if ic.issue != nil {
-		return ic.issue.UpdatedAt
+	if ic.Issue != nil {
+		return ic.Issue.UpdatedAt
 	}
-	return ic.comment.UpdatedAt
+	return ic.Comment.UpdatedAt
 }
 
 func (ic *issueOrComment) body() string {
-	if ic.issue != nil {
-		return ic.issue.Body
+	if ic.Issue != nil {
+		return ic.Issue.Body
 	}
-	return ic.comment.Body
+	return ic.Comment.Body
 }
 
 func (ic *issueOrComment) download(ctx context.Context, gh *github.Client) (*issueOrComment, error) {
-	if ic.issue != nil {
-		live, err := gh.DownloadIssue(ctx, ic.issue.URL)
-		return &issueOrComment{issue: live}, err
+	if ic.Issue != nil {
+		live, err := gh.DownloadIssue(ctx, ic.Issue.URL)
+		return &issueOrComment{Issue: live}, err
 	}
-	live, err := gh.DownloadIssueComment(ctx, ic.comment.URL)
-	return &issueOrComment{comment: live}, err
+	live, err := gh.DownloadIssueComment(ctx, ic.Comment.URL)
+	return &issueOrComment{Comment: live}, err
 }
 
 func (ic *issueOrComment) url() string {
-	if ic.issue != nil {
-		return ic.issue.URL
+	if ic.Issue != nil {
+		return ic.Issue.URL
 	}
-	return ic.comment.URL
+	return ic.Comment.URL
 }
 
 func (ic *issueOrComment) editBody(ctx context.Context, gh *github.Client, body string) error {
-	if ic.issue != nil {
-		return gh.EditIssue(ctx, ic.issue, &github.IssueChanges{Body: body})
+	if ic.Issue != nil {
+		return gh.EditIssue(ctx, ic.Issue, &github.IssueChanges{Body: body})
 	}
-	return gh.EditIssueComment(ctx, ic.comment, &github.IssueCommentChanges{Body: body})
+	return gh.EditIssueComment(ctx, ic.Comment, &github.IssueCommentChanges{Body: body})
 }
 
 // Fix applies the configured rewrites to the markdown text.

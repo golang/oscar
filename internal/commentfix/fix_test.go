@@ -7,8 +7,10 @@ package commentfix
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"io"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"sync"
 	"testing"
@@ -324,6 +326,38 @@ func TestFixGitHubIssue(t *testing.T) {
 		testutil.ExpectLog(t, buf, "commentfix rewrite", 1)
 		testutil.ExpectLog(t, buf, "commentfix already applied", n-1)
 	})
+}
+
+func TestActionMarshal(t *testing.T) {
+	a := action{
+		Project: "P",
+		Issue:   3,
+		IC: &issueOrComment{
+			Issue: &github.Issue{
+				URL: "u",
+			},
+		},
+		Body: "b",
+	}
+	data, err := json.Marshal(&a)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var g action
+	if err := json.Unmarshal(data, &g); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(g, a) {
+		t.Errorf("got %+v, want %+v", g, a)
+	}
+}
+
+func expect(t *testing.T, buf *bytes.Buffer, action string, n int) {
+	t.Helper()
+
+	if mentions := bytes.Count(buf.Bytes(), []byte(action)); mentions != n {
+		t.Errorf("logs mention %q %d times, want %d mentions:\n%s", action, mentions, n, buf.Bytes())
+	}
 }
 
 func newFixer(t *testing.T) (_ *Fixer, project string, _ *bytes.Buffer, check func(error)) {
