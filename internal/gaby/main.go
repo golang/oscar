@@ -21,6 +21,7 @@ import (
 	"cloud.google.com/go/compute/metadata"
 	"cloud.google.com/go/errorreporting"
 	ometric "go.opentelemetry.io/otel/metric"
+	"golang.org/x/oscar/internal/actions"
 	"golang.org/x/oscar/internal/commentfix"
 	"golang.org/x/oscar/internal/crawl"
 	"golang.org/x/oscar/internal/crawldocs"
@@ -502,8 +503,10 @@ func (g *Gaby) syncAndRunAll(ctx context.Context) (errs []error) {
 
 	if flags.enablechanges {
 		// Changes can run in any order.
-		check(g.fixAllComments(ctx))
+		check(g.fixAllComments(ctx)) // this writes to the action log, but does not apply the fixes
 		check(g.postAllRelated(ctx))
+		// Apply all actions. Currently, that is just the comment fixes.
+		actions.Run(ctx, g.slog, g.db)
 	}
 
 	return errs

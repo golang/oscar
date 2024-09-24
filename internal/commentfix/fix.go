@@ -7,6 +7,7 @@ package commentfix
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -18,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	"golang.org/x/oscar/internal/actions"
 	"golang.org/x/oscar/internal/diff"
 	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/storage"
@@ -45,6 +47,7 @@ type Fixer struct {
 	edit      bool
 	timeLimit time.Time
 	db        storage.DB
+	logAction actions.BeforeFunc
 
 	stderrw io.Writer
 }
@@ -92,6 +95,7 @@ func New(lg *slog.Logger, gh *github.Client, db storage.DB, name string) *Fixer 
 	if gh != nil {
 		f.watcher = gh.EventWatcher("commentfix.Fixer:" + name)
 	}
+	f.logAction = actions.Register("commentfix.Fixer:"+name, f.runFromActionLog)
 	return f
 }
 
@@ -271,7 +275,19 @@ type action struct {
 	Body    string // new body of issue or comment
 }
 
-// Run applies the configured rewrites to issue texts and comments on GitHub
+// logKey returns the key for the action in the action log.
+// The full db key includes the action kind as well, which includes
+// the Fixer name.
+func (a *action) logKey() []byte {
+	return ordered.Encode(a.IC.url())
+}
+
+// result is the result of applying an action.
+type result struct {
+	URL string // URL of modified issue or comment
+}
+
+// Run adds to the action log the configured rewrites to issue texts and comments on GitHub
 // that have been updated since the last call to Run for this fixer with edits enabled
 // (including in different program invocations using the same fixer name).
 //
@@ -282,12 +298,11 @@ type action struct {
 // because slog logs the diffs as single-line Go quoted strings that are
 // too difficult to skim.
 //
-// If [Fixer.EnableEdits] has not been called, Run processes recent issue texts
-// and comments and prints diffs of its intended edits to standard error,
-// but it does not make the changes. It also does not mark the issues and comments as processed,
-// so that a future call to Run with edits enabled can rewrite them on GitHub.
-//
-// Run sleeps for 1 second after each GitHub edit.
+// If [Fixer.EnableEdits] has not been called, Run processes recent issue texts and
+// comments and prints diffs of its intended edits to standard error, but it does
+// not add the changes to the action log. It also does not mark the issues and comments
+// as processed, so that a future call to Run with edits enabled can rewrite them
+// on GitHub.
 //
 // Run panics if the Fixer was not constructed by calling [New]
 // with a non-nil [github.Client].
@@ -311,27 +326,12 @@ func (f *Fixer) Run(ctx context.Context) error {
 			}
 		}
 		last = e.DBTime
-
-		applied, advance, err := f.fix(ctx, e)
-		if err != nil {
-			// unreachable unless github error
-			return err
-		}
-		if !applied && !advance {
-			continue
-		}
+		f.logFix(e)
 		if f.edit {
-			if advance {
-				// Mark this one old right now, so that we don't consider editing it again.
-				f.watcher.MarkOld(e.DBTime)
-				f.watcher.Flush()
-				old = 0
-			}
-
-			if applied && !testing.Testing() {
-				// unreachable in tests
-				time.Sleep(sleep)
-			}
+			// Mark this one old right now, so that we don't consider editing it again.
+			f.watcher.MarkOld(e.DBTime)
+			f.watcher.Flush()
+			old = 0
 		}
 	}
 
@@ -348,8 +348,8 @@ func (f *Fixer) Run(ctx context.Context) error {
 	return nil
 }
 
-// FixGitHubIssue applies rewrites to the issue body and comments of the
-// specified GitHub issue, following the same logic as [Fixer.Run].
+// LogFixGitHubIssue adds rewrites to the issue body and comments of the
+// specified GitHub issue to the action log, following the same logic as [Fixer.Run].
 //
 // It requires that the Fixer's [github.Client] contain one or more events
 // for the issue.
@@ -365,17 +365,11 @@ func (f *Fixer) Run(ctx context.Context) error {
 //
 // It returns an error if any of the fixes cannot be applied or if
 // no events are found for the issue.
-func (f *Fixer) FixGitHubIssue(ctx context.Context, project string, issue int64) error {
+func (f *Fixer) LogFixGitHubIssue(ctx context.Context, project string, issue int64) error {
 	events := 0
 	for event := range f.github.Events(project, issue, issue) {
 		events++
-		applied, _, err := f.fix(ctx, event)
-		if err != nil {
-			return err
-		}
-		if applied && testing.Testing() {
-			time.Sleep(sleep)
-		}
+		f.logFix(event)
 	}
 	if events == 0 {
 		return fmt.Errorf("%w for project=%s issue=%d", errNoGitHubEvents, project, issue)
@@ -388,42 +382,26 @@ var (
 	errNoGitHubEvents = errors.New("no GitHub events")
 )
 
-// fix creates and runs the action for the specified event.
-// advance is true if the Fixer has edits enabled, and the action was
-// successfully applied by this run or a previous one, indicating that
-// the Fixer's watcher can be advanced. applied is true if the action
-// was applied by this run of fix.
-// fix returns an error if the action was attempted but could not be applied.
-func (f *Fixer) fix(ctx context.Context, e *github.Event) (applied, advance bool, err error) {
-	a := f.newAction(e)
-	if a == nil {
-		return false, false, nil
+// logFix adds an action to fix the specified event to the action log
+// if edits are enabled. If edits are disabled or no fix is needed, logFix does nothing.
+func (f *Fixer) logFix(e *github.Event) {
+	if a := f.newAction(e); a != nil {
+		// Don't add the action to the log if edits are off.
+		// If we did add it, it could get run; perhaps not now, but in a future time
+		// when edits were on.
+		if !f.edit {
+			return
+		}
+		key := a.logKey()
+		if f.logAction(f.db, key, storage.JSON(a), !actions.RequiresApproval) {
+			f.slog.Info("logged action", "key", storage.Fmt(key))
+		} else {
+			f.slog.Info("fixer already added action", "key", storage.Fmt(key))
+		}
 	}
-	return f.runAction(ctx, a)
 }
 
-// appliedKey returns the db key used to indicate a fix has been
-// applied by this Fixer (identified by [Fixer.name]) for this issue or
-// comment (identified by the URL of the issue/comment).
-func (f *Fixer) appliedKey(a *action) []byte {
-	return ordered.Encode("commentfix.Fixer", f.name, a.IC.url())
-}
-
-// markApplied marks this action as applied by this Fixer
-// (identified by [Fixer.name]).
-func (f *Fixer) markApplied(a *action) {
-	f.db.Set(f.appliedKey(a), nil)
-	f.db.Flush()
-}
-
-// isApplied reports whether the action has been applied by a Fixer
-// with the same name as this one.
-func (f *Fixer) isApplied(a *action) bool {
-	_, ok := f.db.Get(f.appliedKey(a))
-	return ok
-}
-
-// newAction returns an newAction to take on the issue or comment of the event,
+// newAction returns a new action to take on the issue or comment of the event,
 // or nil if there is nothing to do.
 func (f *Fixer) newAction(e *github.Event) *action {
 	if !f.projects[e.Project] {
@@ -462,44 +440,56 @@ func (f *Fixer) newAction(e *github.Event) *action {
 	}
 }
 
-// runAction runs the given action and reports whether it was applied by this run,
-// and whether to advance the Fixer's watcher.
-func (f *Fixer) runAction(ctx context.Context, a *action) (applied, advance bool, _ error) {
+// runFromActionLog is called by actions.Run to execute an action.
+// It decodes the action, calls [Fixer.runAction], then encodes the result.
+func (f *Fixer) runFromActionLog(ctx context.Context, data []byte) ([]byte, error) {
+	var a action
+	if err := json.Unmarshal(data, &a); err != nil {
+		return nil, err
+	}
+	res, err := f.runAction(ctx, &a)
+	if err != nil {
+		return nil, err
+	}
+	return storage.JSON(res), nil
+}
+
+// runAction runs the given action.
+func (f *Fixer) runAction(ctx context.Context, a *action) (*result, error) {
 	// Do not include this Fixer's name in the lock, so that separate
 	// fixers cannot operate on the same object at the same time.
+	// We need this lock, even though [actions.Run] acquires one.
+	// The action log lock includes the fixer name, but this one locks out all fixers.
 	lock := string(ordered.Encode("commentfix", a.IC.url()))
 	f.db.Lock(lock)
 	defer f.db.Unlock(lock)
 
-	if f.isApplied(a) {
-		f.slog.Info("commentfix already applied", "fixer", f.name, "project", a.Project, "issue", a.Issue, "url", a.IC.url())
-		// Watcher can be advanced (in edit mode) if a fix was already applied.
-		return false, f.edit, nil
-	}
-
 	live, err := a.IC.download(ctx, f.github)
 	if err != nil {
 		// unreachable unless github error
-		return false, false, fmt.Errorf("commentfix download error: project=%s issue=%d url=%s err=%w", a.Project, a.Issue, a.IC.url(), err)
+		return nil, fmt.Errorf("commentfix download error: project=%s issue=%d url=%s err=%w", a.Project, a.Issue, a.IC.url(), err)
 	}
 	if live.body() != a.IC.body() {
 		f.slog.Info("commentfix stale", "project", a.Project, "issue", a.Issue, "url", a.IC.url())
-		return false, false, nil
+		return nil, nil
 	}
-	f.slog.Info("commentfix rewrite", "project", a.Project, "issue", a.Issue, "url", a.IC.url(), "edit", f.edit, "diff", bodyDiff(a.IC.body(), a.Body))
+	f.slog.Info("do commentfix rewrite", "project", a.Project, "issue", a.Issue, "url", a.IC.url(), "edit", f.edit, "diff", bodyDiff(a.IC.body(), a.Body))
 	fmt.Fprintf(f.stderr(), "Fix %s:\n%s\n", a.IC.url(), bodyDiff(a.IC.body(), a.Body))
 
 	if !f.edit {
-		return false, false, nil
+		return nil, nil
 	}
 
 	f.slog.Info("commentfix editing github", "url", a.IC.url())
 	if err := a.IC.editBody(ctx, f.github, a.Body); err != nil {
 		// unreachable unless github error
-		return false, false, fmt.Errorf("commentfix edit: project=%s issue=%d err=%w", a.Project, a.Issue, err)
+		return nil, fmt.Errorf("commentfix edit: project=%s issue=%d err=%w", a.Project, a.Issue, err)
 	}
-	f.markApplied(a)
-	return true, true, nil
+	if !testing.Testing() {
+		// unreachable in tests
+		time.Sleep(sleep)
+	}
+	return &result{URL: a.IC.url()}, nil
 }
 
 // Latest returns the latest known DBTime marked old by the Fixer's Watcher.

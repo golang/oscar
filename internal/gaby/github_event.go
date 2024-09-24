@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"golang.org/x/oscar/internal/actions"
 	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/githubdocs"
 )
@@ -94,9 +95,7 @@ func (g *Gaby) handleGitHubIssueEvent(ctx context.Context, event *github.Webhook
 		if err := g.relatedPoster.Post(ctx, project, event.Issue.Number); err != nil {
 			return false, err
 		}
-		// No need to lock; [commentfix.Fixer.FixGitHubIssue] and
-		// [commentfix.Fixer.Run] can happen concurrently.
-		if err := g.commentFixer.FixGitHubIssue(ctx, project, event.Issue.Number); err != nil {
+		if err := g.fixGitHubIssue(ctx, project, event.Issue.Number); err != nil {
 			return false, err
 		}
 		return true, nil
@@ -134,15 +133,25 @@ func (g *Gaby) handleGitHubIssueCommentEvent(ctx context.Context, event *github.
 
 	// Do not attempt changes unless sync is enabled and completely succeeded.
 	if fl.enablechanges && fl.enablesync {
-		// No need to lock; [commentfix.Fixer.FixGitHubIssue] and
-		// [commentfix.Fixer.Run] can happen concurrently.
-		if err := g.commentFixer.FixGitHubIssue(ctx, project, event.Issue.Number); err != nil {
+		if err := g.fixGitHubIssue(ctx, project, event.Issue.Number); err != nil {
 			return false, err
 		}
 		return true, nil
 	}
 
 	return false, nil
+}
+
+func (g *Gaby) fixGitHubIssue(ctx context.Context, project string, issue int64) error {
+	// No need to lock; [commentfix.Fixer.FixGitHubIssue] and
+	// [commentfix.Fixer.Run] can happen concurrently.
+	if err := g.commentFixer.LogFixGitHubIssue(ctx, project, issue); err != nil {
+		return err
+	}
+	if err := actions.Run(ctx, g.slog, g.db); err != nil {
+		return err
+	}
+	return nil
 }
 
 // syncGitHubProject syncs the document corpus with respect to a single

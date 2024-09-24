@@ -73,7 +73,9 @@ import (
 	"iter"
 	"log/slog"
 	"math"
+	"strings"
 	"sync"
+	"testing"
 	"time"
 
 	"golang.org/x/oscar/internal/storage"
@@ -106,6 +108,17 @@ type Entry struct {
 // IsDone reports whether e is done.
 func (e *Entry) IsDone() bool {
 	return !e.Done.IsZero()
+}
+
+func (e *Entry) String() string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "<Entry Created:%s", e.Created.Format(time.RFC3339))
+	fmt.Fprintf(&b, " Kind:%s", e.Kind)
+	fmt.Fprintf(&b, " Key:%s", storage.Fmt(e.Key))
+	fmt.Fprintf(&b, " Action:%q", e.Action)
+	fmt.Fprintf(&b, " Done:%s", e.Done.Format(time.RFC3339))
+	fmt.Fprintf(&b, ">")
+	return b.String()
 }
 
 // A Decision describes the approval or denial of an action.
@@ -341,11 +354,11 @@ type RunFunc func(ctx context.Context, action []byte) ([]byte, error)
 type BeforeFunc func(db storage.DB, key, action []byte, requiresApproval bool) (added bool)
 
 // Register associates the given action kind and run function.
-// Only one function may be registered for each kind.
+// Only one function may be registered for each kind, except during testing.
 //
 // Register returns a function that should be called to log an action before it is run.
 func Register(actionKind string, r RunFunc) BeforeFunc {
-	if _, ok := registry.LoadOrStore(actionKind, r); ok {
+	if _, ok := registry.LoadOrStore(actionKind, r); ok && !testing.Testing() {
 		panic(fmt.Sprintf("%q already registered", actionKind))
 	}
 	return func(db storage.DB, key, action []byte, requiresApproval bool) bool {
@@ -410,6 +423,16 @@ func runEntry(ctx context.Context, lg *slog.Logger, db storage.DB, e *entry) err
 	}
 	setEntry(db, dbKey(e.Kind, e.Key), e)
 	return err
+}
+
+// ClearLogForTesting deletes the entire action log.
+// It is intended only for tests.
+func ClearLogForTesting(_ *testing.T, db storage.DB) {
+	// Additional ugly sanity check.
+	if dbt := fmt.Sprintf("%T", db); dbt != "*storage.memDB" {
+		db.Panic("ClearLogForTesting: bad type", "type", dbt)
+	}
+	db.DeleteRange(ordered.Encode(logKind), ordered.Encode(logKind, ordered.Inf))
 }
 
 // unmarshalTimedEntry extracts an entry from a timed.Entry.

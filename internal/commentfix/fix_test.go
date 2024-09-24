@@ -5,18 +5,21 @@
 package commentfix
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
+	"maps"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
 	"text/template"
 	"time"
 
+	"golang.org/x/oscar/internal/actions"
 	"golang.org/x/oscar/internal/diff"
 	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/storage"
@@ -92,223 +95,263 @@ func TestErrors(t *testing.T) {
 }
 
 func TestGitHub(t *testing.T) {
-	// Check for comment with too-new cutoff and edits disabled.
-	// Finds nothing but also no-op.
 	gh := testGitHub(t)
 	db := storage.MemDB()
-	lg, buf := testutil.SlogBuffer()
+	lg := testutil.Slogger(t)
+	check := testutil.Checker(t)
+
+	checkNoLog := func() {
+		t.Helper()
+		if len(actionLogEntries(db)) > 0 {
+			t.Fatal("actions were logged")
+		}
+	}
+
+	// Check for action with too-new cutoff and edits disabled.
+	// Finds nothing in the action log.
 	f := New(lg, gh, db, "fixer1")
 	f.SetStderr(testutil.LogWriter(t))
 	f.EnableProject("rsc/tmp")
 	f.SetTimeLimit(time.Date(2222, 1, 1, 1, 1, 1, 1, time.UTC))
 	f.ReplaceText("cancelled", "canceled")
-	f.Run(ctx)
-	// t.Logf("output:\n%s", buf)
-	if bytes.Contains(buf.Bytes(), []byte("commentfix rewrite")) {
-		t.Fatalf("logs mention rewrite of old comment:\n%s", buf.Bytes())
-	}
+	check(f.Run(ctx))
+	checkNoLog()
 
 	// Check again with old enough cutoff.
-	// Finds comment but does not edit, does not advance cursor.
+	// Does not edit, does not advance cursor.
 	f = New(lg, gh, db, "fixer1")
 	f.SetStderr(testutil.LogWriter(t))
 	f.EnableProject("rsc/tmp")
 	f.SetTimeLimit(time.Time{})
 	f.ReplaceText("cancelled", "canceled")
-	f.Run(ctx)
-	// t.Logf("output:\n%s", buf)
-	if !bytes.Contains(buf.Bytes(), []byte("commentfix rewrite")) {
-		t.Fatalf("logs do not mention rewrite of comment:\n%s", buf.Bytes())
-	}
-	if bytes.Contains(buf.Bytes(), []byte("editing github")) {
-		t.Fatalf("logs incorrectly mention editing github:\n%s", buf.Bytes())
-	}
+	check(f.Run(ctx))
+	checkNoLog()
 
-	// Run with too-new cutoff and edits enabled, should make issue not seen again.
-	buf.Truncate(0)
+	// Run with too-new cutoff and edits enabled, should cause the issue to no
+	// longer be visible again. But now the watcher advances.
+	actions.ClearLogForTesting(t, db)
 	f.SetTimeLimit(time.Date(2222, 1, 1, 1, 1, 1, 1, time.UTC))
 	f.EnableEdits()
-	f.Run(ctx)
-	// t.Logf("output:\n%s", buf)
-	if bytes.Contains(buf.Bytes(), []byte("commentfix rewrite")) {
-		t.Fatalf("logs incorrectly mention rewrite of comment:\n%s", buf.Bytes())
-	}
+	check(f.Run(ctx))
+	checkNoLog()
 
+	// The watcher has passed the issue, so it won't be run even with the early cutoff.
 	f.SetTimeLimit(time.Time{})
-	f.Run(ctx)
-	// t.Logf("output:\n%s", buf)
-	if bytes.Contains(buf.Bytes(), []byte("commentfix rewrite")) {
-		t.Fatalf("logs incorrectly mention rewrite of comment:\n%s", buf.Bytes())
-	}
+	check(f.Run(ctx))
+	checkNoLog()
 
 	// Write comment (now using fixer2 to avoid 'marked as old' in fixer1).
-	lg, buf = testutil.SlogBuffer()
 	f = New(lg, gh, db, "fixer2")
 	f.SetStderr(testutil.LogWriter(t))
 	f.EnableProject("rsc/tmp")
 	f.ReplaceText("cancelled", "canceled")
 	f.SetTimeLimit(time.Time{})
 	f.EnableEdits()
-	f.Run(ctx)
-	// t.Logf("output:\n%s", buf)
-	if !bytes.Contains(buf.Bytes(), []byte("commentfix rewrite")) {
-		t.Fatalf("logs do not mention rewrite of comment:\n%s", buf.Bytes())
+	check(f.Run(ctx))
+	actions.Run(ctx, lg, db)
+	entries := actionLogEntries(db)
+	if g, w := len(entries), 3; g != w {
+		t.Fatalf("got %d entries, want %d", g, w)
 	}
-	if !bytes.Contains(buf.Bytes(), []byte("editing github")) {
-		t.Fatalf("logs do not mention editing github:\n%s", buf.Bytes())
-	}
-	if !bytes.Contains(buf.Bytes(), []byte(`editing github" url=https://api.github.com/repos/rsc/tmp/issues/18`)) {
-		t.Fatalf("logs do not mention editing issue body:\n%s", buf.Bytes())
-	}
-	if bytes.Contains(buf.Bytes(), []byte(`editing github" url=https://api.github.com/repos/rsc/tmp/issues/19`)) {
-		t.Fatalf("logs incorrectly mention editing pull request body:\n%s", buf.Bytes())
-	}
-	if !bytes.Contains(buf.Bytes(), []byte(`editing github" url=https://api.github.com/repos/rsc/tmp/issues/comments/10000000001`)) {
-		t.Fatalf("logs do not mention editing issue comment:\n%s", buf.Bytes())
-	}
-	if bytes.Contains(buf.Bytes(), []byte("ERROR")) {
-		t.Fatalf("editing failed:\n%s", buf.Bytes())
+	for i, url := range []string{
+		"https://api.github.com/repos/rsc/tmp/issues/18",
+		"https://api.github.com/repos/rsc/tmp/issues/comments/10000000001",
+		// no action for 19, a pull request
+		"https://api.github.com/repos/rsc/tmp/issues/20",
+	} {
+		w := fmt.Sprintf(`{"URL":"%s"}`, url)
+		if g := string(entries[i].Result); g != w {
+			t.Errorf("entries[%d]: got %s, want %s", i, g, w)
+		}
 	}
 
 	// Try again; comment should now be marked old in watcher.
-	lg, buf = testutil.SlogBuffer()
 	f = New(lg, gh, db, "fixer2")
 	f.SetStderr(testutil.LogWriter(t))
 	f.EnableProject("rsc/tmp")
 	f.ReplaceText("cancelled", "canceled")
 	f.EnableEdits()
 	f.SetTimeLimit(time.Time{})
-	f.Run(ctx)
-	// t.Logf("output:\n%s", buf)
-	if bytes.Contains(buf.Bytes(), []byte("commentfix rewrite")) {
-		t.Fatalf("logs incorrectly mention rewrite of comment:\n%s", buf.Bytes())
+	check(f.Run(ctx))
+	// There shouldn't be unexecuted actions.
+	undone := filter(actionLogEntries(db),
+		func(e *actions.Entry) bool { return !e.IsDone() })
+	if len(undone) > 0 {
+		t.Fatal("new actions were logged")
 	}
 
 	// Check that not enabling the project doesn't edit comments.
-	lg, buf = testutil.SlogBuffer()
 	f = New(lg, gh, db, "fixer3")
 	f.SetStderr(testutil.LogWriter(t))
 	f.EnableProject("xyz/tmp")
 	f.ReplaceText("cancelled", "canceled")
 	f.EnableEdits()
 	f.SetTimeLimit(time.Time{})
-	f.Run(ctx)
-	// t.Logf("output:\n%s", buf)
-	if bytes.Contains(buf.Bytes(), []byte("commentfix rewrite")) {
-		t.Fatalf("logs incorrectly mention rewrite of comment:\n%s", buf.Bytes())
+	check(f.Run(ctx))
+	entries = filter(actionLogEntries(db),
+		func(e *actions.Entry) bool { return strings.HasSuffix(e.Kind, "fixer3") })
+	if len(entries) > 0 {
+		t.Fatal("new actions were logged")
 	}
 
 	// Check that when there's nothing to do, we still mark things old.
-	lg, buf = testutil.SlogBuffer()
 	f = New(lg, gh, db, "fixer4")
 	f.SetStderr(testutil.LogWriter(t))
 	f.EnableProject("rsc/tmp")
 	f.ReplaceText("zyzzyva", "ZYZZYVA")
 	f.EnableEdits()
 	f.SetTimeLimit(time.Time{})
-	f.Run(ctx)
-	// t.Logf("output:\n%s", buf)
-	if bytes.Contains(buf.Bytes(), []byte("commentfix rewrite")) {
-		t.Fatalf("logs incorrectly mention rewrite of comment:\n%s", buf.Bytes())
+	check(f.Run(ctx))
+	entries = filter(actionLogEntries(db),
+		func(e *actions.Entry) bool { return strings.HasSuffix(e.Kind, "fixer4") })
+	if len(entries) > 0 {
+		t.Fatal("new actions were logged")
 	}
 
 	// Reverse the replacement and run again with same name; should not consider any comments.
-	lg, buf = testutil.SlogBuffer()
 	f = New(lg, gh, db, "fixer4")
 	f.SetStderr(testutil.LogWriter(t))
 	f.EnableProject("rsc/tmp")
 	f.ReplaceText("c", "C")
 	f.EnableEdits()
 	f.SetTimeLimit(time.Time{})
-	f.Run(ctx)
-	// t.Logf("output:\n%s", buf)
-	if bytes.Contains(buf.Bytes(), []byte("commentfix rewrite")) {
-		t.Fatalf("logs incorrectly mention rewrite of comment:\n%s", buf.Bytes())
+	check(f.Run(ctx))
+	entries = filter(actionLogEntries(db),
+		func(e *actions.Entry) bool { return strings.HasSuffix(e.Kind, "fixer4") })
+	if len(entries) > 0 {
+		t.Fatal("new actions were logged")
+	}
+}
+
+// runActions calls f.Run, then runs all the actions in the log.
+func runActions(t *testing.T, f *Fixer) {
+	t.Helper()
+	if err := f.Run(ctx); err != nil {
+		t.Fatal(err)
+	}
+	actions.Run(ctx, f.slog, f.db)
+}
+
+// funFix calls LogFixGitHubIssue, then runs all the actions in the log.
+func runFix(t *testing.T, f *Fixer, project string, issue int64) {
+	t.Helper()
+	if err := f.LogFixGitHubIssue(ctx, project, issue); err != nil {
+		t.Fatal(err)
+	}
+	actions.Run(ctx, f.slog, f.db)
+}
+
+// expectResultSubstrings checks that the results of the actions in the action log
+// have the given substrings. Each result must match a substring, and
+// there can be no actions left over. But the order of the actions doesn't matter.
+func expectResultSubstrings(t *testing.T, db storage.DB, subs ...string) {
+	t.Helper()
+	wants := map[string]bool{}
+	for _, s := range subs {
+		wants[s] = true
+	}
+	entries := actionLogEntries(db)
+	if g, w := len(entries), len(wants); g != w {
+		t.Fatalf("got %d action log entries, want %d", g, w)
+	}
+	for _, e := range entries {
+		g := string(e.Result)
+		ok := false
+		for w := range wants {
+			if strings.Contains(g, w) {
+				delete(wants, w)
+				ok = true
+				break
+			}
+		}
+		if !ok {
+			t.Fatalf("%s has no substring in %q", g, slices.Collect(maps.Keys(wants)))
+		}
 	}
 }
 
 func TestFixGitHubIssue(t *testing.T) {
-	ctx := context.Background()
+
+	all := []string{"issues/18", "comments", "issues/20"}
+
 	t.Run("basic", func(t *testing.T) {
-		f, project, buf, check := newFixer(t)
-		check(f.FixGitHubIssue(ctx, project, 18))
-		testutil.ExpectLog(t, buf, "commentfix rewrite", 2) // fix body and comment
+		f, project, db := newFixer(t)
+		runFix(t, f, project, 18)
+		entries := actionLogEntries(db)
+		if g, w := len(entries), 2; g != w {
+			t.Fatalf("got %d entries, want %d", g, w)
+		}
+		expectResultSubstrings(t, db, "issues/18", "comments")
 	})
 
 	t.Run("twice", func(t *testing.T) {
-		f, project, buf, check := newFixer(t)
-		check(f.FixGitHubIssue(ctx, project, 18))
-		testutil.ExpectLog(t, buf, "commentfix rewrite", 2) // fix body and comment
+		f, project, db := newFixer(t)
+		runFix(t, f, project, 18)
+		expectResultSubstrings(t, db, "issues/18", "comments")
 
 		// Running Fix again doesn't change anything because fixes were
 		// already applied.
-		check(f.FixGitHubIssue(ctx, project, 18))
-		testutil.ExpectLog(t, buf, "commentfix rewrite", 2) // nothing new
-		testutil.ExpectLog(t, buf, "commentfix already applied", 2)
+		runFix(t, f, project, 18)
+		expectResultSubstrings(t, db, "issues/18", "comments")
 	})
 
 	t.Run("fix-run", func(t *testing.T) {
-		f, project, buf, check := newFixer(t)
-		check(f.FixGitHubIssue(ctx, project, 20))
-		testutil.ExpectLog(t, buf, "commentfix rewrite", 1) // fix body of issue 20
+		f, project, db := newFixer(t)
+		runFix(t, f, project, 20)
+		expectResultSubstrings(t, db, "issues/20")
 
 		// Run still fixes issue 18 because FixGitHubIssue
 		// doesn't modify Run's watcher.
-		check(f.Run(ctx))
-		testutil.ExpectLog(t, buf, "commentfix rewrite", 3) // fix body and comment of issue 18
-		testutil.ExpectLog(t, buf, "commentfix already applied", 1)
+		runActions(t, f)
+		expectResultSubstrings(t, db, all...)
 	})
 
 	t.Run("fix-run-watcher", func(t *testing.T) {
-		f, project, buf, check := newFixer(t)
-		check(f.FixGitHubIssue(ctx, project, 18))
-		check(f.FixGitHubIssue(ctx, project, 20))
-		testutil.ExpectLog(t, buf, "commentfix rewrite", 3) // fix body of issue 20
+		f, project, db := newFixer(t)
+		runFix(t, f, project, 18)
+		runFix(t, f, project, 20)
+		expectResultSubstrings(t, db, all...)
 
 		// Run sees that fixes have already been applied and advances
 		// watcher.
-		check(f.Run(ctx))
-		testutil.ExpectLog(t, buf, "commentfix rewrite", 3) // no change
-		testutil.ExpectLog(t, buf, "commentfix already applied", 3)
+		runActions(t, f)
+		expectResultSubstrings(t, db, all...) // no change
 
 		// Run doesn't do anything because its watcher has been advanced.
-		check(f.Run(ctx))
-		testutil.ExpectLog(t, buf, "commentfix rewrite", 3)         // no change
-		testutil.ExpectLog(t, buf, "commentfix already applied", 3) // no change
+		runActions(t, f)
+		expectResultSubstrings(t, db, all...)
 	})
 
 	t.Run("fix-run-concurrent", func(t *testing.T) {
-		f, project, buf, check := newFixer(t)
-
+		f, project, db := newFixer(t)
 		var wg sync.WaitGroup
 
 		wg.Add(1)
 		go func() {
-			check(f.FixGitHubIssue(ctx, project, 20))
+			runFix(t, f, project, 20)
 			wg.Done()
 		}()
 
 		wg.Add(1)
 		go func() {
-			check(f.Run(ctx))
+			runActions(t, f)
 			wg.Done()
 		}()
 
 		wg.Add(1)
 		go func() {
-			check(f.FixGitHubIssue(ctx, project, 18))
+			runFix(t, f, project, 18)
 			wg.Done()
 		}()
 
 		wg.Wait()
 
-		// Each action is attempted twice.
-		testutil.ExpectLog(t, buf, "commentfix rewrite", 3)
-		testutil.ExpectLog(t, buf, "commentfix already applied", 3)
+		// Each action is attempted twice, but only happens once.
+		expectResultSubstrings(t, db, all...)
 	})
 
 	t.Run("fix-concurrent", func(t *testing.T) {
-		f, project, buf, check := newFixer(t)
+		f, project, db := newFixer(t)
 
 		var wg sync.WaitGroup
 
@@ -316,15 +359,13 @@ func TestFixGitHubIssue(t *testing.T) {
 		wg.Add(n)
 		for range n {
 			go func() {
-				check(f.FixGitHubIssue(ctx, project, 20))
+				runFix(t, f, project, 20)
 				wg.Done()
 			}()
 		}
 
 		wg.Wait()
-
-		testutil.ExpectLog(t, buf, "commentfix rewrite", 1)
-		testutil.ExpectLog(t, buf, "commentfix already applied", n-1)
+		expectResultSubstrings(t, db, "issues/20")
 	})
 }
 
@@ -352,18 +393,10 @@ func TestActionMarshal(t *testing.T) {
 	}
 }
 
-func expect(t *testing.T, buf *bytes.Buffer, action string, n int) {
-	t.Helper()
-
-	if mentions := bytes.Count(buf.Bytes(), []byte(action)); mentions != n {
-		t.Errorf("logs mention %q %d times, want %d mentions:\n%s", action, mentions, n, buf.Bytes())
-	}
-}
-
-func newFixer(t *testing.T) (_ *Fixer, project string, _ *bytes.Buffer, check func(error)) {
+func newFixer(t *testing.T) (_ *Fixer, project string, db storage.DB) {
 	gh := testGitHub(t)
-	db := storage.MemDB()
-	lg, buf := testutil.SlogBuffer()
+	db = storage.MemDB()
+	lg := testutil.Slogger(t)
 	f := New(lg, gh, db, t.Name())
 	f.SetStderr(testutil.LogWriter(t))
 	project = "rsc/tmp"
@@ -371,7 +404,7 @@ func newFixer(t *testing.T) (_ *Fixer, project string, _ *bytes.Buffer, check fu
 	f.ReplaceText("cancelled", "canceled")
 	f.SetTimeLimit(time.Time{})
 	f.EnableEdits()
-	return f, project, buf, testutil.Checker(t)
+	return f, project, db
 }
 
 func testGitHub(t *testing.T) *github.Client {
@@ -416,4 +449,18 @@ func testGitHub(t *testing.T) *github.Client {
 	})
 
 	return gh
+}
+
+func actionLogEntries(db storage.DB) []*actions.Entry {
+	return slices.Collect(actions.ScanAfter(nil, db, time.Time{}, nil))
+}
+
+func filter[S ~[]E, E any](s S, f func(E) bool) S {
+	var r S
+	for _, e := range s {
+		if f(e) {
+			r = append(r, e)
+		}
+	}
+	return r
 }
