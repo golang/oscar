@@ -31,8 +31,10 @@ type QueryRequest struct {
 // Options are the results filters that can be passed to the search
 // functions as part of a [QueryRequest] or [VectorRequest].
 type Options struct {
-	Threshold float64 // lowest score to keep; default 0. Max is 1.
-	Limit     int     // max results (fewer if Threshold is set); 0 means use a fixed default
+	Threshold float64  // lowest score to keep; default 0. Max is 1.
+	Limit     int      // max results (fewer if Threshold is set); 0 means use a fixed default
+	AllowKind []string // kinds of documents to keep; empty means keep all
+	DenyKind  []string // kinds of documents to remove; empty means remove none
 }
 
 // Result is a single result of a search ([Query] or [Vector]).
@@ -89,22 +91,44 @@ func vector(vdb storage.VectorDB, dc *docs.Corpus, vec llm.Vector, opts *Options
 	if opts.Threshold > 0 {
 		threshold = opts.Threshold
 	}
+	// By defaut, allow all kinds of documents.
+	allowKind := func(string) bool { return true }
+	if len(opts.AllowKind) != 0 {
+		allowKind = containsFunc(opts.AllowKind)
+	}
+	// By defaut, deny no kinds of documents.
+	denyKind := func(string) bool { return false }
+	if len(opts.DenyKind) != 0 {
+		denyKind = containsFunc(opts.DenyKind)
+	}
 	var srs []Result
 	for _, r := range vdb.Search(vec, limit) {
 		if r.Score < threshold {
 			break
+		}
+		kind := docIDKind(r.ID)
+		if !allowKind(kind) || denyKind(kind) {
+			continue
 		}
 		title := ""
 		if d, ok := dc.Get(r.ID); ok {
 			title = d.Title
 		}
 		srs = append(srs, Result{
-			Kind:         docIDKind(r.ID),
+			Kind:         kind,
 			Title:        title,
 			VectorResult: r,
 		})
 	}
 	return srs
+}
+
+func containsFunc(s []string) func(string) bool {
+	m := make(map[string]bool)
+	for _, k := range s {
+		m[k] = true
+	}
+	return func(s string) bool { return m[s] }
 }
 
 // Round rounds r.Score to three decimal places.
@@ -114,6 +138,16 @@ func (r *Result) Round() {
 
 // Maximum number of search results to return by default.
 const defaultLimit = 20
+
+// Recognized kinds of documents.
+const (
+	KindGitHubIssue     = "GitHubIssue"
+	KindGoWiki          = "GoWiki"
+	KindGoDocumentation = "GoDocumentation"
+	KindGoReference     = "GoReference"
+	KindGoBlog          = "GoBlog"
+	KindGoDevPage       = "GoDevPage"
+)
 
 // docIDKind determines the kind of document from its ID.
 // It returns the empty string if it cannot do so.
@@ -125,17 +159,17 @@ func docIDKind(id string) string {
 	hp := path.Join(u.Host, u.Path)
 	switch {
 	case strings.HasPrefix(hp, "github.com/golang/go/issues/"):
-		return "GitHubIssue"
+		return KindGitHubIssue
 	case strings.HasPrefix(hp, "go.dev/wiki/"):
-		return "GoWiki"
+		return KindGoWiki
 	case strings.HasPrefix(hp, "go.dev/doc/"):
-		return "GoDocumentation"
+		return KindGoDocumentation
 	case strings.HasPrefix(hp, "go.dev/ref/"):
-		return "GoReference"
+		return KindGoReference
 	case strings.HasPrefix(hp, "go.dev/blog/"):
-		return "GoBlog"
+		return KindGoBlog
 	case strings.HasPrefix(hp, "go.dev/"):
-		return "GoDevPage"
+		return KindGoDevPage
 	default:
 		return ""
 	}

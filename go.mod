@@ -4,6 +4,7 @@ go 1.23
 
 require (
 	github.com/cockroachdb/pebble v1.1.1
+	github.com/google/go-cmp v0.6.0
 	golang.org/x/net v0.29.0
 	golang.org/x/tools v0.25.0
 	rsc.io/markdown v0.0.0-20240617154923-1f2ef1438fed
