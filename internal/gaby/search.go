@@ -56,7 +56,7 @@ func (g *Gaby) doSearch(r *http.Request) ([]byte, error) {
 
 // This template assumes that if a result's Kind is non-empty, it is a URL,
 // and vice versa.
-var searchPageTmpl = template.Must(template.New("").Parse(`
+var searchPageTmpl = template.Must(template.New("search").Parse(`
 <!doctype html>
 <html>
   <head>

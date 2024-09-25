@@ -1,0 +1,89 @@
+<!--
+Copyright 2024 The Go Authors. All rights reserved.
+Use of this source code is governed by a BSD-style
+license that can be found in the LICENSE file.
+-->
+<!doctype html>
+<html>
+  <head>
+    <title>Oscar Action Log</title>
+    <style>
+      body { font-family: sans-serif }
+    </style>
+  </head>
+  <body>
+    <h1>Action Log Viewer</h1>
+
+    <form id="form" action="/actionlog" method="GET">
+		<table>
+		  <tr>
+		    <td>
+              <fieldset>
+                <legend>Start</legend>
+                <div>
+                  <input type="radio" name="start" id="start-fixed" value="fixed"
+                    {{if eq .Start.Radio "fixed"}}checked{{end}}/>
+                  <label for="start-fixed">Beginning</label>
+                </div>
+                <div>
+                  <input type="radio" name="start" id="start-dur" value="dur"
+                    {{if eq .Start.Radio "dur"}}checked{{end}}/>
+                  <input type="text" id="start-dur" size="4" name="start-dur-num" value="{{.Start.DurNum}}" autofocus/>
+                    <select name="start-dur-unit">
+                      {{template "dur-unit" .Start.DurUnit}}
+                    </select>
+                  <label for="start-dur">before end</label>
+                </div>
+                <div>
+                  <input type="radio" name="start" id="start-date" value="date"
+                    {{if eq .Start.Radio "date"}}checked{{end}}/>
+                  <label for="start-date">From</label>
+                  <input type="datetime-local" name="start-date" value="{{.Start.Date}}"/>
+                </div>
+              </fieldset>
+            </td>
+
+		    <td>
+              <fieldset>
+                <legend>End</legend>
+                <div>
+                  <input type="radio" name="end" id="end-fixed" value="fixed"
+                    {{if eq .End.Radio "fixed"}}checked{{end}}/>
+                  <label for="end-fixed">End</label>
+                </div>
+                <div>
+                  <input type="radio" name="end" id="end-dur" value="dur"
+                    {{if eq .End.Radio "dur"}}checked{{end}}/>
+                    <input type="text" id="end-dur" size="4" name="end-dur-num" value="1" autofocus/>
+                    <select name="end-dur-unit">
+                      {{template "dur-unit" .End.DurUnit}}
+                    </select>
+                  <label for="end-dur">after start</label>
+                </div>
+                <div>
+                  <input type="radio" name="end" id="end-date" value="date"
+                    {{if eq .End.Radio "date"}}checked{{end}}/>
+                  <label for="end-date">To</label>
+                  <input type="datetime-local" name="end-date" value="{{.End.Date}}"ga/>
+                </div>
+              </fieldset>
+            </td>
+
+            <td> <input type="submit" value="Display"/> </td>
+		  </tr>
+        </table>
+    </form>
+
+    {{if .StartTime}}
+      <h2>Action Log from {{.StartTime}} to {{.EndTime}}</h2>
+    {{end}}
+
+   </body>
+</html>
+
+{{define "dur-unit"}}
+  <option value="minutes"{{if eq . "minutes"}} selected{{end}}>minutes</option>
+  <option value="hours"{{if eq . "hours"}} selected{{end}}>hours</option>
+  <option value="days"{{if eq . "days"}} selected{{end}}>days</option>
+  <option value="weeks"{{if eq . "weeks"}} selected{{end}}>weeks</option>
+{{end}}

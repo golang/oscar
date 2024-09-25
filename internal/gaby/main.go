@@ -433,6 +433,9 @@ func (g *Gaby) newServer(report func(error)) *http.ServeMux {
 	// POST because the arguments to the request are in the body.
 	mux.HandleFunc("POST /api/search", g.handleSearchAPI)
 
+	// /actionlog: display action log
+	mux.HandleFunc("GET /actionlog", g.handleActionLog)
+
 	return mux
 }
 
