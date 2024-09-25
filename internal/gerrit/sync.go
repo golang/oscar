@@ -47,7 +47,7 @@ const (
 //
 // The following key schemas are stored in the database:
 //
-//	["gerritSyncProject", Instance, Project] => JSON of projectSync structure
+//	["gerrit.SyncProject", Instance, Project] => JSON of projectSync structure
 //	["gerrit.Change", Instance, Project, ChangeNumber] => ChangeInfo JSON
 //	["gerrit.Comment", Instance, Project, ChangeNumber] => CommentInfo JSON
 //	["gerrit.ChangeUpdate", Instance, ChangeNumber, MetaID] => DBTime
@@ -55,6 +55,21 @@ const (
 //
 // A watcher on "gerrit.ChangeUpdate" will see all Gerrit changes,
 // and can read the new data from the database.
+
+// Gerrit APIs for searching changes return results only in reverse
+// chronological order. As execution of [Client.Sync] can in principle
+// be interrupted by the enclosing environment (for instance, Cloud Run
+// timeout), this requires a different algorithm for making partial progress.
+//
+// The algorithm keeps track of three points in time: low watermark (L),
+// high watermark (H), and current watermark (C). [Client.Sync] has
+// processed all change updates before L and none after H. The algorithm
+// first tries to process change updates in the interval [L, H] by going
+// backwards from H. The watermark C is used to remember where in this
+// interval the algorithm is currently. This is done so that the algorithm
+// can restart in case there is an interruption. Once the algorithm
+// processes the [L, H] interval, H becomes the new low watermark, the
+// new high watermark is the current moment in time, and C is equal to H.
 
 // changeOpts is the options we request for a change.
 var changeOpts = []string{
@@ -113,9 +128,15 @@ func (c *Client) RequestFlush() {
 // an instance, such as "go" or "website".
 // This is stored in the database.
 type projectSync struct {
-	Instance string // instance host name, "go-review.googlesource.com"
-	Name     string // project name, such as "go" or "oscar".
-	SyncDate string // date/time of last sync
+	Instance    string // instance host name, "go-review.googlesource.com"
+	Name        string // project name, such as "go" or "oscar".
+	LowMark     string // low watermark L, in gerrit timestamp layout
+	HighMark    string // high watermark H, in gerrit timestamp layout
+	CurrentMark string // current watermark C, in gerrit timestamp layout
+	// Skip is used to guarantee partial progress in the
+	// case there are more change updates happening at
+	// the CurrentMark across the change batch boundaries.
+	Skip int
 }
 
 // store stores inst into db.
@@ -175,7 +196,7 @@ func (c *Client) SyncProject(ctx context.Context, project string) (err error) {
 	// Load sync state.
 	var proj projectSync
 	if val, ok := c.db.Get(key); !ok {
-		return errors.New("missing project")
+		return fmt.Errorf("missing project %s", project)
 	} else if err := json.Unmarshal(val, &proj); err != nil {
 		return err
 	}
@@ -183,112 +204,210 @@ func (c *Client) SyncProject(ctx context.Context, project string) (err error) {
 	return c.syncChanges(ctx, &proj)
 }
 
-// syncChanges finds all changes that have been updated since the last
-// sync time. It stores the data for those changes in the database.
-// It also adds in the metadata changes.
+// syncChanges attempts to finish finding all the change updates
+// in the interval [proj.LowMark, proj.HighMark]. If it successfully
+// finishes analyzing the interval, it opens up a new one and
+// starts working on it. It repeats this process as long as there
+// are some changes processed in the interval.
+// It stores the data for those changes in the database.
+// It also adds in the metadata changes, such as values for watermarks.
 func (c *Client) syncChanges(ctx context.Context, proj *projectSync) (err error) {
+	// save stores the new values for low and high
+	// watermark, and sets the current mark to high.
+	save := func(low, high string) {
+		proj.LowMark = low
+		proj.HighMark = high
+		proj.CurrentMark = high
+		proj.Skip = 0
+		proj.store(c.db)
+		c.db.Flush()
+	}
+
+	// If the previous interval was closed successfully,
+	// then create a new one.
+	if proj.HighMark == "" {
+		save(proj.LowMark, now())
+	}
+
+	for {
+		c.slog.Info("gerrit sync interval", "project", proj.Name, "low", proj.LowMark,
+			"curr", proj.CurrentMark, "skip", proj.Skip, "high", proj.HighMark)
+		some, err := c.syncIntervalChanges(ctx, proj)
+		if err != nil {
+			return err
+		}
+		if !some { // no changes in the interval
+			break
+		}
+		save(proj.HighMark, now()) // set high as the low mark
+	}
+
+	// Prepare for the next invocation of syncChanges.
+	save(proj.HighMark, "") // set high as the low mark
+	return nil
+}
+
+// testNow exists for testing purposes, to avoid the
+// issue of dealing with the current moment in time.
+// For ordinary use this should be empty string.
+// TODO: instead, should we ask database for its
+// definition of now?
+var testNow string
+
+// testInterrupt designates the number of times
+// the main loop in [Client.syncIntervalChanges]
+// executes before being interrupted. Used only
+// during testing.
+var testInterrupt = -1
+
+// now returns current time in gerrit time format.
+func now() string {
+	if testNow != "" {
+		return testNow
+	}
+	return time.Now().Format(timeStampLayout)
+}
+
+// syncIntervalChanges syncs changes in [proj.LowMark, proj.CurrentMark].
+// Reports whether there were any change updates in the interval.
+func (c *Client) syncIntervalChanges(ctx context.Context, proj *projectSync) (some bool, err error) {
 	b := c.db.Batch()
-	defer b.Apply()
+	defer func() {
+		b.Apply()
+		c.db.Flush()
+	}()
 
 	// When we need to fetch multiple lists of changes,
 	// concurrent modifications can cause us to see the
 	// same change more than once. Keep track of the changes
 	// we've already seen.
-	seen := make(map[int]json.RawMessage)
-
-	// We see the changes from newest to oldest.
-	// Update the sync time if we get through
-	// all of them with no error.
-	lastUpdate := ""
-	defer func() {
-		if err == nil && lastUpdate != "" {
-			proj.SyncDate = lastUpdate
-			proj.store(c.db)
-		}
-	}()
-
-	for change, err := range c.changes(ctx, proj.Name, proj.SyncDate) {
-		if err != nil {
-			return err
-		}
-		if err := ctx.Err(); err != nil {
-			return err
-		}
-
-		if c.flushRequested.Load() {
-			// Flush database.
-			b.Apply()
-			c.db.Flush()
-			c.flushRequested.Store(false)
-		}
-
-		if lastUpdate == "" {
-			// Save the update time of the most recent
-			// change to record in the project sync.
-			var updated struct {
-				Updated string `json:"updated"`
-			}
-			if err := json.Unmarshal(change, &updated); err != nil {
-				return err
-			}
-			lastUpdate = updated.Updated
-		}
-
-		// Change is a Gerrit ChangeInfo in JSON form.
-		// Pull out the change number.
-		var num struct {
-			Number int    `json:"_number"`
-			MetaID string `json:"meta_rev_id"`
-		}
-		if err := json.Unmarshal(change, &num); err != nil {
-			return err
-		}
-		changeNum := num.Number
-		metaID := num.MetaID
-		if changeNum == 0 {
-			return fmt.Errorf("missing _number field in %q", change)
-		}
-		if metaID == "" {
-			return fmt.Errorf("missing meta_rev_id field in change %d: %q", changeNum, change)
-		}
-
-		if oldChange, ok := seen[changeNum]; ok {
+	cache := make(map[int]json.RawMessage)
+	seen := func(change json.RawMessage, changeNum int, metaID string) (bool, error) {
+		if oldChange, ok := cache[changeNum]; ok {
 			same, err := sameChangeInfo(change, metaID, oldChange)
 			if err != nil {
-				return err
+				return false, err
 			}
 			if same {
 				// Nothing has changed.
-				continue
+				return true, nil
 			}
 		}
-
-		seen[changeNum] = change
+		cache[changeNum] = change
 
 		key := o(changeKind, c.instance, proj.Name, changeNum)
 		if oldChange, ok := c.db.Get(key); ok {
 			same, err := sameChangeInfo(change, metaID, oldChange)
 			if err != nil {
-				return err
+				return false, err
 			}
 			if same {
 				// Nothing has changed.
-				continue
+				return true, nil
+			}
+		}
+		return false, nil
+	}
+
+	saveCurrentMark := func(curr string, skip int) {
+		proj.CurrentMark = curr
+		proj.Skip = skip
+		proj.store(c.db)
+	}
+
+	for {
+		nChanges := 0
+		for change, err := range c.changes(ctx, proj.Name, proj.LowMark, proj.CurrentMark, proj.Skip) {
+			if err != nil {
+				return false, err
+			}
+			if err := ctx.Err(); err != nil {
+				return false, err
+			}
+			some = true
+
+			if nChanges == testInterrupt { // for testing purposes only
+				return false, errors.New("test interrupt error")
+			}
+			nChanges++
+
+			if c.flushRequested.Load() {
+				// Flush database.
+				b.Apply()
+				c.db.Flush()
+				c.flushRequested.Store(false)
+			}
+
+			// Change is a Gerrit ChangeInfo in JSON form.
+			// Pull out the change number.
+			var num struct {
+				Number int    `json:"_number"`
+				MetaID string `json:"meta_rev_id"`
+			}
+			if err := json.Unmarshal(change, &num); err != nil {
+				return false, err
+			}
+			changeNum := num.Number
+			metaID := num.MetaID
+			if changeNum == 0 {
+				return false, fmt.Errorf("missing _number field in %q", change)
+			}
+			if metaID == "" {
+				return false, fmt.Errorf("missing meta_rev_id field in change %d: %q", changeNum, change)
+			}
+
+			same, err := seen(change, changeNum, metaID)
+			if err != nil {
+				return false, err
+			}
+			if !same {
+				key := o(changeKind, c.instance, proj.Name, changeNum)
+				b.Set(key, change)
+				if err := c.syncComments(ctx, b, proj.Name, changeNum); err != nil {
+					return false, err
+				}
+
+				// Record that the change was updated.
+				timed.Set(c.db, b, changeUpdateKind, o(c.instance, changeNum, metaID), nil)
+			}
+
+			b.MaybeApply()
+
+			// Save the update time of the most recent
+			// change to proj.CurrentMark only once we
+			// have successfully processed the change.
+			var updated struct {
+				Updated string `json:"updated"`
+			}
+			if err := json.Unmarshal(change, &updated); err != nil {
+				return false, err
+			}
+			// Gerrit intervals are inclusive. Update proj.Skip
+			// to avoid re-fetching processeed change updates
+			// happening at the same gerrit timestamp at the
+			// boundaries of the outter loop.
+			if updated.Updated == proj.CurrentMark {
+				saveCurrentMark(updated.Updated, proj.Skip+1)
+			} else {
+				saveCurrentMark(updated.Updated, 1)
+			}
+
+			// Flush progress to the database occasionally
+			// to make sure it is saved before interruption.
+			if nChanges%100 == 0 {
+				b.Apply()
+				c.db.Flush()
 			}
 		}
 
-		b.Set(key, change)
-		if err := c.syncComments(ctx, b, proj.Name, changeNum); err != nil {
-			return err
+		// There were no changes in the interval [proj.LowMark, proj.CurrentMark],
+		// which means we are done with the interval.
+		if nChanges == 0 {
+			return some, nil
 		}
-
-		// Record that the change was updated.
-		timed.Set(c.db, b, changeUpdateKind, o(c.instance, changeNum, metaID), nil)
-
-		b.MaybeApply()
 	}
 
-	return nil
+	return some, nil
 }
 
 // syncComments updates the comments of a change in the database.
@@ -304,83 +423,53 @@ func (c *Client) syncComments(ctx context.Context, b storage.Batch, project stri
 	return nil
 }
 
-// testBefore exists for testing purposes, to only pull changes before
-// some time. For ordinary use this should be the empty string.
-var testBefore string
+const gerritQueryLimit = 500 // gerrit returns up to 500 changes at a time.
 
-// changes returns an iterator over changes in the Gerrit repo.
-// If date is not the empty string, changes only returns changes
-// that were updated after date.
-func (c *Client) changes(ctx context.Context, project, date string) iter.Seq2[json.RawMessage, error] {
+// changes returns an iterator, in reverse chronological order, over
+// at most gerritQueryLimit changes in the Gerrit repo most recently
+// updated in the interval [before, after]. The first skip number of
+// changes matching the criteria are disregarded.
+// Empty strings for before and after indicate open interval.
+func (c *Client) changes(ctx context.Context, project, after, before string, skip int) iter.Seq2[json.RawMessage, error] {
 	return func(yield func(json.RawMessage, error) bool) {
 		baseURL := "https://" + c.instance + "/changes"
 
-		// Gerrit returns up to 500 changes at a time.
-		// Gerrit provides a way to skip leading changes,
-		// by passing an S parameter.
-		// Unfortunately, S only works up to a value of 10,000.
-		// Beyond that Gerrit returns no changes.
-		// So to get all the changes we have to ask for changes
-		// before some time.
-		before := testBefore
+		values := url.Values{
+			"o": changeOpts,
+		}
+		query := "p:" + project
+		if after != "" {
+			query += " after:" + quote(after) // precise timestamps have spaces and need quotes
+		}
+		if before != "" {
+			query += " before:" + quote(before) // precise timestamps have spaces and need quotes
+		}
+		query += " limit:" + strconv.Itoa(gerritQueryLimit)
+		values.Set("q", query)
+		if skip > 0 {
+			values.Set("S", strconv.Itoa(skip))
+		}
+		addr := baseURL + "?" + values.Encode()
 
-		for {
-			values := url.Values{
-				"o": changeOpts,
-			}
-			query := "p:" + project
-			if date != "" {
-				query += " after:" + date
-			}
-			if before != "" {
-				query += " before:" + before
-			}
-			values.Set("q", query)
-			addr := baseURL + "?" + values.Encode()
+		var body []json.RawMessage
+		if err := c.get(ctx, addr, &body); err != nil {
+			yield(nil, err)
+			return
+		}
 
-			var body []json.RawMessage
-			if err := c.get(ctx, addr, &body); err != nil {
-				yield(nil, err)
+		for _, change := range body {
+			if !yield(change, nil) {
 				return
 			}
-
-			if len(body) == 0 {
-				return
-			}
-
-			// If the last element in body has a
-			// _more_changes field, then skip it this time,
-			// and pick it up next time with a before query.
-			var more struct {
-				MoreChanges bool   `json:"_more_changes"`
-				Updated     string `json:"updated"`
-			}
-			last := body[len(body)-1]
-			if err := json.Unmarshal(last, &more); err != nil {
-				yield(nil, err)
-				return
-			}
-			if more.MoreChanges {
-				if len(body) == 1 {
-					yield(nil, errors.New("single change has _more_changes set"))
-				}
-				body = body[:len(body)-1]
-			}
-
-			for _, change := range body {
-				if !yield(change, nil) {
-					return
-				}
-			}
-
-			if !more.MoreChanges {
-				return
-			}
-
-			// Fortunately the before query is inclusive.
-			before = more.Updated
 		}
 	}
+}
+
+func quote(t string) string {
+	if _, err := strconv.Unquote(t); err != nil { // missing quotes
+		return strconv.Quote(t)
+	}
+	return t
 }
 
 // sameChangeInfo reports whether two ChangeInfo structures,

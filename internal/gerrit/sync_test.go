@@ -9,6 +9,7 @@ import (
 	"maps"
 	"net/http"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -38,8 +39,8 @@ func TestSync(t *testing.T) {
 
 	// Only look at changes before a certain date, so that we
 	// don't get too much data.
-	testBefore = "2016-08-01"
-	defer func() { testBefore = "" }()
+	testNow = "2016-08-01"
+	defer func() { testNow = "" }()
 
 	check(c.Sync(ctx))
 
@@ -74,7 +75,7 @@ func TestSync(t *testing.T) {
 
 	// Now pretend that we are running later, and do an incremental update.
 
-	testBefore = "2016-12-01"
+	testNow = "2016-12-01"
 	rr, err = httprr.Open("testdata/sync2.httprr", http.DefaultTransport)
 	check(err)
 
@@ -96,6 +97,59 @@ func TestSync(t *testing.T) {
 	wantCLs = []int{30292}
 	if !slices.Equal(gotCLs, wantCLs) {
 		t.Errorf("incremental update got %v, want %v", gotCLs, wantCLs)
+	}
+}
+
+// TestSyncInterrupt checks that [Client.Sync] properly restarts
+// after an interruption.
+func TestSyncInterrupt(t *testing.T) {
+	check := testutil.Checker(t)
+	lg := testutil.Slogger(t)
+	db := storage.MemDB()
+	ctx := context.Background()
+
+	cls := func(c *Client) []int {
+		var cs []int
+		for changeNum, _ := range c.ChangeNumbers(project) {
+			cs = append(cs, changeNum)
+		}
+		return cs
+	}
+
+	rr, err := httprr.Open("testdata/sync-interrupt.httprr", http.DefaultTransport)
+	check(err)
+	sdb := secret.Empty()
+	c := New("go-review.googlesource.com", lg, db, sdb, rr.Client())
+
+	check(c.Add(project))
+
+	// Only look at changes before a certain date, so that we
+	// don't get too much data.
+	testNow = "2016-08-01"
+	defer func() { testNow = "" }()
+
+	// Interrupt listing changes after seeing a single change.
+	testInterrupt = 1
+	if err := c.Sync(ctx); err == nil || !strings.Contains(err.Error(), "test interrupt error") {
+		t.Errorf("want test interrupt error; got %v", err)
+	}
+	gotCLs := cls(c)
+	wantCLs := []int{24962}
+	if !slices.Equal(gotCLs, wantCLs) {
+		t.Errorf("got CLs %v, want %v", gotCLs, wantCLs)
+	}
+
+	rr, err = httprr.Open("testdata/sync2-interrupt.httprr", http.DefaultTransport)
+	check(err)
+	c = New("go-review.googlesource.com", lg, db, sdb, rr.Client())
+
+	// Proceed without interruption.
+	testInterrupt = -1
+	check(c.Sync(ctx))
+	gotCLs = cls(c)
+	wantCLs = []int{24894, 24907, 24961, 24962}
+	if !slices.Equal(gotCLs, wantCLs) {
+		t.Errorf("got CLs %v, want %v", gotCLs, wantCLs)
 	}
 }
 
