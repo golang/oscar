@@ -29,7 +29,7 @@ type Embedder interface {
 
 // An EmbedDoc is a single document to be embedded.
 type EmbedDoc struct {
-	Title string // title of document
+	Title string // title of document (optional)
 	Text  string // text of document
 }
 

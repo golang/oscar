@@ -36,7 +36,10 @@ func (g *Gaby) doSearch(r *http.Request) ([]byte, error) {
 	}
 	if page.Query != "" {
 		var err error
-		page.Results, err = search.Search(r.Context(), g.vector, g.docs, g.embed, &search.Request{EmbedDoc: llm.EmbedDoc{Text: page.Query}})
+		page.Results, err = search.Query(r.Context(), g.vector, g.docs, g.embed,
+			&search.QueryRequest{
+				EmbedDoc: llm.EmbedDoc{Text: page.Query},
+			})
 		if err != nil {
 			return nil, err
 		}
@@ -94,14 +97,14 @@ var searchPageTmpl = template.Must(template.New("").Parse(`
 `))
 
 func (g *Gaby) handleSearchAPI(w http.ResponseWriter, r *http.Request) {
-	sreq, err := readJSONBody[search.Request](r)
+	sreq, err := readJSONBody[search.QueryRequest](r)
 	if err != nil {
 		// The error could also come from failing to read the body, but then the
 		// connection is probably broken so it doesn't matter what status we send.
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	sres, err := search.Search(r.Context(), g.vector, g.docs, g.embed, sreq)
+	sres, err := search.Query(r.Context(), g.vector, g.docs, g.embed, sreq)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

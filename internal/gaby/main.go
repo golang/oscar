@@ -36,6 +36,7 @@ import (
 	"golang.org/x/oscar/internal/llm"
 	"golang.org/x/oscar/internal/pebble"
 	"golang.org/x/oscar/internal/related"
+	"golang.org/x/oscar/internal/search"
 	"golang.org/x/oscar/internal/secret"
 	"golang.org/x/oscar/internal/storage"
 	"golang.org/x/oscar/internal/storage/timed"
@@ -257,17 +258,19 @@ func (g *Gaby) searchLoop() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	vecs, err := g.embed.EmbedDocs(context.Background(), []llm.EmbedDoc{{Title: "", Text: string(data)}})
+
+	rs, err := search.Query(context.Background(), g.vector, g.docs, g.embed, &search.QueryRequest{
+		Options: search.Options{
+			Limit: 20,
+		},
+		EmbedDoc: llm.EmbedDoc{Text: string(data)},
+	})
 	if err != nil {
 		log.Fatal(err)
 	}
-	vec := vecs[0]
-	for _, r := range g.vector.Search(vec, 20) {
-		title := "?"
-		if d, ok := g.docs.Get(r.ID); ok {
-			title = d.Title
-		}
-		fmt.Printf(" %.5f %s # %s\n", r.Score, r.ID, title)
+
+	for _, r := range rs {
+		fmt.Printf(" %.5f %s # %s\n", r.Score, r.ID, r.Title)
 	}
 }
 

@@ -20,49 +20,75 @@ import (
 	"golang.org/x/oscar/internal/storage"
 )
 
-// Request is a [Search] request.
+// QueryRequest is a [Query] request.
 // It includes the document to search for neighbors of, and
 // (optional) result filters.
-type Request struct {
-	Threshold float64 // lowest score to keep; default 0. Max is 1.
-	Limit     int     // max results (fewer if Threshold is set); 0 means use a fixed default
+type QueryRequest struct {
+	Options
 	llm.EmbedDoc
 }
 
-// Result is a [Search] result.
+// Options are the results filters that can be passed to the search
+// functions as part of a [QueryRequest] or [VectorRequest].
+type Options struct {
+	Threshold float64 // lowest score to keep; default 0. Max is 1.
+	Limit     int     // max results (fewer if Threshold is set); 0 means use a fixed default
+}
+
+// Result is a single result of a search ([Query] or [Vector]).
 // It represents a single document in a vector database which is a
-// nearest neighbor of a [Request]'s document.
+// nearest neighbor of the request.
 type Result struct {
 	Kind  string // kind of document: issue, doc page, etc.
 	Title string
 	storage.VectorResult
 }
 
-// Search performs a nearest neighbors search for the request's document
-// over the given vector database, respecting the filters set in [Request].
+// Query performs a nearest neighbors search for the request's document
+// over the given vector database, respecting the options set in [QueryRequest].
 //
-// It embeds the request onto the vector space using the given embedder.
+// It embeds the request's document onto the vector space using the given embedder.
 //
 // It expects that vdb is a vector database containing embeddings of
 // the documents in dc, embedded using embed.
-func Search(ctx context.Context, vdb storage.VectorDB, dc *docs.Corpus, embed llm.Embedder, req *Request) ([]Result, error) {
+func Query(ctx context.Context, vdb storage.VectorDB, dc *docs.Corpus, embed llm.Embedder, req *QueryRequest) ([]Result, error) {
 	vecs, err := embed.EmbedDocs(ctx, []llm.EmbedDoc{req.EmbedDoc})
 	if err != nil {
 		return nil, fmt.Errorf("EmbedDocs: %w", err)
 	}
 	vec := vecs[0]
+	return vector(vdb, dc, vec, &req.Options), nil
+}
 
+// VectorRequest is a [Vector] request.
+// It includes the vector to search for neighbors of, and
+// (optional) result filters.
+type VectorRequest struct {
+	Options
+	llm.Vector
+}
+
+// Vector performs a nearest neighbors search for the request's vector
+// over the given vector database, respecting the options set in [VectorRequest].
+//
+// It expects that vdb is a vector database containing embeddings of
+// the documents in dc, embedded using the same embedder used to create
+// the request's vector.
+func Vector(vdb storage.VectorDB, dc *docs.Corpus, req *VectorRequest) []Result {
+	return vector(vdb, dc, req.Vector, &req.Options)
+}
+
+func vector(vdb storage.VectorDB, dc *docs.Corpus, vec llm.Vector, opts *Options) []Result {
 	limit := defaultLimit
-	if req.Limit > 0 {
-		limit = req.Limit
+	if opts.Limit > 0 {
+		limit = opts.Limit
 	}
 	// Search uses normalized dot product, so higher numbers are better.
 	// Max is 1, min is 0.
 	threshold := 0.0
-	if req.Threshold > 0 {
-		threshold = req.Threshold
+	if opts.Threshold > 0 {
+		threshold = opts.Threshold
 	}
-
 	var srs []Result
 	for _, r := range vdb.Search(vec, limit) {
 		if r.Score < threshold {
@@ -78,7 +104,7 @@ func Search(ctx context.Context, vdb storage.VectorDB, dc *docs.Corpus, embed ll
 			VectorResult: r,
 		})
 	}
-	return srs, nil
+	return srs
 }
 
 // Round rounds r.Score to three decimal places.

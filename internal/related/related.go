@@ -15,6 +15,7 @@ import (
 
 	"golang.org/x/oscar/internal/docs"
 	"golang.org/x/oscar/internal/github"
+	"golang.org/x/oscar/internal/search"
 	"golang.org/x/oscar/internal/storage"
 	"golang.org/x/oscar/internal/storage/timed"
 	"rsc.io/ordered"
@@ -281,21 +282,23 @@ func issueURL(project string, issue int64) string {
 // p.scoreCutoff and trims the results list to a max length of p.maxResults.
 // It expects that there is already an entry for the url in the vector
 // database, and returns ok=false if there is no such entry.
-func (p *Poster) search(u string) (_ []storage.VectorResult, ok bool) {
+func (p *Poster) search(u string) (_ []search.Result, ok bool) {
 	vec, ok := p.vdb.Get(u)
 	if !ok {
 		return nil, false
 	}
-	results := p.vdb.Search(vec, p.maxResults+5)
+	results := search.Vector(p.vdb, p.docs, &search.VectorRequest{
+		Options: search.Options{
+			Threshold: p.scoreCutoff,
+			Limit:     p.maxResults + 5, // add a buffer for filters
+		},
+		Vector: vec,
+	})
+	// Remove the query itself if present.
 	if len(results) > 0 && results[0].ID == u {
 		results = results[1:]
 	}
-	for i, r := range results {
-		if r.Score < p.scoreCutoff {
-			results = results[:i]
-			break
-		}
-	}
+	// Trim length.
 	if len(results) > p.maxResults {
 		results = results[:p.maxResults]
 	}
@@ -304,13 +307,13 @@ func (p *Poster) search(u string) (_ []storage.VectorResult, ok bool) {
 
 // comment returns the comment to post to GitHub for the given related
 // issues.
-func (p *Poster) comment(results []storage.VectorResult) string {
+func (p *Poster) comment(results []search.Result) string {
 	var comment strings.Builder
 	fmt.Fprintf(&comment, "**Related Issues and Documentation**\n\n")
 	for _, r := range results {
 		title := r.ID
-		if d, ok := p.docs.Get(r.ID); ok {
-			title = d.Title
+		if r.Title != "" {
+			title = r.Title
 		}
 		info := ""
 		if issue, err := p.github.LookupIssueURL(r.ID); err == nil {

@@ -49,23 +49,33 @@ func TestSearch(t *testing.T) {
 		id := fmt.Sprintf("id%d", i)
 		doc := llm.EmbedDoc{Title: fmt.Sprintf("title%d", i), Text: fmt.Sprintf("text-%s", strings.Repeat("x", i))}
 		corpus.Add(id, doc.Title, doc.Text)
-		vec, err := embedder.EmbedDocs(ctx, []llm.EmbedDoc{doc})
-		if err != nil {
-			t.Fatal(err)
-		}
-		vdb.Set(id, vec[0])
+		vec := mustEmbed(t, embedder, doc)
+		vdb.Set(id, vec)
 	}
-	sreq := &Request{
+	opts := Options{
 		Threshold: 0,
 		Limit:     2,
-		EmbedDoc:  llm.EmbedDoc{Title: "title3", Text: "text-xxx"},
 	}
-	sres, err := Search(ctx, vdb, corpus, embedder, sreq)
+	doc := llm.EmbedDoc{Title: "title3", Text: "text-xxx"}
+	qreq := &QueryRequest{
+		Options:  opts,
+		EmbedDoc: doc,
+	}
+	gotQ, err := Query(ctx, vdb, corpus, embedder, qreq)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for i := range sres {
-		sres[i].Round()
+	for i := range gotQ {
+		gotQ[i].Round()
+	}
+
+	vreq := &VectorRequest{
+		Options: opts,
+		Vector:  mustEmbed(t, embedder, doc),
+	}
+	gotV := Vector(vdb, corpus, vreq)
+	for i := range gotV {
+		gotV[i].Round()
 	}
 
 	want := []Result{
@@ -81,28 +91,47 @@ func TestSearch(t *testing.T) {
 		},
 	}
 
-	if !slices.Equal(sres, want) {
-		t.Errorf("got  %v\nwant %v", sres, want)
+	if !slices.Equal(gotQ, want) {
+		t.Errorf("Query: got  %v\nwant %v", gotQ, want)
 	}
 
-	sreq.Threshold = 0.9
-	sres, err = Search(ctx, vdb, corpus, embedder, sreq)
+	if !slices.Equal(gotV, want) {
+		t.Errorf("Vector: got  %v\nwant %v", gotQ, want)
+	}
+
+	qreq.Threshold = 0.9
+	gotQ, err = Query(ctx, vdb, corpus, embedder, qreq)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(sres) != 1 {
-		t.Errorf("got %d results, want 1", len(sres))
+	if len(gotQ) != 1 {
+		t.Errorf("got %d results, want 1", len(gotQ))
 	}
+
+	vreq.Threshold = 0.9
+	gotV = Vector(vdb, corpus, vreq)
+	if len(gotV) != 1 {
+		t.Errorf("got %d results, want 1", len(gotQ))
+	}
+}
+
+func mustEmbed(t *testing.T, embedder llm.Embedder, doc llm.EmbedDoc) llm.Vector {
+	t.Helper()
+	vec, err := embedder.EmbedDocs(context.Background(), []llm.EmbedDoc{doc})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return vec[0]
 }
 
 func TestSearchJSON(t *testing.T) {
 	// Confirm that we can unmarshal a search request, and marshal a response.
 	postBody := `{"Limit": 10, "Threshold": 0.8, "Title": "t", "Text": "text"}`
-	var gotReq Request
+	var gotReq QueryRequest
 	if err := json.Unmarshal([]byte(postBody), &gotReq); err != nil {
 		t.Fatal(err)
 	}
-	wantReq := Request{Limit: 10, Threshold: 0.8, EmbedDoc: llm.EmbedDoc{Title: "t", Text: "text"}}
+	wantReq := QueryRequest{Options: Options{Limit: 10, Threshold: 0.8}, EmbedDoc: llm.EmbedDoc{Title: "t", Text: "text"}}
 	if gotReq != wantReq {
 		t.Errorf("got %+v, want %+v", gotReq, wantReq)
 	}
