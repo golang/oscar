@@ -184,6 +184,10 @@ type ChangeInfo struct {
 	// TrackingIDs []TrackingIDInfo `json:"tracking_ids,omitempty"`
 	// Problems []ProblemInfo `json:"problems,omitempty"`
 	// ContainsGitConflicts bool `json:"contains_git_conflicts,omitempty"`
+
+	// The following fields are used for testing purposes only.
+
+	interrupt bool // fake an interruption right after this change
 }
 
 // AccountInfo contains information about an account.

@@ -98,7 +98,8 @@ type Client struct {
 
 	ac accountCache
 
-	testing bool
+	testing    bool
+	testClient *TestingClient
 }
 
 // New returns a new client to access a Gerrit instance
@@ -254,12 +255,6 @@ func (c *Client) syncChanges(ctx context.Context, proj *projectSync) (err error)
 // definition of now?
 var testNow string
 
-// testInterrupt designates the number of times
-// the main loop in [Client.syncIntervalChanges]
-// executes before being interrupted. Used only
-// during testing.
-var testInterrupt = -1
-
 // now returns current time in gerrit time format.
 func now() string {
 	if testNow != "" {
@@ -324,11 +319,8 @@ func (c *Client) syncIntervalChanges(ctx context.Context, proj *projectSync) (so
 			if err := ctx.Err(); err != nil {
 				return false, err
 			}
-			some = true
 
-			if nChanges == testInterrupt { // for testing purposes only
-				return false, errors.New("test interrupt error")
-			}
+			some = true
 			nChanges++
 
 			if c.flushRequested.Load() {
@@ -412,6 +404,10 @@ func (c *Client) syncIntervalChanges(ctx context.Context, proj *projectSync) (so
 
 // syncComments updates the comments of a change in the database.
 func (c *Client) syncComments(ctx context.Context, b storage.Batch, project string, changeNum int) error {
+	if c.divertChanges() { // testing
+		return c.testClient.syncComments(ctx, b, project, changeNum)
+	}
+
 	url := "https://" + c.instance + "/changes/" + strconv.Itoa(changeNum) + "/comments"
 	var obj json.RawMessage
 	if err := c.get(ctx, url, &obj); err != nil {
@@ -431,6 +427,10 @@ const gerritQueryLimit = 500 // gerrit returns up to 500 changes at a time.
 // changes matching the criteria are disregarded.
 // Empty strings for before and after indicate open interval.
 func (c *Client) changes(ctx context.Context, project, after, before string, skip int) iter.Seq2[json.RawMessage, error] {
+	if c.divertChanges() { // testing
+		return c.testClient.changes(ctx, project, after, before, skip)
+	}
+
 	return func(yield func(json.RawMessage, error) bool) {
 		baseURL := "https://" + c.instance + "/changes"
 
