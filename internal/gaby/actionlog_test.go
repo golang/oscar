@@ -6,9 +6,15 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"strings"
 	"testing"
 	"time"
+
+	"golang.org/x/oscar/internal/actions"
+	"golang.org/x/oscar/internal/storage"
+	"golang.org/x/oscar/internal/testutil"
+	"rsc.io/ordered"
 )
 
 func TestTimeOrDuration(t *testing.T) {
@@ -92,7 +98,15 @@ func TestTimes(t *testing.T) {
 func TestActionTemplate(t *testing.T) {
 	var buf bytes.Buffer
 	page := actionLogPage{
-		Start: endpoint{DurNum: "3", DurUnit: "days"},
+		Start:     endpoint{DurNum: "3", DurUnit: "days"},
+		StartTime: "whatevs",
+		Entries: []*actions.Entry{
+			{
+				Created: time.Now(),
+				Key:     ordered.Encode("P", 22),
+				Action:  []byte(`{"Project": "P", "Issue":22, "Fix": "fix"}`),
+			},
+		},
 	}
 	if err := actionLogPageTmpl.Execute(&buf, page); err != nil {
 		t.Fatal(err)
@@ -100,6 +114,8 @@ func TestActionTemplate(t *testing.T) {
 	got := buf.String()
 	wants := []string{
 		`<option value="days" selected>days</option>`,
+		`Project`,
+		`Issue`,
 	}
 	for _, w := range wants {
 		if !strings.Contains(got, w) {
@@ -108,5 +124,23 @@ func TestActionTemplate(t *testing.T) {
 	}
 	if t.Failed() {
 		t.Log(got)
+	}
+}
+
+func TestActionsBetween(t *testing.T) {
+	db := storage.MemDB()
+	g := &Gaby{slog: testutil.Slogger(t), db: db}
+	before := actions.Register("actionlog", func(context.Context, []byte) ([]byte, error) {
+		return nil, nil
+	})
+	start := time.Now()
+	before(db, []byte{1}, nil, false)
+	end := time.Now()
+	time.Sleep(100 * time.Millisecond)
+	before(db, []byte{2}, nil, false)
+
+	got := g.actionsBetween(start, end)
+	if len(got) != 1 {
+		t.Errorf("got %d entries, want 1", len(got))
 	}
 }

@@ -7,14 +7,17 @@ package main
 import (
 	"bytes"
 	"embed"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
 	"time"
 
+	"github.com/google/safehtml"
 	"github.com/google/safehtml/template"
 	"golang.org/x/oscar/internal/actions"
+	"golang.org/x/oscar/internal/storage"
 )
 
 // actionLogPage is the data for the action log HTML template.
@@ -53,8 +56,10 @@ func (g *Gaby) doActionLog(r *http.Request) (content []byte, status int, err err
 		return nil, http.StatusBadRequest, err
 	}
 
-	// Display a table heading, but only if something was set.
+	// Retrieve and display entries if something was set.
 	if r.FormValue("start") != "" {
+		page.Entries = g.actionsBetween(startTime, endTime)
+
 		if startTime.IsZero() {
 			page.StartTime = "the beginning of time"
 		} else {
@@ -169,6 +174,42 @@ func (e *endpoint) timeOrDuration(now time.Time) (time.Time, time.Duration, erro
 	}
 }
 
+// actionsBetween returns the action entries between start and end, inclusive.
+func (g *Gaby) actionsBetween(start, end time.Time) []*actions.Entry {
+	var es []*actions.Entry
+	// Scan entries created in [start, end].
+	for e := range actions.ScanAfter(g.slog, g.db, start.Add(-time.Nanosecond), nil) {
+		if e.Created.After(end) {
+			break
+		}
+		es = append(es, e)
+	}
+	return es
+}
+
+// fmtTime formats a time for display on the action log page.
+func fmtTime(t time.Time) string {
+	if t.IsZero() {
+		return "-"
+	}
+	return t.Format(time.DateTime)
+}
+
+// fmtValue tries to produce a readable string from a []byte.
+// If the slice contains JSON, it displays it as a multi-line indented string.
+// Otherwise it simply converts the []byte to a string.
+func fmtValue(b []byte) string {
+	var m map[string]any
+	if err := json.Unmarshal(b, &m); err != nil {
+		return string(b)
+	}
+	r, err := json.MarshalIndent(m, "", "  ")
+	if err != nil {
+		return fmt.Sprintf("ERROR: %s", err)
+	}
+	return string(r)
+}
+
 // Embed the action template into the binary.
 // We must use the FS form in order to make it trusted with the
 // github.com/google/safehtml/template API.
@@ -180,4 +221,12 @@ const actionLogTmplFile = "actionlog.tmpl"
 
 // The template name must match the filename.
 var actionLogPageTmpl = template.Must(template.New(actionLogTmplFile).
+	Funcs(template.FuncMap{
+		"fmttime": fmtTime,
+		"fmtkey":  func(key []byte) string { return storage.Fmt(key) },
+		"fmtval":  fmtValue,
+		"safeid": func(s string) safehtml.Identifier {
+			return safehtml.IdentifierFromConstantPrefix("id", s)
+		},
+	}).
 	ParseFS(template.TrustedFSFromEmbed(actionLogFS), actionLogTmplFile))

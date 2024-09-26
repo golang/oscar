@@ -9,7 +9,18 @@ license that can be found in the LICENSE file.
     <title>Oscar Action Log</title>
     <style>
       body { font-family: sans-serif }
+      thead { background-color: rgb(220, 220, 220)}
     </style>
+    <script>
+      // Toggle the hidden state of a row containing the action.
+      // Also change the button label accordingly..
+      function toggleAction(event) {
+        let row = document.getElementById(event.target.dataset.rowid);
+        row.hidden = !row.hidden;
+        // event.target is the button.
+        event.target.value = row.hidden? 'Show': 'Hide';
+      }
+    </script>
   </head>
   <body>
     <h1>Action Log Viewer</h1>
@@ -18,6 +29,11 @@ license that can be found in the LICENSE file.
 		<table>
 		  <tr>
 		    <td>
+              {{- /* Resist the temptation to factor out the endpoint controls into
+                     a single template. That will require that id values are substituted
+                     in, which causes safehtml to complain that they aren't safe identifiers.
+                     It ends up being more complicated than it's worth.
+              */ -}}
               <fieldset>
                 <legend>Start</legend>
                 <div>
@@ -76,8 +92,43 @@ license that can be found in the LICENSE file.
 
     {{if .StartTime}}
       <h2>Action Log from {{.StartTime}} to {{.EndTime}}</h2>
-    {{end}}
 
+      {{with .Entries}}
+      <table>
+        <thead>
+          <tr>
+            <th>Created</th>
+            <th>Kind</th>
+            <th>Key</th>
+            <th>Action</th>
+            <th>Done</th>
+            <th>Result</th>
+            <th>Error</th>
+          </tr>
+        </thead>
+        {{range $i, $e := .}}
+          <tr>
+            <td>{{$e.Created | fmttime}}</td>
+            <td>{{$e.Kind}}</td>
+            <td>{{$e.Key | fmtkey}}</td>
+            <td>
+              {{- /* clicking the button shows/hides the action on the following row */ -}}
+              <input type="button" value="Show"
+                     data-rowid="id-action-{{$i}}"
+                     onclick="toggleAction(event)"/>
+            </td>
+            <td>{{$e.Done | fmttime}}</td>
+            <td>{{$e.Result | fmtval}}</td>
+            <td>{{$e.Error}}</td>
+          </tr>
+          <tr id="{{(print "action-" $i) | safeid}}" hidden="true"><td colspan="7">
+            <td>{{$e.Action | fmtval}}</td>
+          <tr>
+        {{end}}
+      {{else}}
+        No entries.
+      {{end}}
+    {{end}}
    </body>
 </html>
 
