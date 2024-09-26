@@ -61,16 +61,52 @@ var searchPageTmpl = template.Must(template.New("search").Parse(`
 <html>
   <head>
     <title>Oscar Search</title>
+	<style>
+	body {
+		font-family: sans-serif;
+		font-size: 1em;
+		color: #3e4042;
+	}
+	.header {
+		display: block;
+	}
+	span.title a {
+		font-weight: bold;
+		font-size: 1.1em;
+		color: #3e4042;
+	}
+	.kind,.score {
+		color: #6e7072;
+		font-size: .75em;
+	}
+	a {
+		color: #007d9c;
+		text-decoration: none;
+	}
+	a:hover {
+		text-decoration: underline;
+	}
+	div.result span {
+		display: block;
+		padding-bottom: .05em;
+	}
+	div.result {
+		padding-bottom: 1em;
+	}
+	div.section {
+		padding: 0em 2em 1em 1em;
+	}
+	</style>
   </head>
   <body>
-    <h1>Gaby search</h1>
-    <p>Search Gaby's database of GitHub issues and Go documentation.</p>
-    <form id="form" action="/search" method="GET">
-      <input type="text" name="q" value="{{.Query}}" required autofocus />
-      <input type="submit" value="Search"/>
-    </form>
-
-    <div id="working"></div>
+    <div class="section" class="header">
+	 <h1>Gaby search</h1>
+	 <p>Search Gaby's database of GitHub issues and Go documentation.</p>
+	 <form id="form" action="/search" method="GET">
+		<input type="text" name="q" value="{{.Query}}" required autofocus />
+		<input type="submit" value="search"/>
+	 </form>
+	</div>
 
     <script>
     const form = document.getElementById("form");
@@ -79,19 +115,30 @@ var searchPageTmpl = template.Must(template.New("search").Parse(`
     })
     </script>
 
+	<div class="section">
+	<div id="working"></div>
 	{{with .Results -}}
 	  {{- range . -}}
-	    <p>{{with .Title}}{{.}}: {{end -}}
+	    <div class="result">
 	    {{if .Kind -}}
-	      <a href="{{.ID}}">{{.ID}}</a>
+			 <span><a class="id" href="{{.ID}}">{{.ID}}</a></span>
+			{{if .Title -}}
+			 <span class="title"><a href="{{.ID}}">{{.Title}}</a></span>
+			{{end -}}
+			<span class="kind">type: {{.Kind}}</span>
 	    {{else -}}
-	      {{.ID -}}
+		  {{with .Title}}
+			<span class="title">>{{.}}</span>
+		  {{end -}}
+	      <span class="id">{{.ID -}}</span>
 	    {{end -}}
-	    {{" "}}({{.Score}})</p>
+	    <span class="score">similarity: <b>{{.Score}}</b><span>
+		</div>
 	  {{end}}
 	{{- else -}}
-	 {{if .Query}}No results.{{end}}
+	 {{if .Query}}<p>No results.</p>{{end}}
   	{{- end}}
+   </div>
   </body>
 </html>
 `))
