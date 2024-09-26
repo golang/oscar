@@ -22,7 +22,7 @@ type Change struct {
 
 // ChangeInfo returns a [ChangeInfo] holding almost all the information
 // about a [Change]. This does not include the file comments,
-// which can be retrieved using the [Change.Comments] method.
+// which can be retrieved using the [Client.Comments] method.
 func (c *Client) ChangeInfo(ch *Change) *ChangeInfo {
 	var ci ChangeInfo
 	c.unmarshal(ch, "change", &ci)
@@ -335,6 +335,17 @@ func (c *Client) ChangeHashtags(ch *Change) []string {
 	}
 	c.unmarshal(ch, "hashtags", &hashtags)
 	return hashtags.Hashtags
+}
+
+// ChangeCommentCounts returns the total number of comments and the
+// nmber of unresolved comments.
+func (c *Client) ChangeCommentCounts(ch *Change) (total, unresolved int) {
+	var counts struct {
+		TotalCommentCount      int `json:"total_comment_count"`
+		UnresolvedCommentCount int `json:"unresolved_comment_count"`
+	}
+	c.unmarshal(ch, "comment counts", &counts)
+	return counts.TotalCommentCount, counts.UnresolvedCommentCount
 }
 
 // unmarshal unmarshals ch.data into a value. If the unmarshal fails, it
