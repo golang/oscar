@@ -1,0 +1,64 @@
+/*
+Copyright 2024 The Go Authors. All rights reserved.
+Use of this source code is governed by a BSD-style
+license that can be found in the LICENSE file.
+*/
+.header {
+    display: block;
+}
+form span {
+    display: block;
+    padding-bottom: .2em
+}
+label {
+    display: inline-block;
+    width: 20%;
+    margin-right: .1em;
+}
+input {
+    display: inline-block;
+    width: 20%;
+}
+input.submit {
+    width: 10%;
+}
+.title,span.title a {
+    font-weight: bold;
+    font-size: 1.1em;
+    color: #3e4042;
+}
+.kind,.score {
+    color: #6e7072;
+    font-size: .75em;
+}
+p {
+    margin-top: .25em;
+    margin-bottom: .25em;
+}
+div.result span {
+    display: block;
+    padding-bottom: .05em;
+}
+div.result {
+    padding-bottom: 1em;
+}
+div.section {
+    padding: 0em 2em 1em 1em;
+}
+.filter-tips-box {
+    font-size: .75em;
+    padding-bottom: .5em;
+}
+.toggle {
+    font-weight: bold;
+     color: #007d9c;
+}
+.toggle:hover {
+    text-decoration: underline;
+}
+#filter-tips {
+    display: none;
+}
+.submit {
+    padding-top: .5em;
+}

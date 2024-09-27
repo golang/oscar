@@ -328,6 +328,9 @@ func (g *Gaby) newServer(report func(error)) *http.ServeMux {
 		fmt.Fprintf(w, "log level: %v\n", g.slogLevel.Level())
 	})
 
+	// serve static files
+	mux.Handle("GET /static/", http.FileServerFS(staticFS))
+
 	// setlevel changes the log level dynamically.
 	// Usage: /setlevel?l=LEVEL
 	mux.HandleFunc("GET /"+setLevelEndpoint, func(w http.ResponseWriter, r *http.Request) {

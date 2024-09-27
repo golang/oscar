@@ -1,0 +1,18 @@
+/*
+Copyright 2024 The Go Authors. All rights reserved.
+Use of this source code is governed by a BSD-style
+license that can be found in the LICENSE file.
+*/
+body {
+    font-family: sans-serif;
+    font-size: 1em;
+    color: #3e4042;
+}
+a {
+    color: #007d9c;
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}
+

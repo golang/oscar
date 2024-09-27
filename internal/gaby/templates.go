@@ -12,12 +12,15 @@ import (
 	"github.com/google/safehtml/template"
 )
 
-// Embed the templates into the binary.
+// Embed the templates and static files into the binary.
 // We must use the FS form in order to make them trusted with the
 // github.com/google/safehtml/template API.
 
 //go:embed tmpl/*.tmpl
 var tmplFS embed.FS
+
+//go:embed static/*
+var staticFS embed.FS
 
 const (
 	actionLogTmplFile  = "actionlog.tmpl"
