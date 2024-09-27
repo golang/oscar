@@ -103,12 +103,20 @@ type Entry struct {
 	Decisions        []Decision // approval decisions
 }
 
+// IsDone reports whether e is done.
+func (e *Entry) IsDone() bool {
+	return !e.Done.IsZero()
+}
+
 // A Decision describes the approval or denial of an action.
 type Decision struct {
 	Name     string    // name of person or system making the decision
 	Time     time.Time // time of the decision
 	Approved bool      // true if approved, false if denied
 }
+
+// RequiresApproval can be passed as the last argument to a [BeforeFunc] for clarity.
+const RequiresApproval = true
 
 // entry is the database representation of Entry.
 // Changes to this struct must still allow existing values from the database to be
@@ -179,12 +187,13 @@ func fromEntry(e *Entry) *entry {
 	return e2
 }
 
+// before adds an action to the db if it is not already present.
+// For more, see [BeforeFunc].
 func before(db storage.DB, actionKind string, key, action []byte, requiresApproval bool) bool {
-	dkey := dbKey(actionKind, key)
-	lock := string(dkey)
-	db.Lock(lock)
-	defer db.Unlock(lock)
+	unlock := lockAction(db, actionKind, key)
+	defer unlock()
 
+	dkey := dbKey(actionKind, key)
 	if _, ok := timed.Get(db, logKind, dkey); ok {
 		return false
 	}
@@ -215,11 +224,10 @@ func Get(db storage.DB, actionKind string, key []byte) (*Entry, bool) {
 // key and u.
 // It panics if the action does not exist or does not require approval.
 func AddDecision(db storage.DB, actionKind string, key []byte, d Decision) {
-	dkey := dbKey(actionKind, key)
-	lockName := logKind + "-" + string(dkey)
-	db.Lock(lockName)
-	defer db.Unlock(lockName)
+	unlock := lockAction(db, actionKind, key)
+	defer unlock()
 
+	dkey := dbKey(actionKind, key)
 	te, ok := timed.Get(db, logKind, dkey)
 	if !ok {
 		// unreachable unless program bug
@@ -375,7 +383,7 @@ func maybeRunEntry(ctx context.Context, lg *slog.Logger, db storage.DB, dkey []b
 	}
 	if !e.Done.IsZero() {
 		// This action was already run. It should have been removed from the pending list.
-		return fmt.Errorf("done action on pending list with key %s", storage.Fmt(dkey))
+		return fmt.Errorf("done action %s on pending list", storage.Fmt(dkey))
 	}
 	if !e.approved() {
 		return nil
@@ -413,6 +421,16 @@ func unmarshalTimedEntry(te *timed.Entry) *entry {
 	}
 	e.ModTime = te.ModTime
 	return &e
+}
+
+// lockAction locks the action with the given kind and key in db, and returns a function
+// that unlocks it.
+func lockAction(db storage.DB, actionKind string, key []byte) func() {
+	// This name must match the name used in maybeRunEntry and other functions
+	// that may not have the action kind.
+	name := logKind + "-" + string(dbKey(actionKind, key))
+	db.Lock(name)
+	return func() { db.Unlock(name) }
 }
 
 func getEntry(db storage.DB, dkey []byte) (*entry, bool) {

@@ -31,7 +31,7 @@ func TestDB(t *testing.T) {
 	)
 	t.Run("before", func(t *testing.T) {
 		db := storage.MemDB()
-		if !before(db, actionKind, key, action, false) {
+		if !before(db, actionKind, key, action, !RequiresApproval) {
 			t.Fatal("already added")
 		}
 		e, ok := Get(db, actionKind, key)
@@ -50,7 +50,7 @@ func TestDB(t *testing.T) {
 			t.Errorf("Before:\ngot  %+v\nwant %+v", e, want)
 		}
 
-		if before(db, actionKind, key, action, false) {
+		if before(db, actionKind, key, action, !RequiresApproval) {
 			t.Error("got added for existing action")
 		}
 	})
@@ -62,7 +62,7 @@ func TestDB(t *testing.T) {
 	})
 	t.Run("approval", func(t *testing.T) {
 		db := storage.MemDB()
-		if !before(db, actionKind, key, action, true) {
+		if !before(db, actionKind, key, action, RequiresApproval) {
 			t.Fatal("already added")
 		}
 		tm := time.Now().Round(0).In(time.UTC)
@@ -104,7 +104,7 @@ func TestDB(t *testing.T) {
 				Action: []byte{byte(-i)},
 			}
 			time.Sleep(50 * time.Millisecond) // ensure each action has a different wall clock time
-			if !before(db, e.Kind, e.Key, e.Action, false) {
+			if !before(db, e.Kind, e.Key, e.Action, !RequiresApproval) {
 				t.Fatal("already added")
 			}
 			entries = append(entries, e)
@@ -165,7 +165,7 @@ func TestDB(t *testing.T) {
 		})
 
 		db := storage.MemDB()
-		if !before(db, key, action, false) {
+		if !before(db, key, action, !RequiresApproval) {
 			t.Fatal("already added")
 		}
 		e, ok := getEntry(db, dbKey(actionKind, key))
@@ -226,56 +226,120 @@ func TestApproved(t *testing.T) {
 
 func TestRun(t *testing.T) {
 	ctx := context.Background()
-	db := storage.MemDB()
 	const actionKind = "akind"
+	key := ordered.Encode("key")
 	var errAction = errors.New("action failed")
 	lg := testutil.Slogger(t)
+	nRunCalls := 0
 
 	before := Register(actionKind, func(_ context.Context, action []byte) ([]byte, error) {
+		nRunCalls++
 		if string(action) == "fail" {
 			return nil, errAction
 		}
 		return append([]byte("result "), action...), nil
 	})
 
-	actions := []string{"a1", "a2", "fail"}
-	for i, a := range actions {
-		before(db, ordered.Encode(i), []byte(a), false)
-	}
+	t.Run("basic", func(t *testing.T) {
+		db := storage.MemDB()
+		actions := []string{"a1", "a2", "fail"}
+		for i, a := range actions {
+			before(db, ordered.Encode(i), []byte(a), !RequiresApproval)
+		}
 
-	err := Run(ctx, testutil.Slogger(t), db)
-	// Expect one error, the failed action.
-	errs := err.(interface{ Unwrap() []error }).Unwrap()
-	if len(errs) != 1 || errs[0] != errAction {
-		t.Fatalf("wanted one errAction, got %+v", errs)
-	}
+		err := Run(ctx, lg, db)
+		// Expect one error, the failed action.
+		errs := err.(interface{ Unwrap() []error }).Unwrap()
+		if len(errs) != 1 || errs[0] != errAction {
+			t.Fatalf("wanted one errAction, got %+v", errs)
+		}
 
-	// There should be no pending actions.
-	for range timed.ScanAfter(lg, db, pendingKind, 0, nil) {
-		t.Fatal("there are still pending actions")
-	}
+		// There should be no pending actions.
+		for range timed.ScanAfter(lg, db, pendingKind, 0, nil) {
+			t.Fatal("there are still pending actions")
+		}
 
-	// The log should contain all the executed actions and their results.
-	var want []*Entry
-	for i := range len(actions) {
-		want = append(want, &Entry{
-			Key:    ordered.Encode(i),
-			Action: []byte(actions[i]),
-			Result: []byte("result " + actions[i]),
-			Error:  "",
+		// The log should contain all the executed actions and their results.
+		var want []*Entry
+		for i := range len(actions) {
+			want = append(want, &Entry{
+				Key:    ordered.Encode(i),
+				Action: []byte(actions[i]),
+				Result: []byte("result " + actions[i]),
+				Error:  "",
+			})
+		}
+		want[2].Result = nil
+		want[2].Error = "action failed"
+		got := slices.Collect(ScanAfter(lg, db, time.Time{}, nil))
+		compareSlices(t, got, want, func(g, w *Entry) bool {
+			return bytes.Equal(g.Key, w.Key) &&
+				bytes.Equal(g.Action, w.Action) &&
+				!g.Done.IsZero() &&
+				bytes.Equal(g.Result, w.Result) &&
+				g.Error == w.Error &&
+				!g.ApprovalRequired &&
+				len(g.Decisions) == 0
 		})
-	}
-	want[2].Result = nil
-	want[2].Error = "action failed"
-	got := slices.Collect(ScanAfter(lg, db, time.Time{}, nil))
-	compareSlices(t, got, want, func(g, w *Entry) bool {
-		return bytes.Equal(g.Key, w.Key) &&
-			bytes.Equal(g.Action, w.Action) &&
-			!g.Done.IsZero() &&
-			bytes.Equal(g.Result, w.Result) &&
-			g.Error == w.Error &&
-			!g.ApprovalRequired &&
-			len(g.Decisions) == 0
 	})
+	t.Run("actions are run only once", func(t *testing.T) {
+		check := testutil.Checker(t)
+		nRunCalls = 0
+		db := storage.MemDB()
+		before(db, key, nil, !RequiresApproval)
+		check(Run(ctx, lg, db))
+		check(Run(ctx, lg, db))
+		if nRunCalls != 1 {
+			t.Fatalf("got %d calls, want 1", nRunCalls)
+		}
+		e, ok := Get(db, actionKind, key)
+		if !ok || !e.IsDone() {
+			t.Fatal("entry not done")
+		}
+	})
+	t.Run("(un)approved actions are (not) run", func(t *testing.T) {
+		check := testutil.Checker(t)
+		nRunCalls = 0
+		db := storage.MemDB()
 
+		checkRunAndDone := func(key []byte, wantRun bool) {
+			t.Helper()
+			check(Run(ctx, lg, db))
+			wantN := 0
+			wantDone := false
+			if wantRun {
+				wantN = 1
+				wantDone = true
+			}
+			if nRunCalls != wantN {
+				t.Errorf("got %d calls, want %d", nRunCalls, wantN)
+			}
+			e, ok := Get(db, actionKind, key)
+			if !ok {
+				t.Fatal("action not found")
+			}
+			if got := e.IsDone(); got != wantDone {
+				t.Errorf("done = %t, want %t", got, wantDone)
+			}
+		}
+
+		// unapproved, not run
+		before(db, key, nil, RequiresApproval)
+		checkRunAndDone(key, false)
+
+		// denied, still not run
+		AddDecision(db, actionKind, key, Decision{Approved: false})
+		checkRunAndDone(key, false)
+
+		// denied and approved, still not run
+		AddDecision(db, actionKind, key, Decision{Approved: true})
+		checkRunAndDone(key, false)
+
+		// approved, run
+		// We can't remove a decision, so make a new action.
+		key2 := ordered.Encode("key2")
+		before(db, key2, nil, RequiresApproval)
+		AddDecision(db, actionKind, key2, Decision{Approved: true})
+		checkRunAndDone(key2, true)
+	})
 }
