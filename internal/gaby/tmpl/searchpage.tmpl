@@ -67,22 +67,21 @@ license that can be found in the LICENSE file.
 
 	<div class="section">
 	<div id="working"></div>
-    {{/* This template assumes that if a result's Kind is non-empty, it is a URL, and vice versa. */}}
 	{{with .Results -}}
 	  {{- range . -}}
 	    <div class="result">
-	    {{if .Kind -}}
+	    {{if .IDIsURL -}}
 			 <span><a class="id" href="{{.ID}}">{{.ID}}</a></span>
 			{{if .Title -}}
 			 <span class="title"><a href="{{.ID}}">{{.Title}}</a></span>
 			{{end -}}
-			<span class="kind">type: {{.Kind}}</span>
 	    {{else -}}
 		  <span class="id">{{.ID -}}</span>
 		  {{with .Title}}
 			<span class="title">>{{.}}</span>
 		  {{end -}}
 	    {{end -}}
+	    <span class="kind">type: {{.Kind}}</span>
 	    <span class="score">similarity: <b>{{.Score}}</b><span>
 		</div>
 	  {{end}}

@@ -13,7 +13,9 @@ import (
 	"math"
 	"net/url"
 	"path"
+	"regexp"
 	"strings"
+	"testing"
 
 	"golang.org/x/oscar/internal/docs"
 	"golang.org/x/oscar/internal/llm"
@@ -136,6 +138,12 @@ func (r *Result) Round() {
 	r.Score = math.Round(r.Score*1e3) / 1e3
 }
 
+// IDIsURL reports whether the Result's ID is a valid URL.
+func (r *Result) IDIsURL() bool {
+	_, err := url.Parse(r.ID)
+	return err == nil
+}
+
 // Maximum number of search results to return by default.
 const defaultLimit = 20
 
@@ -147,14 +155,18 @@ const (
 	KindGoReference     = "GoReference"
 	KindGoBlog          = "GoBlog"
 	KindGoDevPage       = "GoDevPage"
+	// Unknown document.
+	KindUnknown = "Unknown"
 )
 
 // docIDKind determines the kind of document from its ID.
 // It returns the empty string if it cannot do so.
+//
+// The function assumes that we only care about the Go project.
 func docIDKind(id string) string {
 	u, err := url.Parse(id)
 	if err != nil {
-		return ""
+		return KindUnknown
 	}
 	hp := path.Join(u.Host, u.Path)
 	switch {
@@ -171,6 +183,13 @@ func docIDKind(id string) string {
 	case strings.HasPrefix(hp, "go.dev/"):
 		return KindGoDevPage
 	default:
-		return ""
+		// In tests, any GitHub project's issues are OK.
+		if testing.Testing() && githubIssueRE.MatchString(hp) {
+			return KindGitHubIssue
+		}
+		return KindUnknown
 	}
 }
+
+// Matches GitHub issue URLs in any project, e.g. github.com/golang/go/issues/42.
+var githubIssueRE = regexp.MustCompile(`^github\.com/[\w-]+/[\w-]+/issues/\d+$`)

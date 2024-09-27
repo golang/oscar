@@ -291,6 +291,7 @@ func (p *Poster) search(u string) (_ []search.Result, ok bool) {
 		Options: search.Options{
 			Threshold: p.scoreCutoff,
 			Limit:     p.maxResults + 5, // add a buffer for filters
+			DenyKind:  []string{search.KindUnknown},
 		},
 		Vector: vec,
 	})

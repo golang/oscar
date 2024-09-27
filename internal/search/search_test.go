@@ -24,7 +24,7 @@ func TestKind(t *testing.T) {
 	for _, test := range []struct {
 		id, want string
 	}{
-		{"something", ""},
+		{"something", "Unknown"},
 		{"https://go.dev/x", "GoDevPage"},
 		{"https://go.dev/blog/xxx", "GoBlog"},
 		{"https://go.dev/doc/x", "GoDocumentation"},
@@ -79,12 +79,12 @@ func TestSearch(t *testing.T) {
 
 	want := []Result{
 		{
-			Kind:         "",
+			Kind:         KindUnknown,
 			Title:        "title3",
 			VectorResult: storage.VectorResult{ID: "id3", Score: 1.0},
 		},
 		{
-			Kind:         "",
+			Kind:         KindUnknown,
 			Title:        "title4",
 			VectorResult: storage.VectorResult{ID: "id4", Score: 0.56},
 		},
@@ -168,7 +168,7 @@ func TestOptions(t *testing.T) {
 			VectorResult: storage.VectorResult{ID: ids[5], Score: 0.544},
 		},
 		3: {
-			Kind:         "", // unknown
+			Kind:         KindUnknown,
 			Title:        "title2",
 			VectorResult: storage.VectorResult{ID: ids[2], Score: 0.531},
 		},
@@ -188,7 +188,7 @@ func TestOptions(t *testing.T) {
 			VectorResult: storage.VectorResult{ID: ids[8], Score: 0.503},
 		},
 		7: {
-			Kind:         "", // unknown
+			Kind:         KindUnknown,
 			Title:        "title9",
 			VectorResult: storage.VectorResult{ID: ids[9], Score: 0.492},
 		},
