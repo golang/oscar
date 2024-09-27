@@ -6,7 +6,6 @@ package main
 
 import (
 	"bytes"
-	"embed"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -210,23 +209,11 @@ func fmtValue(b []byte) string {
 	return string(r)
 }
 
-// Embed the action template into the binary.
-// We must use the FS form in order to make it trusted with the
-// github.com/google/safehtml/template API.
-
-//go:embed actionlog.tmpl
-var actionLogFS embed.FS
-
-const actionLogTmplFile = "actionlog.tmpl"
-
-// The template name must match the filename.
-var actionLogPageTmpl = template.Must(template.New(actionLogTmplFile).
-	Funcs(template.FuncMap{
-		"fmttime": fmtTime,
-		"fmtkey":  func(key []byte) string { return storage.Fmt(key) },
-		"fmtval":  fmtValue,
-		"safeid": func(s string) safehtml.Identifier {
-			return safehtml.IdentifierFromConstantPrefix("id", s)
-		},
-	}).
-	ParseFS(template.TrustedFSFromEmbed(actionLogFS), actionLogTmplFile))
+var actionLogPageTmpl = newTemplate(actionLogTmplFile, template.FuncMap{
+	"fmttime": fmtTime,
+	"fmtkey":  func(key []byte) string { return storage.Fmt(key) },
+	"fmtval":  fmtValue,
+	"safeid": func(s string) safehtml.Identifier {
+		return safehtml.IdentifierFromConstantPrefix("id", s)
+	},
+})
