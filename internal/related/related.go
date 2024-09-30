@@ -7,12 +7,14 @@ package related
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
 	"time"
 
+	"golang.org/x/oscar/internal/actions"
 	"golang.org/x/oscar/internal/docs"
 	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/search"
@@ -36,6 +38,7 @@ type Poster struct {
 	maxResults  int
 	scoreCutoff float64
 	post        bool
+	logAction   actions.BeforeFunc
 }
 
 // New creates and returns a new Poster. It logs to lg, stores state in db,
@@ -48,7 +51,7 @@ type Poster struct {
 // (especially [Poster.EnableProject] and [Poster.EnablePosts])
 // before calling [Poster.Run].
 func New(lg *slog.Logger, db storage.DB, gh *github.Client, vdb storage.VectorDB, docs *docs.Corpus, name string) *Poster {
-	return &Poster{
+	p := &Poster{
 		slog:        lg,
 		db:          db,
 		vdb:         vdb,
@@ -61,6 +64,8 @@ func New(lg *slog.Logger, db storage.DB, gh *github.Client, vdb storage.VectorDB
 		maxResults:  defaultMaxResults,
 		scoreCutoff: defaultScoreCutoff,
 	}
+	p.logAction = actions.Register("related.Poster:"+name, p.runFromActionLog)
+	return p
 }
 
 // SetTimeLimit controls how old an issue can be for the Poster to post to it.
@@ -133,7 +138,20 @@ func (p *Poster) deletePosted() {
 	p.db.DeleteRange(ordered.Encode("triage.Posted"), ordered.Encode("triage.Posted", ordered.Inf))
 }
 
+// An action has all the information needed to post a comment to a GitHub issue.
+type action struct {
+	Issue   *github.Issue
+	Changes *github.IssueCommentChanges
+}
+
+// result is the result of apply an action.
+type result struct {
+	URL string // URL of new comment
+}
+
 // Run runs a single round of posting to GitHub.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 // It scans all open issues that have been created since the last call to [Poster.Run]
 // using a Poster with the same name (see [New]).
 // Run skips closed issues, and it also skips pull requests.
@@ -147,8 +165,8 @@ func (p *Poster) deletePosted() {
 // (see [Poster.SetMaxResults]).
 //
 // Run logs each post to the [slog.Logger] passed to [New].
-// If [Poster.EnablePosts] has been called, then [Run] also posts the comment to GitHub,
-// records in the database that it has posted to GitHub to make sure it never posts to that issue again,
+// If [Poster.EnablePosts] has been called, then [Run] also adds an action to the
+// action log an action that will post the comment to GitHub (see [actions.Run]),
 // and advances its GitHub issue watcher's incremental cursor to speed future calls to [Run].
 //
 // When [Poster.EnablePosts] has not been called, Run only logs the comments it would post.
@@ -264,12 +282,39 @@ func (p *Poster) postIssue(ctx context.Context, e *github.Event) (advance bool, 
 	}
 
 	issue := e.Typed.(*github.Issue)
-	if _, err := p.github.PostIssueComment(ctx, issue, &github.IssueCommentChanges{Body: comment}); err != nil {
-		return false, fmt.Errorf("%w issue=%d: %v", errPostIssueCommentFailed, issue.Number, err)
+	act := &action{
+		Issue:   issue,
+		Changes: &github.IssueCommentChanges{Body: comment},
 	}
-
+	_, err := p.runAction(context.Background(), act)
+	if err != nil {
+		return false, err
+	}
 	p.markPosted(e)
 	return true, nil
+}
+
+// runFromActionLog is called by actions.Run to execute an action.
+// It decodes the action, calls [Poster.runAction], then encodes the result.
+func (p *Poster) runFromActionLog(ctx context.Context, data []byte) ([]byte, error) {
+	var a action
+	if err := json.Unmarshal(data, &a); err != nil {
+		return nil, err
+	}
+	res, err := p.runAction(ctx, &a)
+	if err != nil {
+		return nil, err
+	}
+	return storage.JSON(res), nil
+}
+
+// runAction runs the given action.
+func (p *Poster) runAction(ctx context.Context, a *action) (*result, error) {
+	url, err := p.github.PostIssueComment(ctx, a.Issue, a.Changes)
+	if err != nil {
+		return nil, fmt.Errorf("%w issue=%d: %v", errPostIssueCommentFailed, a.Issue.Number, err)
+	}
+	return &result{URL: url}, nil
 }
 
 // issueURL returns the URL of the GitHub issue in the given project.
