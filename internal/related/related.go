@@ -264,7 +264,7 @@ func (p *Poster) postIssue(ctx context.Context, e *github.Event) (advance bool, 
 	}
 
 	issue := e.Typed.(*github.Issue)
-	if err := p.github.PostIssueComment(ctx, issue, &github.IssueCommentChanges{Body: comment}); err != nil {
+	if _, err := p.github.PostIssueComment(ctx, issue, &github.IssueCommentChanges{Body: comment}); err != nil {
 		return false, fmt.Errorf("%w issue=%d: %v", errPostIssueCommentFailed, issue.Number, err)
 	}
 

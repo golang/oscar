@@ -24,7 +24,8 @@ import (
 // as high in the stack as possible, and the GitHub client is not.
 
 // PostIssueComment posts a new comment with the given body (written in Markdown) on issue.
-func (c *Client) PostIssueComment(ctx context.Context, issue *Issue, changes *IssueCommentChanges) error {
+// It returns the URL of the new comment suitable for display.
+func (c *Client) PostIssueComment(ctx context.Context, issue *Issue, changes *IssueCommentChanges) (string, error) {
 	if c.divertEdits() {
 		c.testMu.Lock()
 		defer c.testMu.Unlock()
@@ -34,10 +35,20 @@ func (c *Client) PostIssueComment(ctx context.Context, issue *Issue, changes *Is
 			Issue:               issue.Number,
 			IssueCommentChanges: changes.clone(),
 		})
-		return nil
+		return "", nil
 	}
 
-	return c.post(ctx, issue.URL+"/comments", changes)
+	body, err := c.post(ctx, issue.URL+"/comments", changes)
+	if err != nil {
+		return "", err
+	}
+	var res struct {
+		URL string `json:"html_url"`
+	}
+	if err := json.Unmarshal(body, &res); err != nil {
+		return "", err
+	}
+	return res.URL, nil
 }
 
 // DownloadIssue downloads the current issue JSON from the given URL
@@ -92,7 +103,8 @@ func (c *Client) EditIssueComment(ctx context.Context, comment *IssueComment, ch
 		return nil
 	}
 
-	return c.patch(ctx, comment.URL, changes)
+	_, err := c.patch(ctx, comment.URL, changes)
+	return err
 }
 
 // An IssueChanges specifies changes to make to an issue.
@@ -134,55 +146,60 @@ func (c *Client) EditIssue(ctx context.Context, issue *Issue, changes *IssueChan
 		return nil
 	}
 
-	return c.patch(ctx, issue.URL, changes)
+	_, err := c.patch(ctx, issue.URL, changes)
+	return err
 }
 
 // patch is like c.get but makes a PATCH request.
 // Unlike c.get, it requires authentication.
-func (c *Client) patch(ctx context.Context, url string, changes any) error {
+// It returns the response body on success.
+func (c *Client) patch(ctx context.Context, url string, changes any) ([]byte, error) {
 	return c.json(ctx, "PATCH", url, changes)
 }
 
 // post is like c.get but makes a POST request.
 // Unlike c.get, it requires authentication.
-func (c *Client) post(ctx context.Context, url string, body any) error {
+// It returns the response body on success.
+func (c *Client) post(ctx context.Context, url string, body any) ([]byte, error) {
 	return c.json(ctx, "POST", url, body)
 }
 
 // json is the general PATCH/POST implementation.
-func (c *Client) json(ctx context.Context, method, url string, body any) error {
+// It returns the response body on success.
+func (c *Client) json(ctx context.Context, method, url string, body any) ([]byte, error) {
 	js, err := json.Marshal(body)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	auth, ok := c.secret.Get("api.github.com")
 	if !ok && !testing.Testing() {
-		return fmt.Errorf("no secret for api.github.com")
+		return nil, fmt.Errorf("no secret for api.github.com")
 	}
 	user, pass, _ := strings.Cut(auth, ":")
 
 Redo:
 	req, err := http.NewRequestWithContext(ctx, method, url, bytes.NewReader(js))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	req.SetBasicAuth(user, pass)
 	resp, err := c.http.Do(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	data, err := io.ReadAll(resp.Body)
 	resp.Body.Close()
 	if err != nil {
-		return fmt.Errorf("reading body: %v", err)
+		return nil, fmt.Errorf("reading body: %v", err)
 	}
 	if c.rateLimit(resp) {
 		goto Redo
 	}
 	if resp.StatusCode/10 != 20 { // allow 200, 201, maybe others
-		return fmt.Errorf("%s\n%s", resp.Status, data)
+		// Include body as part of error; don't return it separately.
+		return nil, fmt.Errorf("%s\n%s", resp.Status, data)
 	}
-	return nil
+	return data, nil
 }

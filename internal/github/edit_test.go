@@ -8,6 +8,7 @@ import (
 	"context"
 	"net/http"
 	"slices"
+	"strings"
 	"testing"
 
 	"golang.org/x/oscar/internal/httprr"
@@ -67,7 +68,12 @@ func TestMarkdownEditing(t *testing.T) {
 
 	c.testing = false // edit github directly (except for the httprr in the way)
 	check(c.EditIssueComment(ctx, comment, &IssueCommentChanges{Body: testutil.Rot13(comment.Body)}))
-	check(c.PostIssueComment(ctx, issue, &IssueCommentChanges{Body: "testing. rot13 is the best."}))
+	url, err := c.PostIssueComment(ctx, issue, &IssueCommentChanges{Body: "testing. rot13 is the best."})
+	check(err)
+	const wantPrefix = "https://github.com/rsc/tmp/issues/5#issuecomment-"
+	if !strings.HasPrefix(url, "https://github.com/rsc/tmp/issues/5#issuecomment-") {
+		t.Errorf("PostIssueComment: url=%q, want prefix %q", url, wantPrefix)
+	}
 	check(c.EditIssue(ctx, issue, &IssueChanges{Title: testutil.Rot13(issue.Title)}))
 }
 
@@ -110,7 +116,8 @@ func TestMarkdownDivertEdit(t *testing.T) {
 	}
 
 	check(c.EditIssueComment(ctx, comment, &IssueCommentChanges{Body: testutil.Rot13(comment.Body)}))
-	check(c.PostIssueComment(ctx, issue, &IssueCommentChanges{Body: "testing. rot13 is the best."}))
+	_, err = c.PostIssueComment(ctx, issue, &IssueCommentChanges{Body: "testing. rot13 is the best."})
+	check(err)
 	check(c.EditIssue(ctx, issue, &IssueChanges{Title: testutil.Rot13(issue.Title), Labels: &[]string{"ebg13"}}))
 
 	var edits []string
