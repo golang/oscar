@@ -6,7 +6,9 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -16,78 +18,144 @@ import (
 	"golang.org/x/oscar/internal/search"
 )
 
+// a searchPage holds the fields needed to display the results
+// of a search.
 type searchPage struct {
-	Query string
-	search.Options
-	// allowlist and denylist as comma-separated strings (for display)
-	AllowStr, DenyStr string
-	Results           []search.Result
+	searchForm                  // the raw query and options
+	Results     []search.Result // the search results to display
+	SearchError string          // if non-empty, the error to display instead of results
 }
 
 func (g *Gaby) handleSearch(w http.ResponseWriter, r *http.Request) {
-	data, err := g.doSearch(r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	} else {
-		_, _ = w.Write(data)
-	}
-}
-
-// doSearch returns the contents of the vector search page.
-func (g *Gaby) doSearch(r *http.Request) ([]byte, error) {
-	page := populatePage(r)
-	if page.Query != "" {
-		var err error
-		page.Results, err = search.Query(r.Context(), g.vector, g.docs, g.embed,
-			&search.QueryRequest{
-				EmbedDoc: llm.EmbedDoc{Text: page.Query},
-				Options:  page.Options,
-			})
-		if err != nil {
-			return nil, err
-		}
-		for i := range page.Results {
-			page.Results[i].Round()
-		}
-	}
+	page := g.populatePage(r)
 	var buf bytes.Buffer
 	if err := searchPageTmpl.Execute(&buf, page); err != nil {
-		return nil, err
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
-	return buf.Bytes(), nil
+	_, _ = w.Write(buf.Bytes())
 }
 
-// populatePage parses the form values into a searchPage.
-// TODO(tatianabradley): Add error handling for malformed
-// filters and trim spaces in inputs.
-func populatePage(r *http.Request) searchPage {
-	threshold, err := strconv.ParseFloat(r.FormValue("threshold"), 64)
+// populatePage returns the contents of the vector search page.
+func (g *Gaby) populatePage(r *http.Request) searchPage {
+	form := searchForm{
+		Query:     r.FormValue("q"),
+		Threshold: r.FormValue("threshold"),
+		Limit:     r.FormValue("limit"),
+		Allow:     r.FormValue("allow_kind"),
+		Deny:      r.FormValue("deny_kind"),
+	}
+	opts, err := form.toOptions()
 	if err != nil {
-		threshold = 0
+		return searchPage{
+			searchForm:  form,
+			SearchError: fmt.Errorf("invalid form value: %w", err).Error(),
+		}
 	}
-	limit, err := strconv.Atoi(r.FormValue("limit"))
+	q := strings.TrimSpace(form.Query)
+	results, err := g.search(r.Context(), q, *opts)
 	if err != nil {
-		limit = 20
-	}
-	var allow, deny []string
-	var allowStr, denyStr string
-	if allowStr = r.FormValue("allow_kind"); allowStr != "" {
-		allow = strings.Split(allowStr, ",")
-	}
-	if denyStr = r.FormValue("deny_kind"); denyStr != "" {
-		deny = strings.Split(denyStr, ",")
+		return searchPage{
+			searchForm:  form,
+			SearchError: fmt.Errorf("search: %w", err).Error(),
+		}
 	}
 	return searchPage{
-		Query: r.FormValue("q"),
-		Options: search.Options{
-			Limit:     limit,
-			Threshold: threshold,
-			AllowKind: allow,
-			DenyKind:  deny,
-		},
-		AllowStr: allowStr,
-		DenyStr:  denyStr,
+		searchForm: form,
+		Results:    results,
 	}
+}
+
+// search performs a search on the query and options.
+//
+// If the query is an exact match for an ID in the vector database,
+// it looks up the vector for that ID and performs a search for the
+// nearest neighbors of that vector.
+// Otherwise, it embeds the query and performs a nearest neighbor
+// search for the embedding.
+//
+// It returns an error if search fails.
+func (g *Gaby) search(ctx context.Context, q string, opts search.Options) (results []search.Result, err error) {
+	if q == "" {
+		return nil, nil
+	}
+
+	if vec, ok := g.vector.Get(q); ok {
+		results = search.Vector(g.vector, g.docs,
+			&search.VectorRequest{
+				Options: opts,
+				Vector:  vec,
+			})
+	} else {
+		if results, err = search.Query(ctx, g.vector, g.docs, g.embed,
+			&search.QueryRequest{
+				EmbedDoc: llm.EmbedDoc{Text: q},
+				Options:  opts,
+			}); err != nil {
+			return nil, err
+		}
+	}
+
+	for i := range results {
+		results[i].Round()
+	}
+
+	return results, nil
+}
+
+// searchForm holds the raw inputs to the search form.
+type searchForm struct {
+	Query string // a text query, or an ID of a document in the database
+
+	// String representations of the fields of [search.Options]
+	Threshold   string
+	Limit       string
+	Allow, Deny string // comma separated lists
+}
+
+// toOptions converts a searchForm into a [search.Options],
+// trimming any leading/trailing spaces.
+//
+// It returns an error if any of the form inputs is invalid.
+func (f *searchForm) toOptions() (_ *search.Options, err error) {
+	opts := &search.Options{}
+
+	trim := strings.TrimSpace
+	splitAndTrim := func(s string) []string {
+		vs := strings.Split(s, ",")
+		for i, v := range vs {
+			vs[i] = trim(v)
+		}
+		return vs
+	}
+
+	if l := trim(f.Limit); l != "" {
+		opts.Limit, err = strconv.Atoi(l)
+		if err != nil {
+			return nil, fmt.Errorf("limit: %w", err)
+		}
+	}
+
+	if t := trim(f.Threshold); t != "" {
+		opts.Threshold, err = strconv.ParseFloat(t, 64)
+		if err != nil {
+			return nil, fmt.Errorf("threshold: %w", err)
+		}
+	}
+
+	if a := trim(f.Allow); a != "" {
+		opts.AllowKind = splitAndTrim(a)
+	}
+
+	if d := trim(f.Deny); d != "" {
+		opts.DenyKind = splitAndTrim(d)
+	}
+
+	if err := opts.Validate(); err != nil {
+		return nil, err
+	}
+
+	return opts, nil
 }
 
 var searchPageTmpl = newTemplate(searchPageTmplFile, nil)

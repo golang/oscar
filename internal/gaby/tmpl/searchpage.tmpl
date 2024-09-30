@@ -15,8 +15,9 @@ license that can be found in the LICENSE file.
 	 <h1>Gaby search</h1>
 		<p>Search Gaby's database of GitHub issues and Go documentation.</p>
 		<div class="filter-tips-box">
-			<div class="toggle" onclick="toggle()">[show/hide filter tips]</div>
+			<div class="toggle" onclick="toggle()">[show/hide input tips]</div>
 			<ul id="filter-tips">
+			    <li><b>query</b> (string): the text to search for neigbors of OR the ID (usually a URL) of a document in the vector database</li>
 				<li><b>min similarity</b> (<code>float64</code> between 0 and 1): similarity cutoff (default: 0, allow all)</li>
 				<li><b>max results</b> (<code>int</code>): maximum number of results to display (default: 20)</li>
 				<li><b>include types</b> (comma-separated list): document types to include, e.g <code>GitHubIssue,GoBlog</code> (default: empty, include all)</li>
@@ -30,19 +31,19 @@ license that can be found in the LICENSE file.
 		</span>
 		<span>
 		 <label for="threshold">min similarity</label>
-		 <input id="threshold" type="text" name="threshold" value="{{.Threshold}}" required autofocus />
+		 <input id="threshold" type="text" name="threshold" value="{{.Threshold}}" optional autofocus />
 		</span>
 		<span>
 		 <label for="limit">max results</label>
-		 <input id="limit" type="text" name="limit" value="{{.Limit}}" required autofocus />
+		 <input id="limit" type="text" name="limit" value="{{.Limit}}" optional autofocus />
 		</span>
 		<span>
-		 <label for="allow_kind">allow types</label>
-		 <input id="allow_kind" type="text" name="allow_kind" value="{{.AllowStr}}" optional autofocus />
+		 <label for="allow_kind">include types</label>
+		 <input id="allow_kind" type="text" name="allow_kind" value="{{.Allow}}" optional autofocus />
 		</span>
 		<span>
 		 <label for="deny_kind">exclude types</code></label>
-		 <input id="deny_kind" type="text" name="deny_kind" value="{{.DenyStr}}" optional autofocus />
+		 <input id="deny_kind" type="text" name="deny_kind" value="{{.Deny}}" optional autofocus />
 		</span>
 		<span class="submit">
 		 <input type="submit" value="search"/>
@@ -67,7 +68,9 @@ license that can be found in the LICENSE file.
 
 	<div class="section">
 	<div id="working"></div>
-	{{with .Results -}}
+	{{- with .SearchError -}}
+		<p>Error: {{.}}</p>
+	{{- else with .Results -}}
 	  {{- range . -}}
 	    <div class="result">
 	    {{if .IDIsURL -}}

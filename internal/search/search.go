@@ -32,6 +32,8 @@ type QueryRequest struct {
 
 // Options are the results filters that can be passed to the search
 // functions as part of a [QueryRequest] or [VectorRequest].
+//
+// TODO(tatianabradley): Make kinds case insensitive.
 type Options struct {
 	Threshold float64  // lowest score to keep; default 0. Max is 1.
 	Limit     int      // max results (fewer if Threshold is set); 0 means use a fixed default
@@ -80,6 +82,27 @@ type VectorRequest struct {
 // the request's vector.
 func Vector(vdb storage.VectorDB, dc *docs.Corpus, req *VectorRequest) []Result {
 	return vector(vdb, dc, req.Vector, &req.Options)
+}
+
+// Validate returns an error if any of the options is invalid.
+func (o *Options) Validate() error {
+	if o.Limit < 0 {
+		return fmt.Errorf("limit must be >= 0 (got: %d)", o.Limit)
+	}
+	if o.Threshold < 0 || o.Threshold > 1 {
+		return fmt.Errorf("threshold must be >= 0 and <= 1 (got: %.3f)", o.Threshold)
+	}
+	for _, allow := range o.AllowKind {
+		if _, ok := kinds[allow]; !ok {
+			return fmt.Errorf("unrecognized allow kind %q (case-sensitive)", allow)
+		}
+	}
+	for _, deny := range o.DenyKind {
+		if _, ok := kinds[deny]; !ok {
+			return fmt.Errorf("unrecognized deny kind %q (case-sensitive)", deny)
+		}
+	}
+	return nil
 }
 
 func vector(vdb storage.VectorDB, dc *docs.Corpus, vec llm.Vector, opts *Options) []Result {
@@ -158,6 +181,16 @@ const (
 	// Unknown document.
 	KindUnknown = "Unknown"
 )
+
+// Set of recognized document kinds.
+var kinds = map[string]bool{
+	KindGitHubIssue:     true,
+	KindGoWiki:          true,
+	KindGoDocumentation: true,
+	KindGoBlog:          true,
+	KindGoDevPage:       true,
+	KindUnknown:         true,
+}
 
 // docIDKind determines the kind of document from its ID.
 // It returns the empty string if it cannot do so.
