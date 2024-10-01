@@ -503,9 +503,10 @@ func (g *Gaby) syncAndRunAll(ctx context.Context) (errs []error) {
 
 	if flags.enablechanges {
 		// Changes can run in any order.
-		check(g.fixAllComments(ctx)) // this writes to the action log, but does not apply the fixes
+		// Write all changes to the action log.
+		check(g.fixAllComments(ctx))
 		check(g.postAllRelated(ctx))
-		// Apply all actions. Currently, that is just the comment fixes.
+		// Apply all actions.
 		actions.Run(ctx, g.slog, g.db)
 	}
 

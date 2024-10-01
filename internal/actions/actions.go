@@ -354,11 +354,14 @@ type RunFunc func(ctx context.Context, action []byte) ([]byte, error)
 type BeforeFunc func(db storage.DB, key, action []byte, requiresApproval bool) (added bool)
 
 // Register associates the given action kind and run function.
-// Only one function may be registered for each kind, except during testing.
+// Only one function may be registered for each kind, except during testing,
+// when Register always registers its arguments.
 //
 // Register returns a function that should be called to log an action before it is run.
 func Register(actionKind string, r RunFunc) BeforeFunc {
-	if _, ok := registry.LoadOrStore(actionKind, r); ok && !testing.Testing() {
+	if testing.Testing() {
+		registry.Store(actionKind, r)
+	} else if _, ok := registry.LoadOrStore(actionKind, r); ok {
 		panic(fmt.Sprintf("%q already registered", actionKind))
 	}
 	return func(db storage.DB, key, action []byte, requiresApproval bool) bool {
@@ -374,6 +377,7 @@ func Run(ctx context.Context, lg *slog.Logger, db storage.DB) error {
 	var errs []error
 	for te := range timed.ScanAfter(lg, db, pendingKind, 0, nil) {
 		if err := maybeRunEntry(ctx, lg, db, te.Key); err != nil {
+			lg.Error("action failed", "key", storage.Fmt(te.Key), "err", err)
 			errs = append(errs, err)
 		}
 	}

@@ -38,7 +38,9 @@ type Poster struct {
 	maxResults  int
 	scoreCutoff float64
 	post        bool
-	logAction   actions.BeforeFunc
+	// For the action log.
+	actionKind string
+	logAction  actions.BeforeFunc
 }
 
 // New creates and returns a new Poster. It logs to lg, stores state in db,
@@ -64,7 +66,10 @@ func New(lg *slog.Logger, db storage.DB, gh *github.Client, vdb storage.VectorDB
 		maxResults:  defaultMaxResults,
 		scoreCutoff: defaultScoreCutoff,
 	}
-	p.logAction = actions.Register("related.Poster:"+name, p.runFromActionLog)
+	// TODO: Perhaps the action kind should include name, but perhaps not.
+	// This makes sure we only ever post to each issue once.
+	p.actionKind = "related.Poster"
+	p.logAction = actions.Register(p.actionKind, p.runFromActionLog)
 	return p
 }
 
@@ -133,11 +138,6 @@ func (p *Poster) EnablePosts() {
 	p.post = true
 }
 
-// deletePosted deletes all the “posted on this issue” notes.
-func (p *Poster) deletePosted() {
-	p.db.DeleteRange(ordered.Encode("triage.Posted"), ordered.Encode("triage.Posted", ordered.Inf))
-}
-
 // An action has all the information needed to post a comment to a GitHub issue.
 type action struct {
 	Issue   *github.Issue
@@ -150,8 +150,6 @@ type result struct {
 }
 
 // Run runs a single round of posting to GitHub.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
 // It scans all open issues that have been created since the last call to [Poster.Run]
 // using a Poster with the same name (see [New]).
 // Run skips closed issues, and it also skips pull requests.
@@ -179,7 +177,7 @@ func (p *Poster) Run(ctx context.Context) error {
 
 	defer p.watcher.Flush()
 	for e := range p.watcher.Recent() {
-		advance, err := p.postIssue(ctx, e)
+		advance, err := p.logPostIssue(ctx, e)
 		if err != nil {
 			p.slog.Error("related.Poster", "issue", e.Issue, "event", e, "error", err)
 			continue
@@ -211,7 +209,7 @@ func (p *Poster) Post(ctx context.Context, project string, issue int64) error {
 	if e == nil {
 		return fmt.Errorf("related.Poster.Post(project=%s, issue=%d): %w", project, issue, errEventNotFound)
 	}
-	_, err := p.postIssue(ctx, e)
+	_, err := p.logPostIssue(ctx, e)
 	return err
 }
 
@@ -232,32 +230,30 @@ func lookupIssueEvent(project string, issue int64, gh *github.Client) *github.Ev
 	return nil
 }
 
-// postIssue posts an issue for the event.
+// logPostIssue logs an action to post an issue for the event.
 // advance is true if the event should be considered to have been
 // handled by this or a previous run function, indicating
 // that the Poster's watcher can be advanced.
 // An issue is handled if
 //   - posting is enabled, AND
-//   - an issue was successfully posted, or no issue was needed
+//   - an issue posting was successfully logged, or no issue was needed
 //     because no related documents were found
 //
 // Skipped issues are not considered handled.
-func (p *Poster) postIssue(ctx context.Context, e *github.Event) (advance bool, _ error) {
+func (p *Poster) logPostIssue(ctx context.Context, e *github.Event) (advance bool, _ error) {
 	if skip, reason := p.skip(e); skip {
 		p.slog.Info("related.Poster skip", "name", p.name, "project",
 			e.Project, "issue", e.Issue, "reason", reason, "event", e)
 		return false, nil
 	}
 
-	// Lock before checking if an issue was already posted for this event.
-	lock := string(postedKey(e))
-	p.db.Lock(lock)
-	defer p.db.Unlock(lock)
-
-	if p.posted(e) {
-		p.slog.Info("related.Poster already posted", "name", p.name, "project", e.Project, "issue", e.Issue, "event", e)
+	// If an action has already been logged for this event, do nothing.
+	// This is just an optimization to avoid an expensive vector search, so we don't
+	// need a lock. [actions.before] will lock to avoid multiple log entries.
+	if _, ok := actions.Get(p.db, p.actionKind, logKey(e)); ok {
+		p.slog.Info("related.Poster already logged", "name", p.name, "project", e.Project, "issue", e.Issue, "event", e)
 		// If posting is enabled, we can advance the watcher because
-		// a comment has already been posted for this issue.
+		// a comment has already been logged for this issue.
 		return p.post, nil
 	}
 
@@ -281,16 +277,11 @@ func (p *Poster) postIssue(ctx context.Context, e *github.Event) (advance bool, 
 		return false, nil
 	}
 
-	issue := e.Typed.(*github.Issue)
 	act := &action{
-		Issue:   issue,
+		Issue:   e.Typed.(*github.Issue),
 		Changes: &github.IssueCommentChanges{Body: comment},
 	}
-	_, err := p.runAction(context.Background(), act)
-	if err != nil {
-		return false, err
-	}
-	p.markPosted(e)
+	p.logAction(p.db, logKey(e), storage.JSON(act), !actions.RequiresApproval)
 	return true, nil
 }
 
@@ -311,9 +302,22 @@ func (p *Poster) runFromActionLog(ctx context.Context, data []byte) ([]byte, err
 // runAction runs the given action.
 func (p *Poster) runAction(ctx context.Context, a *action) (*result, error) {
 	url, err := p.github.PostIssueComment(ctx, a.Issue, a.Changes)
+	// If GitHub returns an error, add it to the action log for this action.
+	//
+	// Gaby's original behavior was to log the error, not advance the watcher,
+	// and continue iterating over watcher.Recent. So subsequent successful
+	// posts would advance the watcher over the failed one, leaving only the
+	// slog entry as evidence of the failure.
+	//
+	// The current behavior always advances the watcher and preserves the error
+	// in the action log.
+	//
+	// It is unclear what the right behavior is, but at least at present all
+	// failed actions are available to the program and could be re-run.
 	if err != nil {
 		return nil, fmt.Errorf("%w issue=%d: %v", errPostIssueCommentFailed, a.Issue.Number, err)
 	}
+
 	return &result{URL: url}, nil
 }
 
@@ -405,23 +409,10 @@ func (p *Poster) skip(e *github.Event) (_ bool, reason string) {
 	return false, ""
 }
 
-// posted reports whether the event has already been posted.
-func (p *Poster) posted(e *github.Event) bool {
-	_, ok := p.db.Get(postedKey(e))
-	return ok
-}
-
-// markPosted records that the event has been posted.
-func (p *Poster) markPosted(e *github.Event) {
-	p.db.Set(postedKey(e), nil)
-	p.db.Flush()
-}
-
-// postedKey returns the database key to use when marking an event as posted.
-func postedKey(e *github.Event) []byte {
-	// TODO: Perhaps this key should include p.name, but perhaps not.
-	// This makes sure we only ever post to each issue once.
-	return ordered.Encode("triage.Posted", e.Project, e.Issue)
+// logKey returns the key for the event in the action log.
+// This is only a portion of the database key; it is prefixed by the Poster's action kind.
+func logKey(e *github.Event) []byte {
+	return ordered.Encode(e.Project, e.Issue)
 }
 
 // Latest returns the latest known DBTime marked old by the Poster's Watcher.

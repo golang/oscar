@@ -15,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"golang.org/x/oscar/internal/actions"
 	"golang.org/x/oscar/internal/diff"
 	"golang.org/x/oscar/internal/docs"
 	"golang.org/x/oscar/internal/embeddocs"
@@ -35,6 +36,12 @@ func TestRun(t *testing.T) {
 	gh.Testing().LoadTxtar("../testdata/markdown.txt")
 	gh.Testing().LoadTxtar("../testdata/rsctmp.txt")
 
+	run := func(p *Poster) {
+		t.Helper()
+		check(p.Run(ctx))
+		check(actions.Run(ctx, lg, db))
+	}
+
 	dc := docs.New(lg, db)
 	githubdocs.Sync(ctx, lg, dc, gh)
 
@@ -45,20 +52,19 @@ func TestRun(t *testing.T) {
 	p := New(lg, db, gh, vdb, dc, "postname")
 	p.EnableProject("rsc/markdown")
 	p.SetTimeLimit(time.Time{})
-	check(p.Run(ctx))
+	run(p)
 	checkEdits(t, gh.Testing().Edits(), nil)
 	gh.Testing().ClearEdits()
 
 	p.EnablePosts()
-	check(p.Run(ctx))
+	run(p)
 	checkEdits(t, gh.Testing().Edits(), map[int64]string{13: post13, 19: post19})
 	gh.Testing().ClearEdits()
 
-	p = New(lg, db, gh, vdb, dc, "postname2")
 	p.EnableProject("rsc/markdown")
 	p.SetTimeLimit(time.Time{})
 	p.EnablePosts()
-	check(p.Run(ctx))
+	run(p)
 	checkEdits(t, gh.Testing().Edits(), nil)
 	gh.Testing().ClearEdits()
 
@@ -78,19 +84,20 @@ func TestRun(t *testing.T) {
 			p.SkipBodyContains("ZZZ")
 		}
 		p.EnablePosts()
-		p.deletePosted()
-		check(p.Run(ctx))
+		actions.ClearLogForTesting(t, db)
+		run(p)
 		checkEdits(t, gh.Testing().Edits(), map[int64]string{13: post13})
 		gh.Testing().ClearEdits()
 	}
 
+	p = New(lg, db, gh, vdb, dc, "postname2")
 	p = New(lg, db, gh, vdb, dc, "postname3")
 	p.EnableProject("rsc/markdown")
 	p.SetMinScore(2.0) // impossible
 	p.SetTimeLimit(time.Time{})
 	p.EnablePosts()
-	p.deletePosted()
-	check(p.Run(ctx))
+	actions.ClearLogForTesting(t, db)
+	run(p)
 	checkEdits(t, gh.Testing().Edits(), nil)
 	gh.Testing().ClearEdits()
 
@@ -99,8 +106,8 @@ func TestRun(t *testing.T) {
 	p.SetMinScore(2.0) // impossible
 	p.SetTimeLimit(time.Date(2222, 1, 1, 1, 1, 1, 1, time.UTC))
 	p.EnablePosts()
-	p.deletePosted()
-	check(p.Run(ctx))
+	actions.ClearLogForTesting(t, db)
+	run(p)
 	checkEdits(t, gh.Testing().Edits(), nil)
 	gh.Testing().ClearEdits()
 
@@ -110,69 +117,75 @@ func TestRun(t *testing.T) {
 	p.SetMaxResults(0) // except none
 	p.SetTimeLimit(time.Time{})
 	p.EnablePosts()
-	p.deletePosted()
-	check(p.Run(ctx))
+	actions.ClearLogForTesting(t, db)
+	run(p)
 	checkEdits(t, gh.Testing().Edits(), nil)
 	gh.Testing().ClearEdits()
 }
 
 func TestPost(t *testing.T) {
-	t.Run("basic", func(t *testing.T) {
-		p, _, project, check := newTestPoster(t)
+	check := testutil.Checker(t)
 
-		check(p.Post(ctx, project, 19))
-		check(p.Post(ctx, project, 13))
+	post := func(p *Poster, project string, issues ...int64) {
+		t.Helper()
+		for _, iss := range issues {
+			check(p.Post(ctx, project, iss))
+		}
+		check(actions.Run(ctx, p.slog, p.db))
+	}
+
+	run := func(p *Poster) {
+		check(p.Run(ctx))
+		check(actions.Run(ctx, p.slog, p.db))
+	}
+
+	t.Run("basic", func(t *testing.T) {
+		p, _, project, _ := newTestPoster(t)
+
+		post(p, project, 19, 13)
 		checkEdits(t, p.github.Testing().Edits(), map[int64]string{13: post13, 19: post19})
 	})
 
 	t.Run("double-post", func(t *testing.T) {
-		p, buf, project, check := newTestPoster(t)
-
-		check(p.Post(ctx, project, 13))
-		check(p.Post(ctx, project, 13))
+		p, _, project, _ := newTestPoster(t)
+		post(p, project, 13, 13)
 		checkEdits(t, p.github.Testing().Edits(), map[int64]string{13: post13})
-
-		testutil.ExpectLog(t, buf, "already posted", 1) // issue 13
 	})
 
 	t.Run("post-run", func(t *testing.T) {
-		p, buf, project, check := newTestPoster(t)
+		p, buf, project, _ := newTestPoster(t)
 
-		check(p.Post(ctx, project, 19))
+		post(p, project, 19)
 		checkEdits(t, p.github.Testing().Edits(), map[int64]string{19: post19})
 		testutil.ExpectLog(t, buf, "advanced watcher", 0)
 
 		p.github.Testing().ClearEdits()
 
 		// Post does not advance Run's watcher, so it operates on all issues.
-		check(p.Run(ctx))
+		run(p)
 		checkEdits(t, p.github.Testing().Edits(), map[int64]string{13: post13})
-		testutil.ExpectLog(t, buf, "already posted", 1)   // issue 19
 		testutil.ExpectLog(t, buf, "advanced watcher", 2) // issue 13 and 19 both advance watcher
 
 		p.github.Testing().ClearEdits()
 
 		// Run is a no-op because previous call to run advanced watcher past issue 19.
-		check(p.Run(ctx))
+		run(p)
 		checkEdits(t, p.github.Testing().Edits(), nil)
-		testutil.ExpectLog(t, buf, "already posted", 1)   // no change
 		testutil.ExpectLog(t, buf, "advanced watcher", 2) // no change
 	})
 
 	t.Run("post-run-async", func(t *testing.T) {
-		p, buf, project, check := newTestPoster(t)
+		p, _, project, _ := newTestPoster(t)
 
 		// OK to run Post in the middle of a Run.
 		done := make(chan struct{})
 		go func() {
-			check(p.Run(ctx))
+			run(p)
 			done <- struct{}{}
 		}()
-		check(p.Post(ctx, project, 19))
+		post(p, project, 19)
 		<-done
 		checkEdits(t, p.github.Testing().Edits(), map[int64]string{13: post13, 19: post19})
-
-		testutil.ExpectLog(t, buf, "already posted", 1) // issue 19
 	})
 }
 
