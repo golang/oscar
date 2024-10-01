@@ -40,6 +40,6 @@ docker build -f internal/gaby/Dockerfile \
 
 docker push $image
 
-gcloud run deploy gaby-devel --image $image --region $region --quiet
+gcloud run deploy gaby-devel --image $image --region $region --memory 2G --quiet
 gcloud run services update-traffic gaby-devel --to-latest --region $region
 
