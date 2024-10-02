@@ -109,7 +109,7 @@ func (c *Client) ChangeTimes(ch *Change) ChangeTimes {
 		}
 		if abandoned.IsZero() {
 			c.slog.Error("gerrit change abandoned missing message", "num", ch.num, "data", ch.data)
-			c.db.Panic("gerrit change abandoned missing message for %d", ch.num)
+			c.db.Panic("gerrit change abandoned missing message", "num", ch.num)
 		}
 	}
 
@@ -160,7 +160,7 @@ func (c *Client) ChangeDescription(ch *Change) string {
 	rev, ok := revisions.Revisions[revisions.CurrentRevision]
 	if !ok {
 		c.slog.Error("gerrit no revision data for current revision", "num", ch.num, "data", ch.data, "currentRevision", revisions.CurrentRevision)
-		c.db.Panic("gerrit no revision data for current revision for %d", ch.num)
+		c.db.Panic("gerrit no revision data for current revision", "num", ch.num)
 	}
 
 	return rev.Commit.Message

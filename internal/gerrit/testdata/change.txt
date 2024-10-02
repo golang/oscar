@@ -1,0 +1,22 @@
+-- change#1 --
+Number: 1
+Labels: Hold
+ Optional: true
+ Description: put change on hold
+ Values: 0: not on hold
+ Values: 1: on hold
+ Votes: 0
+Owner: gopher@golang.org
+CurrentRevision: commitid1
+Revisions: commitid1
+ Number: 1
+ Commit:
+  Subject: patch set 1
+  Message: gerrit: test change
+  Author:
+   Email: gopher@golang.org
+Hashtags: tag1 tag2
+Messages:
+ Message: message 1
+Messages:
+ Message: message 2

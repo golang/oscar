@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"iter"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
 	"testing"
@@ -69,6 +70,12 @@ func (tc *TestingClient) LoadTxtar(file string) error {
 	return err
 }
 
+// timeStampType is the [reflect.Type] of [TimeStamp].
+var timeStampType = reflect.TypeFor[TimeStamp]()
+
+// accountInfoType is the [reflect.Type] of [*AccountInfo].
+var accountInfoType = reflect.TypeFor[*AccountInfo]()
+
 // LoadTxtarData loads a change info history from the txtar file content data.
 // See [LoadTxtar] for a description of the format.
 func (tc *TestingClient) LoadTxtarData(data []byte) error {
@@ -77,46 +84,210 @@ func (tc *TestingClient) LoadTxtarData(data []byte) error {
 		data := string(file.Data)
 		// Skip the name and proceed to read headers.
 		c := &ChangeInfo{}
-		for {
-			line, rest, _ := strings.Cut(data, "\n")
-			data = rest
-			if line == "" {
-				break
-			}
-			key, val, ok := strings.Cut(line, ":")
-			if !ok {
-				return fmt.Errorf("%s: invalid header line: %q", file.Name, line)
-			}
-			val = strings.TrimSpace(val)
-			if val == "" {
-				continue
-			}
-			switch key {
-			case "Number":
-				i, err := strconv.Atoi(val)
-				if err != nil {
-					return err
-				}
-				c.Number = i
-			case "Updated":
-				t, err := timestamp(val)
-				if err != nil {
-					return err
-				}
-				c.Updated = t
-			case "MetaRevID":
-				c.MetaRevID = val
-			case "interrupt":
-				b, err := strconv.ParseBool(val)
-				if err != nil {
-					return err
-				}
-				c.interrupt = b
-			}
+		cv := reflect.ValueOf(c).Elem()
+		if _, err := tc.setFields(file.Name, data, 0, cv); err != nil {
+			return err
 		}
 		tc.chs = append(tc.chs, c)
 	}
 	return nil
+}
+
+// setFields reads field values and sets fields in a struct accordingly.
+// The indent parameter says how many spaces are required on each line;
+// this supports fields that are themselves structs.
+// This returns the remaining data.
+func (tc *TestingClient) setFields(filename, data string, indent int, st reflect.Value) (string, error) {
+	prefix := strings.Repeat(" ", indent)
+	for {
+		line, rest, _ := strings.Cut(data, "\n")
+		if line == "" {
+			data = rest
+			break
+		}
+		line, ok := strings.CutPrefix(line, prefix)
+		if !ok {
+			// Don't change data.
+			break
+		}
+		data = rest
+		rest, err := tc.setField(filename, line, data, indent, st)
+		if err != nil {
+			return "", err
+		}
+		data = rest
+	}
+	return data, nil
+}
+
+// setField takes a struct and a line that sets a scalar field.
+// The line should have the form "key: value",
+// where "key" is the name of a field in the struct and
+// "value is the value we want to set it to.
+// This isn't general, it only handles the cases that arise
+// for Gerrit types.
+// The data argument is the data following the line,
+// used for multi-line values.
+// This returns the remaining data.
+func (tc *TestingClient) setField(filename string, line, data string, indent int, st reflect.Value) (string, error) {
+	key, val, ok := strings.Cut(line, ":")
+	if !ok {
+		return "", fmt.Errorf("%s: invalid line: %q", filename, line)
+	}
+	val = strings.TrimSpace(val)
+
+	field := st.FieldByName(key)
+	if !field.IsValid() {
+		return "", fmt.Errorf("%s: unrecognized field name %q in %s", filename, key, st.Type())
+	}
+
+	var vval reflect.Value
+	switch field.Type().Kind() {
+	case reflect.Bool:
+		b, err := strconv.ParseBool(val)
+		if err != nil {
+			return "", fmt.Errorf("%s: field %q: can't parse %q as bool", filename, key, val)
+		}
+		vval = reflect.ValueOf(b)
+
+	case reflect.Int:
+		i, err := strconv.Atoi(val)
+		if err != nil {
+			return "", fmt.Errorf("%s: field %q: can't parse %q as int", filename, key, val)
+		}
+		vval = reflect.ValueOf(i)
+
+	case reflect.String:
+		vval = reflect.ValueOf(val)
+
+	case reflect.Struct:
+		if field.Type() == timeStampType {
+			t, err := timestamp(val)
+			if err != nil {
+				return "", fmt.Errorf("%s: field %q: can't parse %q as timestamp", filename, key, val)
+			}
+			vval = reflect.ValueOf(TimeStamp(t))
+			break
+		}
+		return "", fmt.Errorf("%s: field %q: unexpected struct type %s", filename, key, field.Type())
+
+	case reflect.Pointer:
+		if field.Type() == accountInfoType {
+			// For an account we just an email address.
+			if val == "" {
+				return "", fmt.Errorf("%s: field %q: missing email address for AccountInfo", filename, key)
+			}
+			vval = reflect.ValueOf(&AccountInfo{Email: val})
+			break
+		}
+		if field.Type().Elem().Kind() != reflect.Struct {
+			return "", fmt.Errorf("%s: field %q: unexpected pointer to %s", filename, key, field.Type().Elem())
+		}
+
+		// For struct types in general we expect the fields
+		// to follow, indented.
+		vval = reflect.New(field.Type().Elem())
+		rest, err := tc.setFields(filename, data, indent+1, vval.Elem())
+		if err != nil {
+			return "", err
+		}
+		data = rest
+		break
+
+	case reflect.Slice:
+		switch field.Type().Elem().Kind() {
+		case reflect.Int:
+			// For ints just put all the values on one line.
+			var ints []int
+			for _, vi := range strings.Fields(val) {
+				i, err := strconv.Atoi(vi)
+				if err != nil {
+					return "", fmt.Errorf("%s: field %q: %v", filename, key, err)
+				}
+				ints = append(ints, i)
+			}
+			vval = reflect.ValueOf(ints)
+
+		case reflect.String:
+			// For strings just put all the values on one line.
+			// Strings are space separated, no quoting.
+			var strs []string
+			for _, vs := range strings.Fields(val) {
+				vs = strings.TrimSpace(vs)
+				if vs == "" {
+					continue
+				}
+				strs = append(strs, vs)
+			}
+			vval = reflect.ValueOf(strs)
+
+		case reflect.Pointer:
+			if field.Type().Elem().Elem().Kind() != reflect.Struct {
+				return "", fmt.Errorf("%s: field %q: pointer not to struct in type %s", filename, key, field.Type())
+			}
+			vval = reflect.New(field.Type().Elem().Elem())
+			rest, err := tc.setFields(filename, data, indent+1, vval.Elem())
+			if err != nil {
+				return "", err
+			}
+			data = rest
+			vval = reflect.Append(field, vval)
+
+		default:
+			return "", fmt.Errorf("%s: field %q: unsupported slice type %s", filename, key, field.Type())
+		}
+
+	case reflect.Map:
+		if field.Type().Key().Kind() != reflect.String {
+			return "", fmt.Errorf("%s: field %q: unsupported map key type in %s", filename, key, field.Type())
+		}
+
+		if field.IsZero() {
+			field.Set(reflect.MakeMap(field.Type()))
+		}
+
+		switch field.Type().Elem().Kind() {
+		case reflect.String:
+			mkey, mval, ok := strings.Cut(val, ":")
+			if !ok {
+				return "", fmt.Errorf("%s: field %q: expected key: val in map to string", filename, key)
+			}
+			mkey = strings.TrimSpace(mkey)
+			mval = strings.TrimSpace(mval)
+			field.SetMapIndex(reflect.ValueOf(mkey), reflect.ValueOf(mval))
+			// Don't fall through to bottom of function.
+			return data, nil
+
+		case reflect.Pointer:
+			if field.Type().Elem().Elem().Kind() != reflect.Struct {
+				return "", fmt.Errorf("%s: field %q: pointer not to struct in map element type in %s", filename, key, field.Type())
+			}
+			vval = reflect.New(field.Type().Elem().Elem())
+			rest, err := tc.setFields(filename, data, indent+1, vval.Elem())
+			if err != nil {
+				return "", err
+			}
+			data = rest
+			field.SetMapIndex(reflect.ValueOf(val), vval)
+			// Don't fall through to bottom of function.
+			return data, nil
+
+		default:
+			return "", fmt.Errorf("%s: field %q: unsupported map element type in %s", filename, key, field.Type())
+		}
+
+	default:
+		return "", fmt.Errorf("%s: field %q: unsupported type %s", filename, key, field.Type())
+	}
+
+	if key == "interrupt" {
+		// Special case for the only unexported field.
+		st.Addr().Interface().(*ChangeInfo).interrupt = vval.Bool()
+	} else {
+		field.Set(vval)
+	}
+
+	return data, nil
 }
 
 // changes returns an iterator of change updates in tc.chs that are updated
@@ -192,6 +363,19 @@ func updatedIn(c *ChangeInfo, after, before string) (bool, error) {
 		bin = b.Time().Equal(u) || b.Time().After(u)
 	}
 	return ain && bin, nil
+}
+
+// change returns the data for a single testing change.
+func (tc *TestingClient) change(changeNum int) *Change {
+	for _, ch := range tc.chs {
+		if ch.Number == changeNum {
+			return &Change{
+				num:  changeNum,
+				data: storage.JSON(ch),
+			}
+		}
+	}
+	return nil
 }
 
 func timestamp(gt string) (TimeStamp, error) {

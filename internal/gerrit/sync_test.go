@@ -100,6 +100,14 @@ func TestSync(t *testing.T) {
 	}
 }
 
+// changeTests is a list of tests to run on a change.
+type changeTests struct {
+	name     string
+	accessor func(*Change) any
+	want     any
+	eq       func(any, any) bool
+}
+
 // accessor is one of the accessor methods to retrieve Change values.
 type accessor[T any] func(*Change) T
 
@@ -110,6 +118,23 @@ func wa[T any](fn accessor[T]) func(*Change) any {
 	}
 }
 
+// testChangeTests checks that a [Change] satisfies a list of [changeTests].
+func testChangeTests(t *testing.T, ch *Change, tests []changeTests) {
+	t.Helper()
+	for _, test := range tests {
+		got := test.accessor(ch)
+		var ok bool
+		if test.eq == nil {
+			ok = got == test.want
+		} else {
+			ok = test.eq(got, test.want)
+		}
+		if !ok {
+			t.Errorf("%s got %v, want %v", test.name, got, test.want)
+		}
+	}
+}
+
 // checkFirstCL checks the first CL in our saved sync against
 // the values we expect. The first CL is https://go.dev/cl/24894.
 func checkFirstCL(t *testing.T, c *Client, ch *Change, num int) {
@@ -117,12 +142,7 @@ func checkFirstCL(t *testing.T, c *Client, ch *Change, num int) {
 		t.Errorf("got first CL number %d, want 24894", num)
 	}
 
-	tests := []struct {
-		name     string
-		accessor func(*Change) any
-		want     any
-		eq       func(any, any) bool
-	}{
+	tests := []changeTests{
 		{
 			"ChangeNumber",
 			wa(c.ChangeNumber),
@@ -310,18 +330,7 @@ func checkFirstCL(t *testing.T, c *Client, ch *Change, num int) {
 		},
 	}
 
-	for _, test := range tests {
-		got := test.accessor(ch)
-		var ok bool
-		if test.eq == nil {
-			ok = got == test.want
-		} else {
-			ok = test.eq(got, test.want)
-		}
-		if !ok {
-			t.Errorf("%s got %v, want %v", test.name, got, test.want)
-		}
-	}
+	testChangeTests(t, ch, tests)
 }
 
 // checkChange verifies that we can unpack CL information, and that it

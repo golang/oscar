@@ -28,13 +28,13 @@ type ChangeInfo struct {
 	// The map that maps account IDs to AttentionSetInfo of that
 	// account. Those are all accounts that are currently in the
 	// attention set.
-	AttentionSet map[int]AttentionSetInfo `json:"attention_set,omitempty"`
+	AttentionSet map[int]*AttentionSetInfo `json:"attention_set,omitempty"`
 
 	// The map that maps account IDs to AttentionSetInfo of that
 	// account. Those are all accounts that were in the attention
 	// set but were removed. The AttentionSetInfo is the latest
 	// and most recent removal of the account from the attention set.
-	RemovedFromAttentionSet map[int]AttentionSetInfo `json:"removed_from_attention_set,omitempty"`
+	RemovedFromAttentionSet map[int]*AttentionSetInfo `json:"removed_from_attention_set,omitempty"`
 
 	// List of hashtags that are set on the change.
 	Hashtags []string `json:"hashtags,omitempty"`
@@ -95,7 +95,7 @@ type ChangeInfo struct {
 
 	// List of the [SubmitRecordInfo] containing the submit records
 	// for the change at the latest patchset.
-	SubmitRecords []SubmitRecordInfo `json:"submit_records"`
+	SubmitRecords []*SubmitRecordInfo `json:"submit_records"`
 
 	// The labels of the change as a map that maps the label names
 	// to LabelInfo entries.
@@ -119,7 +119,7 @@ type ChangeInfo struct {
 	PendingReviewers map[string][]*AccountInfo `json:"pending_reviewers,omitempty"`
 
 	// Messages associated with the change.
-	Messages []ChangeMessageInfo `json:"messages,omitempty"`
+	Messages []*ChangeMessageInfo `json:"messages,omitempty"`
 
 	// The number of the current patch set of this change.
 	CurrentRevisionNumber int `json:"current_revision_number"`
@@ -129,7 +129,7 @@ type ChangeInfo struct {
 
 	// All patch sets of this change as a map that maps the commit
 	// ID of the patch set to a [RevisionInfo] entity.
-	Revisions map[string]RevisionInfo `json:"revisions,omitempty"`
+	Revisions map[string]*RevisionInfo `json:"revisions,omitempty"`
 
 	// The SHA-1 of the NoteDb meta ref.
 	MetaRevID string `json:"meta_rev_id,omitempty"`
