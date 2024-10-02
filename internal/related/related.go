@@ -69,7 +69,7 @@ func New(lg *slog.Logger, db storage.DB, gh *github.Client, vdb storage.VectorDB
 	// TODO: Perhaps the action kind should include name, but perhaps not.
 	// This makes sure we only ever post to each issue once.
 	p.actionKind = "related.Poster"
-	p.logAction = actions.Register(p.actionKind, p.runFromActionLog)
+	p.logAction = actions.Register(p.actionKind, &actioner{p})
 	return p
 }
 
@@ -283,6 +283,22 @@ func (p *Poster) logPostIssue(ctx context.Context, e *github.Event) (advance boo
 	}
 	p.logAction(p.db, logKey(e), storage.JSON(act), !actions.RequiresApproval)
 	return true, nil
+}
+
+type actioner struct {
+	p *Poster
+}
+
+func (ar *actioner) Run(ctx context.Context, data []byte) ([]byte, error) {
+	return ar.p.runFromActionLog(ctx, data)
+}
+
+func (ar *actioner) ForDisplay(data []byte) string {
+	var a action
+	if err := json.Unmarshal(data, &a); err != nil {
+		return fmt.Sprintf("ERROR: %v", err)
+	}
+	return a.Issue.HTMLURL + "\n" + a.Changes.Body
 }
 
 // runFromActionLog is called by actions.Run to execute an action.

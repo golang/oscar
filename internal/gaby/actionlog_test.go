@@ -127,12 +127,16 @@ func TestActionTemplate(t *testing.T) {
 	}
 }
 
+type testActioner struct {
+	actions.Actioner
+}
+
+func (testActioner) Run(context.Context, []byte) ([]byte, error) { return nil, nil }
+
 func TestActionsBetween(t *testing.T) {
 	db := storage.MemDB()
 	g := &Gaby{slog: testutil.Slogger(t), db: db}
-	before := actions.Register("actionlog", func(context.Context, []byte) ([]byte, error) {
-		return nil, nil
-	})
+	before := actions.Register("actionlog", testActioner{})
 	start := time.Now()
 	before(db, []byte{1}, nil, false)
 	end := time.Now()

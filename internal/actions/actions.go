@@ -121,6 +121,16 @@ func (e *Entry) String() string {
 	return b.String()
 }
 
+// ActionForDisplay looks up the action associated with e and calls [Actioner.StringForDisplay]
+// on it.
+func (e *Entry) ActionForDisplay() string {
+	a := lookupActioner(e.Kind)
+	if a == nil {
+		return string(e.Action)
+	}
+	return a.ForDisplay(e.Action)
+}
+
 // A Decision describes the approval or denial of an action.
 type Decision struct {
 	Name     string    // name of person or system making the decision
@@ -339,10 +349,25 @@ func ScanAfter(lg *slog.Logger, db storage.DB, t time.Time, filter func(actionKi
 
 var registry sync.Map
 
-// RunFunc is the type of functions that run actions.
-// The function should deserialize the action, execute it, then return
-// the serialized result and error.
-type RunFunc func(ctx context.Context, action []byte) ([]byte, error)
+func lookupActioner(actionKind string) Actioner {
+	a, ok := registry.Load(actionKind)
+	if !ok {
+		return nil
+	}
+	return a.(Actioner)
+}
+
+// An Actioner works with actions.
+// Actioners are registered with [Register]
+type Actioner interface {
+	// Run deserializes the action, executes it, then return
+	// the serialized result and error.
+	Run(context.Context, []byte) ([]byte, error)
+	// ForDisplay returns a string describing the action in a way that is suitable
+	// for display on web pages and by command-line tools.
+	// The action is provided in serialized form, as with Run.
+	ForDisplay([]byte) string
+}
 
 // BeforeFunc is the type of functions that are called to log an action before it is run.
 // It writes an entry to db's action log with the given key and a representation
@@ -353,15 +378,15 @@ type RunFunc func(ctx context.Context, action []byte) ([]byte, error)
 // (has the same key) of an action that is already in the log.
 type BeforeFunc func(db storage.DB, key, action []byte, requiresApproval bool) (added bool)
 
-// Register associates the given action kind and run function.
-// Only one function may be registered for each kind, except during testing,
+// Register associates the given action kind and [Actioner].
+// Only Actioner may be registered for each kind, except during testing,
 // when Register always registers its arguments.
 //
 // Register returns a function that should be called to log an action before it is run.
-func Register(actionKind string, r RunFunc) BeforeFunc {
+func Register(actionKind string, a Actioner) BeforeFunc {
 	if testing.Testing() {
-		registry.Store(actionKind, r)
-	} else if _, ok := registry.LoadOrStore(actionKind, r); ok {
+		registry.Store(actionKind, a)
+	} else if _, ok := registry.LoadOrStore(actionKind, a); ok {
 		panic(fmt.Sprintf("%q already registered", actionKind))
 	}
 	return func(db storage.DB, key, action []byte, requiresApproval bool) bool {
@@ -411,14 +436,14 @@ func maybeRunEntry(ctx context.Context, lg *slog.Logger, db storage.DB, dkey []b
 // runEntry runs the action in entry e. It assumes it is ready to run (and so must
 // be called with a lock held). It returns the error resulting from the run.
 func runEntry(ctx context.Context, lg *slog.Logger, db storage.DB, e *entry) error {
-	run, ok := registry.Load(e.Kind)
-	if !ok {
+	a := lookupActioner(e.Kind)
+	if a == nil {
 		// unreachable unless bug, or if an action kind was removed
 		// while there were still unfinished actions
 		db.Panic("unregistered action kind", "kind", e.Kind)
 	}
 	lg.Info("action log: running", "kind", e.Kind, "key", storage.Fmt(e.Key))
-	result, err := run.(RunFunc)(ctx, e.Action)
+	result, err := a.(Actioner).Run(ctx, e.Action)
 	// mark done
 	e.Done = time.Now()
 	e.Result = result

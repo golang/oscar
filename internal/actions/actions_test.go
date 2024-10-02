@@ -159,9 +159,11 @@ func TestDB(t *testing.T) {
 	})
 	t.Run("registerAndRun", func(t *testing.T) {
 		var gotAction []byte
-		before := Register(actionKind, func(_ context.Context, action []byte) ([]byte, error) {
-			gotAction = action
-			return result, anError
+		before := Register(actionKind, testActioner{
+			run: func(_ context.Context, action []byte) ([]byte, error) {
+				gotAction = action
+				return result, anError
+			},
 		})
 
 		db := storage.MemDB()
@@ -232,12 +234,14 @@ func TestRun(t *testing.T) {
 	lg := testutil.Slogger(t)
 	nRunCalls := 0
 
-	before := Register(actionKind, func(_ context.Context, action []byte) ([]byte, error) {
-		nRunCalls++
-		if string(action) == "fail" {
-			return nil, errAction
-		}
-		return append([]byte("result "), action...), nil
+	before := Register(actionKind, testActioner{
+		run: func(_ context.Context, action []byte) ([]byte, error) {
+			nRunCalls++
+			if string(action) == "fail" {
+				return nil, errAction
+			}
+			return append([]byte("result "), action...), nil
+		},
 	})
 
 	t.Run("basic", func(t *testing.T) {
@@ -342,4 +346,13 @@ func TestRun(t *testing.T) {
 		AddDecision(db, actionKind, key2, Decision{Approved: true})
 		checkRunAndDone(key2, true)
 	})
+}
+
+type testActioner struct {
+	Actioner
+	run func(context.Context, []byte) ([]byte, error)
+}
+
+func (t testActioner) Run(ctx context.Context, data []byte) ([]byte, error) {
+	return t.run(ctx, data)
 }

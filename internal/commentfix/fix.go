@@ -95,7 +95,7 @@ func New(lg *slog.Logger, gh *github.Client, db storage.DB, name string) *Fixer 
 	if gh != nil {
 		f.watcher = gh.EventWatcher("commentfix.Fixer:" + name)
 	}
-	f.logAction = actions.Register("commentfix.Fixer:"+name, f.runFromActionLog)
+	f.logAction = actions.Register("commentfix.Fixer:"+name, &actioner{f})
 	return f
 }
 
@@ -440,6 +440,23 @@ func (f *Fixer) newAction(e *github.Event) *action {
 	}
 }
 
+type actioner struct {
+	f *Fixer
+}
+
+func (ar *actioner) Run(ctx context.Context, data []byte) ([]byte, error) {
+	return ar.f.runFromActionLog(ctx, data)
+}
+
+func (ar *actioner) ForDisplay(data []byte) string {
+	var a action
+	if err := json.Unmarshal(data, &a); err != nil {
+		return fmt.Sprintf("ERROR: %v", err)
+	}
+	d := diff.Diff("before", []byte(a.IC.body()), "after", []byte(a.Body))
+	return a.IC.htmlURL() + "\n" + string(d)
+}
+
 // runFromActionLog is called by actions.Run to execute an action.
 // It decodes the action, calls [Fixer.runAction], then encodes the result.
 func (f *Fixer) runFromActionLog(ctx context.Context, data []byte) ([]byte, error) {
@@ -530,6 +547,13 @@ func (ic *issueOrComment) url() string {
 		return ic.Issue.URL
 	}
 	return ic.Comment.URL
+}
+
+func (ic *issueOrComment) htmlURL() string {
+	if ic.Issue != nil {
+		return ic.Issue.HTMLURL
+	}
+	return ic.Comment.HTMLURL
 }
 
 func (ic *issueOrComment) editBody(ctx context.Context, gh *github.Client, body string) error {
