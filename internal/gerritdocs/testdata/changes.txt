@@ -1,0 +1,44 @@
+-- change#1 --
+Number: 1
+MetaRevID: 1
+Project: test
+Subject: this is change number 1
+CurrentRevision: commitid1
+Revisions: commitid1
+ Number: 1
+ Commit:
+  Subject: patch set 1
+  Message: gerrit: test change
+Messages:
+ Message: message 2
+ Date: "2020-09-01 10:10:10.00000000"
+Messages:
+ Message: message 1
+ Date: "2020-08-01 10:10:10.00000000"
+
+-- change#2 --
+Number: 2
+MetaRevID: 1
+Project: test
+Subject: this is change number 2
+CurrentRevision: commitid1
+Revisions: commitid1
+ Number: 1
+ Commit:
+  Subject: patch set 1
+  Message: gerrit: test change 2
+Messages:
+ Message: message 1
+ Date: "2020-09-01 10:10:10.00000000"
+
+-- change#3 --
+Number: 3
+MetaRevID: 3
+Project: test
+Subject: this is change number 3
+CurrentRevision: commitid1
+Revisions: commitid1
+ Number: 1
+ Commit:
+  Subject: patch set 1
+  Message: gerrit: test change 3
