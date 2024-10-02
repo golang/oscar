@@ -7,6 +7,7 @@ package related
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"maps"
@@ -53,20 +54,20 @@ func TestRun(t *testing.T) {
 	p.EnableProject("rsc/markdown")
 	p.SetTimeLimit(time.Time{})
 	run(p)
-	checkEdits(t, gh.Testing().Edits(), nil)
-	gh.Testing().ClearEdits()
+	checkActionLog(t, db, nil)
+	actions.ClearLogForTesting(t, db)
 
 	p.EnablePosts()
 	run(p)
-	checkEdits(t, gh.Testing().Edits(), map[int64]string{13: post13, 19: post19})
-	gh.Testing().ClearEdits()
+	checkActionLog(t, db, map[int64]string{13: post13, 19: post19})
+	actions.ClearLogForTesting(t, db)
 
 	p.EnableProject("rsc/markdown")
 	p.SetTimeLimit(time.Time{})
 	p.EnablePosts()
 	run(p)
-	checkEdits(t, gh.Testing().Edits(), nil)
-	gh.Testing().ClearEdits()
+	checkActionLog(t, db, nil)
+	actions.ClearLogForTesting(t, db)
 
 	for i := range 4 {
 		p := New(lg, db, gh, vdb, dc, "postnameloop."+fmt.Sprint(i))
@@ -84,10 +85,9 @@ func TestRun(t *testing.T) {
 			p.SkipBodyContains("ZZZ")
 		}
 		p.EnablePosts()
-		actions.ClearLogForTesting(t, db)
 		run(p)
-		checkEdits(t, gh.Testing().Edits(), map[int64]string{13: post13})
-		gh.Testing().ClearEdits()
+		checkActionLog(t, db, map[int64]string{13: post13})
+		actions.ClearLogForTesting(t, db)
 	}
 
 	p = New(lg, db, gh, vdb, dc, "postname2")
@@ -96,20 +96,18 @@ func TestRun(t *testing.T) {
 	p.SetMinScore(2.0) // impossible
 	p.SetTimeLimit(time.Time{})
 	p.EnablePosts()
-	actions.ClearLogForTesting(t, db)
 	run(p)
-	checkEdits(t, gh.Testing().Edits(), nil)
-	gh.Testing().ClearEdits()
+	checkActionLog(t, db, nil)
+	actions.ClearLogForTesting(t, db)
 
 	p = New(lg, db, gh, vdb, dc, "postname4")
 	p.EnableProject("rsc/markdown")
 	p.SetMinScore(2.0) // impossible
 	p.SetTimeLimit(time.Date(2222, 1, 1, 1, 1, 1, 1, time.UTC))
 	p.EnablePosts()
-	actions.ClearLogForTesting(t, db)
 	run(p)
-	checkEdits(t, gh.Testing().Edits(), nil)
-	gh.Testing().ClearEdits()
+	checkActionLog(t, db, nil)
+	actions.ClearLogForTesting(t, db)
 
 	p = New(lg, db, gh, vdb, dc, "postname5")
 	p.EnableProject("rsc/markdown")
@@ -117,10 +115,9 @@ func TestRun(t *testing.T) {
 	p.SetMaxResults(0) // except none
 	p.SetTimeLimit(time.Time{})
 	p.EnablePosts()
-	actions.ClearLogForTesting(t, db)
 	run(p)
-	checkEdits(t, gh.Testing().Edits(), nil)
-	gh.Testing().ClearEdits()
+	checkActionLog(t, db, nil)
+	actions.ClearLogForTesting(t, db)
 }
 
 func TestPost(t *testing.T) {
@@ -143,34 +140,30 @@ func TestPost(t *testing.T) {
 		p, _, project, _ := newTestPoster(t)
 
 		post(p, project, 19, 13)
-		checkEdits(t, p.github.Testing().Edits(), map[int64]string{13: post13, 19: post19})
+		checkActionLog(t, p.db, map[int64]string{13: post13, 19: post19})
 	})
 
 	t.Run("double-post", func(t *testing.T) {
 		p, _, project, _ := newTestPoster(t)
 		post(p, project, 13, 13)
-		checkEdits(t, p.github.Testing().Edits(), map[int64]string{13: post13})
+		checkActionLog(t, p.db, map[int64]string{13: post13})
 	})
 
 	t.Run("post-run", func(t *testing.T) {
 		p, buf, project, _ := newTestPoster(t)
 
 		post(p, project, 19)
-		checkEdits(t, p.github.Testing().Edits(), map[int64]string{19: post19})
+		latestDone := checkActionLog(t, p.db, map[int64]string{19: post19})
 		testutil.ExpectLog(t, buf, "advanced watcher", 0)
 
-		p.github.Testing().ClearEdits()
-
-		// Post does not advance Run's watcher, so it operates on all issues.
+		// Post does not advance Run's watcher, so it operates on all unhandled issues.
 		run(p)
-		checkEdits(t, p.github.Testing().Edits(), map[int64]string{13: post13})
+		latestDone = checkActionLogAfter(t, p.db, map[int64]string{13: post13}, latestDone)
 		testutil.ExpectLog(t, buf, "advanced watcher", 2) // issue 13 and 19 both advance watcher
-
-		p.github.Testing().ClearEdits()
 
 		// Run is a no-op because previous call to run advanced watcher past issue 19.
 		run(p)
-		checkEdits(t, p.github.Testing().Edits(), nil)
+		checkActionLogAfter(t, p.db, nil, latestDone)
 		testutil.ExpectLog(t, buf, "advanced watcher", 2) // no change
 	})
 
@@ -185,7 +178,7 @@ func TestPost(t *testing.T) {
 		}()
 		post(p, project, 19)
 		<-done
-		checkEdits(t, p.github.Testing().Edits(), map[int64]string{13: post13, 19: post19})
+		checkActionLog(t, p.db, map[int64]string{13: post13, 19: post19})
 	})
 }
 
@@ -230,7 +223,6 @@ func newTestPoster(t *testing.T) (_ *Poster, out *bytes.Buffer, project string, 
 	vdb := storage.MemVectorDB(db, lg, "vecs")
 	embeddocs.Sync(ctx, lg, vdb, llm.QuoteEmbedder(), dc)
 
-	t.Cleanup(gh.Testing().ClearEdits)
 	p := New(lg, db, gh, vdb, dc, t.Name())
 	project = "rsc/markdown"
 	p.EnableProject(project)
@@ -240,26 +232,40 @@ func newTestPoster(t *testing.T) (_ *Poster, out *bytes.Buffer, project string, 
 	return p, out, project, testutil.Checker(t)
 }
 
-func checkEdits(t *testing.T, edits []*github.TestingEdit, want map[int64]string) {
+// checkActionLog calls checkActionLogAfter with the zero time.
+func checkActionLog(t *testing.T, db storage.DB, want map[int64]string) time.Time {
+	return checkActionLogAfter(t, db, want, time.Time{})
+}
+
+// checkActionLogAfter compares the contents of the action log after start with the values in want.
+// The actions in the log must all be of type [action].
+// Each key in want is the issue number of a completed action, and each value must match the action's
+// comment body.
+// checkActionLogAfter returns the done time of the latest matched action.
+func checkActionLogAfter(t *testing.T, db storage.DB, want map[int64]string, start time.Time) time.Time {
 	t.Helper()
-	for _, e := range edits {
-		if e.Project != "rsc/markdown" {
+	entries := slices.Collect(actions.ScanAfter(testutil.Slogger(t), db, start, nil))
+	for _, e := range entries {
+		if !e.IsDone() {
+			continue
+		}
+		var a action
+		if err := json.Unmarshal(e.Action, &a); err != nil {
+			t.Fatal(err)
+		}
+		if a.Issue.Project() != "rsc/markdown" {
 			t.Errorf("posted to unexpected project: %v", e)
 			continue
 		}
-		if e.Comment != 0 || e.IssueCommentChanges == nil {
-			t.Errorf("non-post edit: %v", e)
-			continue
-		}
-		w, ok := want[e.Issue]
+		w, ok := want[a.Issue.Number]
 		if !ok {
 			t.Errorf("post to unexpected issue: %v", e)
 			continue
 		}
-		delete(want, e.Issue)
-		if strings.TrimSpace(e.IssueCommentChanges.Body) != strings.TrimSpace(w) {
-			t.Errorf("rsc/markdown#%d: wrong post:\n%s", e.Issue,
-				string(diff.Diff("want", []byte(w), "have", []byte(e.IssueCommentChanges.Body))))
+		delete(want, a.Issue.Number)
+		if strings.TrimSpace(a.Changes.Body) != strings.TrimSpace(w) {
+			t.Errorf("rsc/markdown#%d: wrong post:\n%s", a.Issue.Number,
+				string(diff.Diff("want", []byte(w), "have", []byte(a.Changes.Body))))
 		}
 	}
 	for _, issue := range slices.Sorted(maps.Keys(want)) {
@@ -268,6 +274,10 @@ func checkEdits(t *testing.T, edits []*github.TestingEdit, want map[int64]string
 	if t.Failed() {
 		t.FailNow()
 	}
+	if len(entries) > 0 {
+		return entries[len(entries)-1].Done
+	}
+	return time.Time{}
 }
 
 var post13 = unQUOT(`**Related Issues and Documentation**
