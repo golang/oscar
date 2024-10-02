@@ -92,7 +92,7 @@ license that can be found in the LICENSE file.
       <h2>Action Log from {{.StartTime}} to {{.EndTime}}</h2>
 
       {{with .Entries}}
-      <table>
+      <table style="max-width:100%">
         <thead>
           <tr>
             <th>Created</th>
@@ -116,11 +116,13 @@ license that can be found in the LICENSE file.
                      onclick="toggleAction(event)"/>
             </td>
             <td>{{$e.Done | fmttime}}</td>
-            <td>{{$e.Result | fmtval}}</td>
+            <td><pre class="wrap">{{$e.Result | fmtval}}</pre></td>
             <td>{{$e.Error}}</td>
           </tr>
           <tr id="{{(print "action-" $i) | safeid}}" hidden="true">
-            <td colspan="7">{{$e.Action | fmtval}}</td>
+            <td colspan="7">
+              <pre class="wrap">{{$e.Action | fmtval}}</pre>
+            </td>
           </tr>
         {{end}}
         </table>
