@@ -7,8 +7,8 @@ license that can be found in the LICENSE file.
 <html>
   <head>
     <title>Oscar Search</title>
-	<link rel="stylesheet" href="static/style.css">
-	<link rel="stylesheet" href="static/search.css">
+	<link rel="stylesheet" href="static/style.css"/>
+	<link rel="stylesheet" href="static/search.css"/>
   </head>
   <body>
     <div class="section" class="header">
@@ -42,7 +42,7 @@ license that can be found in the LICENSE file.
 		 <input id="allow_kind" type="text" name="allow_kind" value="{{.Allow}}" optional autofocus />
 		</span>
 		<span>
-		 <label for="deny_kind">exclude types</code></label>
+		 <label for="deny_kind">exclude types</label>
 		 <input id="deny_kind" type="text" name="deny_kind" value="{{.Deny}}" optional autofocus />
 		</span>
 		<span class="submit">
@@ -85,7 +85,7 @@ license that can be found in the LICENSE file.
 		  {{end -}}
 	    {{end -}}
 	    <span class="kind">type: {{.Kind}}</span>
-	    <span class="score">similarity: <b>{{.Score}}</b><span>
+	    <span class="score">similarity: <b>{{.Score}}</b></span>
 		</div>
 	  {{end}}
 	{{- else -}}

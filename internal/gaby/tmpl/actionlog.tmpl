@@ -7,8 +7,8 @@ license that can be found in the LICENSE file.
 <html>
   <head>
     <title>Oscar Action Log</title>
-    <link rel="stylesheet" href="static/style.css">
-    <link rel="stylesheet" href="static/actionlog.css">
+    <link rel="stylesheet" href="static/style.css"/>
+    <link rel="stylesheet" href="static/actionlog.css"/>
     <script>
       // Toggle the hidden state of a row containing the action.
       // Also change the button label accordingly..
@@ -119,10 +119,11 @@ license that can be found in the LICENSE file.
             <td>{{$e.Result | fmtval}}</td>
             <td>{{$e.Error}}</td>
           </tr>
-          <tr id="{{(print "action-" $i) | safeid}}" hidden="true"><td colspan="7">
-            <td>{{$e.Action | fmtval}}</td>
-          <tr>
+          <tr id="{{(print "action-" $i) | safeid}}" hidden="true">
+            <td colspan="7">{{$e.Action | fmtval}}</td>
+          </tr>
         {{end}}
+        </table>
       {{else}}
         No entries.
       {{end}}
