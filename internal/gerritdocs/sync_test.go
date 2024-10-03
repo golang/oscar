@@ -21,7 +21,6 @@ func TestSync(t *testing.T) {
 	ctx := context.Background()
 
 	gr := gerrit.New("go-review.googlesource.com", lg, db, nil, nil)
-	// TODO: add comments, they are currently missing.
 	check(gr.Testing().LoadTxtar("testdata/changes.txt"))
 
 	check(gr.Add("test"))
@@ -76,5 +75,5 @@ func TestSync(t *testing.T) {
 var (
 	ch1      = "https://go-review.googlesource.com/c/test/+/1#related-content"
 	ch1Title = "this is change number 1"
-	ch1Text  = "gerrit: test change\n\nmessage 1\n\nmessage 2"
+	ch1Text  = "gerrit: test change\n\ncomment 1\n\nmessage 1\n\ncomment 2\n\nmessage 2"
 )

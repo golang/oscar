@@ -404,14 +404,15 @@ func (c *Client) syncIntervalChanges(ctx context.Context, proj *projectSync) (so
 
 // syncComments updates the comments of a change in the database.
 func (c *Client) syncComments(ctx context.Context, b storage.Batch, project string, changeNum int) error {
-	if c.divertChanges() { // testing
-		return c.testClient.syncComments(ctx, b, project, changeNum)
-	}
-
-	url := "https://" + c.instance + "/changes/" + strconv.Itoa(changeNum) + "/comments"
 	var obj json.RawMessage
-	if err := c.get(ctx, url, &obj); err != nil {
-		return err
+	if c.divertChanges() { // testing
+		cms := c.testClient.comments[changeNum]
+		obj = storage.JSON(map[string][]*CommentInfo{"file": cms}) // attach comments to a single file
+	} else {
+		url := "https://" + c.instance + "/changes/" + strconv.Itoa(changeNum) + "/comments"
+		if err := c.get(ctx, url, &obj); err != nil {
+			return err
+		}
 	}
 
 	key := o(commentKind, c.instance, project, changeNum)

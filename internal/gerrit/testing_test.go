@@ -92,13 +92,18 @@ func TestLoadTxtar(t *testing.T) {
 	}
 
 	testChangeTests(t, ch, tests)
+
+	want := "comment 1"
+	if got := tc.comments[1][0].Message; got != want {
+		t.Errorf("change #1: got comment %q, want %q", got, want)
+	}
 }
 
 func TestTestingChanges(t *testing.T) {
 	check := testutil.Checker(t)
 	ctx := context.Background()
 
-	tc := TestingClient{}
+	tc := newTestingClient()
 	tc.queryLimit = 1000 // grab everything in one batch
 	check(tc.LoadTxtar("testdata/uniquetimes.txt"))
 

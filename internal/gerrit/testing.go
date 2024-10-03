@@ -40,15 +40,20 @@ func (c *Client) Testing() *TestingClient {
 	}
 
 	if c.testClient == nil {
-		c.testClient = &TestingClient{}
+		c.testClient = newTestingClient()
 	}
 	return c.testClient
 }
 
 // A TestingClient provides access to [Client] functionality intended for testing.
 type TestingClient struct {
-	chs        []*ChangeInfo // change updates, in reverse chronological order
-	queryLimit int           // mimic Gerrit query limits
+	chs        []*ChangeInfo          // change updates, in reverse chronological order
+	queryLimit int                    // mimic Gerrit query limits
+	comments   map[int][]*CommentInfo // comments indexed by change number
+}
+
+func newTestingClient() *TestingClient {
+	return &TestingClient{comments: make(map[int][]*CommentInfo)}
 }
 
 // LoadTxtar loads a change info history from the named txtar file,
@@ -124,6 +129,10 @@ func (tc *TestingClient) setFields(filename, data string, indent int, st reflect
 // The line should have the form "key: value",
 // where "key" is the name of a field in the struct and
 // "value is the value we want to set it to.
+// The one exception are lines whose "key" is "Comment". The value
+// for such lines must be [CommentInfo]. If such comment lines exist,
+// they need to be preceeded by a "Number: value" line and st must be
+// of type [ChangeInfo]. Comments are added to tc.comments.
 // This isn't general, it only handles the cases that arise
 // for Gerrit types.
 // The data argument is the data following the line,
@@ -138,6 +147,19 @@ func (tc *TestingClient) setField(filename string, line, data string, indent int
 
 	field := st.FieldByName(key)
 	if !field.IsValid() {
+		if ch, ok := st.Interface().(ChangeInfo); ok && key == "Comment" { // parse comments
+			if ch.Number == 0 {
+				return "", errors.New("change Number not set before Comment lines")
+			}
+			var cm CommentInfo
+			cmv := reflect.ValueOf(&cm).Elem()
+			data, err := tc.setFields(filename, data, indent+1, cmv)
+			if err != nil {
+				return "", err
+			}
+			tc.comments[ch.Number] = append(tc.comments[ch.Number], &cm)
+			return data, nil
+		}
 		return "", fmt.Errorf("%s: unrecognized field name %q in %s", filename, key, st.Type())
 	}
 
@@ -388,9 +410,4 @@ func timestamp(gt string) (TimeStamp, error) {
 		return TimeStamp(time.Time{}), err
 	}
 	return ts, nil
-}
-
-// syncComments does nothing, for testing purposes.
-func (tc *TestingClient) syncComments(_ context.Context, _ storage.Batch, _ string, _ int) error {
-	return nil
 }

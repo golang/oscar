@@ -16,6 +16,9 @@ Revisions: commitid1
   Message: gerrit: test change
   Author:
    Email: gopher@golang.org
+Comment:
+ Message: comment 1
+Number: 1
 Hashtags: tag1 tag2
 Messages:
  Message: message 1
