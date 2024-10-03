@@ -9,9 +9,11 @@ package gcpmetrics
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"strings"
 	"sync/atomic"
+	"time"
 
 	gcpexporter "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric"
 	"go.opentelemetry.io/contrib/detectors/gcp"
@@ -59,8 +61,15 @@ type loggingExporter struct {
 // For testing.
 var totalExports, failedExports atomic.Int64
 
+// If true, print what would be exported but do not export.
+const debug = false
+
 func (e *loggingExporter) Export(ctx context.Context, rm *metricdata.ResourceMetrics) error {
 	totalExports.Add(1)
+	if debug {
+		debugExport(rm)
+		return nil
+	}
 	err := e.Exporter.Export(ctx, rm)
 	if err != nil {
 		e.lg.Warn("metric export failed", "err", err)
@@ -75,4 +84,33 @@ func (e *loggingExporter) Export(ctx context.Context, rm *metricdata.ResourceMet
 		e.lg.Debug("exported metrics", "metrics", strings.Join(metricNames, " "))
 	}
 	return err
+}
+
+func debugExport(rm *metricdata.ResourceMetrics) {
+	fmt.Println("DEBUG METRICS EXPORT (not actually exporting)")
+	for _, sm := range rm.ScopeMetrics {
+		for _, m := range sm.Metrics {
+			fmt.Printf("metric %q\n", m.Name)
+			switch d := m.Data.(type) {
+			case metricdata.Gauge[int64]:
+				debugDataPoints(d.DataPoints)
+			case metricdata.Sum[int64]:
+				debugDataPoints(d.DataPoints)
+			default:
+				fmt.Printf("\tdata of type %T\n", m.Data)
+			}
+		}
+		fmt.Println("DEBUG END")
+	}
+}
+
+func debugDataPoints[T int64 | float64](dps []metricdata.DataPoint[T]) {
+	for _, dp := range dps {
+		var as []string
+		for _, kv := range dp.Attributes.ToSlice() {
+			as = append(as, fmt.Sprintf("%s:%q", kv.Key, kv.Value.Emit()))
+		}
+		fmt.Printf("\ttime=%s value=%v attrs:{%s}\n",
+			dp.Time.Format(time.DateTime), dp.Value, strings.Join(as, ", "))
+	}
 }
