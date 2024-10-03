@@ -61,7 +61,6 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"encoding/hex"
@@ -72,6 +71,7 @@ import (
 	"go/parser"
 	"go/printer"
 	"go/token"
+	"io"
 	"log"
 	"log/slog"
 	"math"
@@ -82,6 +82,7 @@ import (
 	"golang.org/x/oscar/internal/gcp/firestore"
 	"golang.org/x/oscar/internal/pebble"
 	"golang.org/x/oscar/internal/storage"
+	"golang.org/x/term"
 	"rsc.io/ordered"
 )
 
@@ -100,6 +101,7 @@ func main() {
 	if flag.NArg() != 1 {
 		usage()
 	}
+
 	dbspec := flag.Arg(0)
 	db, err := openDB(dbspec)
 	if err != nil {
@@ -107,13 +109,21 @@ func main() {
 	}
 	readonly := strings.HasPrefix(dbspec, "firestore:oscar-go-1,")
 
-	s := bufio.NewScanner(os.Stdin)
+	if err := run(db, readonly); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func run(db storage.DB, readonly bool) error {
+	t := term.NewTerminal(os.Stdin, "dbedit> ")
 	for {
-		fmt.Fprintf(os.Stderr, "dbedit> ")
-		if !s.Scan() {
-			break
+		line, err := readLine(t)
+		if err == io.EOF {
+			return nil
 		}
-		line := s.Text()
+		if err != nil {
+			return err
+		}
 		func() {
 			if e := recover(); e != nil {
 				fmt.Fprintf(os.Stderr, "?%s\n", e)
@@ -475,4 +485,13 @@ func openDB(spec string) (storage.DB, error) {
 	default:
 		return nil, errors.New("unknown DB type")
 	}
+}
+
+func readLine(t *term.Terminal) (string, error) {
+	old, err := term.MakeRaw(int(os.Stdin.Fd()))
+	if err != nil {
+		return "", err
+	}
+	defer term.Restore(int(os.Stdin.Fd()), old)
+	return t.ReadLine()
 }

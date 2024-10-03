@@ -8,8 +8,10 @@ require (
 	github.com/google/safehtml v0.1.0
 	go.opentelemetry.io/otel v1.28.0
 	go.opentelemetry.io/otel/metric v1.28.0
-	golang.org/x/oscar v0.0.0-20240819200921-b512a4fcd26f
+	golang.org/x/net v0.29.0
+	golang.org/x/oscar v0.0.0-20241003170524-f6709c1300ee
 	golang.org/x/oscar/internal/gcp v0.0.0-20240906165427-0318a0cba7d5
+	rsc.io/ordered v1.1.0
 )
 
 require (
@@ -64,15 +66,14 @@ require (
 	go.opentelemetry.io/otel/sdk v1.28.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v1.28.0 // indirect
 	go.opentelemetry.io/otel/trace v1.28.0 // indirect
-	golang.org/x/crypto v0.26.0 // indirect
+	golang.org/x/crypto v0.27.0 // indirect
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
-	golang.org/x/net v0.28.0 // indirect
 	golang.org/x/oauth2 v0.22.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
-	golang.org/x/sys v0.23.0 // indirect
-	golang.org/x/text v0.17.0 // indirect
+	golang.org/x/sys v0.25.0 // indirect
+	golang.org/x/text v0.18.0 // indirect
 	golang.org/x/time v0.6.0 // indirect
-	golang.org/x/tools v0.24.0 // indirect
+	golang.org/x/tools v0.25.0 // indirect
 	google.golang.org/api v0.189.0 // indirect
 	google.golang.org/genproto v0.0.0-20240722135656-d784300faade // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240722135656-d784300faade // indirect
@@ -81,6 +82,5 @@ require (
 	google.golang.org/protobuf v1.34.2 // indirect
 	rsc.io/markdown v0.0.0-20240617154923-1f2ef1438fed // indirect
 	rsc.io/omap v1.2.1-0.20240709133045-40dad5c0c0fb // indirect
-	rsc.io/ordered v1.1.0 // indirect
 	rsc.io/top v1.0.2 // indirect
 )
