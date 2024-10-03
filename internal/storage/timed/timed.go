@@ -288,13 +288,16 @@ type Watcher[T any] struct {
 // The Watcher applies decode(e) to each time-stamped Entry to obtain the T returned
 // in the iteration.
 func NewWatcher[T any](lg *slog.Logger, db storage.DB, name, kind string, decode func(*Entry) T) *Watcher[T] {
-	return &Watcher[T]{
+	w := &Watcher[T]{
 		slog:   lg,
 		db:     db,
 		dkey:   ordered.Encode(kind+"Watcher", name),
 		kind:   kind,
 		decode: decode,
 	}
+	// Set w.latest to current DB value.
+	w.cutoffUnlocked()
+	return w
 }
 
 func (w *Watcher[T]) lock() {
@@ -318,6 +321,10 @@ func (w *Watcher[T]) cutoff() DBTime {
 		// unreachable unless called wrong in this file
 		w.db.Panic("timed.Watcher not locked")
 	}
+	return w.cutoffUnlocked()
+}
+
+func (w *Watcher[T]) cutoffUnlocked() DBTime {
 	var t int64
 	if dval, ok := w.db.Get(w.dkey); ok {
 		if err := ordered.Decode(dval, &t); err != nil {
@@ -408,10 +415,6 @@ func (w *Watcher[T]) Flush() {
 
 // Latest returns the latest known DBTime marked old by the Watcher.
 // It does not require the lock to be held.
-//
-// Latest may return a stale value. In particular, it will return
-// 0 until the first call to [Watcher.Recent] or [Watcher.MarkOld] in
-// the process.
 func (w *Watcher[T]) Latest() DBTime {
 	return DBTime(w.latest.Load())
 }
