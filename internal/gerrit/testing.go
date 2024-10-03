@@ -293,7 +293,7 @@ func (tc *TestingClient) setField(filename string, line, data string, indent int
 // changes returns an iterator of change updates in tc.chs that are updated
 // in the interval [after, before], in reverse chronological order. First
 // skip number of matching change updates are disregarded.
-func (tc *TestingClient) changes(_ context.Context, _ string, after, before string, skip int) iter.Seq2[json.RawMessage, error] {
+func (tc *TestingClient) changes(_ context.Context, project string, after, before string, skip int) iter.Seq2[json.RawMessage, error] {
 	return func(yield func(json.RawMessage, error) bool) {
 		skipped := 0
 		inInterval := false
@@ -322,6 +322,10 @@ func (tc *TestingClient) changes(_ context.Context, _ string, after, before stri
 			if err != nil {
 				yield(nil, err)
 				return
+			}
+
+			if c.Project != project {
+				continue
 			}
 
 			yielded++

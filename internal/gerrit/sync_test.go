@@ -390,7 +390,7 @@ func TestSyncTesting(t *testing.T) {
 	lg := testutil.Slogger(t)
 	ctx := context.Background()
 
-	project := "test-repo"
+	project := "test"
 	numCLs := func(c *Client) int {
 		cnt := 0
 		for _, _ = range c.ChangeNumbers(project) {

@@ -104,7 +104,7 @@ func TestTestingChanges(t *testing.T) {
 
 	cnt := 0
 	// There should be six changes matching the criteria, but skip the first one.
-	for _, err := range tc.changes(ctx, "", "2020-03-01 10:10:10.00000000", "2020-08-01 10:10:10.00000000", 1) {
+	for _, err := range tc.changes(ctx, "test", "2020-03-01 10:10:10.00000000", "2020-08-01 10:10:10.00000000", 1) {
 		check(err)
 		cnt++
 	}
