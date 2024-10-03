@@ -422,11 +422,28 @@ func (p *Poster) skip(e *github.Event) (_ bool, reason string) {
 			return true, fmt.Sprintf("ignored by function ignores[%d]", i)
 		}
 	}
+	if p.posted(e) {
+		return true, "already posted"
+	}
 	return false, ""
 }
 
+// posted reports whether the event has already been posted.
+// This should only be necessary for a short time, since the action log
+// is now handling this check.
+func (p *Poster) posted(e *github.Event) bool {
+	_, ok := p.db.Get(postedKey(e))
+	return ok
+}
+
+// postedKey returns the database key to use when marking an event as posted.
+func postedKey(e *github.Event) []byte {
+	return ordered.Encode("triage.Posted", e.Project, e.Issue)
+}
+
 // logKey returns the key for the event in the action log.
-// This is only a portion of the database key; it is prefixed by the Poster's action kind.
+// This is only a portion of the database key; it is prefixed by the Poster's action
+// kind.
 func logKey(e *github.Event) []byte {
 	return ordered.Encode(e.Project, e.Issue)
 }
