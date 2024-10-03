@@ -549,7 +549,11 @@ func (g *Gaby) syncGerrit(ctx context.Context) error {
 	defer g.db.Unlock(gabyGerritSyncLock)
 
 	// Download new events from all gerrit projects.
-	return g.gerrit.Sync(ctx)
+	if err := g.gerrit.Sync(ctx); err != nil {
+		return err
+	}
+	// Store newly downloaded gerrit events in the document database.
+	return gerritdocs.Sync(ctx, g.slog, g.docs, g.gerrit, g.gerritProjects)
 }
 
 // embedAll store embeddings for all new documents in the vector database.
