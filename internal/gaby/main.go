@@ -50,6 +50,7 @@ type gabyFlags struct {
 	firestoredb   string
 	enablesync    bool
 	enablechanges bool
+	level         string
 }
 
 var flags gabyFlags
@@ -60,6 +61,7 @@ func init() {
 	flag.StringVar(&flags.firestoredb, "firestoredb", "", "name of the Firestore DB to use")
 	flag.BoolVar(&flags.enablesync, "enablesync", false, "sync the DB with GitHub and other external sources")
 	flag.BoolVar(&flags.enablechanges, "enablechanges", false, "allow changes to GitHub")
+	flag.StringVar(&flags.level, "level", "info", "initial log level")
 }
 
 // Gaby holds the state for gaby's execution.
@@ -93,6 +95,9 @@ func main() {
 	flag.Parse()
 
 	level := new(slog.LevelVar)
+	if err := level.UnmarshalText([]byte(flags.level)); err != nil {
+		log.Fatal(err)
+	}
 	g := &Gaby{
 		ctx:            context.Background(),
 		cloud:          onCloudRun(),
