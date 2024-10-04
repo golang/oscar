@@ -199,7 +199,10 @@ func (tc *TestingClient) setField(filename string, line, data string, indent int
 			if val == "" {
 				return "", fmt.Errorf("%s: field %q: missing email address for AccountInfo", filename, key)
 			}
-			vval = reflect.ValueOf(&AccountInfo{Email: val})
+			vval = reflect.ValueOf(&AccountInfo{
+				AccountID: makeTestAccountID(val),
+				Email:     val,
+			})
 			break
 		}
 		if field.Type().Elem().Kind() != reflect.Struct {
@@ -291,6 +294,27 @@ func (tc *TestingClient) setField(filename string, line, data string, indent int
 			}
 			data = rest
 			field.SetMapIndex(reflect.ValueOf(val), vval)
+			// Don't fall through to bottom of function.
+			return data, nil
+
+		case reflect.Slice:
+			typ := field.Type().Elem()
+			if typ.Elem().Kind() != reflect.Pointer || typ.Elem().Elem().Kind() != reflect.Struct {
+				return "", fmt.Errorf("%s: field %q: unsupported map slice element type in %s", filename, key, field.Type())
+			}
+			vval = reflect.New(typ.Elem().Elem())
+			rest, err := tc.setFields(filename, data, indent+1, vval.Elem())
+			if err != nil {
+				return "", err
+			}
+			data = rest
+			key := reflect.ValueOf(val)
+			old := field.MapIndex(key)
+			if !old.IsValid() {
+				old = reflect.MakeSlice(typ, 0, 1)
+			}
+			vval = reflect.Append(old, vval)
+			field.SetMapIndex(key, vval)
 			// Don't fall through to bottom of function.
 			return data, nil
 
@@ -410,4 +434,20 @@ func timestamp(gt string) (TimeStamp, error) {
 		return TimeStamp(time.Time{}), err
 	}
 	return ts, nil
+}
+
+var (
+	testAccounts  = make(map[string]int)
+	testAccountID int
+)
+
+// makeTestAccountID maintains a mapping from account email to account ID.
+// This lets most testing accounts just provide an email.
+func makeTestAccountID(email string) int {
+	if id, ok := testAccounts[email]; ok {
+		return id
+	}
+	testAccountID++
+	testAccounts[email] = testAccountID
+	return testAccountID
 }

@@ -89,6 +89,20 @@ func TestLoadTxtar(t *testing.T) {
 				return true
 			},
 		},
+		{
+			"ChangeReviewers",
+			wa(c.ChangeReviewers),
+			[]string{"gopher@golang.org"},
+			func(got, want any) bool {
+				g := got.([]*AccountInfo)
+				w := want.([]string)
+				ge := make([]string, 0, len(g))
+				for _, a := range g {
+					ge = append(ge, a.Email)
+				}
+				return slices.Equal(ge, w)
+			},
+		},
 	}
 
 	testChangeTests(t, ch, tests)

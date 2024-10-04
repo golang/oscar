@@ -44,6 +44,10 @@ func (c *Client) ChangeNumbers(project string) iter.Seq2[int, func() *Change] {
 // Change returns the data for a single change.
 // This will return nil if no information is recorded.
 func (c *Client) Change(project string, changeNum int) *Change {
+	if c.divertChanges() { // testing
+		return c.testClient.change(changeNum)
+	}
+
 	val, ok := c.db.Get(o(changeKind, c.instance, project, changeNum))
 	if !ok {
 		return nil

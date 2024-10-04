@@ -20,6 +20,8 @@ Comment:
  Message: comment 1
 Number: 1
 Hashtags: tag1 tag2
+Reviewers: REVIEWER
+ Email: gopher@golang.org
 Messages:
  Message: message 1
 Messages:
