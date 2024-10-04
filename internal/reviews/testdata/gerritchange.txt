@@ -1,0 +1,41 @@
+-- change#1 --
+Number: 1
+Project: test
+Status: NEW
+Owner: gopher@golang.org
+Created: "2024-10-01 10:10:10.00000000"
+Updated: "2024-10-03 10:10:10.00000000"
+Subject: my new change
+CurrentRevision: hash2
+CurrentRevisionNumber: 2
+Revisions: hash1
+ Kind: REWORK
+ Number: 1
+ Created: "2024-10-01 10:10:10.00000000"
+ Uploader: gopher@golang.org
+ Commit:
+  Message: initial change
+Revisions: hash2
+ Kind: REWORK
+ Number: 2
+ Created: "2024-10-02 10:10:10.00000000"
+ Uploader: gopher@golang.org
+ Commit:
+  Message: initial change
+Reviewers: REVIEWER
+ AccountID: 1000
+ Email: maintainer@golang.org
+Messages:
+ ID: message hash 1
+ Author: maintainer@golang.org
+ Date: "2024-10-01 11:10:10.00000000"
+ Message: "maintainer review"
+Messages:
+ ID: message hash 2
+ Author: commenter@golang.org
+ Date: "2024-10-01 12:10:10.00000000"
+ Message: "commenter review"
+-- change#2 --
+Number: 2
+Project: test
+Status: MERGED
