@@ -84,6 +84,7 @@ gaby-prod-00004-t9p).
 [Cloud Run](https://console.cloud.google.com/run?project=oscar-go-1)
 [Cloud Build](https://console.cloud.google.com/cloud-build/builds?project=oscar-go-1)
 [Cloud Error Reporting](https://console.cloud.google.com/errors?project=oscar-go-1).
+[Cloud Monitoring](https://console.cloud.google.com/monitoring/dashboards?project=oscar-go-1)
 
 ## GCP error logging and alerting
 
