@@ -79,7 +79,7 @@ func TestLoadTxtar(t *testing.T) {
 				"message 2",
 			},
 			func(got, want any) bool {
-				g := got.([]ChangeMessageInfo)
+				g := got.([]*ChangeMessageInfo)
 				w := want.([]string)
 				for i, m := range g {
 					if m.Message != w[i] {

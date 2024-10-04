@@ -56,21 +56,71 @@ func (c *Client) Change(project string, changeNum int) *Change {
 
 // Comments returns the comments on a change, if any. These are the
 // inline comments placed on files in the change. The top-level
-// replies are stored in a [Change] and are returned by [Change.Messages].
+// replies are stored in a [Change] and are returned by [Client.ChangeMessages].
 //
 // This returns a map from file names to a list of comments on each file.
-// Gerrit stores top-level comments on the file "/PATCHSET_LEVEL".
-// The result may be nil, with no error, if no comment information exists.
-func (c *Client) Comments(project string, changeNum int) (map[string][]*CommentInfo, error) {
+// The result is nil if no comment information exists.
+func (c *Client) Comments(project string, changeNum int) map[string][]*CommentInfo {
 	val, ok := c.db.Get(o(commentKind, c.instance, project, changeNum))
 	if !ok {
-		return nil, nil
+		return nil
 	}
-	var comments map[string][]*CommentInfo
+
+	// Unpack into a commentInfo struct, and then convert to CommentInfo,
+	// so that we don't have to unpack the lengthy AccountInfo data
+	// each time.
+	type commentInfo struct {
+		PatchSet        int                  `json:"patch_set,omitempty"`
+		ID              string               `json:"id"`
+		Path            string               `json:"path,omitempty"`
+		Side            string               `json:"side,omitempty"`
+		Parent          int                  `json:"parent,omitempty"`
+		Line            int                  `json:"line,omitempty"`
+		Range           *CommentRange        `json:"range,omitempty"`
+		InReplyTo       string               `json:"in_reply_to,omitempty"`
+		Message         string               `json:"message,omitempty"`
+		Updated         TimeStamp            `json:"updated"`
+		Author          json.RawMessage      `json:"author,omitempty"`
+		Tag             string               `json:"tag,omitempty"`
+		Unresolved      bool                 `json:"unresolved,omitempty"`
+		ChangeMessageID string               `json:"change_message_id,omitempty"`
+		CommitID        string               `json:"commit_id,omitempty"`
+		FixSuggestions  []*FixSuggestionInfo `json:"fix_suggestions,omitempty"`
+	}
+	var comments map[string][]*commentInfo
 	if err := json.Unmarshal(val, &comments); err != nil {
-		return nil, fmt.Errorf("can't decode change %d comments: %v", changeNum, err)
+		c.slog.Error("gerrit comment decode failure", "num", changeNum, "data", val, "err", err)
+		c.db.Panic("gerrit comment decode failure", "num", changeNum, "err", err)
 	}
-	return comments, nil
+
+	ret := make(map[string][]*CommentInfo, len(comments))
+	for key, val := range comments {
+		rcs := make([]*CommentInfo, 0, len(val))
+		for _, comment := range val {
+			rc := &CommentInfo{
+				PatchSet:        comment.PatchSet,
+				ID:              comment.ID,
+				Path:            comment.Path,
+				Side:            comment.Side,
+				Parent:          comment.Parent,
+				Line:            comment.Line,
+				Range:           comment.Range,
+				InReplyTo:       comment.InReplyTo,
+				Message:         comment.Message,
+				Updated:         comment.Updated,
+				Author:          c.loadAccount(comment.Author),
+				Tag:             comment.Tag,
+				Unresolved:      comment.Unresolved,
+				ChangeMessageID: comment.ChangeMessageID,
+				CommitID:        comment.CommitID,
+				FixSuggestions:  comment.FixSuggestions,
+			}
+			rcs = append(rcs, rc)
+		}
+		ret[key] = rcs
+	}
+
+	return ret
 }
 
 // A ChangeEvent is a Gerrit CL change event returned by ChangeWatcher.

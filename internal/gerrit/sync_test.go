@@ -227,7 +227,7 @@ func checkFirstCL(t *testing.T, c *Client, ch *Change, num int) {
 				"Patch Set 9:\n\nNaah, just roll forward and fix the test.",
 			},
 			func(got, want any) bool {
-				g := got.([]ChangeMessageInfo)
+				g := got.([]*ChangeMessageInfo)
 				w := want.([]string)
 				for i, m := range g {
 					if m.Message != w[i] {
@@ -250,8 +250,8 @@ func checkFirstCL(t *testing.T, c *Client, ch *Change, num int) {
 			nil,
 		},
 		{
-			"ChangeReviewed",
-			wa(c.ChangeReviewed),
+			"ChangeReviewers",
+			wa(c.ChangeReviewers),
 			[]string{
 				"bradfitz@golang.org",
 				"iant@golang.org",
@@ -328,9 +328,32 @@ func checkFirstCL(t *testing.T, c *Client, ch *Change, num int) {
 				return slices.Equal(g, w)
 			},
 		},
+		{
+			"ChangeRevisions",
+			wa(c.ChangeRevisions),
+			"errgroup: add package",
+			func(got, want any) bool {
+				g := got.([]*RevisionInfo)
+				if len(g) != 9 {
+					return false
+				}
+				for _, r := range g {
+					if r.Commit.Subject != want {
+						return false
+					}
+				}
+				return true
+			},
+		},
 	}
 
 	testChangeTests(t, ch, tests)
+
+	total, unresolved := c.ChangeCommentCounts(ch)
+	wantTotal, wantUnresolved := 22, 0
+	if total != wantTotal || unresolved != wantUnresolved {
+		t.Errorf("CommentCounts = %d, %d; want %d, %d", total, unresolved, wantTotal, wantUnresolved)
+	}
 }
 
 // checkChange verifies that we can unpack CL information, and that it
@@ -343,11 +366,7 @@ func checkChange(t *testing.T, c *Client, changeNum int, ch *Change) {
 	}
 
 	// Fetch and unpack comments for the change.
-	commentsInfo, err := c.Comments(project, changeNum)
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	commentsInfo := c.Comments(project, changeNum)
 	if commentsInfo == nil {
 		t.Errorf("no comment information for CL %d", changeNum)
 		return

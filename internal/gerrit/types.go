@@ -205,7 +205,7 @@ type AccountInfo struct {
 	UserName string `json:"username,omitempty"`
 	// List of [AvatarInfo] entities that provide information about
 	// avatar images of the account.
-	Avatars []AvatarInfo `json:"avatars,omitempty"`
+	Avatars []*AvatarInfo `json:"avatars,omitempty"`
 	// Status message of the account.
 	Status string `json:"status,omitempty"`
 	// Whether the account is inactive.
@@ -265,7 +265,7 @@ type SubmitRecordInfo struct {
 	// * label: the label name.
 	// * status:
 	// * appliedBy:
-	Labels []struct {
+	Labels []*struct {
 		// The label name.
 		Label string `json:"label"`
 		// The label status: {OK, REJECT, MAY, NEED, IMPOSSIBLE}.
@@ -275,7 +275,7 @@ type SubmitRecordInfo struct {
 	} `json:"labels,omitempty"`
 	// List of the requirements to be met before this change can
 	// be submitted.
-	Requirements []Requirement `json:"requirements,omitempty"`
+	Requirements []*Requirement `json:"requirements,omitempty"`
 	// When status is RULE_ERROR this message provides some text
 	// describing the failure of the rule predicate.
 	ErrorMessage string `json:"error_message,omitempty"`
@@ -428,7 +428,7 @@ type RevisionInfo struct {
 	// branch name if the parent is a merged commit in the target
 	// branch. Otherwise, we include the change and patch-set
 	// numbers of the parent change.
-	ParentsData []ParentInfo `json:"parents_data,omitempty"`
+	ParentsData []*ParentInfo `json:"parents_data,omitempty"`
 	// The name of the target branch that this revision is set to
 	// be merged into.  Note that if the change is moved with the
 	// Move Change endpoint, this field can be different for
@@ -461,7 +461,7 @@ type CommitInfo struct {
 	// The parent commits of this commit as a list of CommitInfo
 	// entities. In each parent only the commit and subject fields
 	// are populated.
-	Parents []CommitInfo `json:"parents,omitempty"`
+	Parents []*CommitInfo `json:"parents,omitempty"`
 	// The author of the commit as a GitPersonInfo entity.
 	Author *GitPersonInfo `json:"author,omitempty"`
 	// The committer of the commit as a GitPersonInfo entity.
@@ -472,10 +472,10 @@ type CommitInfo struct {
 	Message string `json:"message,omitempty"`
 	// Links to the patch set in external sites as a list of
 	// WebLinkInfo entities.
-	WebLinks []WebLinkInfo `json:"web_links,omitempty"`
+	WebLinks []*WebLinkInfo `json:"web_links,omitempty"`
 	// Links to the commit in external sites for resolving
 	// conflicts as a list of WebLinkInfo entities.
-	ResolveConflictsWebLinks []WebLinkInfo `json:"resolve_conflicts_web_links,omitempty"`
+	ResolveConflictsWebLinks []*WebLinkInfo `json:"resolve_conflicts_web_links,omitempty"`
 }
 
 // GitPersonInfo holds information about the author/committer of a commit.
@@ -579,7 +579,7 @@ type CommentInfo struct {
 	// the patchset to which this comment applies.
 	CommitID string `json:"commit_id,omitempty"`
 	// Suggested fixes for this comment.
-	FixSuggestions []FixSuggestionInfo `json:"fix_suggestions,omitempty"`
+	FixSuggestions []*FixSuggestionInfo `json:"fix_suggestions,omitempty"`
 
 	// The remaining fields are defined by Gerrit but we don't
 	// request their values.
@@ -598,7 +598,7 @@ type FixSuggestionInfo struct {
 	// A list of FixReplacementInfo entities indicating how the
 	// content of one or several files should be modified. Within
 	// a file, they should refer to non-overlapping regions.
-	Replacements []FixReplacementInfo `json:"replacements"`
+	Replacements []*FixReplacementInfo `json:"replacements"`
 }
 
 // FixReplacementInfo describes how the content of a file should be

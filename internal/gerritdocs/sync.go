@@ -146,10 +146,7 @@ func relatedDocURL(gr *gerrit.Client, c *changeInfo) string {
 // comments returns file comments for the gerrit change.
 func comments(gr *gerrit.Client, c *changeInfo) ([]*gerrit.CommentInfo, error) {
 	var cmts []*gerrit.CommentInfo
-	cmtsMap, err := gr.Comments(c.project, c.number)
-	if err != nil {
-		return nil, err
-	}
+	cmtsMap := gr.Comments(c.project, c.number)
 	for _, cs := range cmtsMap { // we don't care about comment file locations
 		cmts = append(cmts, cs...)
 	}

@@ -5,6 +5,7 @@
 package gerrit
 
 import (
+	"cmp"
 	"encoding/json"
 	"fmt"
 	"slices"
@@ -135,12 +136,52 @@ func (c *Client) ChangeSubject(ch *Change) string {
 // These are the top-level messages created by clicking on
 // the top REPLY button when reviewing a change.
 // Inline file comments are returned by [Client.Comments].
-func (c *Client) ChangeMessages(ch *Change) []ChangeMessageInfo {
+func (c *Client) ChangeMessages(ch *Change) []*ChangeMessageInfo {
 	var messages struct {
-		Messages []ChangeMessageInfo `json:"messages"`
+		Messages []json.RawMessage `json:"messages"`
 	}
 	c.unmarshal(ch, "messages", &messages)
-	return messages.Messages
+
+	// Unpack into a changeMessageInfo struct, and then convert to
+	// ChangeMessageInfo, so that we don't have to unpack the lengthy
+	// AccountInfo data each time.
+	type changeMessageInfo struct {
+		ID                string            `json:"id"`
+		Author            json.RawMessage   `json:"author,omitempty"`
+		RealAuthor        json.RawMessage   `json:"real_author,omitempty"`
+		Date              TimeStamp         `json:"date"`
+		Message           string            `json:"message"`
+		AccountsInMessage []json.RawMessage `json:"accounts_in_message,omitempty"`
+		Tag               string            `json:"tag,omitempty"`
+		RevisionNumber    int               `json:"_revision_number,omitempty"`
+	}
+
+	ret := make([]*ChangeMessageInfo, 0, len(messages.Messages))
+	for _, msg := range messages.Messages {
+		var cmi changeMessageInfo
+		if err := json.Unmarshal(msg, &cmi); err != nil {
+			c.slog.Error("gerrit message decode failure", "num", ch.num, "data", msg, "err", err)
+			c.db.Panic("gerrit message decode failure", "num", ch.num, "err", err)
+		}
+
+		var aims []*AccountInfo
+		for _, aim := range cmi.AccountsInMessage {
+			aims = append(aims, c.loadAccount(aim))
+		}
+		r := &ChangeMessageInfo{
+			ID:                cmi.ID,
+			Author:            c.loadAccount(cmi.Author),
+			RealAuthor:        c.loadAccount(cmi.RealAuthor),
+			Date:              cmi.Date,
+			Message:           cmi.Message,
+			AccountsInMessage: aims,
+			Tag:               cmi.Tag,
+			RevisionNumber:    cmi.RevisionNumber,
+		}
+		ret = append(ret, r)
+	}
+
+	return ret
 }
 
 // ChangeDescription returns the current description of the change.
@@ -176,10 +217,11 @@ func (c *Client) ChangeWorkInProgress(ch *Change) bool {
 	return workInProgress.WorkInProgress
 }
 
-// ChangeReviewed returns a list of accounts that have reviewed this change.
+// ChangeReviewers returns a list of accounts that are listed as
+// reviewers of this change.
 // Note that this is not identical to ChangeInfo.Reviewers,
 // which includes both reviewers and people CC'ed.
-func (c *Client) ChangeReviewed(ch *Change) []*AccountInfo {
+func (c *Client) ChangeReviewers(ch *Change) []*AccountInfo {
 	var reviewers struct {
 		Reviewers map[string][]json.RawMessage `json:"reviewers"`
 	}
@@ -227,6 +269,9 @@ func (c *Client) ChangeLabel(ch *Change, label string) *LabelInfo {
 
 // unmarshalLabel unmarshals a LabelInfo.
 func (c *Client) unmarshalLabel(ch *Change, input json.RawMessage) *LabelInfo {
+	// Unpack into approvalInfo and labelInfo structs, and then convert to
+	// ApprovalInfo and LabelInfo, so that we don't have to unpack the
+	// lengthy AccountInfo data each time.
 	type approvalInfo struct {
 		Value                int             `json:"value,omitempty"`
 		PermittedVotingRange VotingRangeInfo `json:"permitted_voting_range,omitempty"`
@@ -346,6 +391,72 @@ func (c *Client) ChangeCommentCounts(ch *Change) (total, unresolved int) {
 	}
 	c.unmarshal(ch, "comment counts", &counts)
 	return counts.TotalCommentCount, counts.UnresolvedCommentCount
+}
+
+// ChangeRevisions returns information about all the patch sets,
+// ordered by patch set number.
+func (c *Client) ChangeRevisions(ch *Change) []*RevisionInfo {
+	// Unpack into commitInfo and revisionInfo structs,
+	// and then convert to CommitInfo and RevisionInfo,
+	// so that we don't have to unpack the lengthy AccountInfo
+	// data each time. We also skip some CommitInfo fields.
+	type commitInfo struct {
+		Commit    string         `json:"commit,omitempty"`
+		Author    *GitPersonInfo `json:"author,omitempty"`
+		Committer *GitPersonInfo `json:"committer,omitempty"`
+		Subject   string         `json:"subject"`
+		Message   string         `json:"message,omitempty"`
+	}
+	type revisionInfo struct {
+		Kind         string          `json:"kind"`
+		Number       int             `json:"_number"`
+		Created      TimeStamp       `json:"created"`
+		Uploader     json.RawMessage `json:"uploader"`
+		RealUploader json.RawMessage `json:"real_uploader,omitempty"`
+		Ref          string          `json:"ref"`
+		Commit       *commitInfo     `json:"commit,omitempty"`
+		Branch       string          `json:"branch,omitempty"`
+		Description  string          `json:"description,omitempty"`
+	}
+	var revisions struct {
+		Revisions map[string]*revisionInfo `json:"revisions"`
+	}
+	c.unmarshal(ch, "revisions", &revisions)
+
+	toCommitInfo := func(from *commitInfo) *CommitInfo {
+		if from == nil {
+			return nil
+		}
+		return &CommitInfo{
+			Commit:    from.Commit,
+			Author:    from.Author,
+			Committer: from.Committer,
+			Subject:   from.Subject,
+			Message:   from.Message,
+		}
+	}
+
+	revs := make([]*RevisionInfo, 0, len(revisions.Revisions))
+	for _, rev := range revisions.Revisions {
+		ri := &RevisionInfo{
+			Kind:         rev.Kind,
+			Number:       rev.Number,
+			Created:      rev.Created,
+			Uploader:     c.loadAccount(rev.Uploader),
+			RealUploader: c.loadAccount(rev.RealUploader),
+			Ref:          rev.Ref,
+			Commit:       toCommitInfo(rev.Commit),
+			Branch:       rev.Branch,
+			Description:  rev.Description,
+		}
+		revs = append(revs, ri)
+	}
+
+	slices.SortFunc(revs, func(a, b *RevisionInfo) int {
+		return cmp.Compare(a.Number, b.Number)
+	})
+
+	return revs
 }
 
 // unmarshal unmarshals ch.data into a value. If the unmarshal fails, it
