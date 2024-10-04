@@ -5,8 +5,8 @@ go 1.23
 require (
 	github.com/cockroachdb/pebble v1.1.1
 	github.com/google/go-cmp v0.6.0
-	golang.org/x/net v0.29.0
-	golang.org/x/tools v0.25.0
+	golang.org/x/net v0.30.0
+	golang.org/x/tools v0.26.0
 	rsc.io/markdown v0.0.0-20240617154923-1f2ef1438fed
 	rsc.io/omap v1.2.1-0.20240709133045-40dad5c0c0fb
 	rsc.io/ordered v1.1.0
@@ -36,7 +36,7 @@ require (
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/rogpeppe/go-internal v1.10.0 // indirect
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
-	golang.org/x/sys v0.25.0 // indirect
-	golang.org/x/text v0.18.0 // indirect
+	golang.org/x/sys v0.26.0 // indirect
+	golang.org/x/text v0.19.0 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 )
