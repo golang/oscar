@@ -42,14 +42,17 @@ func Sync(ctx context.Context, lg *slog.Logger, dc *docs.Corpus, gr *gerrit.Clie
 		lg.Debug("gerritrelateddocs sync", "change", ce.ChangeNum, "dbtime", ce.DBTime)
 		c := change(ce, gr, projects)
 		if c == nil {
-			lg.Error("gerritrelatedocs cannot find change", "number", ce.ChangeNum)
+			lg.Error("gerritrelateddocs cannot find change", "change", ce.ChangeNum)
 			continue
 		}
 		title := gr.ChangeSubject(c.ch)
 		body, err := relatedDocBody(gr, c)
 		if err != nil {
-			lg.Error("gerritrelatedocs cannot find comments for change", "number", ce.ChangeNum)
+			lg.Error("gerritrelateddocs cannot find comments", "change", ce.ChangeNum)
 			continue
+		}
+		if len(body) > geminiCharLimit {
+			lg.Warn("gerritrelateddocs potential truncation by gemini", "change", ce.ChangeNum, "docSize", len(body))
 		}
 		text := cleanBody(body)
 		id := relatedDocURL(gr, c)
@@ -58,6 +61,15 @@ func Sync(ctx context.Context, lg *slog.Logger, dc *docs.Corpus, gr *gerrit.Clie
 	}
 	return nil
 }
+
+// geminiCharLimit is an approximate limit on the number of
+// document characters a gemini text embedding can accept.
+// Gemini text embedding models have an input token limit
+// of 2048, where each token is about four characters long.
+// Gemini truncates documents after this limit.
+// For more info, see
+// https://ai.google.dev/gemini-api/docs/models/gemini#text-embedding-and-embedding
+const geminiCharLimit = 8200
 
 // changeInfo accumulates information from [gerrit.Change]
 // and [gerrit.ChangeEvent] needed to grab change subject,
