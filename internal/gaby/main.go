@@ -379,6 +379,7 @@ func (g *Gaby) newServer(report func(error)) *http.ServeMux {
 
 		if err := g.crawl(r.Context()); err != nil {
 			report(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 
 		crawlEndpointCounter.Add(r.Context(), 1)
