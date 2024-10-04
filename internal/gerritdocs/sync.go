@@ -154,8 +154,9 @@ func Restart(lg *slog.Logger, gr *gerrit.Client) {
 	gr.ChangeWatcher("gerritrelateddocs").Restart()
 }
 
-// Latest returns the latest known DBTime marked old by the client's Watcher.
-func Latest(gr *gerrit.Client) timed.DBTime {
+// RelatedLatest returns the latest known DBTime marked old by
+// the client's "gerritrelateddocs" Watcher.
+func RelatedLatest(gr *gerrit.Client) timed.DBTime {
 	return gr.ChangeWatcher("gerritrelateddocs").Latest()
 }
 

@@ -33,6 +33,7 @@ import (
 	"golang.org/x/oscar/internal/gcp/gcpsecret"
 	"golang.org/x/oscar/internal/gcp/gemini"
 	"golang.org/x/oscar/internal/gerrit"
+	"golang.org/x/oscar/internal/gerritdocs"
 	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/githubdocs"
 	"golang.org/x/oscar/internal/llm"
@@ -125,6 +126,7 @@ func main() {
 
 	g.docs = docs.New(g.slog, g.db)
 	watcherLatests["githubdocs"] = func() timed.DBTime { return githubdocs.Latest(g.github) }
+	watcherLatests["gerritrelateddocs"] = func() timed.DBTime { return gerritdocs.RelatedLatest(g.gerrit) }
 
 	ai, err := gemini.NewClient(g.ctx, g.slog, g.secret, g.http, "text-embedding-004")
 	if err != nil {
