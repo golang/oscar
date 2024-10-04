@@ -324,6 +324,9 @@ func (w *Watcher[T]) cutoff() DBTime {
 	return w.cutoffUnlocked()
 }
 
+// cutoffUnlocked returns the value of the watcher key in the DB.
+// (The key is the maximum of calls to [Watcher.MarkOld].)
+// It also updates [Watcher.latest].
 func (w *Watcher[T]) cutoffUnlocked() DBTime {
 	var t int64
 	if dval, ok := w.db.Get(w.dkey); ok {
