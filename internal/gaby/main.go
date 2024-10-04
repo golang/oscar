@@ -440,7 +440,7 @@ func (g *Gaby) newServer(report func(error)) *http.ServeMux {
 		}
 
 		if err != nil {
-			http.Error(w, fmt.Sprintf("sync: error %v for %s", err, job), 500)
+			http.Error(w, fmt.Sprintf("sync: error %v for %s", err, job), http.StatusInternalServerError)
 			g.slog.Error("sync", "job", job, "error", err)
 		}
 	})
