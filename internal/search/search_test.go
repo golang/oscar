@@ -31,6 +31,7 @@ func TestKind(t *testing.T) {
 		{"https://go.dev/ref/x", "GoReference"},
 		{"https://go.dev/wiki/x", "GoWiki"},
 		{"https://github.com/golang/go/issues/123", "GitHubIssue"},
+		{"https://go-review.googlesource.com/c/test/+/1#related-content", "GoGerritChange"},
 	} {
 		got := docIDKind(test.id)
 		if got != test.want {
@@ -129,16 +130,17 @@ func TestOptions(t *testing.T) {
 	corpus := docs.New(lg, db)
 
 	ids := []string{
-		0: "https://go.dev/blog/topic",
-		1: "https://github.com/golang/go/issues/11",
-		2: "not-a-url",
-		3: "https://go.dev/doc/something",
-		4: "https://go.dev/ref/something",
-		5: "https://go.dev/page",
-		6: "https://go.dev/blog/another/topic",
-		7: "https://github.com/golang/go/issues/42",
-		8: "https://go.dev/wiki/something",
-		9: "https://pkg.go.dev/",
+		0:  "https://go.dev/blog/topic",
+		1:  "https://github.com/golang/go/issues/11",
+		2:  "not-a-url",
+		3:  "https://go.dev/doc/something",
+		4:  "https://go.dev/ref/something",
+		5:  "https://go.dev/page",
+		6:  "https://go.dev/blog/another/topic",
+		7:  "https://github.com/golang/go/issues/42",
+		8:  "https://go.dev/wiki/something",
+		9:  "https://pkg.go.dev/",
+		10: "https://go-review.googlesource.com/c/go/+/1",
 	}
 
 	for i, id := range ids {
@@ -198,6 +200,11 @@ func TestOptions(t *testing.T) {
 			VectorResult: storage.VectorResult{ID: ids[1], Score: 0.483},
 		},
 		9: {
+			Kind:         KindGoGerritChange,
+			Title:        "title10",
+			VectorResult: storage.VectorResult{ID: ids[10], Score: 0.481},
+		},
+		10: {
 			Kind:         KindGoBlog,
 			Title:        "title0",
 			VectorResult: storage.VectorResult{ID: ids[0], Score: 0.431},
@@ -275,14 +282,14 @@ func TestOptions(t *testing.T) {
 		{
 			name: "deny",
 			options: Options{
-				DenyKind: []string{KindGoWiki, KindGitHubIssue},
+				DenyKind: []string{KindGoWiki, KindGitHubIssue, KindGoGerritChange},
 			},
 			want: []Result{
 				results[0], results[1], results[2], results[3], results[4],
 				// skip 5 (issue) and 6 (wiki)
 				results[7],
-				// skip 8 (issue)
-				results[9]},
+				// skip 8 (issue) and 9 (change)
+				results[10]},
 		},
 		{
 			name: "allow-deny",

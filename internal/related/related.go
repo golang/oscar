@@ -377,7 +377,7 @@ func (p *Poster) comment(results []search.Result) string {
 	var comment strings.Builder
 	fmt.Fprintf(&comment, "**Related Issues and Documentation**\n\n")
 	for _, r := range results {
-		title := r.ID
+		title := cleanTitle(r.ID)
 		if r.Title != "" {
 			title = r.Title
 		}
@@ -392,6 +392,13 @@ func (p *Poster) comment(results []search.Result) string {
 	}
 	fmt.Fprintf(&comment, "\n<sub>(Emoji vote if this was helpful or unhelpful; more detailed feedback welcome in [this discussion](https://github.com/golang/go/discussions/67901).)</sub>\n")
 	return comment.String()
+}
+
+// cleanTitle cleans up document title t to make it more readable
+// and understandable to the user. For instance, it removes URL
+// fragments synthetically added by document embedders.
+func cleanTitle(t string) string {
+	return strings.TrimSuffix(t, "#related-content") // gerrit related change URLs
 }
 
 // skip reports whether the event should be skipped and why.

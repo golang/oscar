@@ -178,6 +178,7 @@ const (
 	KindGoReference     = "GoReference"
 	KindGoBlog          = "GoBlog"
 	KindGoDevPage       = "GoDevPage"
+	KindGoGerritChange  = "GoGerritChange"
 	// Unknown document.
 	KindUnknown = "Unknown"
 )
@@ -190,6 +191,7 @@ var kinds = map[string]bool{
 	KindGoBlog:          true,
 	KindGoDevPage:       true,
 	KindUnknown:         true,
+	KindGoGerritChange:  true,
 }
 
 // docIDKind determines the kind of document from its ID.
@@ -215,6 +217,8 @@ func docIDKind(id string) string {
 		return KindGoBlog
 	case strings.HasPrefix(hp, "go.dev/"):
 		return KindGoDevPage
+	case strings.HasPrefix(hp, "go-review.googlesource.com/"):
+		return KindGoGerritChange
 	default:
 		// In tests, any GitHub project's issues are OK.
 		if testing.Testing() && githubIssueRE.MatchString(hp) {
