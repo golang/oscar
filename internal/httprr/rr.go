@@ -86,16 +86,30 @@ func (rr *RecordReplay) Recording() bool {
 // makes actual HTTP requests using rt but then logs the requests and
 // responses to the file for replaying in a future run.
 func Open(file string, rt http.RoundTripper) (*RecordReplay, error) {
+	record, err := Recording(file)
+	if err != nil {
+		return nil, err
+	}
+	if record {
+		return create(file, rt)
+	}
+	return open(file, rt)
+}
+
+// Recording reports whether the "-httprecord" flag is set
+// for the given file.
+// It return an error if the flag is set to an invalid value.
+func Recording(file string) (bool, error) {
 	if *record != "" {
 		re, err := regexp.Compile(*record)
 		if err != nil {
-			return nil, fmt.Errorf("invalid -httprecord flag: %v", err)
+			return false, fmt.Errorf("invalid -httprecord flag: %v", err)
 		}
 		if re.MatchString(file) {
-			return create(file, rt)
+			return true, nil
 		}
 	}
-	return open(file, rt)
+	return false, nil
 }
 
 // creates creates a new record-mode RecordReplay in the file.

@@ -1,0 +1,66 @@
+httprr trace v1
+914 2608
+POST https://api.github.com/graphql HTTP/1.1
+Host: api.github.com
+User-Agent: Go-http-client/1.1
+Content-Length: 759
+Content-Type: application/json
+
+{"query":"query($cursor:String$labelsCursor:String$labelsPerPage:Int!$orderBy:DiscussionOrder!$owner:String!$perPage:Int!$repo:String!){repository(owner: $owner, name: $repo){discussions(first: $perPage, after: $cursor, orderBy: $orderBy){nodes{activeLockReason,isAnswered,answer{id,url},answerChosenAt,author{login},authorAssociation,body,category{name},closedAt,createdAt,id,labels(first:$labelsPerPage, after:$labelsCursor){nodes{name},pageInfo{endCursor,hasNextPage},totalCount},lastEditedAt,locked,number,resourcePath,title,updatedAt,upvoteCount,url},pageInfo{endCursor,hasNextPage}}}}","variables":{"cursor":null,"labelsCursor":null,"labelsPerPage":2,"orderBy":{"field":"UPDATED_AT","direction":"DESC"},"owner":"tatianab","perPage":2,"repo":"scratch"}}
+HTTP/2.0 200 OK
+Access-Control-Allow-Origin: *
+Access-Control-Expose-Headers: ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset
+Content-Security-Policy: default-src 'none'
+Content-Type: application/json; charset=utf-8
+Date: Mon, 07 Oct 2024 17:23:24 GMT
+Github-Authentication-Token-Expiration: 2025-06-04 04:00:00 UTC
+Referrer-Policy: origin-when-cross-origin, strict-origin-when-cross-origin
+Server: github.com
+Strict-Transport-Security: max-age=31536000; includeSubdomains; preload
+Vary: Accept-Encoding, Accept, X-Requested-With
+X-Accepted-Oauth-Scopes: repo
+X-Content-Type-Options: nosniff
+X-Frame-Options: deny
+X-Github-Media-Type: github.v4; format=json
+X-Github-Request-Id: E987:E9C06:141179B:270FDA0:6704190C
+X-Oauth-Scopes: public_repo
+X-Ratelimit-Limit: 5000
+X-Ratelimit-Remaining: 4997
+X-Ratelimit-Reset: 1728325162
+X-Ratelimit-Resource: graphql
+X-Ratelimit-Used: 3
+X-Xss-Protection: 0
+
+{"data":{"repository":{"discussions":{"nodes":[{"activeLockReason":"RESOLVED","isAnswered":null,"answer":null,"answerChosenAt":null,"author":{"login":"tatianab"},"authorAssociation":"OWNER","body":"Some locked topic of discussion.","category":{"name":"General"},"closedAt":null,"createdAt":"2024-10-07T16:08:25Z","id":"D_kwDOHoUMN84AbzB_","labels":{"nodes":[],"pageInfo":{"endCursor":null,"hasNextPage":false},"totalCount":0},"lastEditedAt":"2024-10-07T16:30:38Z","locked":true,"number":51,"resourcePath":"/tatianab/scratch/discussions/51","title":"A general discussion","updatedAt":"2024-10-07T16:30:38Z","upvoteCount":1,"url":"https://github.com/tatianab/scratch/discussions/51"},{"activeLockReason":null,"isAnswered":null,"answer":null,"answerChosenAt":null,"author":{"login":"tatianab"},"authorAssociation":"OWNER","body":"So much discussing to do.\r\n\r\nThere's always more to talk about.","category":{"name":"General"},"closedAt":null,"createdAt":"2024-10-07T16:09:40Z","id":"D_kwDOHoUMN84AbzCI","labels":{"nodes":[],"pageInfo":{"endCursor":null,"hasNextPage":false},"totalCount":0},"lastEditedAt":"2024-10-07T16:20:27Z","locked":false,"number":52,"resourcePath":"/tatianab/scratch/discussions/52","title":"A third discussion","updatedAt":"2024-10-07T16:20:27Z","upvoteCount":1,"url":"https://github.com/tatianab/scratch/discussions/52"}],"pageInfo":{"endCursor":"Y3Vyc29yOnYyOpK5MjAyNC0xMC0wN1QxMjoyMDoyNy0wNDowMM4AbzCI","hasNextPage":true}}}}}968 1954
+POST https://api.github.com/graphql HTTP/1.1
+Host: api.github.com
+User-Agent: Go-http-client/1.1
+Content-Length: 813
+Content-Type: application/json
+
+{"query":"query($cursor:String$labelsCursor:String$labelsPerPage:Int!$orderBy:DiscussionOrder!$owner:String!$perPage:Int!$repo:String!){repository(owner: $owner, name: $repo){discussions(first: $perPage, after: $cursor, orderBy: $orderBy){nodes{activeLockReason,isAnswered,answer{id,url},answerChosenAt,author{login},authorAssociation,body,category{name},closedAt,createdAt,id,labels(first:$labelsPerPage, after:$labelsCursor){nodes{name},pageInfo{endCursor,hasNextPage},totalCount},lastEditedAt,locked,number,resourcePath,title,updatedAt,upvoteCount,url},pageInfo{endCursor,hasNextPage}}}}","variables":{"cursor":"Y3Vyc29yOnYyOpK5MjAyNC0xMC0wN1QxMjoyMDoyNy0wNDowMM4AbzCI","labelsCursor":null,"labelsPerPage":2,"orderBy":{"field":"UPDATED_AT","direction":"DESC"},"owner":"tatianab","perPage":2,"repo":"scratch"}}
+HTTP/2.0 200 OK
+Access-Control-Allow-Origin: *
+Access-Control-Expose-Headers: ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset
+Content-Security-Policy: default-src 'none'
+Content-Type: application/json; charset=utf-8
+Date: Mon, 07 Oct 2024 17:23:24 GMT
+Github-Authentication-Token-Expiration: 2025-06-04 04:00:00 UTC
+Referrer-Policy: origin-when-cross-origin, strict-origin-when-cross-origin
+Server: github.com
+Strict-Transport-Security: max-age=31536000; includeSubdomains; preload
+Vary: Accept-Encoding, Accept, X-Requested-With
+X-Accepted-Oauth-Scopes: repo
+X-Content-Type-Options: nosniff
+X-Frame-Options: deny
+X-Github-Media-Type: github.v4; format=json
+X-Github-Request-Id: E987:E9C06:1411843:270FEDA:6704190C
+X-Oauth-Scopes: public_repo
+X-Ratelimit-Limit: 5000
+X-Ratelimit-Remaining: 4996
+X-Ratelimit-Reset: 1728325162
+X-Ratelimit-Resource: graphql
+X-Ratelimit-Used: 4
+X-Xss-Protection: 0
+
+{"data":{"repository":{"discussions":{"nodes":[{"activeLockReason":null,"isAnswered":null,"answer":null,"answerChosenAt":null,"author":{"login":"tatianab"},"authorAssociation":"OWNER","body":"This is an example of a discussion.\r\n","category":{"name":"Announcements"},"closedAt":null,"createdAt":"2024-10-07T16:06:05Z","id":"D_kwDOHoUMN84AbzBx","labels":{"nodes":[{"name":"other"}],"pageInfo":{"endCursor":"MQ","hasNextPage":false},"totalCount":1},"lastEditedAt":null,"locked":false,"number":50,"resourcePath":"/tatianab/scratch/discussions/50","title":"Welcome to discussions","updatedAt":"2024-10-07T16:07:27Z","upvoteCount":1,"url":"https://github.com/tatianab/scratch/discussions/50"}],"pageInfo":{"endCursor":"Y3Vyc29yOnYyOpK5MjAyNC0xMC0wN1QxMjowNzoyNy0wNDowMM4AbzBx","hasNextPage":false}}}}}

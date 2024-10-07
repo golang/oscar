@@ -515,12 +515,7 @@ func (c *Client) get(ctx context.Context, url, etag string, obj any) (*http.Resp
 		}
 	}
 
-	auth, _ := c.secret.Get("api.github.com")
-	if _, pass, ok := strings.Cut(auth, ":"); ok {
-		// Accept token as "password" in user:pass from netrc secret store
-		auth = pass
-	}
-
+	auth := Token(c.secret)
 	nrate := 0
 	nfail := 0
 Redo:
@@ -562,6 +557,16 @@ Redo:
 		return nil, fmt.Errorf("%s\n%s", resp.Status, data)
 	}
 	return resp, json.Unmarshal(data, obj)
+}
+
+// Token returns the secret for "api.github.com".
+func Token(sdb secret.DB) string {
+	auth, _ := sdb.Get("api.github.com")
+	if _, pass, ok := strings.Cut(auth, ":"); ok {
+		// Accept token as "password" in user:pass from netrc secret store
+		return pass
+	}
+	return auth
 }
 
 // A page is an HTTP response with a body that is a JSON array of objects.
