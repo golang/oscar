@@ -5,9 +5,6 @@
 package discussion
 
 import (
-	"strconv"
-	"strings"
-
 	"golang.org/x/oscar/internal/github"
 )
 
@@ -42,20 +39,12 @@ type Comment struct {
 	Body       string      `json:"body"`
 }
 
-// ID returns the numerical ID of a comment (the last part of its URL).
+// ID returns the numerical ID of a comment (the last part of its URL),
+// or 0 if its URL is not valid.
 func (c *Comment) ID() int64 {
-	return parseID(c.URL)
-}
-
-// parseID returns the numerical ID of a comment from its URL.
-func parseID(u string) int64 {
-	parts := strings.Split(u, "discussioncomment-")
-	if len(parts) != 2 {
-		return 0
-	}
-	i, err := strconv.ParseInt(parts[1], 10, 64)
+	n, err := parseID(c.URL, "-")
 	if err != nil {
 		return 0
 	}
-	return i
+	return n
 }

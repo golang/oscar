@@ -128,6 +128,8 @@ func (gc *gqlClient) replies(ctx context.Context, c *comment) iter.Seq2[*reply, 
 // nodes returns an iterator over the nodes of the query.
 // q and vars are the initial inputs to [gql.Client.Query].
 // It returns an error if any of the GitHub queries fails.
+// TODO(tatianabradley): Add a check to see if we have hit a GitHub
+// rate limit and slow down if so.
 func nodes[N node, Q query[N]](ctx context.Context, gc *gqlClient, q Q, vars varsMap) iter.Seq2[N, error] {
 	return func(yield func(N, error) bool) {
 		var zero N
