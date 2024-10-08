@@ -459,6 +459,9 @@ func (g *Gaby) newServer(report func(error)) *http.ServeMux {
 	// /actionlog: display action log
 	mux.HandleFunc("GET /actionlog", g.handleActionLog)
 
+	// /reviews: display review dashboard
+	mux.HandleFunc("GET /reviews", g.handleReviewDashboard)
+
 	return mux
 }
 

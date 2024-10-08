@@ -11,9 +11,9 @@ import (
 	"net/http"
 )
 
-// DisplayReviews is an HTTP handler function that displays the
+// Display is an HTTP handler function that displays the
 // changes to review.
-func DisplayReviews(lg *slog.Logger, doc template.HTML, cps []ChangePreds, w http.ResponseWriter, r *http.Request) {
+func Display(lg *slog.Logger, doc template.HTML, cps []ChangePreds, w http.ResponseWriter, r *http.Request) {
 	if len(cps) == 0 {
 		io.WriteString(w, reportNoData)
 		return
