@@ -25,6 +25,8 @@ import (
 	"golang.org/x/oscar/internal/commentfix"
 	"golang.org/x/oscar/internal/crawl"
 	"golang.org/x/oscar/internal/crawldocs"
+	"golang.org/x/oscar/internal/discussion"
+	"golang.org/x/oscar/internal/discussiondocs"
 	"golang.org/x/oscar/internal/docs"
 	"golang.org/x/oscar/internal/embeddocs"
 	"golang.org/x/oscar/internal/gcp/firestore"
@@ -83,6 +85,7 @@ type Gaby struct {
 	docs      *docs.Corpus           // document corpus to use
 	embed     llm.Embedder           // LLM embedder to use
 	github    *github.Client         // github client to use
+	disc      *discussion.Client     // github discussion client to use
 	gerrit    *gerrit.Client         // gerrit client to use
 	crawler   *crawl.Crawler         // web crawler to use
 	meter     ometric.Meter          // used to create Open Telemetry instruments
@@ -118,15 +121,18 @@ func main() {
 	watcherLatests := map[string]func() timed.DBTime{}
 
 	g.github = github.New(g.slog, g.db, g.secret, g.http)
+	g.disc = discussion.New(g.ctx, g.slog, g.secret, g.db)
+	_ = g.disc.Add(g.githubProject) // only needed once per g.db lifetime
 
 	g.gerrit = gerrit.New("go-review.googlesource.com", g.slog, g.db, g.secret, g.http)
 	for _, project := range g.gerritProjects {
-		g.gerrit.Add(project) // in principle needed only once per g.db lifetime
+		_ = g.gerrit.Add(project) // in principle needed only once per g.db lifetime
 	}
 
 	g.docs = docs.New(g.slog, g.db)
 	watcherLatests["githubdocs"] = func() timed.DBTime { return githubdocs.Latest(g.github) }
 	watcherLatests["gerritrelateddocs"] = func() timed.DBTime { return gerritdocs.RelatedLatest(g.gerrit) }
+	watcherLatests["discussiondocs"] = func() timed.DBTime { return discussiondocs.Latest(g.disc) }
 
 	ai, err := gemini.NewClient(g.ctx, g.slog, g.secret, g.http, "text-embedding-004")
 	if err != nil {
@@ -411,7 +417,7 @@ func (g *Gaby) newServer(report func(error)) *http.ServeMux {
 
 	// syncEndpoint is called manually to invoke a specific sync job.
 	// It performs a sync if enablesync is true.
-	// Usage: /sync?job={github | crawl | gerrit}
+	// Usage: /sync?job={github | crawl | gerrit | discussion}
 	mux.HandleFunc("GET /"+syncEndpoint, func(w http.ResponseWriter, r *http.Request) {
 		g.slog.Info(syncEndpoint + " start")
 		defer g.slog.Info(syncEndpoint + " end")
@@ -430,6 +436,8 @@ func (g *Gaby) newServer(report func(error)) *http.ServeMux {
 		switch job {
 		case "github":
 			err = g.syncGitHub(g.ctx)
+		case "discussion":
+			err = g.syncDiscussions(g.ctx)
 		case "crawl":
 			err = g.syncCrawl(g.ctx)
 		case "gerrit":
@@ -525,10 +533,11 @@ func (g *Gaby) syncAndRunAll(ctx context.Context) (errs []error) {
 }
 
 const (
-	gabyGitHubSyncLock = "gabygithubsync"
-	gabyGerritSyncLock = "gabygerritsync"
-	gabyEmbedLock      = "gabyembedsync"
-	gabyCrawlLock      = "gabycrawlsync"
+	gabyGitHubSyncLock     = "gabygithubsync"
+	gabyDiscussionSyncLock = "gabydiscussionsync"
+	gabyGerritSyncLock     = "gabygerritsync"
+	gabyEmbedLock          = "gabyembedsync"
+	gabyCrawlLock          = "gabycrawlsync"
 
 	gabyFixCommentLock  = "gabyfixcommentaction"
 	gabyPostRelatedLock = "gabyrelatedaction"
@@ -545,6 +554,20 @@ func (g *Gaby) syncGitHub(ctx context.Context) error {
 	// Store newly downloaded GitHub events in the document
 	// database.
 	return githubdocs.Sync(ctx, g.slog, g.docs, g.github)
+}
+
+func (g *Gaby) syncDiscussions(ctx context.Context) error {
+	g.db.Lock(gabyDiscussionSyncLock)
+	defer g.db.Unlock(gabyDiscussionSyncLock)
+
+	// Download new discussions and discussion comments from
+	// all GitHub projects.
+	if err := g.disc.Sync(ctx); err != nil {
+		return err
+	}
+
+	// Store newly downloaded GitHub discussions in the document database.
+	return discussiondocs.Sync(ctx, g.slog, g.docs, g.disc)
 }
 
 func (g *Gaby) syncGerrit(ctx context.Context) error {
