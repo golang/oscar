@@ -45,8 +45,8 @@ type Event struct {
 // are merely for identification purposes.
 // We use the term API for consistency with the [github.Event.API] field.
 const (
-	discussionAPI string = "/discussions"
-	commentAPI    string = "/discussions/comments" // both comments and replies
+	DiscussionAPI string = "/discussions"
+	CommentAPI    string = "/discussions/comments" // both comments and replies
 )
 
 // decodeEvent decodes the key, val pair into an Event.
@@ -66,9 +66,9 @@ func (c *Client) decodeEvent(t *timed.Entry) *Event {
 	switch e.API {
 	default:
 		c.db.Panic("discussion event invalid kind", "kind", e.API)
-	case discussionAPI:
+	case DiscussionAPI:
 		e.Typed = new(Discussion)
-	case commentAPI:
+	case CommentAPI:
 		e.Typed = new(Comment)
 	}
 	if err := json.Unmarshal(js, e.Typed); err != nil {

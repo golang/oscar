@@ -44,6 +44,7 @@ import (
 	"log/slog"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"golang.org/x/oscar/internal/secret"
@@ -60,6 +61,10 @@ type Client struct {
 
 	slog *slog.Logger
 	db   storage.DB
+
+	testMu     sync.Mutex
+	testClient *TestingClient
+	testEvents map[string]json.RawMessage
 }
 
 // New creates a new client for making requests to the GitHub
@@ -109,10 +114,10 @@ func (c *Client) SyncProject(ctx context.Context, project string) error {
 		return fmt.Errorf("discussion.SyncProject: unknown project: %q", project)
 	}
 
-	if err := c.syncByDate(ctx, proj, discussionAPI); err != nil {
+	if err := c.syncByDate(ctx, proj, DiscussionAPI); err != nil {
 		return err
 	}
-	return c.syncByDate(ctx, proj, commentAPI)
+	return c.syncByDate(ctx, proj, CommentAPI)
 }
 
 // discussionEventsSince returns an iterator over the discussion events since the given time.
@@ -179,10 +184,10 @@ func (c *Client) syncByDate(ctx context.Context, proj *projectSync, api string) 
 	var sinceStr *string
 	var eventsSince func(context.Context, *projectSync, time.Time) iter.Seq2[*Event, error]
 	switch api {
-	case discussionAPI:
+	case DiscussionAPI:
 		sinceStr = &proj.DiscussionDate
 		eventsSince = c.gql.discussionEventsSince
-	case commentAPI:
+	case CommentAPI:
 		sinceStr = &proj.CommentDate
 		eventsSince = c.gql.commentEventsSince
 	default:
@@ -234,7 +239,7 @@ func (d *Discussion) toEvent(project string) (*Event, error) {
 	return &Event{
 		Project:    project,
 		Discussion: d.Number,
-		API:        discussionAPI,
+		API:        DiscussionAPI,
 		ID:         d.Number,
 		JSON:       storage.JSON(d),
 		Updated:    updated,
@@ -262,7 +267,7 @@ func (c *Comment) toEvent(project string) (*Event, error) {
 	return &Event{
 		Project:    project,
 		Discussion: disc,
-		API:        commentAPI,
+		API:        CommentAPI,
 		ID:         c.ID(),
 		JSON:       storage.JSON(c),
 		Updated:    updated,

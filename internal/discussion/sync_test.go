@@ -147,60 +147,60 @@ var (
 	// The first three events as of testdata/scratch2.httprr, in the order
 	// returned by [Client.EventsAfter] (dbtime order).
 	scratchEarlyEvents = [][]byte{
-		o(scratchProject, 51, discussionAPI, 51),
-		o(scratchProject, 53, discussionAPI, 53),
-		o(scratchProject, 52, discussionAPI, 52),
+		o(scratchProject, 51, DiscussionAPI, 51),
+		o(scratchProject, 53, DiscussionAPI, 53),
+		o(scratchProject, 52, DiscussionAPI, 52),
 	}
 	// The events as of testdata/scratch.httprr, in the order
 	// returned by [Client.Events]
 	scratchEvents1 = [][]byte{
-		o(scratchProject, 50, discussionAPI, 50),
-		o(scratchProject, 50, commentAPI, 10870119),
-		o(scratchProject, 50, commentAPI, 10870121),
-		o(scratchProject, 50, commentAPI, 10870125),
-		o(scratchProject, 50, commentAPI, 10870127),
-		o(scratchProject, 50, commentAPI, 10881941),
-		o(scratchProject, 50, commentAPI, 10881945),
-		o(scratchProject, 51, discussionAPI, 51),
-		o(scratchProject, 51, commentAPI, 10870149),
-		o(scratchProject, 51, commentAPI, 10870153),
-		o(scratchProject, 51, commentAPI, 10870157),
-		o(scratchProject, 51, commentAPI, 10870161),
-		o(scratchProject, 51, commentAPI, 10870165),
-		o(scratchProject, 51, commentAPI, 10870169),
-		o(scratchProject, 52, discussionAPI, 52),
-		o(scratchProject, 52, commentAPI, 10870178),
-		o(scratchProject, 53, discussionAPI, 53),
+		o(scratchProject, 50, DiscussionAPI, 50),
+		o(scratchProject, 50, CommentAPI, 10870119),
+		o(scratchProject, 50, CommentAPI, 10870121),
+		o(scratchProject, 50, CommentAPI, 10870125),
+		o(scratchProject, 50, CommentAPI, 10870127),
+		o(scratchProject, 50, CommentAPI, 10881941),
+		o(scratchProject, 50, CommentAPI, 10881945),
+		o(scratchProject, 51, DiscussionAPI, 51),
+		o(scratchProject, 51, CommentAPI, 10870149),
+		o(scratchProject, 51, CommentAPI, 10870153),
+		o(scratchProject, 51, CommentAPI, 10870157),
+		o(scratchProject, 51, CommentAPI, 10870161),
+		o(scratchProject, 51, CommentAPI, 10870165),
+		o(scratchProject, 51, CommentAPI, 10870169),
+		o(scratchProject, 52, DiscussionAPI, 52),
+		o(scratchProject, 52, CommentAPI, 10870178),
+		o(scratchProject, 53, DiscussionAPI, 53),
 	}
 	// The events as of testdata/scratch2.httprr, in the order
 	// returned by [Client.Events]
 	scratchEvents2 = [][]byte{
-		o(scratchProject, 50, discussionAPI, 50),
-		o(scratchProject, 50, commentAPI, 10870119),
-		o(scratchProject, 50, commentAPI, 10870121),
-		o(scratchProject, 50, commentAPI, 10870125),
-		o(scratchProject, 50, commentAPI, 10870127),
-		o(scratchProject, 50, commentAPI, 10881941),
-		o(scratchProject, 50, commentAPI, 10881945),
-		o(scratchProject, 50, commentAPI, 10883560), // new
-		o(scratchProject, 50, commentAPI, 10883563), // new
-		o(scratchProject, 51, discussionAPI, 51),
-		o(scratchProject, 51, commentAPI, 10870149),
-		o(scratchProject, 51, commentAPI, 10870153),
-		o(scratchProject, 51, commentAPI, 10870157),
-		o(scratchProject, 51, commentAPI, 10870161),
-		o(scratchProject, 51, commentAPI, 10870165),
-		o(scratchProject, 51, commentAPI, 10870169),
-		o(scratchProject, 52, discussionAPI, 52),
-		o(scratchProject, 52, commentAPI, 10870178),
-		o(scratchProject, 53, discussionAPI, 53),
-		o(scratchProject, 54, discussionAPI, 54), // new
+		o(scratchProject, 50, DiscussionAPI, 50),
+		o(scratchProject, 50, CommentAPI, 10870119),
+		o(scratchProject, 50, CommentAPI, 10870121),
+		o(scratchProject, 50, CommentAPI, 10870125),
+		o(scratchProject, 50, CommentAPI, 10870127),
+		o(scratchProject, 50, CommentAPI, 10881941),
+		o(scratchProject, 50, CommentAPI, 10881945),
+		o(scratchProject, 50, CommentAPI, 10883560), // new
+		o(scratchProject, 50, CommentAPI, 10883563), // new
+		o(scratchProject, 51, DiscussionAPI, 51),
+		o(scratchProject, 51, CommentAPI, 10870149),
+		o(scratchProject, 51, CommentAPI, 10870153),
+		o(scratchProject, 51, CommentAPI, 10870157),
+		o(scratchProject, 51, CommentAPI, 10870161),
+		o(scratchProject, 51, CommentAPI, 10870165),
+		o(scratchProject, 51, CommentAPI, 10870169),
+		o(scratchProject, 52, DiscussionAPI, 52),
+		o(scratchProject, 52, CommentAPI, 10870178),
+		o(scratchProject, 53, DiscussionAPI, 53),
+		o(scratchProject, 54, DiscussionAPI, 54), // new
 	}
 	// Diff between testdata/scratch.httprr and testdata/scratch2.httprr.
 	scratchNewEvents = [][]byte{
-		o(scratchProject, 50, discussionAPI, 50),    // update
-		o(scratchProject, 50, commentAPI, 10883560), // new
-		o(scratchProject, 50, commentAPI, 10883563), // new
-		o(scratchProject, 54, discussionAPI, 54),    // new
+		o(scratchProject, 50, DiscussionAPI, 50),    // update
+		o(scratchProject, 50, CommentAPI, 10883560), // new
+		o(scratchProject, 50, CommentAPI, 10883563), // new
+		o(scratchProject, 54, DiscussionAPI, 54),    // new
 	}
 )
