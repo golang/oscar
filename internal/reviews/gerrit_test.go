@@ -5,7 +5,6 @@
 package reviews
 
 import (
-	"context"
 	"reflect"
 	"slices"
 	"sync"
@@ -33,7 +32,6 @@ func loadTestChange(t *testing.T, gc *gerrit.Client, filename string, num int) C
 	gch := gc.Change("test", num)
 	grc := &GerritReviewClient{
 		GClient:  gc,
-		Project:  "test",
 		Accounts: testAccounts(),
 	}
 	change := &GerritChange{
@@ -132,8 +130,15 @@ func TestGerritChange(t *testing.T) {
 		}
 	}
 
-	ctx := context.Background()
-	it := GerritChanges(ctx, gc, []string{"test"}, testAccounts())
+	gerritChanges := func(yield func(*gerrit.Change) bool) {
+		for _, changeFn := range gc.ChangeNumbers("test") {
+			if !yield(changeFn()) {
+				return
+			}
+		}
+	}
+
+	it := GerritChanges(gc, testAccounts(), gerritChanges)
 	got := slices.Collect(it)
 	var gotIDs []string
 	for _, g := range got {

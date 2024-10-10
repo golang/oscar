@@ -5,7 +5,6 @@
 package reviews
 
 import (
-	"context"
 	"iter"
 	"slices"
 	"strconv"
@@ -17,11 +16,10 @@ import (
 // GerritReviewClient is a [gerrit.Client] with a mapping
 // from account e-mail addresses to [Account] data.
 // We do things this way because a lot of Gerrit change
-// data is more or less the same for any Gerrit project,
+// data is more or less the same for any Gerrit instance,
 // but account information is not.
 type GerritReviewClient struct {
 	GClient  *gerrit.Client
-	Project  string
 	Accounts AccountLookup
 }
 
@@ -117,7 +115,8 @@ func (gc *GerritChange) Reviewed() []Account {
 	}
 
 	num := gc.Client.GClient.ChangeNumber(gc.Change)
-	commentMap := gc.Client.GClient.Comments(gc.Client.Project, num)
+	project := gc.Client.GClient.ChangeProject(gc.Change)
+	commentMap := gc.Client.GClient.Comments(project, num)
 	for _, comments := range commentMap {
 		for _, comment := range comments {
 			if comment.Author != nil {
@@ -159,24 +158,21 @@ func (gc *GerritChange) Needs() Needs {
 	}
 }
 
-// GerritChanges returns an iterator over the [GerritChange]
-// values for the specific projects.
-func GerritChanges(ctx context.Context, cl *gerrit.Client, projects []string, accounts AccountLookup) iter.Seq[*GerritChange] {
+// GerritChanges converts from an iterator over [gerrit.Change]
+// values into an iterator over [GerritChange] values.
+func GerritChanges(cl *gerrit.Client, accounts AccountLookup, it iter.Seq[*gerrit.Change]) iter.Seq[*GerritChange] {
 	return func(yield func(*GerritChange) bool) {
-		for _, project := range projects {
-			grc := &GerritReviewClient{
-				GClient:  cl,
-				Project:  project,
-				Accounts: accounts,
+		grc := &GerritReviewClient{
+			GClient:  cl,
+			Accounts: accounts,
+		}
+		for ch := range it {
+			gc := &GerritChange{
+				Client: grc,
+				Change: ch,
 			}
-			for _, changeFn := range cl.ChangeNumbers(project) {
-				gc := &GerritChange{
-					Client: grc,
-					Change: changeFn(),
-				}
-				if !yield(gc) {
-					return
-				}
+			if !yield(gc) {
+				return
 			}
 		}
 	}

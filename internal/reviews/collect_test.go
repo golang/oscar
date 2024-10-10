@@ -9,6 +9,7 @@ import (
 	"slices"
 	"testing"
 
+	"golang.org/x/oscar/internal/gerrit"
 	"golang.org/x/oscar/internal/testutil"
 )
 
@@ -16,17 +17,25 @@ func TestCollectChangePreds(t *testing.T) {
 	gc := testGerritClient(t)
 	testutil.Check(t, gc.Testing().LoadTxtar("testdata/gerritchange.txt"))
 
-	ctx := context.Background()
+	// Fetch changes and convert to a sequence of gerrit.Change
+	gchanges := func(yield func(*gerrit.Change) bool) {
+		for _, changeFn := range gc.ChangeNumbers("test") {
+			if !yield(changeFn()) {
+				return
+			}
+		}
+	}
 
 	// Convert a iter.Seq[*GerritChange] into a iter.Seq[Change].
 	changes := func(yield func(Change) bool) {
-		for gc := range GerritChanges(ctx, gc, []string{"test"}, testAccounts()) {
+		for gc := range GerritChanges(gc, testAccounts(), gchanges) {
 			if !yield(gc) {
 				return
 			}
 		}
 	}
 
+	ctx := context.Background()
 	cps := CollectChangePreds(ctx, testutil.Slogger(t), changes)
 	if len(cps) != 1 {
 		t.Errorf("CollectChangePreds returned %d entries, want 1", len(cps))
