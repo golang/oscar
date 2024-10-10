@@ -150,6 +150,12 @@ func checkFirstCL(t *testing.T, c *Client, ch *Change, num int) {
 			nil,
 		},
 		{
+			"ChangeProject",
+			wa(c.ChangeProject),
+			"sync",
+			nil,
+		},
+		{
 			"ChangeStatus",
 			wa(c.ChangeStatus),
 			"MERGED",

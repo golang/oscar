@@ -36,6 +36,15 @@ func (c *Client) ChangeNumber(ch *Change) int {
 	return ch.num
 }
 
+// Project returns the project that the change is in.
+func (c *Client) ChangeProject(ch *Change) string {
+	var project struct {
+		Project string `json:"project"`
+	}
+	c.unmarshal(ch, "project", &project)
+	return project.Project
+}
+
 // Status returns the status of the change: NEW, MERGED, ABANDONED.
 func (c *Client) ChangeStatus(ch *Change) string {
 	var status struct {
