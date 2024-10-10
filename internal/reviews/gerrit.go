@@ -5,6 +5,8 @@
 package reviews
 
 import (
+	"context"
+	"iter"
 	"slices"
 	"strconv"
 	"time"
@@ -154,5 +156,28 @@ func (gc *GerritChange) Needs() Needs {
 		return NeedsMaintainerReview
 	} else {
 		return NeedsReview
+	}
+}
+
+// GerritChanges returns an iterator over the [GerritChange]
+// values for the specific projects.
+func GerritChanges(ctx context.Context, cl *gerrit.Client, projects []string, accounts AccountLookup) iter.Seq[*GerritChange] {
+	return func(yield func(*GerritChange) bool) {
+		for _, project := range projects {
+			grc := &GerritReviewClient{
+				GClient:  cl,
+				Project:  project,
+				Accounts: accounts,
+			}
+			for _, changeFn := range cl.ChangeNumbers(project) {
+				gc := &GerritChange{
+					Client: grc,
+					Change: changeFn(),
+				}
+				if !yield(gc) {
+					return
+				}
+			}
+		}
 	}
 }

@@ -5,8 +5,10 @@
 package reviews
 
 import (
+	"context"
 	"reflect"
 	"slices"
+	"sync"
 	"testing"
 	"time"
 
@@ -30,28 +32,9 @@ func loadTestChange(t *testing.T, gc *gerrit.Client, filename string, num int) C
 	testutil.Check(t, tc.LoadTxtar(filename))
 	gch := gc.Change("test", num)
 	grc := &GerritReviewClient{
-		GClient: gc,
-		Project: "test",
-		Accounts: gerritTestAccountLookup{
-			"gopher@golang.org": &gerritTestAccount{
-				name:        "gopher@golang.org",
-				displayName: "gopher",
-				authority:   AuthorityReviewer,
-				commits:     10,
-			},
-			"maintainer@golang.org": &gerritTestAccount{
-				name:        "maintainer@golang.org",
-				displayName: "maintainer",
-				authority:   AuthorityMaintainer,
-				commits:     10,
-			},
-			"commenter@golang.org": &gerritTestAccount{
-				name:        "commenter@golang.org",
-				displayName: "commenter",
-				authority:   AuthorityContributor,
-				commits:     10,
-			},
-		},
+		GClient:  gc,
+		Project:  "test",
+		Accounts: testAccounts(),
 	}
 	change := &GerritChange{
 		Client: grc,
@@ -148,6 +131,19 @@ func TestGerritChange(t *testing.T) {
 			t.Errorf("%s got %v, want %v", test.name, got, test.want)
 		}
 	}
+
+	ctx := context.Background()
+	it := GerritChanges(ctx, gc, []string{"test"}, testAccounts())
+	got := slices.Collect(it)
+	var gotIDs []string
+	for _, g := range got {
+		gotIDs = append(gotIDs, g.ID())
+	}
+	slices.Sort(gotIDs)
+	wantIDs := []string{"1", "2"}
+	if !slices.Equal(gotIDs, wantIDs) {
+		t.Errorf("GerritChanges returned IDs %v, want %v", gotIDs, wantIDs)
+	}
 }
 
 // changeMethod is one of the methods used to retrieve Change values.
@@ -194,3 +190,27 @@ type gerritTestAccountLookup map[string]Account
 func (gtal gerritTestAccountLookup) Lookup(name string) Account {
 	return gtal[name]
 }
+
+// testAccounts returns an implementation of [AccountLookup] for testing.
+var testAccounts = sync.OnceValue(func() AccountLookup {
+	return gerritTestAccountLookup{
+		"gopher@golang.org": &gerritTestAccount{
+			name:        "gopher@golang.org",
+			displayName: "gopher",
+			authority:   AuthorityReviewer,
+			commits:     10,
+		},
+		"maintainer@golang.org": &gerritTestAccount{
+			name:        "maintainer@golang.org",
+			displayName: "maintainer",
+			authority:   AuthorityMaintainer,
+			commits:     10,
+		},
+		"commenter@golang.org": &gerritTestAccount{
+			name:        "commenter@golang.org",
+			displayName: "commenter",
+			authority:   AuthorityContributor,
+			commits:     10,
+		},
+	}
+})
