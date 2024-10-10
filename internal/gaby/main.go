@@ -435,9 +435,9 @@ func (g *Gaby) newServer(report func(error)) *http.ServeMux {
 		var err error
 		switch job {
 		case "github":
-			err = g.syncGitHub(g.ctx)
+			err = g.syncGitHubIssues(g.ctx)
 		case "discussion":
-			err = g.syncDiscussions(g.ctx)
+			err = g.syncGitHubDiscussions(g.ctx)
 		case "crawl":
 			err = g.syncCrawl(g.ctx)
 		case "gerrit":
@@ -513,7 +513,8 @@ func (g *Gaby) syncAndRunAll(ctx context.Context) (errs []error) {
 
 	if flags.enablesync {
 		// Independent syncs can run in any order.
-		check(g.syncGitHub(ctx))
+		check(g.syncGitHubIssues(ctx))
+		check(g.syncGitHubDiscussions(ctx))
 		check(g.syncGerrit(ctx))
 
 		// Embed must happen last.
@@ -543,20 +544,20 @@ const (
 	gabyPostRelatedLock = "gabyrelatedaction"
 )
 
-func (g *Gaby) syncGitHub(ctx context.Context) error {
+func (g *Gaby) syncGitHubIssues(ctx context.Context) error {
 	g.db.Lock(gabyGitHubSyncLock)
 	defer g.db.Unlock(gabyGitHubSyncLock)
 
-	// Download new events from all GitHub projects.
+	// Download new issue events from all GitHub projects.
 	if err := g.github.Sync(ctx); err != nil {
 		return err
 	}
-	// Store newly downloaded GitHub events in the document
+	// Store newly downloaded GitHub issue events in the document
 	// database.
 	return githubdocs.Sync(ctx, g.slog, g.docs, g.github)
 }
 
-func (g *Gaby) syncDiscussions(ctx context.Context) error {
+func (g *Gaby) syncGitHubDiscussions(ctx context.Context) error {
 	g.db.Lock(gabyDiscussionSyncLock)
 	defer g.db.Unlock(gabyDiscussionSyncLock)
 
