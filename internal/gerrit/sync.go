@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -98,7 +99,9 @@ type Client struct {
 
 	ac accountCache
 
-	testing    bool
+	testing bool
+
+	testMu     sync.Mutex
 	testClient *TestingClient
 }
 
@@ -406,7 +409,9 @@ func (c *Client) syncIntervalChanges(ctx context.Context, proj *projectSync) (so
 func (c *Client) syncComments(ctx context.Context, b storage.Batch, project string, changeNum int) error {
 	var obj json.RawMessage
 	if c.divertChanges() { // testing
+		c.testMu.Lock()
 		cms := c.testClient.comments[changeNum]
+		c.testMu.Unlock()
 		obj = storage.JSON(map[string][]*CommentInfo{"file": cms}) // attach comments to a single file
 	} else {
 		url := "https://" + c.instance + "/changes/" + strconv.Itoa(changeNum) + "/comments"

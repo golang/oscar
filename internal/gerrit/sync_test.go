@@ -434,7 +434,7 @@ func TestSyncTesting(t *testing.T) {
 			check(c.Add(project))
 
 			tc := c.Testing()
-			tc.queryLimit = 3
+			tc.setLimit(3)
 			check(tc.LoadTxtar(d.file))
 
 			err := c.Sync(ctx)

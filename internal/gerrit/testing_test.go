@@ -117,8 +117,9 @@ func TestTestingChanges(t *testing.T) {
 	check := testutil.Checker(t)
 	ctx := context.Background()
 
-	tc := newTestingClient()
-	tc.queryLimit = 1000 // grab everything in one batch
+	c := New("gerrit-test", nil, nil, nil, nil)
+	tc := c.Testing()
+	tc.setLimit(1000) // grab everything in one batch
 	check(tc.LoadTxtar("testdata/uniquetimes.txt"))
 
 	cnt := 0

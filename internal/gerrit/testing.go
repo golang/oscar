@@ -39,21 +39,36 @@ func (c *Client) Testing() *TestingClient {
 		return nil
 	}
 
+	c.testMu.Lock()
+	defer c.testMu.Unlock()
 	if c.testClient == nil {
-		c.testClient = newTestingClient()
+		c.testClient = newTestingClient(c)
 	}
 	return c.testClient
 }
 
 // A TestingClient provides access to [Client] functionality intended for testing.
 type TestingClient struct {
+	c          *Client
 	chs        []*ChangeInfo          // change updates, in reverse chronological order
 	queryLimit int                    // mimic Gerrit query limits
 	comments   map[int][]*CommentInfo // comments indexed by change number
 }
 
-func newTestingClient() *TestingClient {
-	return &TestingClient{comments: make(map[int][]*CommentInfo)}
+func newTestingClient(c *Client) *TestingClient {
+	return &TestingClient{c: c, comments: make(map[int][]*CommentInfo)}
+}
+
+func (tc *TestingClient) limit() int {
+	tc.c.testMu.Lock()
+	defer tc.c.testMu.Unlock()
+	return tc.queryLimit
+}
+
+func (tc *TestingClient) setLimit(l int) {
+	tc.c.testMu.Lock()
+	defer tc.c.testMu.Unlock()
+	tc.queryLimit = l
 }
 
 // LoadTxtar loads a change info history from the named txtar file,
@@ -93,7 +108,9 @@ func (tc *TestingClient) LoadTxtarData(data []byte) error {
 		if _, err := tc.setFields(file.Name, data, 0, cv); err != nil {
 			return err
 		}
+		tc.c.testMu.Lock()
 		tc.chs = append(tc.chs, c)
+		tc.c.testMu.Unlock()
 	}
 	return nil
 }
@@ -157,7 +174,9 @@ func (tc *TestingClient) setField(filename string, line, data string, indent int
 			if err != nil {
 				return "", err
 			}
+			tc.c.testMu.Lock()
 			tc.comments[ch.Number] = append(tc.comments[ch.Number], &cm)
+			tc.c.testMu.Unlock()
 			return data, nil
 		}
 		return "", fmt.Errorf("%s: unrecognized field name %q in %s", filename, key, st.Type())
@@ -384,7 +403,7 @@ func (tc *TestingClient) changes(_ context.Context, project string, after, befor
 				return
 			}
 
-			if yielded >= tc.queryLimit { // reached the batch limit
+			if yielded >= tc.limit() { // reached the batch limit
 				return
 			}
 		}
