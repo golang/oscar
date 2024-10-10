@@ -132,3 +132,30 @@ func TestTestingChanges(t *testing.T) {
 		t.Errorf("want 5 changes; got %d", cnt)
 	}
 }
+
+func TestTestingChangeNumbers(t *testing.T) {
+	check := testutil.Checker(t)
+
+	lg := testutil.Slogger(t)
+	db := storage.MemDB()
+	sdb := secret.Empty()
+	c := New("gerrit-test", lg, db, sdb, nil)
+
+	tc := c.Testing()
+	check(tc.LoadTxtar("testdata/uniquetimes.txt"))
+
+	idx := 1
+	for num, chfn := range c.ChangeNumbers("test") {
+		if num != idx {
+			t.Errorf("ChangeNumbers returned change %d, want %d", num, idx)
+		}
+		ch := chfn()
+		if got := c.ChangeNumber(ch); got != idx {
+			t.Errorf("ChangeNumbers returned change with number %d, want %d", got, idx)
+		}
+		idx++
+	}
+	if idx != 11 {
+		t.Errorf("ChangeNumbers returned %d changes, want 10", idx-1)
+	}
+}

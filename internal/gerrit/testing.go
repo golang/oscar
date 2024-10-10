@@ -415,6 +415,23 @@ func updatedIn(c *ChangeInfo, after, before string) (bool, error) {
 	return ain && bin, nil
 }
 
+// changeNumbers returns the data for the testing changes.
+func (tc *TestingClient) changeNumbers() iter.Seq2[int, func() *Change] {
+	return func(yield func(int, func() *Change) bool) {
+		for _, ch := range tc.chs {
+			cfn := func() *Change {
+				return &Change{
+					num:  ch.Number,
+					data: storage.JSON(ch),
+				}
+			}
+			if !yield(ch.Number, cfn) {
+				return
+			}
+		}
+	}
+}
+
 // change returns the data for a single testing change.
 func (tc *TestingClient) change(changeNum int) *Change {
 	for _, ch := range tc.chs {

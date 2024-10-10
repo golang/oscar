@@ -22,6 +22,10 @@ import (
 // The second iterator value is a function that can be called to
 // return information about the change, as with [storage.DB.Scan].
 func (c *Client) ChangeNumbers(project string) iter.Seq2[int, func() *Change] {
+	if c.divertChanges() { // testing
+		return c.testClient.changeNumbers()
+	}
+
 	return func(yield func(int, func() *Change) bool) {
 		for key, fn := range c.db.Scan(o(changeKind, c.instance, project), o(changeKind, c.instance, project, ordered.Inf)) {
 			var changeNum int
