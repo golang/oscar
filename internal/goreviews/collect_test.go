@@ -16,6 +16,8 @@ import (
 )
 
 func TestCollectChanges(t *testing.T) {
+	addPredicatesOnce()
+
 	check := testutil.Checker(t)
 
 	lg := testutil.Slogger(t)
@@ -52,10 +54,23 @@ func TestCollectChanges(t *testing.T) {
 
 	want := []changePredNames{
 		{
+			changeID: "2",
+			preds: []string{
+				"hasPlusOne",
+				"hasPlusTwo",
+			},
+		},
+		{
 			changeID: "4",
 			preds: []string{
 				"authorMaintainer",
 				"noMaintainerReviews",
+			},
+		},
+		{
+			changeID: "1",
+			preds: []string{
+				"hasPlusTwo",
 			},
 		},
 		{
@@ -80,12 +95,25 @@ func TestCollectChanges(t *testing.T) {
 			},
 		},
 		{
-			changeID: "1",
-			preds:    []string{},
+			changeID: "22",
+			preds: []string{
+				"noMaintainerReviews",
+				"trybotsPassed",
+			},
 		},
 		{
-			changeID: "2",
-			preds:    []string{},
+			changeID: "21",
+			preds: []string{
+				"hasUnresolvedComments",
+				"noMaintainerReviews",
+			},
+		},
+		{
+			changeID: "23",
+			preds: []string{
+				"noMaintainerReviews",
+				"trybotsFailed",
+			},
 		},
 	}
 

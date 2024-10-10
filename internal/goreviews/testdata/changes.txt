@@ -4,6 +4,12 @@ Project: test
 Status: NEW
 Owner: gopher@golang.org
 Subject: Change 1
+CurrentRevision: commitid1
+Revisions: commitid1
+ Number: 1
+ Commit:
+  Subject: patch set 1
+  Message: goreviews: LGTM from maintainer
 Messages:
  Author: maintainer@golang.org
  Message: LGTM
@@ -18,6 +24,12 @@ Project: test
 Status: NEW
 Owner: gopher@golang.org
 Subject: Change 2
+CurrentRevision: commitid1
+Revisions: commitid1
+ Number: 1
+ Commit:
+  Subject: patch set 1
+  Message: goreviews: LGTM from maintainer and reviewer
 Messages:
  Author: maintainer@golang.org
  Message: LGTM
@@ -43,12 +55,24 @@ Project: test
 Status: NEW
 Owner: maintainer@golang.org
 Subject: Change by maintainer
+CurrentRevision: commitid1
+Revisions: commitid1
+ Number: 1
+ Commit:
+  Subject: patch set 1
+  Message: goreviews: CL from maintainer
 -- change#5 --
 Number: 5
 Project: test
 Status: NEW
 Owner: reviewer@golang.org
 Subject: Change by reviewer
+CurrentRevision: commitid1
+Revisions: commitid1
+ Number: 1
+ Commit:
+  Subject: patch set 1
+  Message: goreviews: CL from reviewer
 -- change#6 --
 Number: 6
 Project: test
@@ -109,6 +133,13 @@ Number: 17
 Project: test
 Status: NEW
 Owner: contributor@golang.org
+Subject: Change 17
+CurrentRevision: commitid1
+Revisions: commitid1
+ Number: 1
+ Commit:
+  Subject: patch set 1
+  Message: goreviews: CL from contributor
 -- change#18 --
 Number: 18
 Project: test
@@ -119,11 +150,18 @@ Number: 19
 Project: test
 Owner: gopher@golang.org
 WorkInProgress: true
+CurrentRevision: commitid1
+Revisions: commitid1
+ Number: 1
+ Commit:
+  Subject: patch set 1
+  Message: goreviews: CL from unknown
 -- change#20 --
 Number: 20
 Project: test
 Status: NEW
 Owner: letsusegerrit@gmail.com
+Subject: Change 20
 CurrentRevision: commitid1
 Revisions: commitid1
  Number: 1
@@ -132,3 +170,87 @@ Revisions: commitid1
   Message: goreviews: patch from GitHub pull request
   Author:
    Email: contributor@golang.org
+-- change#21 --
+Number: 21
+Project: test
+Status: NEW
+Owner: gopher@golang.org
+TotalCommentCount: 1
+UnresolvedCommentCount: 1
+CurrentRevision: commitid1
+Revisions: commitid1
+ Number: 1
+ Commit:
+  Subject: patch set 1
+  Message: goreviews: has unresolved comments
+-- change#22 --
+Number: 22
+Project: test
+Status: NEW
+Owner: gopher@golang.org
+Labels: LUCI-TryBot-Result
+ Description: TryBot result
+ All:
+  AccountInfo: luci@golang.org
+  Value: 1
+CurrentRevision: commitid1
+Revisions: commitid1
+ Number: 1
+ Commit:
+  Subject: patch set 1
+  Message: goreviews: trybots passed
+-- change#23 --
+Number: 23
+Project: test
+Status: NEW
+Owner: gopher@golang.org
+Labels: LUCI-TryBot-Result
+ Description: TryBot result
+ All:
+  AccountInfo: luci@golang.org
+  Value: -1
+CurrentRevision: commitid1
+Revisions: commitid1
+ Number: 1
+ Commit:
+  Subject: patch set 1
+  Message: goreviews: trybots failed
+-- change#24 --
+Number: 24
+Project: test
+Status: New
+Owner: gopher@golang.org
+CurrentRevision: commitid1
+Revisions: commitid1
+ Number: 1
+ Commit:
+  Subject: patch set 1
+  Message: goreviews: DO NOT REVIEW
+-- change#25 --
+Number: 25
+Project: test
+Status: New
+Owner: gopher@golang.org
+Hashtags: wait-release
+CurrentRevision: commitid1
+Revisions: commitid1
+ Number: 1
+ Commit:
+  Subject: patch set 1
+  Message: goreviews: tagged wait-release
+-- change#26 --
+Number: 26
+Project: test
+Status: New
+Owner: gopher@golang.org
+Labels: Hold
+ Description: on hold
+ All:
+  AccountInfo: maintainer@golang.org
+  Value: 1
+CurrentRevision: commitid1
+Revisions: commitid1
+ Number: 1
+ Commit:
+  Subject: patch set 1
+  Message: goreviews: on hold
