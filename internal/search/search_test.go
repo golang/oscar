@@ -31,6 +31,9 @@ func TestKind(t *testing.T) {
 		{"https://go.dev/ref/x", "GoReference"},
 		{"https://go.dev/wiki/x", "GoWiki"},
 		{"https://github.com/golang/go/issues/123", "GitHubIssue"},
+		{"https://github.com/golang/go/issues/123#issuecomment-1234", "Unknown"},
+		{"https://github.com/golang/go/discussions/123", "GitHubDiscussion"},
+		{"https://github.com/golang/go/discussions/123#discussioncomment-1234", "Unknown"},
 		{"https://go-review.googlesource.com/c/test/+/1#related-content", "GoGerritChange"},
 	} {
 		got := docIDKind(test.id)

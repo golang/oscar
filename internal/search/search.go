@@ -172,26 +172,28 @@ const defaultLimit = 20
 
 // Recognized kinds of documents.
 const (
-	KindGitHubIssue     = "GitHubIssue"
-	KindGoWiki          = "GoWiki"
-	KindGoDocumentation = "GoDocumentation"
-	KindGoReference     = "GoReference"
-	KindGoBlog          = "GoBlog"
-	KindGoDevPage       = "GoDevPage"
-	KindGoGerritChange  = "GoGerritChange"
+	KindGitHubIssue      = "GitHubIssue"
+	KindGitHubDiscussion = "GitHubDiscussion"
+	KindGoWiki           = "GoWiki"
+	KindGoDocumentation  = "GoDocumentation"
+	KindGoReference      = "GoReference"
+	KindGoBlog           = "GoBlog"
+	KindGoDevPage        = "GoDevPage"
+	KindGoGerritChange   = "GoGerritChange"
 	// Unknown document.
 	KindUnknown = "Unknown"
 )
 
 // Set of recognized document kinds.
 var kinds = map[string]bool{
-	KindGitHubIssue:     true,
-	KindGoWiki:          true,
-	KindGoDocumentation: true,
-	KindGoBlog:          true,
-	KindGoDevPage:       true,
-	KindUnknown:         true,
-	KindGoGerritChange:  true,
+	KindGitHubIssue:      true,
+	KindGitHubDiscussion: true,
+	KindGoWiki:           true,
+	KindGoDocumentation:  true,
+	KindGoBlog:           true,
+	KindGoDevPage:        true,
+	KindUnknown:          true,
+	KindGoGerritChange:   true,
 }
 
 // docIDKind determines the kind of document from its ID.
@@ -205,8 +207,8 @@ func docIDKind(id string) string {
 	}
 	hp := path.Join(u.Host, u.Path)
 	switch {
-	case strings.HasPrefix(hp, "github.com/golang/go/issues/"):
-		return KindGitHubIssue
+	case githubRE.MatchString(hp):
+		return githubKind(hp, u.Fragment)
 	case strings.HasPrefix(hp, "go.dev/wiki/"):
 		return KindGoWiki
 	case strings.HasPrefix(hp, "go.dev/doc/"):
@@ -219,14 +221,36 @@ func docIDKind(id string) string {
 		return KindGoDevPage
 	case strings.HasPrefix(hp, "go-review.googlesource.com/"):
 		return KindGoGerritChange
+	}
+	return KindUnknown
+}
+
+func githubKind(hostPath string, fragment string) string {
+	// We don't currently recognize Github URLs with fragments.
+	if fragment != "" {
+		return KindUnknown
+	}
+
+	s := githubRE.FindStringSubmatch(hostPath)
+	if len(s) != 3 { // malformed
+		return KindUnknown
+	}
+	project, api := s[1], s[2]
+
+	// Project must be "golang/go", except in tests.
+	if project != "golang/go" && !testing.Testing() {
+		return KindUnknown
+	}
+
+	switch api {
+	case "issues":
+		return KindGitHubIssue
+	case "discussions":
+		return KindGitHubDiscussion
 	default:
-		// In tests, any GitHub project's issues are OK.
-		if testing.Testing() && githubIssueRE.MatchString(hp) {
-			return KindGitHubIssue
-		}
 		return KindUnknown
 	}
 }
 
-// Matches GitHub issue URLs in any project, e.g. github.com/golang/go/issues/42.
-var githubIssueRE = regexp.MustCompile(`^github\.com/[\w-]+/[\w-]+/issues/\d+$`)
+// Matches GitHub URLs in any project of the form github.com/owner/repo/api/num.
+var githubRE = regexp.MustCompile(`^github\.com/([\w-]+/[\w-]+)/([\w-]+)/\d+$`)
