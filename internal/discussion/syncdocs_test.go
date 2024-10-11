@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package discussiondocs
+package discussion
 
 import (
 	"context"
@@ -12,33 +12,32 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"golang.org/x/oscar/internal/discussion"
 	"golang.org/x/oscar/internal/docs"
 	"golang.org/x/oscar/internal/secret"
 	"golang.org/x/oscar/internal/storage"
 	"golang.org/x/oscar/internal/testutil"
 )
 
-func TestSync(t *testing.T) {
+func TestDiscussionDocSync(t *testing.T) {
 	check := testutil.Checker(t)
 	lg := testutil.Slogger(t)
 	sdb := secret.Empty()
 	db := storage.MemDB()
 	ctx := context.Background()
 
-	c := discussion.New(ctx, lg, sdb, db)
+	c := New(ctx, lg, sdb, db)
 	project := "test/project"
 	check(c.Add(project))
 
-	d1 := &discussion.Discussion{
+	d1 := &Discussion{
 		Title: "A discussion",
 		Body:  "A body",
 	}
-	d2 := &discussion.Discussion{
+	d2 := &Discussion{
 		Title: "Another discussion",
 		Body:  "Another body",
 	}
-	c1 := &discussion.Comment{
+	c1 := &Comment{
 		Body: "comment",
 	}
 
@@ -47,7 +46,7 @@ func TestSync(t *testing.T) {
 	id2 := c.Testing().AddDiscussion(project, d2)
 
 	dc := docs.New(lg, db)
-	check(Sync(ctx, lg, dc, c))
+	docs.Sync(dc, c)
 
 	dURL := func(d int64) string { return fmt.Sprintf("https://github.com/test/project/discussions/%d", d) }
 	got := slices.Collect(dc.Docs(""))
@@ -61,23 +60,23 @@ func TestSync(t *testing.T) {
 
 	u := dURL(id)
 	dc.Add(u, "OLD TITLE", "OLD TEXT")
-	check(Sync(ctx, lg, dc, c))
+	docs.Sync(dc, c)
 	d, _ := dc.Get(u)
 	if d.Title != "OLD TITLE" || d.Text != "OLD TEXT" {
 		t.Errorf("Sync rewrote: Title=%q Text=%q, want OLD TITLE, OLD TEXT", d.Title, d.Text)
 	}
-	latestBefore := Latest(c)
+	latestBefore := docs.Latest(c)
 
-	Restart(lg, c)
-	if lr := Latest(c); lr != 0 {
+	docs.Restart(c)
+	if lr := docs.Latest(c); lr != 0 {
 		t.Errorf("latest is not 0 after restart: %d", lr)
 	}
-	check(Sync(ctx, lg, dc, c))
+	docs.Sync(dc, c)
 	d, _ = dc.Get(u)
 	if d.Title == "OLD TITLE" || d.Text == "OLD TEXT" {
 		t.Errorf("Restart+Sync did not rewrite: Title=%q Text=%q", d.Title, d.Text)
 	}
-	latestAfter := Latest(c)
+	latestAfter := docs.Latest(c)
 
 	if latestBefore != latestAfter {
 		t.Errorf("latest mismatch before=%d, after=%d", latestBefore, latestAfter)

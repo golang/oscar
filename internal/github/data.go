@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 
+	"golang.org/x/oscar/internal/docs"
 	"golang.org/x/oscar/internal/storage"
 	"golang.org/x/oscar/internal/storage/timed"
 	"rsc.io/ordered"
@@ -59,6 +60,30 @@ type Event struct {
 	ID      int64        // ID of event; each API has a different ID space. (Project, Issue, API, ID) is assumed unique
 	JSON    []byte       // JSON for the event data
 	Typed   any          // Typed unmarshaling of the event data, of type *Issue, *IssueComment, or *IssueEvent
+}
+
+var _ docs.Entry = (*Event)(nil)
+
+// LastWritten implements [docs.Entry.LastWritten].
+func (e *Event) LastWritten() timed.DBTime {
+	return e.DBTime
+}
+
+// CleanTitle should clean the title for indexing.
+// For now we assume the LLM is good enough at Markdown not to bother.
+func CleanTitle(title string) string {
+	// TODO
+	return title
+}
+
+// CleanBody should clean the body for indexing.
+// For now we assume the LLM is good enough at Markdown not to bother.
+// In the future we may want to make various changes like inlining
+// the programs associated with playground URLs,
+// and we may also want to remove any HTML tags from the Markdown.
+func CleanBody(body string) string {
+	// TODO
+	return body
 }
 
 // Events returns an iterator over issue events for the given project,

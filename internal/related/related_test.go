@@ -21,7 +21,6 @@ import (
 	"golang.org/x/oscar/internal/docs"
 	"golang.org/x/oscar/internal/embeddocs"
 	"golang.org/x/oscar/internal/github"
-	"golang.org/x/oscar/internal/githubdocs"
 	"golang.org/x/oscar/internal/llm"
 	"golang.org/x/oscar/internal/storage"
 	"golang.org/x/oscar/internal/testutil"
@@ -44,7 +43,7 @@ func TestRun(t *testing.T) {
 	}
 
 	dc := docs.New(lg, db)
-	githubdocs.Sync(ctx, lg, dc, gh)
+	docs.Sync(dc, gh)
 
 	vdb := storage.MemVectorDB(db, lg, "vecs")
 	embeddocs.Sync(ctx, lg, vdb, llm.QuoteEmbedder(), dc)
@@ -218,7 +217,7 @@ func newTestPoster(t *testing.T) (_ *Poster, out *bytes.Buffer, project string, 
 	gh.Testing().LoadTxtar("../testdata/rsctmp.txt")
 
 	dc := docs.New(lg, db)
-	githubdocs.Sync(ctx, lg, dc, gh)
+	docs.Sync(dc, gh)
 
 	vdb := storage.MemVectorDB(db, lg, "vecs")
 	embeddocs.Sync(ctx, lg, vdb, llm.QuoteEmbedder(), dc)

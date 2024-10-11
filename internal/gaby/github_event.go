@@ -11,8 +11,8 @@ import (
 	"net/http"
 
 	"golang.org/x/oscar/internal/actions"
+	"golang.org/x/oscar/internal/docs"
 	"golang.org/x/oscar/internal/github"
-	"golang.org/x/oscar/internal/githubdocs"
 )
 
 // handleGitHubEvent handles incoming webhook requests from GitHub
@@ -163,5 +163,6 @@ func (g *Gaby) syncGitHubProject(ctx context.Context, project string) error {
 	if err := g.github.SyncProject(ctx, project); err != nil {
 		return err
 	}
-	return githubdocs.Sync(ctx, g.slog, g.docs, g.github)
+	docs.Sync(g.docs, g.github)
+	return nil
 }

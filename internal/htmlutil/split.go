@@ -2,13 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package crawldocs splits crawled HTML pages into sections
-// and inserts them into a document corpus.
-//
-// [Split] provides access to the HTML splitter;
-// [Sync] and [Restart] implement the incremental
-// splitting of crawled HTML into a document corpus.
-package crawldocs
+// Package htmlutil splits crawled HTML pages into sections via [Split].
+package htmlutil
 
 import (
 	"bytes"
@@ -38,7 +33,7 @@ func Split(html []byte) iter.Seq[*Section] {
 			// but we haven't configured any,
 			// so we can assume there won't be an error.
 			// (There is no such thing as "bad" HTML 5.)
-			panic("crawldocs: internal error: HTML 5 parse failed: " + err.Error())
+			panic("htmlutil: internal error: HTML 5 parse failed: " + err.Error())
 		}
 		walkDoc(doc, yield)
 	}

@@ -10,6 +10,7 @@ import (
 	"math"
 	"time"
 
+	"golang.org/x/oscar/internal/docs"
 	"golang.org/x/oscar/internal/storage"
 	"golang.org/x/oscar/internal/storage/timed"
 	"rsc.io/ordered"
@@ -37,6 +38,13 @@ type Event struct {
 	JSON       []byte       // JSON for the event data
 	Typed      any          // Typed unmarshaling of the event data, of type [*Discussion], [*Comment]
 	Updated    time.Time    // when the event was last updated (according to GitHub)
+}
+
+var _ docs.Entry = (*Event)(nil)
+
+// LastWritten implements [docs.Entry.LastWritten].
+func (e *Event) LastWritten() timed.DBTime {
+	return e.DBTime
 }
 
 // The recognized event kinds.

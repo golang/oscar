@@ -2,21 +2,18 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package crawldocs
+package crawl
 
 import (
-	"context"
 	"os"
 	"testing"
 
-	"golang.org/x/oscar/internal/crawl"
 	"golang.org/x/oscar/internal/docs"
 	"golang.org/x/oscar/internal/storage"
 	"golang.org/x/oscar/internal/testutil"
 )
 
-func TestSync(t *testing.T) {
-	ctx := context.Background()
+func TestCrawlDocsSync(t *testing.T) {
 	check := testutil.Checker(t)
 	lg := testutil.Slogger(t)
 	db := storage.MemDB()
@@ -24,17 +21,17 @@ func TestSync(t *testing.T) {
 	data, err := os.ReadFile("testdata/toolchain.html")
 	check(err)
 	dc := docs.New(lg, db)
-	cr := crawl.New(lg, db, nil)
-	cr.Set(&crawl.Page{
+	cr := New(lg, db, nil)
+	cr.Set(&Page{
 		URL:  "https://go.dev/doc/toolchain",
 		HTML: data,
 	})
-	cr.Set(&crawl.Page{
+	cr.Set(&Page{
 		URL:  "https://go.dev/doc/empty",
 		HTML: nil,
 	})
 
-	check(Sync(ctx, lg, dc, cr))
+	docs.Sync(dc, cr)
 
 	var want = []string{
 		"https://go.dev/doc/toolchain#GOTOOLCHAIN",
@@ -70,14 +67,14 @@ func TestSync(t *testing.T) {
 	}
 
 	dc.Add(download, "OLD TITLE", "OLD TEXT")
-	check(Sync(ctx, lg, dc, cr))
+	docs.Sync(dc, cr)
 	d, _ := dc.Get(download)
 	if d.Title != "OLD TITLE" || d.Text != "OLD TEXT" {
 		t.Errorf("Sync rewrote #download: Title=%q Text=%q, want OLD TITLE, OLD TEXT", d.Title, d.Text)
 	}
 
-	Restart(ctx, lg, cr)
-	check(Sync(ctx, lg, dc, cr))
+	docs.Restart(cr)
+	docs.Sync(dc, cr)
 	d, _ = dc.Get(download)
 	if d.Title == "OLD TITLE" || d.Text == "OLD TEXT" {
 		t.Errorf("Restart+Sync did not rewrite #download: Title=%q Text=%q", d.Title, d.Text)

@@ -24,9 +24,7 @@ import (
 	"golang.org/x/oscar/internal/actions"
 	"golang.org/x/oscar/internal/commentfix"
 	"golang.org/x/oscar/internal/crawl"
-	"golang.org/x/oscar/internal/crawldocs"
 	"golang.org/x/oscar/internal/discussion"
-	"golang.org/x/oscar/internal/discussiondocs"
 	"golang.org/x/oscar/internal/docs"
 	"golang.org/x/oscar/internal/embeddocs"
 	"golang.org/x/oscar/internal/gcp/firestore"
@@ -35,9 +33,7 @@ import (
 	"golang.org/x/oscar/internal/gcp/gcpsecret"
 	"golang.org/x/oscar/internal/gcp/gemini"
 	"golang.org/x/oscar/internal/gerrit"
-	"golang.org/x/oscar/internal/gerritdocs"
 	"golang.org/x/oscar/internal/github"
-	"golang.org/x/oscar/internal/githubdocs"
 	"golang.org/x/oscar/internal/llm"
 	"golang.org/x/oscar/internal/pebble"
 	"golang.org/x/oscar/internal/related"
@@ -117,9 +113,6 @@ func main() {
 	shutdown := g.initGCP()
 	defer shutdown()
 
-	// Named functions to retrieve latest Watcher times.
-	watcherLatests := map[string]func() timed.DBTime{}
-
 	g.github = github.New(g.slog, g.db, g.secret, g.http)
 	g.disc = discussion.New(g.ctx, g.slog, g.secret, g.db)
 	_ = g.disc.Add(g.githubProject) // only needed once per g.db lifetime
@@ -130,16 +123,12 @@ func main() {
 	}
 
 	g.docs = docs.New(g.slog, g.db)
-	watcherLatests["githubdocs"] = func() timed.DBTime { return githubdocs.Latest(g.github) }
-	watcherLatests["gerritrelateddocs"] = func() timed.DBTime { return gerritdocs.RelatedLatest(g.gerrit) }
-	watcherLatests["discussiondocs"] = func() timed.DBTime { return discussiondocs.Latest(g.disc) }
 
 	ai, err := gemini.NewClient(g.ctx, g.slog, g.secret, g.http, "text-embedding-004")
 	if err != nil {
 		log.Fatal(err)
 	}
 	g.embed = ai
-	watcherLatests["embeddocs"] = func() timed.DBTime { return embeddocs.Latest(g.docs) }
 
 	cr := crawl.New(g.slog, g.db, g.http)
 	cr.Add("https://go.dev/")
@@ -147,7 +136,6 @@ func main() {
 	cr.Deny(godevDeny...)
 	cr.Clean(godevClean)
 	g.crawler = cr
-	watcherLatests["crawldocs"] = func() timed.DBTime { return crawldocs.Latest(cr) }
 
 	if flags.search {
 		g.searchLoop()
@@ -160,7 +148,6 @@ func main() {
 	cf.ReplaceURL(`\Qhttps://go-review.git.corp.google.com/\E`, "https://go-review.googlesource.com/")
 	cf.EnableEdits()
 	g.commentFixer = cf
-	watcherLatests["gerritlinks fix"] = cf.Latest
 
 	rp := related.New(g.slog, g.db, g.github, g.vector, g.docs, "related")
 	rp.EnableProject(g.githubProject)
@@ -169,7 +156,19 @@ func main() {
 	rp.SkipTitleSuffix(" backport]")
 	rp.EnablePosts()
 	g.relatedPoster = rp
-	watcherLatests["related"] = rp.Latest
+
+	// Named functions to retrieve latest Watcher times.
+	watcherLatests := map[string]func() timed.DBTime{
+		github.DocWatcherID:     docs.LatestFunc(g.github),
+		gerrit.DocWatcherID:     docs.LatestFunc(g.gerrit),
+		discussion.DocWatcherID: docs.LatestFunc(g.disc),
+		crawl.DocWatcherID:      docs.LatestFunc(cr),
+
+		"embeddocs": func() timed.DBTime { return embeddocs.Latest(g.docs) },
+
+		"gerritlinks fix": cf.Latest,
+		"related":         rp.Latest,
+	}
 
 	// Install a metric that observes the latest values of the watchers each time metrics are sampled.
 	g.registerWatcherMetric(watcherLatests)
@@ -495,7 +494,8 @@ func (g *Gaby) syncCrawl(ctx context.Context) error {
 	if err := g.crawler.Run(ctx); err != nil {
 		return err
 	}
-	return crawldocs.Sync(ctx, g.slog, g.docs, g.crawler)
+	docs.Sync(g.docs, g.crawler)
+	return nil
 }
 
 // syncAndRunAll runs all fast syncs (if enablesync is true) and Gaby actions
@@ -554,7 +554,8 @@ func (g *Gaby) syncGitHubIssues(ctx context.Context) error {
 	}
 	// Store newly downloaded GitHub issue events in the document
 	// database.
-	return githubdocs.Sync(ctx, g.slog, g.docs, g.github)
+	docs.Sync(g.docs, g.github)
+	return nil
 }
 
 func (g *Gaby) syncGitHubDiscussions(ctx context.Context) error {
@@ -568,7 +569,8 @@ func (g *Gaby) syncGitHubDiscussions(ctx context.Context) error {
 	}
 
 	// Store newly downloaded GitHub discussions in the document database.
-	return discussiondocs.Sync(ctx, g.slog, g.docs, g.disc)
+	docs.Sync(g.docs, g.disc)
+	return nil
 }
 
 func (g *Gaby) syncGerrit(ctx context.Context) error {
@@ -580,7 +582,8 @@ func (g *Gaby) syncGerrit(ctx context.Context) error {
 		return err
 	}
 	// Store newly downloaded gerrit events in the document database.
-	return gerritdocs.Sync(ctx, g.slog, g.docs, g.gerrit, g.gerritProjects)
+	docs.Sync(g.docs, g.gerrit)
+	return nil
 }
 
 // embedAll store embeddings for all new documents in the vector database.

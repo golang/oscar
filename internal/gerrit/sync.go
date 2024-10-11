@@ -23,6 +23,7 @@ import (
 	"testing"
 	"time"
 
+	"golang.org/x/oscar/internal/docs"
 	"golang.org/x/oscar/internal/secret"
 	"golang.org/x/oscar/internal/storage"
 	"golang.org/x/oscar/internal/storage/timed"
@@ -122,6 +123,16 @@ func New(instance string, lg *slog.Logger, db storage.DB, sdb secret.DB, hc *htt
 	}
 }
 
+var _ docs.Source[*ChangeEvent] = (*Client)(nil)
+
+const DocWatcherID = "gerritrelateddocs"
+
+// DocWatcher returns the change event watcher with name "gerritrelateddocs".
+// Implements [docs.Source.DocWatcher].
+func (c *Client) DocWatcher() *timed.Watcher[*ChangeEvent] {
+	return c.ChangeWatcher(DocWatcherID)
+}
+
 // RequestFlush asks a Gerrit sync to flush the database to disk
 // when convenient. This may be called concurrently with Sync.
 func (c *Client) RequestFlush() {
@@ -169,16 +180,28 @@ func (c *Client) Add(project string) error {
 // Sync syncs the data for all projects in this client's instance.
 func (c *Client) Sync(ctx context.Context) error {
 	var errs []error
-	for key := range c.db.Scan(o(syncProjectKind, c.instance), o(syncProjectKind, c.instance, ordered.Inf)) {
-		var project string
-		if err := ordered.Decode(key, nil, nil, &project); err != nil {
-			c.db.Panic("gerrit client sync decode", "key", storage.Fmt(key), "err", err)
-		}
+	for project := range c.projects() {
 		if err := c.SyncProject(ctx, project); err != nil {
 			errs = append(errs, err)
 		}
 	}
 	return errors.Join(errs...)
+}
+
+// projects returns an iterator over all Gerrit projects in the client's
+// database.
+func (c *Client) projects() iter.Seq[string] {
+	return func(yield func(string) bool) {
+		for key := range c.db.Scan(o(syncProjectKind, c.instance), o(syncProjectKind, c.instance, ordered.Inf)) {
+			var project string
+			if err := ordered.Decode(key, nil, nil, &project); err != nil {
+				c.db.Panic("gerrit client projects decode", "key", storage.Fmt(key), "err", err)
+			}
+			if !yield(project) {
+				return
+			}
+		}
+	}
 }
 
 // SyncProject syncs a single project.

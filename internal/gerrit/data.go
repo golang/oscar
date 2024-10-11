@@ -140,20 +140,20 @@ type ChangeEvent struct {
 
 // ChangeWatcher returns a new [timed.Watcher] with the given name.
 // It picks up where any previous Watcher of the same name left odd.
-func (c *Client) ChangeWatcher(name string) *timed.Watcher[ChangeEvent] {
+func (c *Client) ChangeWatcher(name string) *timed.Watcher[*ChangeEvent] {
 	return timed.NewWatcher(c.slog, c.db, name, changeUpdateKind, c.decodeChangeEvent)
 }
 
 // decodeChangeUpdateEntry decodes a changeUpdateKind [timed.Entry] into
 // a change number.
-func (c *Client) decodeChangeEvent(t *timed.Entry) ChangeEvent {
+func (c *Client) decodeChangeEvent(t *timed.Entry) *ChangeEvent {
 	ce := ChangeEvent{
 		DBTime: t.ModTime,
 	}
 	if err := ordered.Decode(t.Key, &ce.Instance, &ce.ChangeNum, nil); err != nil {
 		c.db.Panic("gerrit change event decode", "key", storage.Fmt(t.Key), "err", err)
 	}
-	return ce
+	return &ce
 }
 
 // timeStampLayout is the timestamp format used by Gerrit.

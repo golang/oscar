@@ -18,12 +18,14 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
+	"golang.org/x/oscar/internal/docs"
 	"golang.org/x/oscar/internal/secret"
 	"golang.org/x/oscar/internal/storage"
 	"golang.org/x/oscar/internal/storage/timed"
@@ -100,6 +102,34 @@ func New(lg *slog.Logger, db storage.DB, sdb secret.DB, hc *http.Client) *Client
 		http:    hc,
 		testing: testing.Testing(),
 	}
+}
+
+var _ docs.Source[*Event] = (*Client)(nil)
+
+const DocWatcherID = "githubdocs"
+
+// DocWatcher returns the event watcher with name "githubdocs".
+// Implements [docs.Source.DocWatcher].
+func (c *Client) DocWatcher() *timed.Watcher[*Event] {
+	return c.EventWatcher(DocWatcherID)
+}
+
+// ToDocs converts an event containing an issue to an
+// embeddable document.
+// It returns (nil, false) if the event is not an issue.
+// Implements [docs.Source.ToDocs].
+func (*Client) ToDocs(e *Event) (iter.Seq[*docs.Doc], bool) {
+	issue, ok := e.Typed.(*Issue)
+	if !ok {
+		return nil, false
+	}
+	return slices.Values([]*docs.Doc{
+		{
+			ID:    fmt.Sprintf("https://github.com/%s/issues/%d", e.Project, e.Issue),
+			Title: CleanTitle(issue.Title),
+			Text:  CleanBody(issue.Body),
+		},
+	}), true
 }
 
 // A projectSync is per-GitHub project ("owner/repo") sync state stored in the database.

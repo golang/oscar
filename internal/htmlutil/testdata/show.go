@@ -4,7 +4,7 @@
 
 //go:build ignore
 
-// Show shows the result of running crawldocs.Split on a single input file.
+// Show shows the result of running htmlutil.Split on a single input file.
 //
 // Usage:
 //
@@ -18,7 +18,7 @@ import (
 	"log"
 	"os"
 
-	"golang.org/x/oscar/internal/crawldocs"
+	"golang.org/x/oscar/internal/htmlutil"
 )
 
 func main() {
@@ -27,7 +27,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	for s := range crawldocs.Split(data) {
+	for s := range htmlutil.Split(data) {
 		fmt.Printf("{%q, %q, %q},\n", s.Title, s.ID, s.Text[:min(len(s.Text), 40)])
 	}
 }

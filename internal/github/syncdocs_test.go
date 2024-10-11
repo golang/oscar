@@ -2,29 +2,25 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package githubdocs
+package github
 
 import (
-	"context"
 	"testing"
 
 	"golang.org/x/oscar/internal/docs"
-	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/storage"
 	"golang.org/x/oscar/internal/testutil"
 )
 
-var ctx = context.Background()
-
-func TestMarkdown(t *testing.T) {
+func TestIssueSync(t *testing.T) {
 	check := testutil.Checker(t)
 	lg := testutil.Slogger(t)
 	db := storage.MemDB()
-	gh := github.New(lg, db, nil, nil)
+	gh := New(lg, db, nil, nil)
 	check(gh.Testing().LoadTxtar("../testdata/markdown.txt"))
 
 	dc := docs.New(lg, db)
-	check(Sync(ctx, lg, dc, gh))
+	docs.Sync(dc, gh)
 
 	var want = []string{
 		"https://github.com/rsc/markdown/issues/1",
@@ -69,14 +65,14 @@ func TestMarkdown(t *testing.T) {
 	}
 
 	dc.Add("https://github.com/rsc/markdown/issues/1", "OLD TITLE", "OLD TEXT")
-	check(Sync(ctx, lg, dc, gh))
+	docs.Sync(dc, gh)
 	d, _ := dc.Get(md1)
 	if d.Title != "OLD TITLE" || d.Text != "OLD TEXT" {
 		t.Errorf("Sync rewrote #1: Title=%q Text=%q, want OLD TITLE, OLD TEXT", d.Title, d.Text)
 	}
 
-	Restart(lg, gh)
-	check(Sync(ctx, lg, dc, gh))
+	docs.Restart(gh)
+	docs.Sync(dc, gh)
 	d, _ = dc.Get(md1)
 	if d.Title == "OLD TITLE" || d.Text == "OLD TEXT" {
 		t.Errorf("Restart+Sync did not rewrite #1: Title=%q Text=%q", d.Title, d.Text)
