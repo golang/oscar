@@ -7,10 +7,14 @@ package main
 import (
 	"net/http"
 
-	"golang.org/x/oscar/internal/reviews"
+	"golang.org/x/oscar/internal/goreviews"
 )
 
 func (g *Gaby) handleReviewDashboard(w http.ResponseWriter, r *http.Request) {
-	// TODO: pass change list and score predicates
-	reviews.Display(g.slog, "", nil, w, r)
+	c := goreviews.New(g.slog, g.gerrit, g.gerritProjects)
+	if err := c.Sync(r.Context()); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	c.Display(w, r)
 }
