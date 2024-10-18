@@ -3,7 +3,7 @@ module golang.org/x/oscar
 go 1.23
 
 require (
-	github.com/cockroachdb/pebble v1.1.1
+	github.com/cockroachdb/pebble v1.1.2
 	github.com/google/go-cmp v0.6.0
 	github.com/shurcooL/githubv4 v0.0.0-20240727222349-48295856cce7
 	golang.org/x/net v0.30.0
