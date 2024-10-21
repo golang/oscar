@@ -317,7 +317,7 @@ func (p *Poster) runFromActionLog(ctx context.Context, data []byte) ([]byte, err
 
 // runAction runs the given action.
 func (p *Poster) runAction(ctx context.Context, a *action) (*result, error) {
-	url, err := p.github.PostIssueComment(ctx, a.Issue, a.Changes)
+	_, url, err := p.github.PostIssueComment(ctx, a.Issue, a.Changes)
 	// If GitHub returns an error, add it to the action log for this action.
 	//
 	// Gaby's original behavior was to log the error, not advance the watcher,

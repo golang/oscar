@@ -68,7 +68,7 @@ func TestMarkdownEditing(t *testing.T) {
 
 	c.testing = false // edit github directly (except for the httprr in the way)
 	check(c.EditIssueComment(ctx, comment, &IssueCommentChanges{Body: testutil.Rot13(comment.Body)}))
-	url, err := c.PostIssueComment(ctx, issue, &IssueCommentChanges{Body: "testing. rot13 is the best."})
+	_, url, err := c.PostIssueComment(ctx, issue, &IssueCommentChanges{Body: "testing. rot13 is the best."})
 	check(err)
 	const wantPrefix = "https://github.com/rsc/tmp/issues/5#issuecomment-"
 	if !strings.HasPrefix(url, "https://github.com/rsc/tmp/issues/5#issuecomment-") {
@@ -116,7 +116,7 @@ func TestMarkdownDivertEdit(t *testing.T) {
 	}
 
 	check(c.EditIssueComment(ctx, comment, &IssueCommentChanges{Body: testutil.Rot13(comment.Body)}))
-	_, err = c.PostIssueComment(ctx, issue, &IssueCommentChanges{Body: "testing. rot13 is the best."})
+	_, _, err = c.PostIssueComment(ctx, issue, &IssueCommentChanges{Body: "testing. rot13 is the best."})
 	check(err)
 	check(c.EditIssue(ctx, issue, &IssueChanges{Title: testutil.Rot13(issue.Title), Labels: &[]string{"ebg13"}}))
 

@@ -24,8 +24,8 @@ import (
 // as high in the stack as possible, and the GitHub client is not.
 
 // PostIssueComment posts a new comment with the given body (written in Markdown) on issue.
-// It returns the URL of the new comment suitable for display.
-func (c *Client) PostIssueComment(ctx context.Context, issue *Issue, changes *IssueCommentChanges) (string, error) {
+// It returns an API URL for the new comment, and a URL suitable for display.
+func (c *Client) PostIssueComment(ctx context.Context, issue *Issue, changes *IssueCommentChanges) (id, url string, err error) {
 	if c.divertEdits() {
 		c.testMu.Lock()
 		defer c.testMu.Unlock()
@@ -35,20 +35,21 @@ func (c *Client) PostIssueComment(ctx context.Context, issue *Issue, changes *Is
 			Issue:               issue.Number,
 			IssueCommentChanges: changes.clone(),
 		})
-		return "", nil
+		return "", "", nil
 	}
 
 	body, err := c.post(ctx, issue.URL+"/comments", changes)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	var res struct {
-		URL string `json:"html_url"`
+		APIURL     string `json:"url"`
+		DisplayURL string `json:"html_url"`
 	}
 	if err := json.Unmarshal(body, &res); err != nil {
-		return "", err
+		return "", "", err
 	}
-	return res.URL, nil
+	return res.APIURL, res.DisplayURL, nil
 }
 
 // DownloadIssue downloads the current issue JSON from the given URL

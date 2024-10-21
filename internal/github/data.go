@@ -11,8 +11,10 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"time"
 
 	"golang.org/x/oscar/internal/docs"
+	"golang.org/x/oscar/internal/model"
 	"golang.org/x/oscar/internal/storage"
 	"golang.org/x/oscar/internal/storage/timed"
 	"rsc.io/ordered"
@@ -216,6 +218,21 @@ type Rename struct {
 	To   string `json:"to"`
 }
 
+// ParseIssueURL expects a GitHUB API URL for an issue (for example "https://api.github.com/repos/org/r/issues/123")
+// and returns the project (for example "org/r") and issue number.
+func ParseIssueURL(u string) (project string, number int64, err error) {
+	bad := func() error { return fmt.Errorf("not a GitHub isue URL: %q", u) }
+	project = urlToProject(u)
+	if project == "" {
+		return "", 0, bad()
+	}
+	number = baseToInt64(u)
+	if number == 0 {
+		return "", 0, bad()
+	}
+	return project, number, nil
+}
+
 func urlToProject(u string) string {
 	u, ok := strings.CutPrefix(u, "https://api.github.com/repos/")
 	if !ok {
@@ -269,6 +286,20 @@ func (x *IssueComment) CommentID() int64 {
 	return baseToInt64(x.URL)
 }
 
+// Methods implementing model.Post.
+func (x *IssueComment) ID() string                 { return x.URL }
+func (x *IssueComment) Title_() string             { return "" }
+func (x *IssueComment) Body_() string              { return x.Body }
+func (x *IssueComment) CreatedAt_() time.Time      { return parseTimeOrZero(x.CreatedAt) }
+func (x *IssueComment) UpdatedAt_() time.Time      { return parseTimeOrZero(x.UpdatedAt) }
+func (x *IssueComment) Author() *model.Identity    { panic("TODO: convert User to Identity") }
+func (x *IssueComment) CanEdit() bool              { return true }
+func (x *IssueComment) CanHaveChildren() bool      { return false }
+func (x *IssueComment) ParentID() string           { return x.IssueURL }
+func (x *IssueComment) Properties() map[string]any { return nil } //TODO: add other fields
+
+var _ model.Post = (*IssueComment)(nil)
+
 // Issue is the GitHub JSON structure for an issue creation event.
 type Issue struct {
 	URL              string    `json:"url"`
@@ -292,4 +323,23 @@ type Issue struct {
 // Project returns the issue's GitHub project (for example, "golang/go").
 func (x *Issue) Project() string {
 	return urlToProject(x.URL)
+}
+
+// Methods implementing model.Post.
+func (x *Issue) ID() string                 { return x.URL }
+func (x *Issue) Title_() string             { return x.Title }
+func (x *Issue) Body_() string              { return x.Body }
+func (x *Issue) CreatedAt_() time.Time      { return parseTimeOrZero(x.CreatedAt) }
+func (x *Issue) UpdatedAt_() time.Time      { return parseTimeOrZero(x.UpdatedAt) }
+func (x *Issue) Author() *model.Identity    { panic("TODO: convert User to Identity") }
+func (x *Issue) CanEdit() bool              { return true }
+func (x *Issue) CanHaveChildren() bool      { return false }
+func (x *Issue) ParentID() string           { return "" }
+func (x *Issue) Properties() map[string]any { return nil } //TODO: add other fields
+
+var _ model.Post = (*Issue)(nil)
+
+func parseTimeOrZero(s string) time.Time {
+	t, _ := time.Parse("2006-01-02 15:04:05", s)
+	return t
 }
