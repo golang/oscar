@@ -4,7 +4,7 @@
 
 // Package gemini implements access to Google's Gemini model.
 //
-// [Client] implements [llm.Embedder]. Use [NewClient] to connect.
+// [Client] implements [llm.Embedder] and [llm.GenerateText]. Use [NewClient] to connect.
 package gemini
 
 import (
@@ -49,16 +49,22 @@ func Scrub(req *http.Request) error {
 
 // A Client represents a connection to Gemini.
 type Client struct {
-	slog  *slog.Logger
-	genai *genai.Client
-	model string
+	slog                            *slog.Logger
+	genai                           *genai.Client
+	embeddingModel, generativeModel string
 }
+
+const (
+	DefaultEmbeddingModel  = "text-embedding-004"
+	DefaultGenerativeModel = "gemini-1.0-pro"
+)
 
 // NewClient returns a connection to Gemini, using the given logger and HTTP client.
 // It expects to find a secret of the form "AIza..." or "user:AIza..." in sdb
 // under the name "ai.google.dev".
-// The model is the model name to use for embedding, such as text-embedding-004.
-func NewClient(ctx context.Context, lg *slog.Logger, sdb secret.DB, hc *http.Client, model string) (*Client, error) {
+// The embeddingModel is the model name to use for embedding, such as text-embedding-004,
+// and the generativeModel is the model name to use for generation, such as gemini-1.0-pro.
+func NewClient(ctx context.Context, lg *slog.Logger, sdb secret.DB, hc *http.Client, embeddingModel, generativeModel string) (*Client, error) {
 	key, ok := sdb.Get("ai.google.dev")
 	if !ok {
 		return nil, fmt.Errorf("missing api key for ai.google.dev")
@@ -82,7 +88,7 @@ func NewClient(ctx context.Context, lg *slog.Logger, sdb secret.DB, hc *http.Cli
 		return nil, err
 	}
 
-	return &Client{slog: lg, genai: ai, model: model}, nil
+	return &Client{slog: lg, genai: ai, embeddingModel: embeddingModel, generativeModel: generativeModel}, nil
 }
 
 // withKey returns a new http.Client that is the same as hc
@@ -116,7 +122,7 @@ const maxBatch = 100 // empirical limit
 // EmbedDocs returns the vector embeddings for the docs,
 // implementing [llm.Embedder].
 func (c *Client) EmbedDocs(ctx context.Context, docs []llm.EmbedDoc) ([]llm.Vector, error) {
-	model := c.genai.EmbeddingModel(c.model)
+	model := c.genai.EmbeddingModel(c.embeddingModel)
 	var vecs []llm.Vector
 	for docs := range slices.Chunk(docs, maxBatch) {
 		b := model.NewBatch()
@@ -132,4 +138,23 @@ func (c *Client) EmbedDocs(ctx context.Context, docs []llm.EmbedDoc) ([]llm.Vect
 		}
 	}
 	return vecs, nil
+}
+
+// GenerateText returns model's text responses for the prompt,
+// implementing [llm.TextGenerator].
+func (c *Client) GenerateText(ctx context.Context, prompt string) ([]string, error) {
+	model := c.genai.GenerativeModel(c.generativeModel)
+	resp, err := model.GenerateContent(ctx, genai.Text(prompt))
+	if err != nil {
+		return nil, err
+	}
+	var candidates []string
+	for _, c := range resp.Candidates {
+		if c.Content != nil {
+			for _, p := range c.Content.Parts {
+				candidates = append(candidates, fmt.Sprintf("%s", p))
+			}
+		}
+	}
+	return candidates, nil
 }

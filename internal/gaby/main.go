@@ -124,7 +124,7 @@ func main() {
 
 	g.docs = docs.New(g.slog, g.db)
 
-	ai, err := gemini.NewClient(g.ctx, g.slog, g.secret, g.http, "text-embedding-004")
+	ai, err := gemini.NewClient(g.ctx, g.slog, g.secret, g.http, gemini.DefaultEmbeddingModel, gemini.DefaultGenerativeModel)
 	if err != nil {
 		log.Fatal(err)
 	}

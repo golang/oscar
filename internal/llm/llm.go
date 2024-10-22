@@ -22,7 +22,7 @@ import (
 //
 // See [QuoteEmbedder] for a semantically useless embedder that
 // can nonetheless be helpful when writing tests,
-// and see [golang.org/x/oscar/internal/gemini] for a real implementation.
+// and see [golang.org/x/oscar/internal/gcp/gemini] for a real implementation.
 type Embedder interface {
 	EmbedDocs(ctx context.Context, docs []EmbedDoc) ([]Vector, error)
 }
@@ -72,4 +72,14 @@ func (v *Vector) Decode(enc []byte) {
 	for ; len(enc) >= 4; enc = enc[4:] {
 		*v = append(*v, math.Float32frombits(binary.BigEndian.Uint32(enc)))
 	}
+}
+
+// A TextGenerator generates text responses given a text prompt.
+//
+// See [EchoTextGenerator] for a generator, useful for testing, that
+// always responds with a deterministic message derived from the prompt.
+//
+// See [golang.org/x/oscar/internal/gcp/gemini] for a real implementation.
+type TextGenerator interface {
+	GenerateText(ctx context.Context, prompt string) ([]string, error)
 }

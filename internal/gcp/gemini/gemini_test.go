@@ -48,8 +48,11 @@ func newTestClient(t *testing.T, rrfile string) *Client {
 	check(err)
 	rr.Scrub(Scrub)
 	sdb := secret.ReadOnlyMap{"ai.google.dev": "nokey"}
+	if rr.Recording() {
+		sdb = secret.Netrc()
+	}
 
-	c, err := NewClient(ctx, lg, sdb, rr.Client(), "text-embedding-004")
+	c, err := NewClient(ctx, lg, sdb, rr.Client(), DefaultEmbeddingModel, DefaultGenerativeModel)
 	check(err)
 
 	return c
@@ -88,6 +91,17 @@ func TestEmbedBatch(t *testing.T) {
 			}
 			t.Errorf("%q: best=%q, want %q", d.Text, best, matches[d.Text])
 		}
+	}
+}
+
+func TestGenerateText(t *testing.T) {
+	ctx := context.Background()
+	check := testutil.Checker(t)
+	c := newTestClient(t, "testdata/generatetext.httprr")
+	responses, err := c.GenerateText(ctx, "What is the Go programming language?")
+	check(err)
+	if len(responses) == 0 {
+		t.Fatal("no responses")
 	}
 }
 

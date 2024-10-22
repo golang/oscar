@@ -79,3 +79,19 @@ func UnquoteVector(v Vector) string {
 	}
 	return string(b)
 }
+
+// EchoTextGenerator returns an implementation
+// of [TextGenerator] that responds with the prompt itself.
+//
+// For testing.
+func EchoTextGenerator() TextGenerator {
+	return echo{}
+}
+
+type echo struct{}
+
+// GenerateText echoes the prompt (for testing).
+// Implements [TextGenerator].
+func (echo) GenerateText(ctx context.Context, prompt string) ([]string, error) {
+	return []string{prompt}, nil
+}
