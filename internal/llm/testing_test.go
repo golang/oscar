@@ -43,14 +43,11 @@ func TestQuote(t *testing.T) {
 func TestEcho(t *testing.T) {
 	ctx := context.Background()
 	gen := EchoTextGenerator()
-	resp, err := gen.GenerateText(ctx, "abc")
+	resp, err := gen.GenerateText(ctx, "abc", "123")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(resp) != 1 {
-		t.Fatalf("len(resp) = %v, want 1", len(resp))
-	}
-	if resp[0] != "abc" {
-		t.Errorf("resp[0] = %q, want %q", resp[0], "abc")
+	if resp != "abc123" {
+		t.Errorf("resp  = %q, want %q", resp[0], "abc123")
 	}
 }

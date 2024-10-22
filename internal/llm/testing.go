@@ -7,6 +7,7 @@ package llm
 import (
 	"context"
 	"math"
+	"strings"
 )
 
 const quoteLen = 123
@@ -90,8 +91,14 @@ func EchoTextGenerator() TextGenerator {
 
 type echo struct{}
 
-// GenerateText echoes the prompt (for testing).
+// GenerateText echoes the prompts (for testing).
 // Implements [TextGenerator].
-func (echo) GenerateText(ctx context.Context, prompt string) ([]string, error) {
-	return []string{prompt}, nil
+func (echo) GenerateText(ctx context.Context, promptParts ...string) (string, error) {
+	return EchoResponse(promptParts...), nil
+}
+
+// EchoResponse returns the concatenation of the prompt parts.
+// For testing.
+func EchoResponse(promptParts ...string) string {
+	return strings.Join(promptParts, "")
 }

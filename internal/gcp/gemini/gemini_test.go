@@ -98,7 +98,7 @@ func TestGenerateText(t *testing.T) {
 	ctx := context.Background()
 	check := testutil.Checker(t)
 	c := newTestClient(t, "testdata/generatetext.httprr")
-	responses, err := c.GenerateText(ctx, "What is the Go programming language?")
+	responses, err := c.GenerateText(ctx, "CanonicalHeaderKey returns the canonical format of the header key s. The canonicalization converts the first letter and any letter following a hyphen to upper case; the rest are converted to lowercase. For example, the canonical key for 'accept-encoding' is 'Accept-Encoding'. If s contains a space or invalid header field bytes, it is returned without modifications.", "When should I use CanonicalHeaderKey?")
 	check(err)
 	if len(responses) == 0 {
 		t.Fatal("no responses")

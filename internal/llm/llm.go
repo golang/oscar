@@ -74,12 +74,13 @@ func (v *Vector) Decode(enc []byte) {
 	}
 }
 
-// A TextGenerator generates text responses given a text prompt.
+// A TextGenerator generates a text response given one or more text
+// prompts.
 //
 // See [EchoTextGenerator] for a generator, useful for testing, that
-// always responds with a deterministic message derived from the prompt.
+// always responds with a deterministic message derived from the prompts.
 //
 // See [golang.org/x/oscar/internal/gcp/gemini] for a real implementation.
 type TextGenerator interface {
-	GenerateText(ctx context.Context, prompt string) ([]string, error)
+	GenerateText(ctx context.Context, parts ...string) (string, error)
 }

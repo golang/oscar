@@ -11,6 +11,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"maps"
@@ -119,6 +120,8 @@ func (t *transportWithKey) RoundTrip(req *http.Request) (resp *http.Response, er
 
 const maxBatch = 100 // empirical limit
 
+var _ llm.Embedder = (*Client)(nil)
+
 // EmbedDocs returns the vector embeddings for the docs,
 // implementing [llm.Embedder].
 func (c *Client) EmbedDocs(ctx context.Context, docs []llm.EmbedDoc) ([]llm.Vector, error) {
@@ -140,21 +143,33 @@ func (c *Client) EmbedDocs(ctx context.Context, docs []llm.EmbedDoc) ([]llm.Vect
 	return vecs, nil
 }
 
-// GenerateText returns model's text responses for the prompt,
+var _ llm.TextGenerator = (*Client)(nil)
+
+// GenerateText returns model's text response for the prompt parts,
 // implementing [llm.TextGenerator].
-func (c *Client) GenerateText(ctx context.Context, prompt string) ([]string, error) {
+func (c *Client) GenerateText(ctx context.Context, promptParts ...string) (string, error) {
 	model := c.genai.GenerativeModel(c.generativeModel)
-	resp, err := model.GenerateContent(ctx, genai.Text(prompt))
-	if err != nil {
-		return nil, err
+	model.SetCandidateCount(1)
+
+	var parts = make([]genai.Part, len(promptParts))
+	for i, p := range promptParts {
+		parts[i] = genai.Text(p)
 	}
-	var candidates []string
+
+	resp, err := model.GenerateContent(ctx, parts...)
+	if err != nil {
+		return "", fmt.Errorf("gemini.GenerateText: %w", err)
+	}
+
 	for _, c := range resp.Candidates {
 		if c.Content != nil {
-			for _, p := range c.Content.Parts {
-				candidates = append(candidates, fmt.Sprintf("%s", p))
+			parts := make([]string, len(c.Content.Parts))
+			for i, p := range c.Content.Parts {
+				parts[i] = fmt.Sprintf("%s", p)
 			}
+			return strings.Join(parts, "\n"), nil
 		}
 	}
-	return candidates, nil
+
+	return "", errors.New("gemini.GenerateText: no content")
 }
