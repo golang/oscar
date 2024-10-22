@@ -27,7 +27,7 @@ func TestMarkdownEditing(t *testing.T) {
 	// Initial load.
 	rr, err := httprr.Open("testdata/tmpedit.httprr", http.DefaultTransport)
 	check(err)
-	rr.Scrub(Scrub)
+	rr.ScrubReq(Scrub)
 	sdb := secret.DB(secret.Map{"api.github.com": "user:pass"})
 	if rr.Recording() {
 		sdb = secret.Netrc()

@@ -159,7 +159,7 @@ func testGHClient(t *testing.T, check func(error), lg *slog.Logger, db storage.D
 
 	rr, err := httprr.Open(fname, http.DefaultTransport)
 	check(err)
-	rr.Scrub(github.Scrub)
+	rr.ScrubReq(github.Scrub)
 	sdb := secret.DB(secret.Map{"api.github.com": "user:pass"})
 	if rr.Recording() {
 		sdb = secret.Netrc()

@@ -46,7 +46,7 @@ func newTestClient(t *testing.T, rrfile string) *Client {
 
 	rr, err := httprr.Open(rrfile, http.DefaultTransport)
 	check(err)
-	rr.Scrub(Scrub)
+	rr.ScrubReq(Scrub)
 	sdb := secret.ReadOnlyMap{"ai.google.dev": "nokey"}
 	if rr.Recording() {
 		sdb = secret.Netrc()

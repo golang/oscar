@@ -46,14 +46,15 @@ type RecordReplay struct {
 	file string            // file being read or written
 	real http.RoundTripper // real HTTP connection
 
-	mu       sync.Mutex
-	scrub    []func(*http.Request) error // scrubbers for logging requests
-	replay   map[string]string           // if replaying, the log
-	record   *os.File                    // if recording, the file being written
-	writeErr error                       // if recording, any write error encountered
+	mu        sync.Mutex
+	reqScrub  []func(*http.Request) error // scrubbers for logging requests
+	respScrub []func(*bytes.Buffer) error // scrubbers for logging responses
+	replay    map[string]string           // if replaying, the log
+	record    *os.File                    // if recording, the file being written
+	writeErr  error                       // if recording, any write error encountered
 }
 
-// Scrub adds new scrubbing functions to rr.
+// ScrubReq adds new request scrubbing functions to rr.
 //
 // Before using a request as a lookup key or saving it in the record/replay log,
 // the RecordReplay calls each scrub function, in the order they were registered,
@@ -62,10 +63,28 @@ type RecordReplay struct {
 // the unmodified original request is sent to the actual server in recording mode.
 // A scrub function can assume that if req.Body is not nil, then it has type [*Body].
 //
-// Calling Scrub adds to the list of registered scrubbing functions;
+// Calling ScrubReq adds to the list of registered request scrubbing functions;
 // it does not replace those registered by earlier calls.
-func (rr *RecordReplay) Scrub(scrubs ...func(req *http.Request) error) {
-	rr.scrub = append(rr.scrub, scrubs...)
+func (rr *RecordReplay) ScrubReq(scrubs ...func(req *http.Request) error) {
+	rr.reqScrub = append(rr.reqScrub, scrubs...)
+}
+
+// ScrubResp adds new response scrubbing functions to rr.
+//
+// Before using a response as a lookup key or saving it in the record/replay log,
+// the RecordReplay calls each scrub function on a byte representation of the
+// response, in the order they were registered, to canonicalize non-deterministic
+// parts of the response and remove secrets.
+//
+// Calling ScrubResp adds to the list of registered response scrubbing functions;
+// it does not replace those registered by earlier calls.
+//
+// Clients should be careful when loading the bytes into [*http.Response] using
+// [http.ReadResponse]. This function can set [http.Response].Close to true even
+// when the original response had it false. See code in go/src/net/http.Response.Write
+// and go/src/net/http.Write for more info.
+func (rr *RecordReplay) ScrubResp(scrubs ...func(*bytes.Buffer) error) {
+	rr.respScrub = append(rr.respScrub, scrubs...)
 }
 
 // Recording reports whether the rr is in recording mode.
@@ -269,7 +288,7 @@ func (rr *RecordReplay) reqWire(req *http.Request) (string, error) {
 	}
 
 	// Canonicalize and scrub request key.
-	for _, scrub := range rr.scrub {
+	for _, scrub := range rr.reqScrub {
 		if err := scrub(rkey); err != nil {
 			return "", err
 		}
@@ -302,6 +321,12 @@ func (rr *RecordReplay) respWire(resp *http.Response) (string, error) {
 		return "", err
 	}
 	*resp = *resp2
+
+	for _, scrub := range rr.respScrub {
+		if err := scrub(&key); err != nil {
+			return "", err
+		}
+	}
 	return key.String(), nil
 }
 

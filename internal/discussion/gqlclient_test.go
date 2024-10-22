@@ -234,7 +234,7 @@ func testGQLClientFromFile(t *testing.T, fname string) *gqlClient {
 	ac := authClient(context.Background(), sdb)
 	rr, err := httprr.Open(fname, ac.Transport)
 	testutil.Check(t, err)
-	rr.Scrub(github.Scrub)
+	rr.ScrubReq(github.Scrub)
 	c := newGQLClient(rr.Client())
 	return c
 }

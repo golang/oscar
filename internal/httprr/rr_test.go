@@ -5,6 +5,7 @@
 package httprr
 
 import (
+	"bytes"
 	"errors"
 	"io"
 	"net/http"
@@ -63,6 +64,17 @@ func hideSecretBody(r *http.Request) error {
 	return nil
 }
 
+func doNothing(b *bytes.Buffer) error {
+	return nil
+}
+
+func doRefresh(b *bytes.Buffer) error {
+	s := b.String()
+	b.Reset()
+	_, _ = b.WriteString(s)
+	return nil
+}
+
 func TestRecordReplay(t *testing.T) {
 	dir := t.TempDir()
 	file := dir + "/rr"
@@ -96,8 +108,9 @@ func TestRecordReplay(t *testing.T) {
 		} else {
 			t.Log("REPLAYING")
 		}
-		rr.Scrub(dropPort, dropSecretHeader)
-		rr.Scrub(hideSecretBody)
+		rr.ScrubReq(dropPort, dropSecretHeader)
+		rr.ScrubReq(hideSecretBody)
+		rr.ScrubResp(doNothing, doRefresh)
 
 		mustNewRequest := func(method, url string, body io.Reader) *http.Request {
 			req, err := http.NewRequest(method, url, body)
@@ -220,8 +233,15 @@ func TestErrors(t *testing.T) {
 		t.Errorf("did not report failure from io.ReadAll(body): err = %v", err)
 	}
 
-	// error during scrub
-	rr.Scrub(func(*http.Request) error { return errors.New("SCRUB ERROR") })
+	// error during request scrub
+	rr.ScrubReq(func(*http.Request) error { return errors.New("SCRUB ERROR") })
+	if _, err := rr.Client().Get("http://127.0.0.1/nonexist"); err == nil || !strings.Contains(err.Error(), "SCRUB ERROR") {
+		t.Errorf("did not report failure from scrub: err = %v", err)
+	}
+	rr.Close()
+
+	// error during response scrub
+	rr.ScrubResp(func(*bytes.Buffer) error { return errors.New("SCRUB ERROR") })
 	if _, err := rr.Client().Get("http://127.0.0.1/nonexist"); err == nil || !strings.Contains(err.Error(), "SCRUB ERROR") {
 		t.Errorf("did not report failure from scrub: err = %v", err)
 	}
@@ -232,9 +252,13 @@ func TestErrors(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	rr.Scrub(func(req *http.Request) error {
+	rr.ScrubReq(func(req *http.Request) error {
 		req.URL = nil
 		req.Host = ""
+		return nil
+	})
+	rr.ScrubResp(func(b *bytes.Buffer) error {
+		b.Reset()
 		return nil
 	})
 	if _, err := rr.Client().Get("http://127.0.0.1/nonexist"); err == nil || !strings.Contains(err.Error(), "no Host or URL set") {
@@ -259,7 +283,7 @@ func TestErrors(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	rr.Scrub(dropPort)
+	rr.ScrubReq(dropPort)
 	rr.record.Close() // cause write error
 	if _, err := rr.Client().Get(srv.URL + "/redirect"); err == nil || !strings.Contains(err.Error(), "file already closed") {
 		t.Errorf("did not report failure from record write: err = %v", err)

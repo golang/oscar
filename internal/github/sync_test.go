@@ -28,7 +28,7 @@ func TestMarkdown(t *testing.T) {
 	// Initial load.
 	rr, err := httprr.Open("testdata/markdown.httprr", http.DefaultTransport)
 	check(err)
-	rr.Scrub(Scrub)
+	rr.ScrubReq(Scrub)
 	sdb := secret.Empty()
 	if rr.Recording() {
 		sdb = secret.Netrc()
@@ -45,7 +45,7 @@ func TestMarkdown(t *testing.T) {
 	// Incremental update.
 	rr, err = httprr.Open("testdata/markdown2.httprr", http.DefaultTransport)
 	check(err)
-	rr.Scrub(Scrub)
+	rr.ScrubReq(Scrub)
 	sdb = secret.Empty()
 	if rr.Recording() {
 		sdb = secret.Netrc()
@@ -66,7 +66,7 @@ func TestMarkdown(t *testing.T) {
 	// Incremental update.
 	rr, err = httprr.Open("testdata/markdown3.httprr", http.DefaultTransport)
 	check(err)
-	rr.Scrub(Scrub)
+	rr.ScrubReq(Scrub)
 	sdb = secret.Empty()
 	if rr.Recording() {
 		sdb = secret.Netrc()
@@ -84,7 +84,7 @@ func TestMarkdownIncrementalSync(t *testing.T) {
 	// Initial load.
 	rr, err := httprr.Open("testdata/markdowninc.httprr", http.DefaultTransport)
 	check(err)
-	rr.Scrub(Scrub)
+	rr.ScrubReq(Scrub)
 	sdb := secret.Empty()
 	if rr.Recording() {
 		sdb = secret.Netrc()
@@ -201,7 +201,7 @@ func TestIvy(t *testing.T) {
 	db := storage.MemDB()
 	rr, err := httprr.Open("testdata/ivy.httprr", http.DefaultTransport)
 	check(err)
-	rr.Scrub(Scrub)
+	rr.ScrubReq(Scrub)
 	sdb := secret.Empty()
 	if rr.Recording() {
 		sdb = secret.Netrc()
@@ -217,7 +217,7 @@ func TestOmap(t *testing.T) {
 	db := storage.MemDB()
 	rr, err := httprr.Open("testdata/omap.httprr", http.DefaultTransport)
 	check(err)
-	rr.Scrub(Scrub)
+	rr.ScrubReq(Scrub)
 	sdb := secret.Empty()
 	if rr.Recording() {
 		sdb = secret.Netrc()
