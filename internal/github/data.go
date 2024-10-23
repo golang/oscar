@@ -94,14 +94,18 @@ func CleanBody(body string) string {
 // Within a specific API, the events are ordered by increasing ID,
 // which corresponds to increasing event time on GitHub.
 func (c *Client) Events(project string, issueMin, issueMax int64) iter.Seq[*Event] {
+	return events(c.db, project, issueMin, issueMax)
+}
+
+func events(db storage.DB, project string, issueMin, issueMax int64) iter.Seq[*Event] {
 	return func(yield func(*Event) bool) {
 		start := o(project, issueMin)
 		if issueMax < 0 {
 			issueMax = math.MaxInt64
 		}
 		end := o(project, issueMax, ordered.Inf)
-		for t := range timed.Scan(c.db, eventKind, start, end) {
-			if !yield(c.decodeEvent(t)) {
+		for t := range timed.Scan(db, eventKind, start, end) {
+			if !yield(decodeEvent(db, t)) {
 				return
 			}
 		}
@@ -127,7 +131,7 @@ func (c *Client) EventsAfter(t timed.DBTime, project string) iter.Seq[*Event] {
 
 	return func(yield func(*Event) bool) {
 		for e := range timed.ScanAfter(c.slog, c.db, eventKind, t, filter) {
-			if !yield(c.decodeEvent(e)) {
+			if !yield(decodeEvent(c.db, e)) {
 				return
 			}
 		}
@@ -135,22 +139,22 @@ func (c *Client) EventsAfter(t timed.DBTime, project string) iter.Seq[*Event] {
 }
 
 // decodeEvent decodes the key, val pair into an Event.
-// It calls c.db.Panic for malformed data.
-func (c *Client) decodeEvent(t *timed.Entry) *Event {
+// It calls db.Panic for malformed data.
+func decodeEvent(db storage.DB, t *timed.Entry) *Event {
 	var e Event
 	e.DBTime = t.ModTime
 	if err := ordered.Decode(t.Key, &e.Project, &e.Issue, &e.API, &e.ID); err != nil {
-		c.db.Panic("github event decode", "key", storage.Fmt(t.Key), "err", err)
+		db.Panic("github event decode", "key", storage.Fmt(t.Key), "err", err)
 	}
 
 	var js ordered.Raw
 	if err := ordered.Decode(t.Val, &js); err != nil {
-		c.db.Panic("github event val decode", "key", storage.Fmt(t.Key), "val", storage.Fmt(t.Val), "err", err)
+		db.Panic("github event val decode", "key", storage.Fmt(t.Key), "val", storage.Fmt(t.Val), "err", err)
 	}
 	e.JSON = js
 	switch e.API {
 	default:
-		c.db.Panic("github event invalid API", "api", e.API)
+		db.Panic("github event invalid API", "api", e.API)
 	case "/issues":
 		e.Typed = new(Issue)
 	case "/issues/comments":
@@ -159,7 +163,7 @@ func (c *Client) decodeEvent(t *timed.Entry) *Event {
 		e.Typed = new(IssueEvent)
 	}
 	if err := json.Unmarshal(js, e.Typed); err != nil {
-		c.db.Panic("github event json", "js", string(js), "err", err)
+		db.Panic("github event json", "js", string(js), "err", err)
 	}
 	return &e
 }
@@ -167,7 +171,10 @@ func (c *Client) decodeEvent(t *timed.Entry) *Event {
 // EventWatcher returns a new [timed.Watcher] with the given name.
 // It picks up where any previous Watcher of the same name left off.
 func (c *Client) EventWatcher(name string) *timed.Watcher[*Event] {
-	return timed.NewWatcher(c.slog, c.db, name, eventKind, c.decodeEvent)
+	decode := func(t *timed.Entry) *Event {
+		return decodeEvent(c.db, t)
+	}
+	return timed.NewWatcher(c.slog, c.db, name, eventKind, decode)
 }
 
 // IssueEvent is the GitHub JSON structure for an issue metadata event.
