@@ -23,8 +23,9 @@ var tmplFS embed.FS
 var staticFS embed.FS
 
 const (
-	actionLogTmplFile  = "actionlog.tmpl"
-	searchPageTmplFile = "searchpage.tmpl"
+	actionLogTmplFile    = "actionlog.tmpl"
+	searchPageTmplFile   = "searchpage.tmpl"
+	overviewPageTmplFile = "overviewpage.tmpl"
 )
 
 func newTemplate(filename string, funcs template.FuncMap) *template.Template {

@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/google/safehtml/template"
 	"golang.org/x/oscar/internal/llm"
 	"golang.org/x/oscar/internal/search"
 )
@@ -27,9 +28,12 @@ type searchPage struct {
 }
 
 func (g *Gaby) handleSearch(w http.ResponseWriter, r *http.Request) {
-	page := g.populatePage(r)
+	handlePage(w, g.populatePage(r), searchPageTmpl)
+}
+
+func handlePage(w http.ResponseWriter, page any, tmpl *template.Template) {
 	var buf bytes.Buffer
-	if err := searchPageTmpl.Execute(&buf, page); err != nil {
+	if err := tmpl.Execute(&buf, page); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
