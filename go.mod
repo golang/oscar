@@ -1,6 +1,6 @@
 module golang.org/x/oscar
 
-go 1.23
+go 1.23.2
 
 require (
 	github.com/cockroachdb/pebble v1.1.2

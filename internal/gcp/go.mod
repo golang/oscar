@@ -1,6 +1,6 @@
 module golang.org/x/oscar/internal/gcp
 
-go 1.23
+go 1.23.2
 
 require (
 	cloud.google.com/go/compute/metadata v0.5.0
