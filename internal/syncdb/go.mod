@@ -1,6 +1,6 @@
 module golang.org/x/oscar/internal/syncdb
 
-go 1.23.2
+go 1.23
 
 require (
 	golang.org/x/oscar v0.0.0-20240819200921-b512a4fcd26f

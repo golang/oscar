@@ -1,6 +1,6 @@
 module golang.org/x/oscar/internal/devtools
 
-go 1.23.2
+go 1.23
 
 require (
 	golang.org/x/oscar v0.0.0-20240923144300-bf51777d1686
