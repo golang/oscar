@@ -34,6 +34,7 @@ import (
 	"golang.org/x/oscar/internal/gcp/gemini"
 	"golang.org/x/oscar/internal/gerrit"
 	"golang.org/x/oscar/internal/github"
+	"golang.org/x/oscar/internal/googlegroups"
 	"golang.org/x/oscar/internal/llm"
 	"golang.org/x/oscar/internal/pebble"
 	"golang.org/x/oscar/internal/related"
@@ -71,6 +72,7 @@ type Gaby struct {
 	addr           string            // address to serve HTTP on
 	githubProject  string            // github project to monitor and update
 	gerritProjects []string          // gerrit projects to monitor and update
+	googleGroups   []string          // google groups to monitor and update
 
 	slog      *slog.Logger           // slog output to use
 	slogLevel *slog.LevelVar         // slog level, for changing as needed
@@ -84,6 +86,7 @@ type Gaby struct {
 	github    *github.Client         // github client to use
 	disc      *discussion.Client     // github discussion client to use
 	gerrit    *gerrit.Client         // gerrit client to use
+	ggroups   *googlegroups.Client   // google groups client to use
 	crawler   *crawl.Crawler         // web crawler to use
 	meter     ometric.Meter          // used to create Open Telemetry instruments
 	report    *errorreporting.Client // used to report important gaby errors to Cloud Error Reporting service
@@ -109,6 +112,7 @@ func main() {
 		addr:           "localhost:4229", // 4229 = gaby on a phone
 		githubProject:  "golang/go",
 		gerritProjects: []string{"go"},
+		googleGroups:   []string{"golang-nuts"},
 	}
 
 	shutdown := g.initGCP()
@@ -121,6 +125,11 @@ func main() {
 	g.gerrit = gerrit.New("go-review.googlesource.com", g.slog, g.db, g.secret, g.http)
 	for _, project := range g.gerritProjects {
 		_ = g.gerrit.Add(project) // in principle needed only once per g.db lifetime
+	}
+
+	g.ggroups = googlegroups.New(g.slog, g.db, g.secret, g.http)
+	for _, group := range g.googleGroups {
+		_ = g.ggroups.Add(group) // in principle needed only once per g.db lifetime
 	}
 
 	g.docs = docs.New(g.slog, g.db)
@@ -418,7 +427,7 @@ func (g *Gaby) newServer(report func(error)) *http.ServeMux {
 
 	// syncEndpoint is called manually to invoke a specific sync job.
 	// It performs a sync if enablesync is true.
-	// Usage: /sync?job={github | crawl | gerrit | discussion}
+	// Usage: /sync?job={github | crawl | gerrit | discussion | groups}
 	mux.HandleFunc("GET /"+syncEndpoint, func(w http.ResponseWriter, r *http.Request) {
 		g.slog.Info(syncEndpoint + " start")
 		defer g.slog.Info(syncEndpoint + " end")
@@ -442,6 +451,8 @@ func (g *Gaby) newServer(report func(error)) *http.ServeMux {
 		case "crawl":
 			err = g.syncCrawl(g.ctx)
 		case "gerrit":
+			err = g.syncGerrit(g.ctx)
+		case "groups":
 			err = g.syncGerrit(g.ctx)
 		default:
 			err = fmt.Errorf("unrecognized sync job %s", job)
@@ -543,6 +554,7 @@ const (
 	gabyGitHubSyncLock     = "gabygithubsync"
 	gabyDiscussionSyncLock = "gabydiscussionsync"
 	gabyGerritSyncLock     = "gabygerritsync"
+	gabyGroupsSyncLock     = "gabygroupssync"
 	gabyEmbedLock          = "gabyembedsync"
 	gabyCrawlLock          = "gabycrawlsync"
 
@@ -589,6 +601,18 @@ func (g *Gaby) syncGerrit(ctx context.Context) error {
 	}
 	// Store newly downloaded gerrit events in the document database.
 	docs.Sync(g.docs, g.gerrit)
+	return nil
+}
+
+func (g *Gaby) syncGroups(ctx context.Context) error {
+	g.db.Lock(gabyGroupsSyncLock)
+	defer g.db.Unlock(gabyGroupsSyncLock)
+
+	// Download new events from all google groups.
+	if err := g.ggroups.Sync(ctx); err != nil {
+		return err
+	}
+	// TODO: add docs
 	return nil
 }
 
