@@ -24,7 +24,7 @@ func TestIssueOverview(t *testing.T) {
 
 	rr, err := httprr.Open("testdata/ivy.httprr", http.DefaultTransport)
 	check(err)
-	rr.Scrub(Scrub)
+	rr.ScrubReq(Scrub)
 	sdb := secret.Empty()
 	if rr.Recording() {
 		sdb = secret.Netrc()
