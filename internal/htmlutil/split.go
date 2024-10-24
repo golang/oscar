@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package htmlutil splits crawled HTML pages into sections via [Split].
+// Package htmlutil provides HTML utilities.
 package htmlutil
 
 import (

@@ -13,10 +13,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/safehtml"
 	"github.com/google/safehtml/template"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
 	"golang.org/x/oscar/internal/actions"
+	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/search"
 )
 
@@ -31,6 +33,17 @@ func TestTemplates(t *testing.T) {
 			StartTime: "t",
 			Entries:   []*actions.Entry{{Kind: "k"}},
 		}},
+		{"overview-initial", overviewPageTmpl, overviewPage{}},
+		{"overview", overviewPageTmpl, overviewPage{
+			overviewForm: overviewForm{Query: "12"},
+			Result: &overviewResult{
+				IssueOverviewResult: github.IssueOverviewResult{
+					URL:         "https://example.com",
+					NumComments: 2,
+					Overview:    "an overview",
+				},
+				OverviewHTML: safehtml.HTMLEscaped("an overview"),
+			}}},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			var buf bytes.Buffer

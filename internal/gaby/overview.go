@@ -10,15 +10,22 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/google/safehtml"
 	"golang.org/x/oscar/internal/github"
+	"golang.org/x/oscar/internal/htmlutil"
 )
 
 // overviewPage holds the fields needed to display the results
 // of a search.
 type overviewPage struct {
-	overviewForm                            // the raw form inputs
-	Result       github.IssueOverviewResult // the overview result to display
-	Error        string                     // if non-empty, the error to display instead of the result
+	overviewForm // the raw form inputs
+	Result       *overviewResult
+	Error        string // if non-empty, the error to display instead of the result
+}
+
+type overviewResult struct {
+	github.IssueOverviewResult               // the raw result
+	OverviewHTML               safehtml.HTML // the overview as HTML
 }
 
 // overviewForm holds the raw inputs to the overview form.
@@ -37,6 +44,11 @@ func (g *Gaby) populateOverviewPage(r *http.Request) overviewPage {
 	form := overviewForm{
 		Query: r.FormValue("q"),
 	}
+	if form.Query == "" {
+		return overviewPage{
+			overviewForm: form,
+		}
+	}
 	issue, err := strconv.Atoi(strings.TrimSpace(form.Query))
 	if err != nil {
 		return overviewPage{
@@ -51,9 +63,11 @@ func (g *Gaby) populateOverviewPage(r *http.Request) overviewPage {
 			Error:        fmt.Errorf("overview: %w", err).Error(),
 		}
 	}
-	// TODO(tatianabradley): Convert markdown response to HTML.
 	return overviewPage{
 		overviewForm: form,
-		Result:       *overview,
+		Result: &overviewResult{
+			IssueOverviewResult: *overview,
+			OverviewHTML:        htmlutil.MarkdownToSafeHTML(overview.Overview),
+		},
 	}
 }
