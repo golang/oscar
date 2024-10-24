@@ -15,7 +15,7 @@ license that can be found in the LICENSE file.
 	 <h1>Oscar Overviews</h1>
 		<p>Generate summaries of posts and their comments. This is a first draft (and currently limited to golang/go GitHub issues). Feedback welcome!</p>
 		<div class="filter-tips-box">
-			<div class="toggle" onclick="toggle()">[show/hide input tips]</div>
+			<div class="toggle" onclick="toggleTips()">[show/hide input tips]</div>
 			<ul id="filter-tips">
 			    <li><b>issue</b> (<code>int</code>): the issue ID (in the github.com/golang/go repo) of the issue to summarize</li>
 			</ul>
@@ -36,13 +36,20 @@ license that can be found in the LICENSE file.
     form.addEventListener("submit", (event) => {
 		document.getElementById("working").innerHTML = "<p style='margin-top:1rem'>Working...</p>"
     })
-	function toggle() {
-		var x = document.getElementById("filter-tips");
+	function toggle(x) {
 		if (x.style.display === "block") {
 			x.style.display = "none";
 		} else {
 			x.style.display = "block";
 		}
+	}
+	function toggleTips() {
+		var x = document.getElementById("filter-tips");
+		toggle(x)
+	}
+	function togglePrompt() {
+		var x = document.getElementById("prompt");
+		toggle(x)
 	}
     </script>
 
@@ -54,7 +61,17 @@ license that can be found in the LICENSE file.
 	    <div class="result">
 			<p>URL: <a href="{{.URL}}">{{.URL}}</a></p>
 			<p>Number of comments: {{.NumComments}}</p>
-	    	<div>{{.OverviewHTML}}</div>
+	    	<div id="overview">{{.OverviewHTML}}</div>
+		</div>
+		<div class="toggle" onclick="togglePrompt()">[show prompt]</div>
+		<div id="prompt">
+			<ul>
+				{{- range .Prompt -}}
+				<li>
+					<pre>{{.}}</pre>
+				</li>
+				{{- end -}}
+			</ul>
 		</div>
 	{{- else }}
 		{{if .Query}}<p>No result.</p>{{end}}

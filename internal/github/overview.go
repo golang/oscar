@@ -16,9 +16,10 @@ import (
 // It contains the generated overview and metadata about
 // the issue.
 type IssueOverviewResult struct {
-	URL         string // the issue's URL
-	NumComments int    // number of comments for this issue
-	Overview    string // the LLM-generated issue and comment summary
+	URL         string   // the issue's URL
+	NumComments int      // number of comments for this issue
+	Overview    string   // the LLM-generated issue and comment summary
+	Prompt      []string // the prompt(s) used to generate the result
 }
 
 // IssueOverview returns an LLM-generated overview of the issue and its comments.
@@ -43,6 +44,7 @@ func IssueOverview(ctx context.Context, g llm.TextGenerator, db storage.DB, proj
 		URL:         m.url,
 		NumComments: m.numComments,
 		Overview:    overview,
+		Prompt:      llmapp.OverviewPrompt(docs),
 	}, nil
 }
 

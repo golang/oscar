@@ -38,7 +38,7 @@ func TestIssueOverview(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	overview := llm.EchoResponse(llmapp.OverviewPrompt([]*llmapp.Doc{
+	prompt := llmapp.OverviewPrompt([]*llmapp.Doc{
 		{
 			Type:   "issue",
 			URL:    "https://github.com/robpike/ivy/issues/19",
@@ -61,12 +61,16 @@ go get robpike.io/ivy
 It is a fair point though that this should be explained in the README. I will fix that.
 `,
 		},
-	})...)
+	})
+	overview := llm.EchoResponse(prompt...)
+
 	want := &IssueOverviewResult{
 		URL:         "https://github.com/robpike/ivy/issues/19",
 		Overview:    overview,
 		NumComments: 1,
+		Prompt:      prompt,
 	}
+
 	if diff := cmp.Diff(got, want); diff != "" {
 		t.Errorf("IssueOverview() mismatch:\n%s", diff)
 	}

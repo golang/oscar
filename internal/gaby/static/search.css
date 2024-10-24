@@ -51,13 +51,28 @@ div.section {
 }
 .toggle {
     font-weight: bold;
-     color: #007d9c;
+    color: #007d9c;
 }
 .toggle:hover {
     text-decoration: underline;
 }
 #filter-tips {
     display: none;
+}
+#prompt {
+    display: none;
+}
+#prompt ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+#overview {
+    padding: 0em 1em 1em 1em;
+    width: 75%;
+    margin: 1em;
+    border: solid black .1em;
+    border-radius: .25em;
 }
 .submit {
     padding-top: .5em;
