@@ -7,6 +7,7 @@ package googlegroups
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"net/http"
 	"regexp"
 	"strings"
@@ -117,5 +118,59 @@ func TestConversationLink(t *testing.T) {
 		if got := conversationLink(tc.url, group); got != tc.want {
 			t.Errorf("got %s for %s; want %s", got, tc.url, tc.want)
 		}
+	}
+}
+
+func TestSyncTesting(t *testing.T) {
+	check := testutil.Checker(t)
+	lg := testutil.Slogger(t)
+	ctx := context.Background()
+
+	group := "test"
+	numConvs := func(c *Client) int {
+		cnt := 0
+		for _, _ = range c.Conversations(group) {
+			cnt++
+		}
+		return cnt
+	}
+
+	for _, d := range []struct {
+		limit         int
+		wantConvs     int
+		wantInterrupt bool
+	}{
+		// interrupt is skipped since it should happen at the
+		// second conversation of the day, but the day limit is 1.
+		// Due to this limit, we sync only 1 conversation per day.
+		{1, 4, false},
+		// With increased limit, we can sync more conversations
+		// per day.
+		{2, 6, true},
+		{3, 7, true},
+	} {
+		t.Run(fmt.Sprintf("%d", d.limit), func(t *testing.T) {
+			db := storage.MemDB()
+			c := New(lg, db, nil, nil)
+			check(c.Add(group))
+
+			tc := c.Testing()
+			tc.setLimit(d.limit)
+			check(tc.LoadTxtar("testdata/convs.txt"))
+
+			err := c.Sync(ctx)
+			if d.wantInterrupt {
+				if err == nil || !strings.Contains(err.Error(), "test interrupt error") {
+					t.Fatalf("want test interrupt error; got %v", err)
+				}
+			} else if err != nil {
+				t.Fatal(err)
+			}
+			check(c.Sync(ctx)) // repeat without interruption
+
+			if gotConvs := numConvs(c); gotConvs != d.wantConvs {
+				t.Errorf("want %d conversations; got %d", d.wantConvs, gotConvs)
+			}
+		})
 	}
 }

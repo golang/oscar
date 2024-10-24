@@ -53,6 +53,9 @@ type Conversation struct {
 	URL string
 	// HTML is the raw html obtained from URL.
 	HTML []byte
+
+	updated   string // for testing
+	interrupt bool   // for testing
 }
 
 // A ConversationEvent is a Google Groups conversation

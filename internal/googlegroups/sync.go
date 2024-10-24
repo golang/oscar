@@ -23,7 +23,9 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+	"sync"
 	"sync/atomic"
+	"testing"
 	"time"
 
 	"golang.org/x/oscar/internal/crawl"
@@ -72,6 +74,11 @@ type Client struct {
 	http   *http.Client
 
 	flushRequested atomic.Bool // flush database to disk when convenient
+
+	testing bool
+
+	testMu     sync.Mutex
+	testClient *TestingClient
 }
 
 // New returns a new client to access google groups.
@@ -81,10 +88,11 @@ type Client struct {
 // "googlegroups" instance. The value will be user:pass. This is not yet used.
 func New(lg *slog.Logger, db storage.DB, sdb secret.DB, hc *http.Client) *Client {
 	return &Client{
-		slog:   lg,
-		db:     db,
-		secret: sdb,
-		http:   hc,
+		slog:    lg,
+		db:      db,
+		secret:  sdb,
+		http:    hc,
+		testing: testing.Testing(),
 	}
 }
 
@@ -312,6 +320,10 @@ func prev(t string) (string, error) {
 // conversations returns an iterator, in reverse chronological order, over
 // conversations updated in the interval (before, after).
 func (c *Client) conversations(ctx context.Context, group, after, before string) iter.Seq2[*Conversation, error] {
+	if c.divertChanges() { // testing
+		return c.testClient.conversations(ctx, group, after, before)
+	}
+
 	return func(yield func(*Conversation, error) bool) {
 		// Fetch all conversations by crawling the search page of the group.
 		// Note: this approach has the limitation that only the 30 most recent
