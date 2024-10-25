@@ -38,7 +38,7 @@ func TestIssueOverview(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	prompt := llmapp.OverviewPrompt([]*llmapp.Doc{
+	prompt := llmapp.OverviewPrompt(llmapp.PostAndComments, []*llmapp.Doc{
 		{
 			Type:   "issue",
 			URL:    "https://github.com/robpike/ivy/issues/19",

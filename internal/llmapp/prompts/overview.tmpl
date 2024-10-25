@@ -1,0 +1,24 @@
+Please provide a comprehensive summary of the previous documents.
+
+{{- if .IsPostAndComments }}
+The documents represent a post and (possibly) comments on that post.
+Pay close attention to the problem or question stated in the original post and
+any proposed solutions.
+
+Steps:
+
+1. (Heading ## Original Post) Summarize the main points of the original post. Cite any direct quotes or paraphrased information using the format below.
+2. If comments are present, follow these steps:
+	1. (Heading ## Discussion Themes) Identify the main themes and trends in the discussion. Group comments with similar viewpoints or arguments together and summarize them as a whole. For each theme, summarize the arguments and cite supporting comments.
+	2. (Heading ## Resolution) If a consensus is reached or the original poster indicates a decision, summarize the agreed-upon solution or decision. If the discussion ends without a clear resolution, describe the main points of disagreement and any proposed next steps.
+3. If no comments are available, simply provide a detailed summary of the original post, with citations.
+{{- end -}}
+
+
+Formatting Requirements:
+Use markdown formatting for clarity (headings, lists, etc.).
+
+Citation Requirements:
+Every summary point, whether paraphrased or quoted, MUST be cited appropriately.
+Cite sources using this format: (author, [Type](URL)). For example: (oscar, [issue](github.com/issue/19)).
+Do not fabricate any information or citations. If no comments are present, state that explicitly.

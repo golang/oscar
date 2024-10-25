@@ -8,7 +8,11 @@ package llmapp
 
 import (
 	"context"
+	"embed"
+	_ "embed"
 	"errors"
+	"strings"
+	"text/template"
 
 	"golang.org/x/oscar/internal/llm"
 	"golang.org/x/oscar/internal/storage"
@@ -31,27 +35,56 @@ type Doc struct {
 
 // Overview returns an LLM-generated overview of the given documents,
 // styled with markdown.
-// It returns an error if no documents are provided, or the LLM
-// is unable to generate a response.
-func Overview(ctx context.Context, g llm.TextGenerator, docs ...*Doc) (string, error) {
+// The kind argument is a descriptor for the given documents, used to add
+// additional context to the LLM prompt.
+// Overview returns an error if no documents are provided or the LLM is unable
+// to generate a response.
+func Overview(ctx context.Context, g llm.TextGenerator, kind DocsKind, docs ...*Doc) (string, error) {
 	if len(docs) == 0 {
 		return "", errors.New("llmapp.Overview: no documents")
 	}
-	return g.GenerateText(ctx, OverviewPrompt(docs)...)
+	return g.GenerateText(ctx, OverviewPrompt(kind, docs)...)
 }
 
 // OverviewPrompt converts the given docs into a slice of
-// text prompts, followed by a hard-coded instruction prompt.
-func OverviewPrompt(docs []*Doc) []string {
+// text prompts, followed by an instruction prompt based
+// on the documents kind.
+func OverviewPrompt(kind DocsKind, docs []*Doc) []string {
 	var inputs = make([]string, len(docs))
 	for i, d := range docs {
 		inputs[i] = string(storage.JSON(d))
 	}
-	return append(inputs, instruction)
+	return append(inputs, kind.instructions())
 }
 
-// The hard-coded instruction to use when generating an overview.
-// In the future this might be a client-provided input to [Overview]
-// instead.
-const instruction = `Write a detailed summary of the documents.
-Use markdown formatting with headings and lists.`
+// DocsKind is a descriptor for a group of documents.
+type DocsKind struct{ int }
+
+var (
+	// Represents a group of documents of an unspecified kind.
+	Documents DocsKind = DocsKind{}
+	// The documents represent a post and comments/replies
+	// on that post. For example, a GitHub issue and its comments.
+	PostAndComments DocsKind = DocsKind{1}
+)
+
+// IsPostAndComments reports whether k is of kind [PostAndComments].
+func (k DocsKind) IsPostAndComments() bool {
+	return k == PostAndComments
+}
+
+//go:embed prompts/*.tmpl
+var promptFS embed.FS
+var instructionTmpl = template.Must(template.ParseFS(promptFS, "prompts/overview.tmpl"))
+
+// instructions returns the instruction prompt for the given
+// document kind.
+func (k DocsKind) instructions() string {
+	w := &strings.Builder{}
+	err := instructionTmpl.Execute(w, k)
+	if err != nil {
+		// unreachable except bug in this package
+		panic(err)
+	}
+	return w.String()
+}

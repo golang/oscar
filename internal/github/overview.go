@@ -36,7 +36,7 @@ func IssueOverview(ctx context.Context, g llm.TextGenerator, db storage.DB, proj
 		}
 		docs = append(docs, doc)
 	}
-	overview, err := llmapp.Overview(ctx, g, docs...)
+	overview, err := llmapp.Overview(ctx, g, llmapp.PostAndComments, docs...)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func IssueOverview(ctx context.Context, g llm.TextGenerator, db storage.DB, proj
 		URL:         m.url,
 		NumComments: m.numComments,
 		Overview:    overview,
-		Prompt:      llmapp.OverviewPrompt(docs),
+		Prompt:      llmapp.OverviewPrompt(llmapp.PostAndComments, docs),
 	}, nil
 }
 
