@@ -453,7 +453,7 @@ func (g *Gaby) newServer(report func(error)) *http.ServeMux {
 		case "gerrit":
 			err = g.syncGerrit(g.ctx)
 		case "groups":
-			err = g.syncGerrit(g.ctx)
+			err = g.syncGroups(g.ctx)
 		default:
 			err = fmt.Errorf("unrecognized sync job %s", job)
 		}
