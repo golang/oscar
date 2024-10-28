@@ -67,7 +67,7 @@ func (g *Gaby) populateOverviewPage(r *http.Request) overviewPage {
 		overviewForm: form,
 		Result: &overviewResult{
 			IssueOverviewResult: *overview,
-			OverviewHTML:        htmlutil.MarkdownToSafeHTML(overview.Overview),
+			OverviewHTML:        htmlutil.MarkdownToSafeHTML(overview.Overview.Overview),
 		},
 	}
 }

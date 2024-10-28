@@ -19,6 +19,7 @@ import (
 	"golang.org/x/net/html/atom"
 	"golang.org/x/oscar/internal/actions"
 	"golang.org/x/oscar/internal/github"
+	"golang.org/x/oscar/internal/llmapp"
 	"golang.org/x/oscar/internal/search"
 )
 
@@ -40,7 +41,10 @@ func TestTemplates(t *testing.T) {
 				IssueOverviewResult: github.IssueOverviewResult{
 					URL:         "https://example.com",
 					NumComments: 2,
-					Overview:    "an overview",
+					Overview: &llmapp.OverviewResult{
+						Overview: "an overview",
+						Prompt:   []string{"a prompt"},
+					},
 				},
 				OverviewHTML: safehtml.HTMLEscaped("an overview"),
 			}}},

@@ -33,13 +33,17 @@ func TestIssueOverview(t *testing.T) {
 	check(c.Add("robpike/ivy"))
 	check(c.Sync(ctx))
 
-	got, err := IssueOverview(ctx, llm.EchoTextGenerator(), db, "robpike/ivy", 19)
+	echo := llm.EchoTextGenerator()
+
+	got, err := IssueOverview(ctx, echo, db, "robpike/ivy", 19)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	prompt := llmapp.OverviewPrompt(llmapp.PostAndComments, []*llmapp.Doc{
-		{
+	// This merely checks that the correct call to [llmapp.PostOverview] is made.
+	// The internals of [llmapp.PostOverview] are tested in the llmapp package.
+	wantOverview, err := llmapp.PostOverview(ctx, echo,
+		&llmapp.Doc{
 			Type:   "issue",
 			URL:    "https://github.com/robpike/ivy/issues/19",
 			Author: "xunshicheng",
@@ -50,25 +54,27 @@ it print: can't load package: package github.com/robpike/ivy: code in directory 
 could you get me a hand！
 `,
 		},
-		{
-			Type:   "issue comment",
-			URL:    "https://github.com/robpike/ivy/issues/19#issuecomment-169157303",
-			Author: "robpike",
-			Text: `See the import comment, or listen to the error message. Ivy uses a custom import.
+		[]*llmapp.Doc{
+			{
+				Type:   "issue comment",
+				URL:    "https://github.com/robpike/ivy/issues/19#issuecomment-169157303",
+				Author: "robpike",
+				Text: `See the import comment, or listen to the error message. Ivy uses a custom import.
 
 go get robpike.io/ivy
 
 It is a fair point though that this should be explained in the README. I will fix that.
 `,
-		},
-	})
-	overview := llm.EchoResponse(prompt...)
+			},
+		})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	want := &IssueOverviewResult{
 		URL:         "https://github.com/robpike/ivy/issues/19",
-		Overview:    overview,
+		Overview:    wantOverview,
 		NumComments: 1,
-		Prompt:      prompt,
 	}
 
 	if diff := cmp.Diff(got, want); diff != "" {

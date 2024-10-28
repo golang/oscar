@@ -16,57 +16,45 @@ import (
 // It contains the generated overview and metadata about
 // the issue.
 type IssueOverviewResult struct {
-	URL         string   // the issue's URL
-	NumComments int      // number of comments for this issue
-	Overview    string   // the LLM-generated issue and comment summary
-	Prompt      []string // the prompt(s) used to generate the result
+	URL         string                 // the issue's URL
+	NumComments int                    // number of comments for this issue
+	Overview    *llmapp.OverviewResult // the LLM-generated issue and comment summary
 }
 
 // IssueOverview returns an LLM-generated overview of the issue and its comments.
 // It does not make any requests to GitHub; the issue and comment data must already
 // be stored in db.
 func IssueOverview(ctx context.Context, g llm.TextGenerator, db storage.DB, project string, issue int64) (*IssueOverviewResult, error) {
-	var docs []*llmapp.Doc
-	var m issueMetadata
+	var post *llmapp.Doc
+	var comments []*llmapp.Doc
 	for e := range events(db, project, issue, issue) {
-		m.update(e)
-		doc := e.toLLMDoc()
+		doc, isIssue := e.toLLMDoc()
 		if doc == nil {
 			continue
 		}
-		docs = append(docs, doc)
+		if isIssue {
+			post = doc
+			continue
+		}
+		comments = append(comments, doc)
 	}
-	overview, err := llmapp.Overview(ctx, g, llmapp.PostAndComments, docs...)
+	overview, err := llmapp.PostOverview(ctx, g, post, comments)
 	if err != nil {
 		return nil, err
 	}
 	return &IssueOverviewResult{
-		URL:         m.url,
-		NumComments: m.numComments,
+		URL:         post.URL,
+		NumComments: len(comments),
 		Overview:    overview,
-		Prompt:      llmapp.OverviewPrompt(llmapp.PostAndComments, docs),
 	}, nil
-}
-
-type issueMetadata struct {
-	url         string
-	numComments int
-}
-
-// update updates the issueMetadata given the event.
-func (m *issueMetadata) update(e *Event) {
-	switch v := e.Typed.(type) {
-	case *Issue:
-		m.url = v.HTMLURL
-	case *IssueComment:
-		m.numComments++
-	}
 }
 
 // toLLMDoc converts an Event to a format that can be used as
 // an input to an LLM.
-// It returns nil if the Event cannot be converted to a document.
-func (e *Event) toLLMDoc() *llmapp.Doc {
+// isIssue is true if the event represents a GitHub issue (as opposed to
+// a comment or another event).
+// It returns (nil, false) if the Event cannot be converted to a document.
+func (e *Event) toLLMDoc() (_ *llmapp.Doc, isIssue bool) {
 	switch v := e.Typed.(type) {
 	case *Issue:
 		return &llmapp.Doc{
@@ -75,7 +63,7 @@ func (e *Event) toLLMDoc() *llmapp.Doc {
 			Author: v.User.Login,
 			Title:  v.Title,
 			Text:   v.Body,
-		}
+		}, true
 	case *IssueComment:
 		return &llmapp.Doc{
 			Type:   "issue comment",
@@ -83,7 +71,7 @@ func (e *Event) toLLMDoc() *llmapp.Doc {
 			Author: v.User.Login,
 			// no title
 			Text: v.Body,
-		}
+		}, false
 	}
-	return nil
+	return nil, false
 }
