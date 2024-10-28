@@ -7,7 +7,6 @@ package goreviews
 import (
 	"slices"
 	"strings"
-	"sync"
 
 	"golang.org/x/oscar/internal/gerrit"
 	"golang.org/x/oscar/internal/reviews"
@@ -170,10 +169,3 @@ func hold(ch reviews.Change) (bool, error) {
 	}
 	return false, nil
 }
-
-// addPredicatesOnce adds the Go project predicates to the
-// general predicates, once.
-var addPredicatesOnce = sync.OnceFunc(func() {
-	reviews.AddPredicates(predicates)
-	reviews.AddRejects(rejects)
-})

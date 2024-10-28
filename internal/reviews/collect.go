@@ -16,10 +16,12 @@ import (
 	"sync"
 )
 
-// CollectChangePreds reads [Change] values from an iterator and
-// collects them into a slice of [ChangePreds] values.
+// CollectChangePreds reads [Change] values from an iterator,
+// applies predicates to the values, and collects the results
+// into a slice of [ChangePreds] values, skipping changes that
+// are rejected.
 // The slice is sorted by the predicate default values.
-func CollectChangePreds(ctx context.Context, lg *slog.Logger, it iter.Seq[Change]) []ChangePreds {
+func CollectChangePreds(ctx context.Context, lg *slog.Logger, it iter.Seq[Change], predicates []Predicate, rejects []Reject) []ChangePreds {
 	// Applying predicates can be time consuming,
 	// and there can be a lot of changes,
 	// so shard the work.
@@ -46,7 +48,7 @@ func CollectChangePreds(ctx context.Context, lg *slog.Logger, it iter.Seq[Change
 		go func() {
 			defer wg.Done()
 			for change := range chIn {
-				cp, ok, err := ApplyPredicates(change)
+				cp, ok, err := ApplyPredicates(change, predicates, rejects)
 				if err != nil {
 					// Errors are assumed to be
 					// non-critical. Just log them.

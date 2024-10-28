@@ -36,7 +36,7 @@ func TestCollectChangePreds(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	cps := CollectChangePreds(ctx, testutil.Slogger(t), changes)
+	cps := CollectChangePreds(ctx, testutil.Slogger(t), changes, Predicates(), Rejects())
 	if len(cps) != 1 {
 		t.Errorf("CollectChangePreds returned %d entries, want 1", len(cps))
 	}

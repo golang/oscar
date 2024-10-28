@@ -35,15 +35,11 @@ func collectChanges(ctx context.Context, lg *slog.Logger, client *gerrit.Client,
 		collectAccounts(client, accounts, chAccount)
 	}()
 
-	var changes []*gerrit.Change
+	// Collect account data first.
 	for _, project := range projects {
 		for _, changeFn := range client.ChangeNumbers(project) {
-			gchange := changeFn()
-
-			changes = append(changes, gchange)
-
 			select {
-			case chAccount <- gchange:
+			case chAccount <- changeFn():
 			case <-ctx.Done():
 				close(chAccount)
 				wg.Wait()
@@ -57,6 +53,33 @@ func collectChanges(ctx context.Context, lg *slog.Logger, client *gerrit.Client,
 
 	// We have all the account data, so we can now apply predicates.
 
+	// We collect all the changes but try to skip those that will be
+	// rejected. Otherwise, the number of changes to which we apply
+	// the predicates can get too big, causing OOM for large projects.
+	// Note that we cannot do this in the above loop since rejection
+	// might depend on the account data.
+	var changes []*gerrit.Change
+	rejs := append(reviews.Rejects(), rejects...)
+	grc := &reviews.GerritReviewClient{GClient: client, Accounts: accounts}
+	for _, project := range projects {
+		for _, changeFn := range client.ChangeNumbers(project) {
+			gchange := changeFn()
+
+			grchange := &reviews.GerritChange{
+				Client: grc,
+				Change: gchange,
+			}
+			_, ok, err := reviews.ApplyPredicates(goChange{grchange}, nil, rejs)
+			if err != nil {
+				lg.Error("error applying rejections", "change", grchange.ID(), "err", err)
+				continue
+			}
+			if ok {
+				changes = append(changes, gchange)
+			}
+		}
+	}
+
 	// Convert to reviews.GerritChange, which implements review.Change.
 	// We wrap GerritChange ourselves to reimplement the Author method.
 	// Create an iterator we can pass to reviews.CollectChangePreds.
@@ -68,7 +91,8 @@ func collectChanges(ctx context.Context, lg *slog.Logger, client *gerrit.Client,
 		}
 	}
 
-	cps := reviews.CollectChangePreds(ctx, lg, toReviews)
+	preds := append(reviews.Predicates(), predicates...)
+	cps := reviews.CollectChangePreds(ctx, lg, toReviews, preds, nil) // we already applied rejections
 
 	lg.Info("finished gathering change information", "duration", time.Since(start))
 

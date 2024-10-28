@@ -16,8 +16,6 @@ import (
 )
 
 func TestCollectChanges(t *testing.T) {
-	addPredicatesOnce()
-
 	check := testutil.Checker(t)
 
 	lg := testutil.Slogger(t)

@@ -6,7 +6,7 @@ package reviews
 
 import (
 	"fmt"
-	"sync"
+	"slices"
 )
 
 // A Predicate is a categorization of a [Change].
@@ -39,19 +39,12 @@ type ChangePreds struct {
 type Reject Predicate
 
 // ApplyPredicates takes a [Change] and applies predicates to it.
-// The bool result reports whether the change is reviewable;
-// this will be false if the change should not be reviewed,
-// for example because it has already been committed.
-func ApplyPredicates(change Change) (ChangePreds, bool, error) {
-	predicatesLock.Lock()
-	// The predicates and rejects slices are append-only,
-	// so a top-level copy is safe to use.
-	p := predicates
-	r := rejects
-	predicatesLock.Unlock()
-
-	for i := range r {
-		applies, err := r[i].Applies(change)
+// The reject predicates are used to determine if the change is
+// reviewable; the bool result will be false if the change should
+// not be reviewed, for example because it has already been committed.
+func ApplyPredicates(change Change, predicates []Predicate, rejects []Reject) (ChangePreds, bool, error) {
+	for i := range rejects {
+		applies, err := rejects[i].Applies(change)
 		if err != nil {
 			return ChangePreds{}, false, err
 		}
@@ -61,8 +54,8 @@ func ApplyPredicates(change Change) (ChangePreds, bool, error) {
 	}
 
 	var preds []*Predicate
-	for i := range p {
-		pred := &p[i]
+	for i := range predicates {
+		pred := &predicates[i]
 		applies, err := pred.Applies(change)
 		if err != nil {
 			return ChangePreds{}, false, err
@@ -80,20 +73,6 @@ func ApplyPredicates(change Change) (ChangePreds, bool, error) {
 	return cp, true, nil
 }
 
-// AddPredicates adds more [Predicate] values for a project.
-func AddPredicates(newPreds []Predicate) {
-	predicatesLock.Lock()
-	defer predicatesLock.Unlock()
-	predicates = append(predicates, newPreds...)
-}
-
-// AddRejects adds more [Reject] values for a project.
-func AddRejects(newRejects []Reject) {
-	predicatesLock.Lock()
-	defer predicatesLock.Unlock()
-	rejects = append(rejects, newRejects...)
-}
-
 // Some [Predicate] default scores.
 const (
 	ScoreImportant     = 10  // change is important
@@ -102,8 +81,11 @@ const (
 	ScoreUnimportant   = -10 // change is not important
 )
 
-// predicatesLock protects predicates and rejectors.
-var predicatesLock sync.Mutex
+// Predicates returns a list of non-reject predicates
+// that apply to a change.
+func Predicates() []Predicate {
+	return slices.Clone(predicates)
+}
 
 // predicates is the list of [Predicate] values that we apply to a change.
 var predicates = []Predicate{
@@ -183,6 +165,12 @@ func noMaintainerReviews(ch Change) (bool, error) {
 		}
 	}
 	return true, nil
+}
+
+// Rejects returns a list of reject predicates
+// that apply to a change.
+func Rejects() []Reject {
+	return slices.Clone(rejects)
 }
 
 // rejects is the list of Reject values that we apply to a change.

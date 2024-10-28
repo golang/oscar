@@ -27,8 +27,6 @@ type Changes struct {
 
 // New returns a new Changes to manage the Go dashboard.
 func New(lg *slog.Logger, client *gerrit.Client, projects []string) *Changes {
-	addPredicatesOnce()
-
 	return &Changes{
 		slog:     lg,
 		client:   client,
