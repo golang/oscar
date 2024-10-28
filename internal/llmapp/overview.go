@@ -39,7 +39,8 @@ type Doc struct {
 // additional context to the LLM prompt.
 // Overview returns an error if no documents are provided or the LLM is unable
 // to generate a response.
-func Overview(ctx context.Context, g llm.TextGenerator, kind DocsKind, docs ...*Doc) (string, error) {
+// TODO(tatianabradley): Chunk large prompts.
+func Overview(ctx context.Context, g llm.TextGenerator, kind docsKind, docs ...*Doc) (string, error) {
 	if len(docs) == 0 {
 		return "", errors.New("llmapp.Overview: no documents")
 	}
@@ -49,7 +50,7 @@ func Overview(ctx context.Context, g llm.TextGenerator, kind DocsKind, docs ...*
 // OverviewPrompt converts the given docs into a slice of
 // text prompts, followed by an instruction prompt based
 // on the documents kind.
-func OverviewPrompt(kind DocsKind, docs []*Doc) []string {
+func OverviewPrompt(kind docsKind, docs []*Doc) []string {
 	var inputs = make([]string, len(docs))
 	for i, d := range docs {
 		inputs[i] = string(storage.JSON(d))
@@ -57,31 +58,27 @@ func OverviewPrompt(kind DocsKind, docs []*Doc) []string {
 	return append(inputs, kind.instructions())
 }
 
-// DocsKind is a descriptor for a group of documents.
-type DocsKind struct{ int }
+// docsKind is a descriptor for a group of documents.
+// unexported so that clients must use a predefined kind.
+type docsKind struct{ name string }
 
 var (
 	// Represents a group of documents of an unspecified kind.
-	Documents DocsKind = DocsKind{}
+	Documents docsKind = docsKind{"documents"}
 	// The documents represent a post and comments/replies
 	// on that post. For example, a GitHub issue and its comments.
-	PostAndComments DocsKind = DocsKind{1}
+	PostAndComments docsKind = docsKind{"post_and_comments"}
 )
-
-// IsPostAndComments reports whether k is of kind [PostAndComments].
-func (k DocsKind) IsPostAndComments() bool {
-	return k == PostAndComments
-}
 
 //go:embed prompts/*.tmpl
 var promptFS embed.FS
-var instructionTmpl = template.Must(template.ParseFS(promptFS, "prompts/overview.tmpl"))
+var tmpls = template.Must(template.ParseFS(promptFS, "prompts/*.tmpl"))
 
 // instructions returns the instruction prompt for the given
 // document kind.
-func (k DocsKind) instructions() string {
+func (k docsKind) instructions() string {
 	w := &strings.Builder{}
-	err := instructionTmpl.Execute(w, k)
+	err := tmpls.ExecuteTemplate(w, k.name, nil)
 	if err != nil {
 		// unreachable except bug in this package
 		panic(err)
