@@ -57,14 +57,14 @@ type Client struct {
 
 const (
 	DefaultEmbeddingModel  = "text-embedding-004"
-	DefaultGenerativeModel = "gemini-1.0-pro"
+	DefaultGenerativeModel = "gemini-1.5-pro"
 )
 
 // NewClient returns a connection to Gemini, using the given logger and HTTP client.
 // It expects to find a secret of the form "AIza..." or "user:AIza..." in sdb
 // under the name "ai.google.dev".
 // The embeddingModel is the model name to use for embedding, such as text-embedding-004,
-// and the generativeModel is the model name to use for generation, such as gemini-1.0-pro.
+// and the generativeModel is the model name to use for generation, such as gemini-1.5-pro.
 func NewClient(ctx context.Context, lg *slog.Logger, sdb secret.DB, hc *http.Client, embeddingModel, generativeModel string) (*Client, error) {
 	key, ok := sdb.Get("ai.google.dev")
 	if !ok {
