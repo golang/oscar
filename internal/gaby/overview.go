@@ -9,8 +9,10 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/safehtml"
+	"github.com/google/safehtml/template"
 	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/htmlutil"
 )
@@ -37,7 +39,22 @@ func (g *Gaby) handleOverview(w http.ResponseWriter, r *http.Request) {
 	handlePage(w, g.populateOverviewPage(r), overviewPageTmpl)
 }
 
-var overviewPageTmpl = newTemplate(overviewPageTmplFile, nil)
+var overviewPageTmpl = newTemplate(overviewPageTmplFile, template.FuncMap{
+	"fmttime": fmtTimeString,
+})
+
+// fmtTimeString formats an [time.RFC3339]-encoded time string
+// as a [time.DateOnly] time string.
+func fmtTimeString(s string) string {
+	if s == "" {
+		return s
+	}
+	t, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		return s
+	}
+	return t.Format(time.DateOnly)
+}
 
 // populateOverviewPage returns the contents of the overview page.
 func (g *Gaby) populateOverviewPage(r *http.Request) overviewPage {
@@ -70,4 +87,10 @@ func (g *Gaby) populateOverviewPage(r *http.Request) overviewPage {
 			OverviewHTML:        htmlutil.MarkdownToSafeHTML(overview.Overview.Overview),
 		},
 	}
+}
+
+// Related returns the relative URL of the related-entity search
+// for the issue.
+func (r *overviewResult) Related() string {
+	return fmt.Sprintf("/search?q=%s", r.Issue.HTMLURL)
 }

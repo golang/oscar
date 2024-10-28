@@ -40,6 +40,25 @@ func TestIssueOverview(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	issue := &Issue{
+		URL:     "https://api.github.com/repos/robpike/ivy/issues/19",
+		HTMLURL: "https://github.com/robpike/ivy/issues/19",
+		User:    User{Login: "xunshicheng"},
+		Title:   "cannot get",
+		Body: `when i get the source code by the command: go get github.com/robpike/ivy
+it print: can't load package: package github.com/robpike/ivy: code in directory D:\gocode\src\github.com\robpike\ivy expects import "robpike.io/ivy"
+
+could you get me a hand！
+`,
+		Number:    19,
+		CreatedAt: "2016-01-05T11:57:53Z",
+		UpdatedAt: "2016-01-05T22:39:41Z",
+		ClosedAt:  "2016-01-05T22:39:41Z",
+		Assignees: []User{},
+		State:     "closed",
+		Labels:    []Label{},
+	}
+
 	// This merely checks that the correct call to [llmapp.PostOverview] is made.
 	// The internals of [llmapp.PostOverview] are tested in the llmapp package.
 	wantOverview, err := llmapp.PostOverview(ctx, echo,
@@ -47,12 +66,8 @@ func TestIssueOverview(t *testing.T) {
 			Type:   "issue",
 			URL:    "https://github.com/robpike/ivy/issues/19",
 			Author: "xunshicheng",
-			Title:  "cannot get",
-			Text: `when i get the source code by the command: go get github.com/robpike/ivy
-it print: can't load package: package github.com/robpike/ivy: code in directory D:\gocode\src\github.com\robpike\ivy expects import "robpike.io/ivy"
-
-could you get me a hand！
-`,
+			Title:  issue.Title,
+			Text:   issue.Body,
 		},
 		[]*llmapp.Doc{
 			{
@@ -72,7 +87,7 @@ It is a fair point though that this should be explained in the README. I will fi
 	}
 
 	want := &IssueOverviewResult{
-		URL:         "https://github.com/robpike/ivy/issues/19",
+		Issue:       issue,
 		Overview:    wantOverview,
 		NumComments: 1,
 	}

@@ -39,7 +39,11 @@ func TestTemplates(t *testing.T) {
 			overviewForm: overviewForm{Query: "12"},
 			Result: &overviewResult{
 				IssueOverviewResult: github.IssueOverviewResult{
-					URL:         "https://example.com",
+					Issue: &github.Issue{
+						User:      github.User{Login: "abc"},
+						CreatedAt: "2023-01-01T0",
+						HTMLURL:   "https://example.com",
+					},
 					NumComments: 2,
 					Overview: &llmapp.OverviewResult{
 						Overview: "an overview",

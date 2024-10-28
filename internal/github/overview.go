@@ -16,15 +16,17 @@ import (
 // It contains the generated overview and metadata about
 // the issue.
 type IssueOverviewResult struct {
-	URL         string                 // the issue's URL
-	NumComments int                    // number of comments for this issue
-	Overview    *llmapp.OverviewResult // the LLM-generated issue and comment summary
+	*Issue          // the issue itself
+	NumComments int // number of comments for this issue
+
+	Overview *llmapp.OverviewResult // the LLM-generated issue and comment summary
 }
 
 // IssueOverview returns an LLM-generated overview of the issue and its comments.
 // It does not make any requests to GitHub; the issue and comment data must already
 // be stored in db.
 func IssueOverview(ctx context.Context, g llm.TextGenerator, db storage.DB, project string, issue int64) (*IssueOverviewResult, error) {
+	var iss *Issue
 	var post *llmapp.Doc
 	var comments []*llmapp.Doc
 	for e := range events(db, project, issue, issue) {
@@ -33,6 +35,7 @@ func IssueOverview(ctx context.Context, g llm.TextGenerator, db storage.DB, proj
 			continue
 		}
 		if isIssue {
+			iss = e.Typed.(*Issue)
 			post = doc
 			continue
 		}
@@ -43,7 +46,7 @@ func IssueOverview(ctx context.Context, g llm.TextGenerator, db storage.DB, proj
 		return nil, err
 	}
 	return &IssueOverviewResult{
-		URL:         post.URL,
+		Issue:       iss,
 		NumComments: len(comments),
 		Overview:    overview,
 	}, nil

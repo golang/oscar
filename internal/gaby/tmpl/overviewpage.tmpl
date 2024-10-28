@@ -59,8 +59,14 @@ license that can be found in the LICENSE file.
 		<p>Error: {{.}}</p>
 	{{- else with .Result -}}
 	    <div class="result">
-			<p>URL: <a href="{{.URL}}">{{.URL}}</a></p>
+			<p><a href="{{.HTMLURL}}" target="_blank">{{.HTMLURL}}</a></p>
+			<p><strong>{{.Title}}</strong></p>
+			<p>Author: {{.User.Login}}</p>
+			<p>State: {{.State}}</p>
+			<p>Created: {{fmttime .CreatedAt}}</p>
+			<p>Updated: {{fmttime .UpdatedAt}}</p>
 			<p>Number of comments: {{.NumComments}}</p>
+			<p><a href="{{.Related}}" target="_blank">[Search for related issues]</a></p>
 	    	<div id="overview">{{.OverviewHTML}}</div>
 		</div>
 		<div class="toggle" onclick="togglePrompt()">[show prompt]</div>
