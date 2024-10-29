@@ -41,6 +41,19 @@ type Post interface {
 
 	CanHaveChildren() bool // can this kind of Post have children?
 	ParentID() string      // the parent post's ID, empty if this is a root post
+
+	Updates() PostUpdates // set changes on a PostUpdates, then pass to [Source.Update]
+}
+
+// Updates contains changes to a value.
+// It is used in conjunction with [Source.Update].
+type Updates interface {
+}
+
+// PostUpdates holds updates to a [Post].
+type PostUpdates interface {
+	SetTitle(string) error // set the title
+	SetBody(string) error  // set the body
 }
 
 // An Identity is an entity that can interact with a project.
@@ -73,12 +86,10 @@ type Source[T Content] interface {
 	// Download the current value for the ID from the external source.
 	Read(ctx context.Context, id string) (T, error)
 
-	// Update c by applying the given changes.
-	// Keys of changes are field names. Values of changes are the new values.
-	// If changes is empty, Update does nothing and returns nil.
-	// Update returns an error if a field doesn't exist or is not modifiable.
-	// Update panics if a value in changes is the wrong type for the field.
-	Update(ctx context.Context, c T, changes map[string]any) error
+	// Update c by applying the given Updates.
+	// Updates should describe how to modify c in a form that the Source
+	// understands. For a [Post], call [Post.Update] to obtain such a value.
+	Update(ctx context.Context, c T, u Updates) error
 
 	// Create a new instance of T in the source, returning its unique ID.
 	Create(context.Context, T) (id string, err error)

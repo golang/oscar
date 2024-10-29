@@ -298,6 +298,10 @@ func (x *IssueComment) CanHaveChildren() bool      { return false }
 func (x *IssueComment) ParentID() string           { return x.IssueURL }
 func (x *IssueComment) Properties() map[string]any { return nil } //TODO: add other fields
 
+func (x *IssueComment) Updates() model.PostUpdates {
+	return &IssueCommentChanges{}
+}
+
 var _ model.Post = (*IssueComment)(nil)
 
 // Issue is the GitHub JSON structure for an issue creation event.
@@ -336,6 +340,8 @@ func (x *Issue) CanEdit() bool              { return true }
 func (x *Issue) CanHaveChildren() bool      { return false }
 func (x *Issue) ParentID() string           { return "" }
 func (x *Issue) Properties() map[string]any { return nil } //TODO: add other fields
+
+func (x *Issue) Updates() model.PostUpdates { return &IssueChanges{} }
 
 var _ model.Post = (*Issue)(nil)
 

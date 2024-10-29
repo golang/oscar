@@ -71,45 +71,27 @@ func (s *issueSource) Create(ctx context.Context, p model.Post) (string, error) 
 // Update implements [model.Source.Update] by changing
 // an issue or issue comment on GitHub.
 // If p is a [*github.Issue], the title, body, state and labels can be changed.
-// The keys of changes should be one or more of "title", "body", "state" or "labels".
 // (It is not possible to set the title, body or state to the empty string.)
-// Labels are replaced, not added to; include all the previous labels in p.Property("labels").
+// Labels are replaced, not added to; include all the previous labels.
 //
-// If p is [*github.IssueComment], changes should contain only the key "body", with a new body.
-func (s *issueSource) Update(ctx context.Context, p model.Post, changes map[string]any) error {
+// If p is [*github.IssueComment], only the body can be changed.
+func (s *issueSource) Update(ctx context.Context, p model.Post, u model.Updates) (err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("github IssueSource update: %w", err)
+		}
+	}()
+
 	switch x := p.(type) {
 	default:
-		return fmt.Errorf("github.com/Source[Post].Update: bad type %T", p)
+		return fmt.Errorf("bad type %T", p)
 
 	case *github.Issue:
-		c := &github.IssueChanges{}
-		for k, v := range changes {
-			switch k {
-			case "title":
-				c.Title = v.(string)
-			case "body":
-				c.Body = v.(string)
-			case "state":
-				c.State = v.(string)
-			case "labels":
-				ls := v.([]string)
-				c.Labels = &ls
-			default:
-				return fmt.Errorf("cannot update field %q on GitHub issues", k)
-			}
-		}
+		c := u.(*github.IssueChanges)
 		return s.a.ic.EditIssue(ctx, x, c)
 
 	case *github.IssueComment:
-		c := &github.IssueCommentChanges{}
-		for k, v := range changes {
-			switch k {
-			case "body":
-				c.Body = v.(string)
-			default:
-				return fmt.Errorf("cannot update field %q on GitHub issue comments", k)
-			}
-		}
+		c := u.(*github.IssueCommentChanges)
 		return s.a.ic.EditIssueComment(ctx, x, c)
 	}
 }

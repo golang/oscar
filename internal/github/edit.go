@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -86,6 +87,15 @@ func (ch *IssueCommentChanges) clone() *IssueCommentChanges {
 	return ch
 }
 
+func (ch *IssueCommentChanges) SetTitle(string) error {
+	return errors.New("cannot set the title of an IssueComment")
+}
+
+func (ch *IssueCommentChanges) SetBody(s string) error {
+	ch.Body = s
+	return nil
+}
+
 // EditIssueComment changes the comment on GitHub to have the new body.
 // It is typically a good idea to use c.DownloadIssueComment first and check
 // that the live comment body matches the one obtained from the database,
@@ -131,6 +141,16 @@ func (ch *IssueChanges) clone() *IssueChanges {
 		ch.Labels = &x
 	}
 	return ch
+}
+
+func (ch *IssueChanges) SetTitle(s string) error {
+	ch.Title = s
+	return nil
+}
+
+func (ch *IssueChanges) SetBody(s string) error {
+	ch.Body = s
+	return nil
 }
 
 // EditIssue applies the changes to issue on GitHub.

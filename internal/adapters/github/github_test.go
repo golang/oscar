@@ -33,10 +33,10 @@ func TestIssueSource(t *testing.T) {
 		Body:      "body",
 		State:     "open",
 	}
-	check(s.Update(ctx, p, map[string]any{
-		"title": "t2",
-		"body":  "b2",
-	}))
+	u := p.Updates()
+	check(u.SetTitle("t2"))
+	check(u.SetBody("b2"))
+	check(s.Update(ctx, p, u))
 	es := a.ic.Testing().Edits()
 	if len(es) != 1 {
 		t.Fatalf("got %d edits, want 1", len(es))
@@ -56,7 +56,9 @@ func TestIssueSource(t *testing.T) {
 		URL:  "https://api.github.com/repos/org/repo/issues/comments/3",
 		Body: "before",
 	}
-	check(s.Update(ctx, c, map[string]any{"body": "after"}))
+	u = c.Updates()
+	check(u.SetBody("after"))
+	check(s.Update(ctx, c, u))
 	es = a.ic.Testing().Edits()
 	if len(es) != 1 {
 		t.Fatalf("got %d edits, want 1", len(es))
