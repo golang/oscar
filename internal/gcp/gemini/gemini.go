@@ -145,6 +145,11 @@ func (c *Client) EmbedDocs(ctx context.Context, docs []llm.EmbedDoc) ([]llm.Vect
 
 var _ llm.TextGenerator = (*Client)(nil)
 
+// Model returns the name of the client's generative model.
+func (c *Client) Model() string {
+	return c.generativeModel
+}
+
 // GenerateText returns model's text response for the prompt parts,
 // implementing [llm.TextGenerator].
 func (c *Client) GenerateText(ctx context.Context, promptParts ...string) (string, error) {

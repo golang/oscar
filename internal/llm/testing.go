@@ -91,6 +91,9 @@ func EchoTextGenerator() TextGenerator {
 
 type echo struct{}
 
+// Implements [TextGenerator.GenerativeModel].
+func (echo) Model() string { return "echo" }
+
 // GenerateText echoes the prompts (for testing).
 // Implements [TextGenerator].
 func (echo) GenerateText(ctx context.Context, promptParts ...string) (string, error) {

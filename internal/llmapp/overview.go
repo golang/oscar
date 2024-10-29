@@ -4,6 +4,18 @@
 
 // Package llmapp provides applications for LLM content generation
 // to complete higher-level tasks.
+//
+// All functionality is provided by [Client], created by [New].
+//
+// Cached LLM responses are stored in the Client's database as:
+//
+//	("llmapp.GenerateText", generativeModel, promptHash) -> [response]
+//
+// Note that currently there is no clear way to clean up old cache values
+// that are no longer relevant, but we might want to add this in the future.
+//
+// We can, however, easily delete ALL cache values and start over by deleting
+// all database entries starting with "llmapp.GenerateText".
 package llmapp
 
 import (
@@ -11,6 +23,7 @@ import (
 	"embed"
 	_ "embed"
 	"errors"
+	"log/slog"
 	"strings"
 	"text/template"
 
@@ -36,25 +49,40 @@ type Doc struct {
 // OverviewResult is the result of [Overview] or [PostOverview].
 type OverviewResult struct {
 	Overview string   // the LLM-generated summary
+	Cached   bool     // whether the summary was cached
 	Prompt   []string // the prompt(s) used to generate the result
+}
+
+// Client is a client for accessing the LLM application functionality.
+type Client struct {
+	slog *slog.Logger
+	g    llm.TextGenerator
+	db   storage.DB // cache for LLM responses
+}
+
+// New returns a new client.
+// g is the underlying LLM text generator to use, and db is the database
+// to use as a cache.
+func New(lg *slog.Logger, g llm.TextGenerator, db storage.DB) *Client {
+	return &Client{slog: lg, g: g, db: db}
 }
 
 // Overview returns an LLM-generated overview of the given documents,
 // styled with markdown.
 // Overview returns an error if no documents are provided or the LLM is unable
 // to generate a response.
-func Overview(ctx context.Context, g llm.TextGenerator, docs ...*Doc) (*OverviewResult, error) {
-	return overview(ctx, g, documents, docs)
+func (c *Client) Overview(ctx context.Context, docs ...*Doc) (*OverviewResult, error) {
+	return c.overview(ctx, documents, docs)
 }
 
 // PostOverview returns an LLM-generated overview of the given post and comments,
 // styled with markdown.
 // PostOverview returns an error if no post is provided or the LLM is unable to generate a response.
-func PostOverview(ctx context.Context, g llm.TextGenerator, post *Doc, comments []*Doc) (*OverviewResult, error) {
+func (c *Client) PostOverview(ctx context.Context, post *Doc, comments []*Doc) (*OverviewResult, error) {
 	if post == nil {
 		return nil, errors.New("llmapp PostOverview: no post")
 	}
-	return overview(ctx, g, postAndComments, append([]*Doc{post}, comments...))
+	return c.overview(ctx, postAndComments, append([]*Doc{post}, comments...))
 }
 
 // overview returns an LLM-generated overview of the given documents,
@@ -63,17 +91,18 @@ func PostOverview(ctx context.Context, g llm.TextGenerator, post *Doc, comments 
 // additional context to the LLM prompt.
 // Overview returns an error if no documents are provided or the LLM is unable
 // to generate a response.
-func overview(ctx context.Context, g llm.TextGenerator, kind docsKind, docs []*Doc) (*OverviewResult, error) {
+func (c *Client) overview(ctx context.Context, kind docsKind, docs []*Doc) (*OverviewResult, error) {
 	if len(docs) == 0 {
 		return nil, errors.New("llmapp overview: no documents")
 	}
 	prompt := overviewPrompt(kind, docs)
-	overview, err := g.GenerateText(ctx, prompt...)
+	overview, cached, err := c.generateText(ctx, prompt)
 	if err != nil {
 		return nil, err
 	}
 	return &OverviewResult{
 		Overview: overview,
+		Cached:   cached,
 		Prompt:   prompt,
 	}, nil
 }

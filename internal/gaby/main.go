@@ -36,6 +36,7 @@ import (
 	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/googlegroups"
 	"golang.org/x/oscar/internal/llm"
+	"golang.org/x/oscar/internal/llmapp"
 	"golang.org/x/oscar/internal/pebble"
 	"golang.org/x/oscar/internal/related"
 	"golang.org/x/oscar/internal/search"
@@ -82,7 +83,7 @@ type Gaby struct {
 	secret    secret.DB              // secret database to use
 	docs      *docs.Corpus           // document corpus to use
 	embed     llm.Embedder           // LLM embedder to use
-	generate  llm.TextGenerator      // LLM text generator to use
+	llm       *llmapp.Client         // LLM client to use
 	github    *github.Client         // github client to use
 	disc      *discussion.Client     // github discussion client to use
 	gerrit    *gerrit.Client         // gerrit client to use
@@ -139,7 +140,7 @@ func main() {
 		log.Fatal(err)
 	}
 	g.embed = ai
-	g.generate = ai
+	g.llm = llmapp.New(g.slog, ai, g.db)
 
 	cr := crawl.New(g.slog, g.db, g.http)
 	cr.Add("https://go.dev/")

@@ -67,6 +67,7 @@ license that can be found in the LICENSE file.
 			<p>Updated: {{fmttime .UpdatedAt}}</p>
 			<p>Number of comments: {{.NumComments}}</p>
 			<p><a href="{{.Related}}" target="_blank">[Search for related issues]</a></p>
+			<p>AI-generated overview{{if .Overview.Cached}} (cached){{end}}:</p>
 	    	<div id="overview">{{.OverviewHTML}}</div>
 		</div>
 		<div class="toggle" onclick="togglePrompt()">[show prompt]</div>

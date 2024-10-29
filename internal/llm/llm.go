@@ -82,5 +82,10 @@ func (v *Vector) Decode(enc []byte) {
 //
 // See [golang.org/x/oscar/internal/gcp/gemini] for a real implementation.
 type TextGenerator interface {
+	// Model returns the name of the generative model
+	// used by this TextGenerator.
+	Model() string
+	// GenerateText generates a text response given one or more text
+	// prompts.
 	GenerateText(ctx context.Context, parts ...string) (string, error)
 }

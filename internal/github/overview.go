@@ -7,7 +7,6 @@ package github
 import (
 	"context"
 
-	"golang.org/x/oscar/internal/llm"
 	"golang.org/x/oscar/internal/llmapp"
 	"golang.org/x/oscar/internal/storage"
 )
@@ -25,7 +24,7 @@ type IssueOverviewResult struct {
 // IssueOverview returns an LLM-generated overview of the issue and its comments.
 // It does not make any requests to GitHub; the issue and comment data must already
 // be stored in db.
-func IssueOverview(ctx context.Context, g llm.TextGenerator, db storage.DB, project string, issue int64) (*IssueOverviewResult, error) {
+func IssueOverview(ctx context.Context, lc *llmapp.Client, db storage.DB, project string, issue int64) (*IssueOverviewResult, error) {
 	var iss *Issue
 	var post *llmapp.Doc
 	var comments []*llmapp.Doc
@@ -41,7 +40,7 @@ func IssueOverview(ctx context.Context, g llm.TextGenerator, db storage.DB, proj
 		}
 		comments = append(comments, doc)
 	}
-	overview, err := llmapp.PostOverview(ctx, g, post, comments)
+	overview, err := lc.PostOverview(ctx, post, comments)
 	if err != nil {
 		return nil, err
 	}

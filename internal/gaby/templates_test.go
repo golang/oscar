@@ -47,6 +47,7 @@ func TestTemplates(t *testing.T) {
 					NumComments: 2,
 					Overview: &llmapp.OverviewResult{
 						Overview: "an overview",
+						Cached:   true,
 						Prompt:   []string{"a prompt"},
 					},
 				},

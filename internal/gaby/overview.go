@@ -73,7 +73,7 @@ func (g *Gaby) populateOverviewPage(r *http.Request) overviewPage {
 			Error:        fmt.Errorf("invalid form value %q: %w", form.Query, err).Error(),
 		}
 	}
-	overview, err := github.IssueOverview(r.Context(), g.generate, g.db, g.githubProject, int64(issue))
+	overview, err := github.IssueOverview(r.Context(), g.llm, g.db, g.githubProject, int64(issue))
 	if err != nil {
 		return overviewPage{
 			overviewForm: form,

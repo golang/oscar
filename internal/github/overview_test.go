@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"golang.org/x/oscar/internal/httprr"
 	"golang.org/x/oscar/internal/llm"
 	"golang.org/x/oscar/internal/llmapp"
@@ -33,9 +34,9 @@ func TestIssueOverview(t *testing.T) {
 	check(c.Add("robpike/ivy"))
 	check(c.Sync(ctx))
 
-	echo := llm.EchoTextGenerator()
+	lc := llmapp.New(lg, llm.EchoTextGenerator(), db)
 
-	got, err := IssueOverview(ctx, echo, db, "robpike/ivy", 19)
+	got, err := IssueOverview(ctx, lc, db, "robpike/ivy", 19)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,8 +61,8 @@ could you get me a hand！
 	}
 
 	// This merely checks that the correct call to [llmapp.PostOverview] is made.
-	// The internals of [llmapp.PostOverview] are tested in the llmapp package.
-	wantOverview, err := llmapp.PostOverview(ctx, echo,
+	// The internals of [llmapp.Client.PostOverview] are tested in the llmapp package.
+	wantOverview, err := lc.PostOverview(ctx,
 		&llmapp.Doc{
 			Type:   "issue",
 			URL:    "https://github.com/robpike/ivy/issues/19",
@@ -92,7 +93,7 @@ It is a fair point though that this should be explained in the README. I will fi
 		NumComments: 1,
 	}
 
-	if diff := cmp.Diff(got, want); diff != "" {
+	if diff := cmp.Diff(got, want, cmpopts.IgnoreFields(llmapp.OverviewResult{}, "Cached")); diff != "" {
 		t.Errorf("IssueOverview() mismatch:\n%s", diff)
 	}
 }
