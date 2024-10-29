@@ -161,9 +161,16 @@ func (r *Result) Round() {
 	r.Score = math.Round(r.Score*1e3) / 1e3
 }
 
-// IDIsURL reports whether the Result's ID is a valid URL.
+// IDIsURL reports whether the Result's ID is a valid absolute URL.
 func (r *Result) IDIsURL() bool {
-	_, err := url.Parse(r.ID)
+	return isURL(r.ID)
+}
+
+// isURL reports whether the string is a valid absolute URL.
+func isURL(s string) bool {
+	// Use [url.ParseRequestURI] as it only accepts absolute URLs
+	// ([url.Parse] accepts relative URLs too).
+	_, err := url.ParseRequestURI(s)
 	return err == nil
 }
 

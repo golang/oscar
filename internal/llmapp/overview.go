@@ -85,6 +85,20 @@ func (c *Client) PostOverview(ctx context.Context, post *Doc, comments []*Doc) (
 	return c.overview(ctx, postAndComments, append([]*Doc{post}, comments...))
 }
 
+// RelatedOverview returns an LLM-generated overview of the given document and
+// related documents, styled with markdown.
+// RelatedOverview returns an error if no initial document is provided, no related docs are
+// provided, or the LLM is unable to generate a response.
+func (c *Client) RelatedOverview(ctx context.Context, doc *Doc, related []*Doc) (*OverviewResult, error) {
+	if doc == nil {
+		return nil, errors.New("llmapp RelatedOverview: no doc")
+	}
+	if len(related) == 0 {
+		return nil, errors.New("llmapp RelatedOverview: no related docs")
+	}
+	return c.overview(ctx, docAndRelated, append([]*Doc{doc}, related...))
+}
+
 // overview returns an LLM-generated overview of the given documents,
 // styled with markdown.
 // The kind argument is a descriptor for the given documents, used to add
@@ -127,6 +141,9 @@ var (
 	// The documents represent a post and comments/replies
 	// on that post. For example, a GitHub issue and its comments.
 	postAndComments docsKind = "post_and_comments"
+	// The documents represent a document followed by documents
+	// that are related to it in some way.
+	docAndRelated docsKind = "doc_and_related"
 )
 
 //go:embed prompts/*.tmpl

@@ -1,0 +1,13 @@
+{{define "doc_and_related"}}
+The documents represent a document followed by related documents.
+
+Steps:
+
+1. (Heading ## Original Document) Summarize the main points of the original document.
+2. (Heading ## Related Documents) For each related document use this format:
+	### Title ([URL](URL)) for example: ### the document title ([example.com](example.com))
+	* **Summary**: Summarize the document in one sentence.
+	* **Relationship**: Explain how the document is related to the original document.
+
+{{template "requirements"}}
+{{end}}

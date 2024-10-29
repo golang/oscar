@@ -13,7 +13,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/google/safehtml"
 	"github.com/google/safehtml/template"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
@@ -36,7 +35,7 @@ func TestTemplates(t *testing.T) {
 		}},
 		{"overview-initial", overviewPageTmpl, overviewPage{}},
 		{"overview", overviewPageTmpl, overviewPage{
-			overviewForm: overviewForm{Query: "12"},
+			Form: overviewForm{Query: "12"},
 			Result: &overviewResult{
 				IssueOverviewResult: github.IssueOverviewResult{
 					Issue: &github.Issue{
@@ -51,8 +50,12 @@ func TestTemplates(t *testing.T) {
 						Prompt:   []string{"a prompt"},
 					},
 				},
-				OverviewHTML: safehtml.HTMLEscaped("an overview"),
+				Type: issueOverviewType,
 			}}},
+		{"overview-error", overviewPageTmpl, overviewPage{
+			Form:  overviewForm{Query: "12"},
+			Error: fmt.Errorf("an error"),
+		}},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			var buf bytes.Buffer

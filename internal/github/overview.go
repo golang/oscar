@@ -6,6 +6,7 @@ package github
 
 import (
 	"context"
+	"fmt"
 
 	"golang.org/x/oscar/internal/llmapp"
 	"golang.org/x/oscar/internal/storage"
@@ -39,6 +40,9 @@ func IssueOverview(ctx context.Context, lc *llmapp.Client, db storage.DB, projec
 			continue
 		}
 		comments = append(comments, doc)
+	}
+	if post == nil {
+		return nil, fmt.Errorf("github.IssueOverview: issue %d not in db", issue)
 	}
 	overview, err := lc.PostOverview(ctx, post, comments)
 	if err != nil {

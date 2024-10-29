@@ -45,12 +45,19 @@ func (c *Client) LookupIssueURL(url string) (*Issue, error) {
 		return bad()
 	}
 
-	for e := range c.Events(proj, n, n) {
+	return LookupIssue(c.db, proj, n)
+}
+
+// LookupIssue looks up an issue by project and issue number
+// (for example "golang/go", 12345), only consulting the database
+// (not actual GitHub).
+func LookupIssue(db storage.DB, project string, issue int64) (*Issue, error) {
+	for e := range events(db, project, issue, issue) {
 		if e.API == "/issues" {
 			return e.Typed.(*Issue), nil
 		}
 	}
-	return nil, fmt.Errorf("%s#%d not in database", proj, n)
+	return nil, fmt.Errorf("github.LookupIssue: issue %s#%d not in database", project, issue)
 }
 
 // An Event is a single GitHub issue event stored in the database.
@@ -327,6 +334,12 @@ type Issue struct {
 // Project returns the issue's GitHub project (for example, "golang/go").
 func (x *Issue) Project() string {
 	return urlToProject(x.URL)
+}
+
+// DocID returns the ID of this issue for storage in a docs.Corpus
+// or a storage.VectorDB.
+func (i *Issue) DocID() string {
+	return i.HTMLURL
 }
 
 // Methods implementing model.Post.

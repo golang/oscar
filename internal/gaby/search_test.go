@@ -13,9 +13,11 @@ import (
 	"testing"
 
 	"golang.org/x/oscar/internal/docs"
-	"golang.org/x/oscar/internal/embeddocs"
+	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/llm"
+	"golang.org/x/oscar/internal/llmapp"
 	"golang.org/x/oscar/internal/search"
+	"golang.org/x/oscar/internal/secret"
 	"golang.org/x/oscar/internal/storage"
 	"golang.org/x/oscar/internal/testutil"
 )
@@ -200,21 +202,11 @@ func TestToOptions(t *testing.T) {
 }
 
 func TestPopulatePage(t *testing.T) {
-	ctx := context.Background()
-	lg := testutil.Slogger(t)
-	db := storage.MemDB()
-	dc := docs.New(lg, db)
-	vector := storage.MemVectorDB(db, lg, "vector")
-	dc.Add("id1", "hello", "hello world")
-	embedder := llm.QuoteEmbedder()
-	embeddocs.Sync(ctx, lg, vector, embedder, dc)
-	g := &Gaby{
-		slog:   lg,
-		db:     db,
-		vector: vector,
-		docs:   dc,
-		embed:  embedder,
-	}
+	g := newTestGaby(t)
+
+	// Add test data relevant for this test.
+	g.docs.Add("id1", "hello", "hello world")
+	g.embedAll(context.Background())
 
 	for _, tc := range []struct {
 		name string
@@ -292,4 +284,23 @@ func TestPopulatePage(t *testing.T) {
 			}
 		})
 	}
+}
+
+func newTestGaby(t *testing.T) *Gaby {
+	t.Helper()
+
+	lg := testutil.Slogger(t)
+	db := storage.MemDB()
+
+	g := &Gaby{
+		slog:   lg,
+		db:     db,
+		vector: storage.MemVectorDB(db, lg, "vector"),
+		github: github.New(lg, db, secret.Empty(), nil),
+		llm:    llmapp.New(lg, llm.EchoTextGenerator(), db),
+		docs:   docs.New(lg, db),
+		embed:  llm.QuoteEmbedder(),
+	}
+
+	return g
 }

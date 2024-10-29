@@ -363,3 +363,25 @@ func TestSearchJSON(t *testing.T) {
 		t.Errorf("\ngot  %s\nwant %s", got, want)
 	}
 }
+
+func TestIsURL(t *testing.T) {
+	for _, tc := range []struct {
+		s    string
+		want bool
+	}{
+		{"", false},
+		{"435", false},
+		{"example.com/hello", false},
+		{"http://example.com", true},
+		{"https://example.com", true},
+		{"https://example.com/path", true},
+		{"https://example.com/path?query=string", true},
+		{"https://example.com/path#fragment", true},
+		{"https://example.com/path?query=string#fragment", true},
+	} {
+		got := isURL(tc.s)
+		if got != tc.want {
+			t.Errorf("%q: got %t, want %t", tc.s, got, tc.want)
+		}
+	}
+}

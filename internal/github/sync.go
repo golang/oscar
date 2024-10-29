@@ -125,7 +125,7 @@ func (*Client) ToDocs(e *Event) (iter.Seq[*docs.Doc], bool) {
 	}
 	return slices.Values([]*docs.Doc{
 		{
-			ID:    fmt.Sprintf("https://github.com/%s/issues/%d", e.Project, e.Issue),
+			ID:    issue.DocID(),
 			Title: CleanTitle(issue.Title),
 			Text:  CleanBody(issue.Body),
 		},

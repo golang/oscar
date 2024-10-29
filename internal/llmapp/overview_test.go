@@ -51,6 +51,21 @@ func TestOverview(t *testing.T) {
 			t.Errorf("PostOverview() mismatch (-got +want):\n%s", diff)
 		}
 	})
+
+	t.Run("RelatedOverview", func(t *testing.T) {
+		got, err := c.RelatedOverview(ctx, doc1, []*Doc{doc2})
+		if err != nil {
+			t.Fatal(err)
+		}
+		promptParts := []string{raw1, raw2, docAndRelated.instructions()}
+		want := &OverviewResult{
+			Overview: llm.EchoResponse(promptParts...),
+			Prompt:   promptParts,
+		}
+		if diff := cmp.Diff(got, want); diff != "" {
+			t.Errorf("RelatedOverview() mismatch (-got +want):\n%s", diff)
+		}
+	})
 }
 
 var (
@@ -149,26 +164,37 @@ func TestResponseUnmarshal(t *testing.T) {
 }
 
 func TestInstructions(t *testing.T) {
-	wantAll := "markdown" // in all instructions
-	wantPost := "post"    // only in PostAndComments
+	wantAll := "markdown"    // in all instructions
+	wantPost := "post"       // only in postAndComments
+	wantRelated := "related" // only in docAndRelated
 
-	t.Run("Documents", func(t *testing.T) {
+	t.Run("documents", func(t *testing.T) {
 		di := documents.instructions()
 		if !strings.Contains(di, wantAll) {
-			t.Errorf("Documents.instructions(): does not contain %q", wantAll)
+			t.Errorf("documents.instructions(): does not contain %q", wantAll)
 		}
 		if strings.Contains(di, wantPost) {
-			t.Errorf("Documents.instructions(): incorrectly contains %q", wantPost)
+			t.Errorf("documents.instructions(): incorrectly contains %q", wantPost)
 		}
 	})
 
-	t.Run("PostAndComments", func(t *testing.T) {
+	t.Run("postAndComments", func(t *testing.T) {
 		pi := postAndComments.instructions()
 		if !strings.Contains(pi, wantAll) {
-			t.Fatalf("PostAndComments.instructions(): does not contain %q", wantAll)
+			t.Fatalf("postAndComments.instructions(): does not contain %q", wantAll)
 		}
 		if !strings.Contains(pi, wantPost) {
-			t.Fatalf("PostAndComments.instructions(): does not contain %q", wantPost)
+			t.Fatalf("postAndComments.instructions(): does not contain %q", wantPost)
+		}
+	})
+
+	t.Run("DocAndRelated", func(t *testing.T) {
+		pi := docAndRelated.instructions()
+		if !strings.Contains(pi, wantAll) {
+			t.Fatalf("docAndRelated.instructions(): does not contain %q", wantAll)
+		}
+		if !strings.Contains(pi, wantRelated) {
+			t.Fatalf("docAndRelated.instructions(): does not contain %q", wantPost)
 		}
 	})
 }

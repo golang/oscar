@@ -1,0 +1,28 @@
+/*
+Copyright 2024 The Go Authors. All rights reserved.
+Use of this source code is governed by a BSD-style
+license that can be found in the LICENSE file.
+*/
+label {
+    min-width: fit-content;
+    width: 10em;
+}
+input {
+    min-width: fit-content;
+    width: 1em;
+}
+#prompt {
+    display: none;
+}
+#prompt ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+#overview {
+    padding: 0em 1em 1em 1em;
+    width: 75%;
+    margin: 1em;
+    border: solid black .1em;
+    border-radius: .25em;
+}
