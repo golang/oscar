@@ -6,10 +6,13 @@ package github
 
 import (
 	"context"
+	"net/http"
 	"reflect"
 	"testing"
 
 	"golang.org/x/oscar/internal/github"
+	"golang.org/x/oscar/internal/httprr"
+	"golang.org/x/oscar/internal/secret"
 	"golang.org/x/oscar/internal/storage"
 	"golang.org/x/oscar/internal/testutil"
 )
@@ -71,5 +74,59 @@ func TestIssueSource(t *testing.T) {
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("got %+v, want %+v", got, want)
+	}
+}
+
+func TestIssueWatcher(t *testing.T) {
+	// Verify that Adapter.IssueWatcher skips events.
+	ctx := context.Background()
+	check := testutil.Checker(t)
+	lg := testutil.Slogger(t)
+	db := storage.MemDB()
+
+	rr, err := httprr.Open("../../github/testdata/markdown.httprr", http.DefaultTransport)
+	check(err)
+	if rr.Recording() {
+		t.Fatal("record from internal/github, not here")
+	}
+	rr.ScrubReq(github.Scrub)
+	a := New(lg, db, secret.Empty(), rr.Client())
+	check(a.AddProject("rsc/markdown"))
+	check(a.Sync(ctx))
+
+	// Count the number of each API.
+	ew := a.ic.EventWatcher("ew")
+	wantCounts := map[string]int{}
+	for e := range ew.Recent() {
+		if i, ok := e.Typed.(*github.Issue); ok && i.PullRequest != nil {
+			wantCounts["PR"]++
+		} else {
+			wantCounts[e.API]++
+		}
+	}
+	if wantCounts["/issues/events"] == 0 {
+		t.Fatal("no events in underlying watcher")
+	}
+	if wantCounts["PR"] == 0 {
+		t.Fatal("no PRs in underlying watchers")
+	}
+
+	// Now check that no events or PRs appear.
+	delete(wantCounts, "/issues/events")
+	delete(wantCounts, "PR")
+	gotCounts := map[string]int{}
+	iw := a.IssueWatcher("iw")
+	for p := range iw.Recent() {
+		switch p.(type) {
+		case *github.Issue:
+			gotCounts["/issues"]++
+		case *github.IssueComment:
+			gotCounts["/issues/comments"]++
+		default:
+			t.Fatalf("bad issue type %T", p)
+		}
+	}
+	if !reflect.DeepEqual(gotCounts, wantCounts) {
+		t.Errorf("got %v, want %v", gotCounts, wantCounts)
 	}
 }
