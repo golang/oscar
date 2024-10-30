@@ -116,14 +116,14 @@ func TestIssueWatcher(t *testing.T) {
 	delete(wantCounts, "PR")
 	gotCounts := map[string]int{}
 	iw := a.IssueWatcher("iw")
-	for p := range iw.Recent() {
-		switch p.(type) {
+	for dp := range iw.Recent() {
+		switch dp.Content.(type) {
 		case *github.Issue:
 			gotCounts["/issues"]++
 		case *github.IssueComment:
 			gotCounts["/issues/comments"]++
 		default:
-			t.Fatalf("bad issue type %T", p)
+			t.Fatalf("bad issue type %T", dp.Content)
 		}
 	}
 	if !reflect.DeepEqual(gotCounts, wantCounts) {

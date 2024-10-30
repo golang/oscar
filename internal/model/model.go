@@ -28,6 +28,12 @@ type Content interface {
 	UpdatedAt_() time.Time
 }
 
+// DBContent is a Content in a [storage.DB].
+type DBContent struct {
+	DBTime  timed.DBTime
+	Content Content
+}
+
 // A Post is a piece of content that can be easily made public ("posted").
 // Examples are email messages, blog posts, and issue comments.
 //

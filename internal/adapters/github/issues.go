@@ -96,10 +96,10 @@ func (s *issueSource) Update(ctx context.Context, p model.Post, u model.Updates)
 	}
 }
 
-// IssueWatcher returns a new [model.Watcher][model.Post] with the given name.
+// IssueWatcher returns a new [model.Watcher][model.DBContent] with the given name.
 // The Watcher delivers only issues and issue comments, not events or pull requests.
 // It picks up where any previous Watcher of the same name left off.
-func (a *Adapter) IssueWatcher(name string) model.Watcher[model.Post] {
+func (a *Adapter) IssueWatcher(name string) model.Watcher[model.DBContent] {
 	return &issueWatcher{a.ic.EventWatcher(name)}
 }
 
@@ -107,16 +107,19 @@ type issueWatcher struct {
 	w *timed.Watcher[*github.Event]
 }
 
-func (w *issueWatcher) Recent() iter.Seq[model.Post] {
-	return func(yield func(model.Post) bool) {
+func (w *issueWatcher) Recent() iter.Seq[model.DBContent] {
+	return func(yield func(model.DBContent) bool) {
 		for e := range w.w.Recent() {
 			switch x := e.Typed.(type) {
 			case *github.Issue:
-				if x.PullRequest == nil && !yield(x) {
+				if x.PullRequest != nil {
+					continue
+				}
+				if !yield(model.DBContent{DBTime: e.DBTime, Content: x}) {
 					return
 				}
 			case *github.IssueComment:
-				if !yield(x) {
+				if !yield(model.DBContent{DBTime: e.DBTime, Content: x}) {
 					return
 				}
 			}
