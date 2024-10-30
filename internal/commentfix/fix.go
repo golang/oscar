@@ -22,6 +22,7 @@ import (
 	"golang.org/x/oscar/internal/actions"
 	"golang.org/x/oscar/internal/diff"
 	"golang.org/x/oscar/internal/github"
+	"golang.org/x/oscar/internal/model"
 	"golang.org/x/oscar/internal/storage"
 	"golang.org/x/oscar/internal/storage/timed"
 	"rsc.io/markdown"
@@ -279,7 +280,7 @@ type action struct {
 // The full db key includes the action kind as well, which includes
 // the Fixer name.
 func (a *action) logKey() []byte {
-	return ordered.Encode(a.IC.url())
+	return ordered.Encode(a.IC.Post().ID())
 }
 
 // result is the result of applying an action.
@@ -425,10 +426,10 @@ func (f *Fixer) newAction(e *github.Event) *action {
 		ic = &issueOrComment{Comment: x}
 		f.slog.Info("fixer run comment", "dbtime", e.DBTime, "url", ic.Comment.URL)
 	}
-	if tm, err := time.Parse(time.RFC3339, ic.updatedAt()); err == nil && tm.Before(f.timeLimit) {
+	if ic.Post().UpdatedAt_().Before(f.timeLimit) {
 		return nil
 	}
-	body, updated := f.Fix(ic.body())
+	body, updated := f.Fix(ic.Post().Body_())
 	if !updated {
 		return nil
 	}
@@ -453,7 +454,7 @@ func (ar *actioner) ForDisplay(data []byte) string {
 	if err := json.Unmarshal(data, &a); err != nil {
 		return fmt.Sprintf("ERROR: %v", err)
 	}
-	d := diff.Diff("before", []byte(a.IC.body()), "after", []byte(a.Body))
+	d := diff.Diff("before", []byte(a.IC.Post().Body_()), "after", []byte(a.Body))
 	return a.IC.htmlURL() + "\n" + string(d)
 }
 
@@ -477,27 +478,27 @@ func (f *Fixer) runAction(ctx context.Context, a *action) (*result, error) {
 	// fixers cannot operate on the same object at the same time.
 	// We need this lock, even though [actions.Run] acquires one.
 	// The action log lock includes the fixer name, but this one locks out all fixers.
-	lock := string(ordered.Encode("commentfix", a.IC.url()))
+	lock := string(ordered.Encode("commentfix", a.IC.Post().ID()))
 	f.db.Lock(lock)
 	defer f.db.Unlock(lock)
 
 	live, err := a.IC.download(ctx, f.github)
 	if err != nil {
 		// unreachable unless github error
-		return nil, fmt.Errorf("commentfix download error: project=%s issue=%d url=%s err=%w", a.Project, a.Issue, a.IC.url(), err)
+		return nil, fmt.Errorf("commentfix download error: project=%s issue=%d url=%s err=%w", a.Project, a.Issue, a.IC.Post().ID(), err)
 	}
-	if live.body() != a.IC.body() {
-		f.slog.Info("commentfix stale", "project", a.Project, "issue", a.Issue, "url", a.IC.url())
+	if live.Body_() != a.IC.Post().Body_() {
+		f.slog.Info("commentfix stale", "project", a.Project, "issue", a.Issue, "url", a.IC.Post().ID())
 		return nil, nil
 	}
-	f.slog.Info("do commentfix rewrite", "project", a.Project, "issue", a.Issue, "url", a.IC.url(), "edit", f.edit, "diff", bodyDiff(a.IC.body(), a.Body))
-	fmt.Fprintf(f.stderr(), "Fix %s:\n%s\n", a.IC.url(), bodyDiff(a.IC.body(), a.Body))
+	f.slog.Info("do commentfix rewrite", "project", a.Project, "issue", a.Issue, "url", a.IC.Post().ID(), "edit", f.edit, "diff", bodyDiff(a.IC.Post().Body_(), a.Body))
+	fmt.Fprintf(f.stderr(), "Fix %s:\n%s\n", a.IC.Post().ID(), bodyDiff(a.IC.Post().Body_(), a.Body))
 
 	if !f.edit {
 		return nil, nil
 	}
 
-	f.slog.Info("commentfix editing github", "url", a.IC.url())
+	f.slog.Info("commentfix editing github", "url", a.IC.Post().ID())
 	if err := a.IC.editBody(ctx, f.github, a.Body); err != nil {
 		// unreachable unless github error
 		return nil, fmt.Errorf("commentfix edit: project=%s issue=%d err=%w", a.Project, a.Issue, err)
@@ -506,7 +507,7 @@ func (f *Fixer) runAction(ctx context.Context, a *action) (*result, error) {
 		// unreachable in tests
 		time.Sleep(sleep)
 	}
-	return &result{URL: a.IC.url()}, nil
+	return &result{URL: a.IC.Post().ID()}, nil
 }
 
 // Latest returns the latest known DBTime marked old by the Fixer's Watcher.
@@ -519,34 +520,18 @@ type issueOrComment struct {
 	Comment *github.IssueComment
 }
 
-func (ic *issueOrComment) updatedAt() string {
+func (ic *issueOrComment) Post() model.Post {
 	if ic.Issue != nil {
-		return ic.Issue.UpdatedAt
+		return ic.Issue
 	}
-	return ic.Comment.UpdatedAt
+	return ic.Comment
 }
 
-func (ic *issueOrComment) body() string {
+func (ic *issueOrComment) download(ctx context.Context, gh *github.Client) (model.Post, error) {
 	if ic.Issue != nil {
-		return ic.Issue.Body
+		return gh.DownloadIssue(ctx, ic.Issue.URL)
 	}
-	return ic.Comment.Body
-}
-
-func (ic *issueOrComment) download(ctx context.Context, gh *github.Client) (*issueOrComment, error) {
-	if ic.Issue != nil {
-		live, err := gh.DownloadIssue(ctx, ic.Issue.URL)
-		return &issueOrComment{Issue: live}, err
-	}
-	live, err := gh.DownloadIssueComment(ctx, ic.Comment.URL)
-	return &issueOrComment{Comment: live}, err
-}
-
-func (ic *issueOrComment) url() string {
-	if ic.Issue != nil {
-		return ic.Issue.URL
-	}
-	return ic.Comment.URL
+	return gh.DownloadIssueComment(ctx, ic.Comment.URL)
 }
 
 func (ic *issueOrComment) htmlURL() string {

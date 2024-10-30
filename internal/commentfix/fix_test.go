@@ -251,9 +251,6 @@ func expectResultSubstrings(t *testing.T, db storage.DB, subs ...string) {
 		wants[s] = true
 	}
 	entries := actionLogEntries(db)
-	if g, w := len(entries), len(wants); g != w {
-		t.Fatalf("got %d action log entries, want %d", g, w)
-	}
 	for _, e := range entries {
 		g := string(e.Result)
 		ok := false
@@ -267,6 +264,9 @@ func expectResultSubstrings(t *testing.T, db storage.DB, subs ...string) {
 		if !ok {
 			t.Fatalf("%s has no substring in %q", g, slices.Collect(maps.Keys(wants)))
 		}
+	}
+	if len(wants) > 0 {
+		t.Fatalf("action log results missing for these substrings: %q", slices.Collect(maps.Keys(wants)))
 	}
 }
 
