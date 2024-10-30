@@ -10,10 +10,13 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/httprr"
+	"golang.org/x/oscar/internal/model"
 	"golang.org/x/oscar/internal/secret"
 	"golang.org/x/oscar/internal/storage"
+	"golang.org/x/oscar/internal/storage/timed"
 	"golang.org/x/oscar/internal/testutil"
 )
 
@@ -94,39 +97,79 @@ func TestIssueWatcher(t *testing.T) {
 	check(a.AddProject("rsc/markdown"))
 	check(a.Sync(ctx))
 
-	// Count the number of each API.
-	ew := a.ic.EventWatcher("ew")
-	wantCounts := map[string]int{}
-	for e := range ew.Recent() {
-		if i, ok := e.Typed.(*github.Issue); ok && i.PullRequest != nil {
-			wantCounts["PR"]++
-		} else {
-			wantCounts[e.API]++
+	// Collect summaries of all events.
+	allItems := recentItemsFromEvents(a.ic.EventWatcher("ew"))
+	// The items from the issue watcher should be the subsequence of allItems that
+	// are issues and issue comments.
+	var wantItems []item
+	sawIssue := false
+	sawComment := false
+	for _, it := range allItems {
+		if it.API == "/issues" {
+			wantItems = append(wantItems, it)
+			sawIssue = true
+		} else if it.API == "/issues/comments" {
+			wantItems = append(wantItems, it)
+			sawComment = true
 		}
 	}
-	if wantCounts["/issues/events"] == 0 {
-		t.Fatal("no events in underlying watcher")
-	}
-	if wantCounts["PR"] == 0 {
-		t.Fatal("no PRs in underlying watchers")
+	if !sawIssue || !sawComment {
+		t.Fatal("missing at least one issue and one issue comment")
 	}
 
-	// Now check that no events or PRs appear.
-	delete(wantCounts, "/issues/events")
-	delete(wantCounts, "PR")
-	gotCounts := map[string]int{}
-	iw := a.IssueWatcher("iw")
-	for dp := range iw.Recent() {
-		switch dp.Content.(type) {
-		case *github.Issue:
-			gotCounts["/issues"]++
-		case *github.IssueComment:
-			gotCounts["/issues/comments"]++
-		default:
-			t.Fatalf("bad issue type %T", dp.Content)
+	issueItems := recentItemsFromPosts(a.IssueWatcher("iw"))
+	if diff := cmp.Diff(wantItems, issueItems); diff != "" {
+		t.Errorf("mismatch (-want, +got):\n%s", diff)
+	}
+}
+
+// item is a summary of a github.Event or model.DBContent, for testing.
+type item struct {
+	DBTime timed.DBTime
+	Issue  int64
+	API    string // github API, or "PR" for pull requests
+	ID     int64
+}
+
+func recentItemsFromEvents(w *timed.Watcher[*github.Event]) []item {
+	var its []item
+	for e := range w.Recent() {
+		it := item{
+			DBTime: e.DBTime,
+			Issue:  e.Issue,
+			API:    e.API,
+			ID:     e.ID,
 		}
+		if i, ok := e.Typed.(*github.Issue); ok {
+			it.ID = i.Number
+			if i.PullRequest != nil {
+				it.API = "PR"
+			}
+		} else if c, ok := e.Typed.(*github.IssueComment); ok {
+			it.ID = c.CommentID()
+		}
+		its = append(its, it)
 	}
-	if !reflect.DeepEqual(gotCounts, wantCounts) {
-		t.Errorf("got %v, want %v", gotCounts, wantCounts)
+	return its
+}
+
+func recentItemsFromPosts(w model.Watcher[model.DBContent]) []item {
+	var its []item
+	for dp := range w.Recent() {
+		it := item{DBTime: dp.DBTime}
+		switch x := dp.Content.(type) {
+		case *github.Issue:
+			it.API = "/issues"
+			it.Issue = x.Number
+			it.ID = x.Number
+		case *github.IssueComment:
+			it.API = "/issues/comments"
+			it.Issue = x.Issue()
+			it.ID = x.CommentID()
+		default:
+			panic("bad post type")
+		}
+		its = append(its, it)
 	}
+	return its
 }
