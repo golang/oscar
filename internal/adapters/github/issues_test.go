@@ -99,8 +99,14 @@ func TestIssueWatcher(t *testing.T) {
 
 	// Collect summaries of all events.
 	allItems := recentItemsFromEvents(a.ic.EventWatcher("ew"))
-	// The items from the issue watcher should be the subsequence of allItems that
+	issueItems := recentItemsFromPosts(a.IssueWatcher("iw"))
+	checkIssueItems(t, allItems, issueItems)
+}
+
+func checkIssueItems(t *testing.T, allItems, issueItems []item) {
+	// The issueItems should be the subsequence of allItems that
 	// are issues and issue comments.
+	t.Helper()
 	var wantItems []item
 	sawIssue := false
 	sawComment := false
@@ -117,8 +123,81 @@ func TestIssueWatcher(t *testing.T) {
 		t.Fatal("missing at least one issue and one issue comment")
 	}
 
-	issueItems := recentItemsFromPosts(a.IssueWatcher("iw"))
 	if diff := cmp.Diff(wantItems, issueItems); diff != "" {
+		t.Errorf("mismatch (-want, +got):\n%s", diff)
+	}
+}
+
+func TestReplaceWatcher(t *testing.T) {
+	// Verify that an event watcher can be safely replaced by an issue watcher
+	// with the same name, and vice versa.
+	ctx := context.Background()
+	check := testutil.Checker(t)
+	lg := testutil.Slogger(t)
+	db := storage.MemDB()
+
+	rr, err := httprr.Open("../../github/testdata/markdown.httprr", http.DefaultTransport)
+	check(err)
+	if rr.Recording() {
+		t.Fatal("record from internal/github, not here")
+	}
+	rr.ScrubReq(github.Scrub)
+	a := New(lg, db, secret.Empty(), rr.Client())
+	check(a.AddProject("rsc/markdown"))
+	check(a.Sync(ctx))
+
+	ew := a.ic.EventWatcher("w")
+
+	// Mark at least one issue and one comment old with an event watcher.
+	markedIssue := false
+	markedComment := false
+	for e := range ew.Recent() {
+		ew.MarkOld(e.DBTime)
+		switch x := e.Typed.(type) {
+		case *github.Issue:
+			if x.PullRequest == nil {
+				markedIssue = true
+			}
+		case *github.IssueComment:
+			markedComment = true
+		}
+		if markedIssue && markedComment {
+			break
+		}
+	}
+
+	// Collect everything else.
+
+	// Switch to an issue watcher with the same name.
+	iw := a.IssueWatcher("w")
+	issueItems := recentItemsFromPosts(iw)
+	if len(issueItems) == 0 {
+		t.Fatal("no issue items")
+	}
+	// The issue watcher should start from the same place as the event watcher.
+	allItems := recentItemsFromEvents(ew)
+	checkIssueItems(t, allItems, issueItems)
+
+	// Mark something old using the issue watcher.
+	for range iw.Recent() { // MarkOld must be called within Recent.
+		iw.MarkOld(issueItems[0].DBTime)
+		break
+	}
+
+	// The event watcher should skip that.
+	start := -1
+	for i, it := range allItems {
+		if it.API == "/issues" || it.API == "/issues/comments" {
+			// This is the event that we marked old above; recent
+			// events should begin just after.
+			start = i
+			break
+		}
+	}
+	if start < 0 {
+		t.Fatal("no issues or comments left")
+	}
+	if diff := cmp.Diff(allItems[start+1:], recentItemsFromEvents(ew)); diff != "" {
 		t.Errorf("mismatch (-want, +got):\n%s", diff)
 	}
 }
