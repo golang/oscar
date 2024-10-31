@@ -368,13 +368,14 @@ func (c *Client) conversations(ctx context.Context, group, after, before string)
 			if err != nil {
 				yield(nil, err)
 			} else {
-				messages, err := conversationMessages(html)
+				title, messages, err := titleAndMessages(html)
 				if err != nil {
 					// unreachable unless error in crawler or html package
 					c.db.Panic("ggroups extract messages", "conversation", u, "err", err)
 				}
 				conv := &Conversation{
 					Group:    group,
+					Title:    title,
 					URL:      u,
 					Messages: messages,
 				}
@@ -446,29 +447,45 @@ func getHTML(ctx context.Context, hc *http.Client, u string) ([]byte, error) {
 	return body, nil
 }
 
-// conversationMessages extracts HTML fragments of h
-// containing individual conversation messages.
+// titleAndMessages extracts HTML fragments of h
+// containing individual conversation messages as
+// well as the title.
 // It returns an error if h is not HTML.
-func conversationMessages(h []byte) ([]string, error) {
+func titleAndMessages(h []byte) (string, []string, error) {
 	root, err := html.Parse(bytes.NewReader(h))
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
 
 	// Currently, Google Groups web page has individual
 	// messages wrapped in top-level section HTML elements.
 	sectionNodes := sections(root)
+	if len(sectionNodes) == 0 {
+		return "", nil, nil
+	}
+
+	// All sections are grouped together with a parent
+	// that has "aria-label" set to the conversation
+	// name. There does not seem to be a more structured
+	// way of getting the title.
+	var title string
+	for _, a := range sectionNodes[0].Parent.Attr {
+		if a.Key == "aria-label" {
+			title = a.Val
+			break
+		}
+	}
 
 	var sections []string
 	for _, s := range sectionNodes {
 		clean(s) // reduce the size of each message
 		var buf bytes.Buffer
 		if err := html.Render(&buf, s); err != nil {
-			return nil, err
+			return "", nil, err
 		}
 		sections = append(sections, buf.String())
 	}
-	return sections, nil
+	return title, sections, nil
 }
 
 // sections recursively collects all

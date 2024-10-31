@@ -66,6 +66,9 @@ func TestSync(t *testing.T) {
 	if len(cs) != 1 {
 		t.Errorf("got %d conversations; want 1", len(cs))
 	}
+	if cs[0].Title != "release.r57.1" {
+		t.Errorf("got %q as title; want 'release.r57.1'", cs[0].Title)
+	}
 	msgs := cs[0].Messages
 	if len(msgs) != 1 {
 		t.Errorf("got %d message; want 1", len(msgs))
@@ -180,40 +183,46 @@ func TestSyncTesting(t *testing.T) {
 	}
 }
 
-func TestConversationMessages(t *testing.T) {
+func TestTitleAndMessages(t *testing.T) {
 	check := testutil.Checker(t)
 	h := `<html>
 <head></head>
 <body>
 <script>some javascript</script>
 <div id="go">Go</div>
+<div aria-label="golang-test">
 <section><div>Section 1</div></section>
 <div><section>Section 2</section></div>
 <section>Section 3<h1><section>Section 4</section></h1></section>
+</div>
 </body>
 </html>`
-	msgs, err := conversationMessages([]byte(h))
+	title, msgs, err := titleAndMessages([]byte(h))
 	check(err)
 	if len(msgs) != 4 {
 		t.Errorf("got %d messages; want 4", len(msgs))
 	}
 	want := "<section><div>Section 1</div></section>"
 	if msgs[0] != want {
-		t.Errorf("got %s as the first message; want %s", msgs[0], want)
+		t.Errorf("got %q as the first message; want %s", msgs[0], want)
+	}
+	if title != "golang-test" {
+		t.Errorf("got %q as title; want 'golang-test'", title)
 	}
 }
 
 func TestTruncate(t *testing.T) {
 	dls := dbLimitSize
-	dbLimitSize = 100
+	dbLimitSize = 120
 	defer func() { dbLimitSize = dls }()
 
 	c := &Conversation{
 		URL:      "https://groups.google.com/g/golang/test/c/123456",
+		Title:    "convo",
 		Messages: []string{"open", "reply", "close"},
 	}
 
-	// Conversation c in JSON is 105 bytes big, so
+	// Conversation c in JSON is 121 bytes big, so
 	// only the last message should be truncated.
 	if !truncate(c) {
 		t.Error("want conversation truncated")

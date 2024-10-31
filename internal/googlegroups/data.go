@@ -47,6 +47,8 @@ const timeStampLayout = time.DateOnly
 type Conversation struct {
 	// Group name.
 	Group string
+	// Title of the conversation.
+	Title string
 	// URL points to the Google Groups web
 	// page of the conversation. The page
 	// contains conversation messages.
