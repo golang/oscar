@@ -51,8 +51,10 @@ type Conversation struct {
 	// page of the conversation. The page
 	// contains conversation messages.
 	URL string
-	// HTML is the raw html obtained from URL.
-	HTML []byte
+	// Messages are raw html data that contain
+	// individual conversation messages obtained
+	// from URL.
+	Messages []string
 
 	updated   string // for testing
 	interrupt bool   // for testing

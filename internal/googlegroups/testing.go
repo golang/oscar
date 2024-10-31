@@ -121,7 +121,7 @@ func (tc *TestingClient) LoadTxtarData(data []byte) error {
 			case "URL":
 				c.URL = val
 			case "HTML":
-				c.HTML = []byte(val)
+				c.Messages = []string{val}
 			case "Updated":
 				c.updated = val
 			case "interrupt":

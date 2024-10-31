@@ -12,6 +12,7 @@
 package googlegroups
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -28,6 +29,7 @@ import (
 	"testing"
 	"time"
 
+	"golang.org/x/net/html"
 	"golang.org/x/oscar/internal/crawl"
 	"golang.org/x/oscar/internal/secret"
 	"golang.org/x/oscar/internal/storage"
@@ -317,6 +319,12 @@ func prev(t string) (string, error) {
 	return tt.Add(-24 * time.Hour).Format(timeStampLayout), nil
 }
 
+// dbLimitSize is the limit on the value size
+// that can be stored to firestore, in bytes.
+// See https://firebase.google.com/docs/firestore/quotas
+// for more information.
+var dbLimitSize = 1048576
+
 // conversations returns an iterator, in reverse chronological order, over
 // conversations updated in the interval (before, after).
 func (c *Client) conversations(ctx context.Context, group, after, before string) iter.Seq2[*Conversation, error] {
@@ -360,12 +368,21 @@ func (c *Client) conversations(ctx context.Context, group, after, before string)
 			if err != nil {
 				yield(nil, err)
 			} else {
-				conv := &Conversation{
-					Group: group,
-					URL:   u,
-					HTML:  html,
+				messages, err := conversationMessages(html)
+				if err != nil {
+					// unreachable unless error in crawler or html package
+					c.db.Panic("ggroups extract messages", "conversation", u, "err", err)
 				}
-				yield(conv, nil)
+				conv := &Conversation{
+					Group:    group,
+					URL:      u,
+					Messages: messages,
+				}
+				if truncate(conv) {
+					c.slog.Warn("ggroups conversation truncated", "conversation", u)
+				} else {
+					yield(conv, nil)
+				}
 			}
 		}
 		return
@@ -427,4 +444,82 @@ func getHTML(ctx context.Context, hc *http.Client, u string) ([]byte, error) {
 	}
 
 	return body, nil
+}
+
+// conversationMessages extracts HTML fragments of h
+// containing individual conversation messages.
+// It returns an error if h is not HTML.
+func conversationMessages(h []byte) ([]string, error) {
+	root, err := html.Parse(bytes.NewReader(h))
+	if err != nil {
+		return nil, err
+	}
+
+	// Currently, Google Groups web page has individual
+	// messages wrapped in top-level section HTML elements.
+	sectionNodes := sections(root)
+
+	var sections []string
+	for _, s := range sectionNodes {
+		clean(s) // reduce the size of each message
+		var buf bytes.Buffer
+		if err := html.Render(&buf, s); err != nil {
+			return nil, err
+		}
+		sections = append(sections, buf.String())
+	}
+	return sections, nil
+}
+
+// sections recursively collects all
+// elements with section HTML tag.
+func sections(n *html.Node) []*html.Node {
+	var secs []*html.Node
+	for c := n.FirstChild; c != nil; c = c.NextSibling {
+		if c.Type == html.ElementNode && c.Data == "section" {
+			secs = append(secs, c)
+		}
+		secs = append(secs, sections(c)...)
+	}
+	return secs
+}
+
+// clean recursively removes tag attributes.
+func clean(n *html.Node) {
+	for c := n.FirstChild; c != nil; c = c.NextSibling {
+		c.Attr = nil // clean attributes
+		clean(c)
+	}
+}
+
+// truncate removes trailing messages from c until
+// the total size of c is below dbLimitSize.
+// It returns true if truncation happened, false otherwise.
+func truncate(c *Conversation) bool {
+	s := size(c)
+	truncated := false
+	for s >= dbLimitSize {
+		if len(c.Messages) == 0 {
+			// Sanity check, as this only happens if
+			// conversation title and URL are together
+			// of dbLimitSize.
+			break
+		}
+
+		li := len(c.Messages) - 1
+		lms := c.Messages[li]
+		c.Messages = c.Messages[:li]
+		truncated = true
+		// Take into account quotation marks around the
+		// message, potential space before it, and
+		// potential comma after it.
+		s -= len(lms) + 4
+	}
+	return truncated
+}
+
+// size is the size of c in its
+// db representation, in bytes.
+func size(c *Conversation) int {
+	return len(storage.JSON(c))
 }

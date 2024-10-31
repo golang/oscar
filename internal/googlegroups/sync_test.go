@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"slices"
 	"strings"
 	"testing"
 
@@ -65,10 +66,14 @@ func TestSync(t *testing.T) {
 	if len(cs) != 1 {
 		t.Errorf("got %d conversations; want 1", len(cs))
 	}
+	msgs := cs[0].Messages
+	if len(msgs) != 1 {
+		t.Errorf("got %d message; want 1", len(msgs))
+	}
 
 	const wantMessage = "just tagged our second stable Go release, release.r57.1."
-	if html := string(cs[0].HTML); !strings.Contains(html, wantMessage) {
-		t.Errorf("could not locate '%s' message in the %s conversation", wantMessage, cs[0].URL)
+	if html := msgs[0]; !strings.Contains(html, wantMessage) {
+		t.Errorf("could not locate '%s' message in the %s message", wantMessage, cs[0].URL)
 	}
 
 	// Now go a little bit into the future, but there should
@@ -77,7 +82,7 @@ func TestSync(t *testing.T) {
 	check(c.Sync(ctx))
 
 	if got := len(convs()); got != 1 {
-		t.Errorf("got %d conversations; want 2", got)
+		t.Errorf("got %d conversations; want 1", got)
 	}
 }
 
@@ -172,5 +177,53 @@ func TestSyncTesting(t *testing.T) {
 				t.Errorf("want %d conversations; got %d", d.wantConvs, gotConvs)
 			}
 		})
+	}
+}
+
+func TestConversationMessages(t *testing.T) {
+	check := testutil.Checker(t)
+	h := `<html>
+<head></head>
+<body>
+<script>some javascript</script>
+<div id="go">Go</div>
+<section><div>Section 1</div></section>
+<div><section>Section 2</section></div>
+<section>Section 3<h1><section>Section 4</section></h1></section>
+</body>
+</html>`
+	msgs, err := conversationMessages([]byte(h))
+	check(err)
+	if len(msgs) != 4 {
+		t.Errorf("got %d messages; want 4", len(msgs))
+	}
+	want := "<section><div>Section 1</div></section>"
+	if msgs[0] != want {
+		t.Errorf("got %s as the first message; want %s", msgs[0], want)
+	}
+}
+
+func TestTruncate(t *testing.T) {
+	dls := dbLimitSize
+	dbLimitSize = 100
+	defer func() { dbLimitSize = dls }()
+
+	c := &Conversation{
+		URL:      "https://groups.google.com/g/golang/test/c/123456",
+		Messages: []string{"open", "reply", "close"},
+	}
+
+	// Conversation c in JSON is 105 bytes big, so
+	// only the last message should be truncated.
+	if !truncate(c) {
+		t.Error("want conversation truncated")
+	}
+	want := []string{"open", "reply"}
+	if !slices.Equal(want, c.Messages) {
+		t.Errorf("want %v messages; got %v", want, c.Messages)
+	}
+
+	if truncate(c) {
+		t.Error("conversation truncation not idempotent")
 	}
 }
