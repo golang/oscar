@@ -332,7 +332,7 @@ func ScanAfterDBTime(lg *slog.Logger, db storage.DB, t timed.DBTime, filter func
 func ScanAfter(lg *slog.Logger, db storage.DB, t time.Time, filter func(actionKind string, key []byte) bool) iter.Seq[*Entry] {
 	// Find the first DBTime associated with a time after t.
 	// If there is none, use the maximum DBTime.
-	dbt := math.MaxInt64
+	dbt := int64(math.MaxInt64)
 	for key := range db.Scan(ordered.Encode(wallKind, t.UnixNano()+1), ordered.Encode(wallKind, ordered.Inf)) {
 		// The DBTime is the third part of the key, after wallKind and the time.Time.
 		if err := ordered.Decode(key, nil, nil, &dbt); err != nil {
