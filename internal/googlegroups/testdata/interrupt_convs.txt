@@ -1,0 +1,41 @@
+-- conversation#1 --
+Group: test
+URL: https://groups.google.com/g/test/c/1
+Updated: 2024-10-20
+HTML: update
+-- conversation#2 --
+Group: test
+URL: https://groups.google.com/g/test/c/2
+Updated: 2024-10-19
+HTML: update
+-- conversation#3 --
+Group: different-test
+URL: https://groups.google.com/g/different-test/c/3
+Updated: 2024-10-19
+HTML: update
+-- conversation#4 --
+Group: test
+URL: https://groups.google.com/g/test/c/4
+Updated: 2024-10-19
+HTML: update
+-- conversation#5 --
+Group: test
+URL: https://groups.google.com/g/test/c/5
+Updated: 2024-10-19
+HTML: update
+-- conversation#6 --
+Group: test
+URL: https://groups.google.com/g/test/c/6
+Updated: 2024-10-18
+HTML: update
+-- conversation#7 --
+Group: test
+URL: https://groups.google.com/g/test/c/7
+Updated: 2024-10-18
+HTML: update
+interrupt: true
+-- conversation#8 --
+Group: test
+URL: https://groups.google.com/g/test/c/8
+Updated: 2024-10-17
+HTML: update

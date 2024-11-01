@@ -164,7 +164,7 @@ func TestSyncTesting(t *testing.T) {
 
 			tc := c.Testing()
 			tc.setLimit(d.limit)
-			check(tc.LoadTxtar("testdata/convs.txt"))
+			check(tc.LoadTxtar("testdata/interrupt_convs.txt"))
 
 			err := c.Sync(ctx)
 			if d.wantInterrupt {

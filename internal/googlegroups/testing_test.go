@@ -18,8 +18,8 @@ func TestLoadTxtar(t *testing.T) {
 
 	tc := c.Testing()
 	check(tc.LoadTxtar("testdata/convs.txt"))
-	if len(tc.convs) != 8 {
-		t.Errorf("want 8 conversations; got %d", len(tc.convs))
+	if len(tc.convs) != 3 {
+		t.Errorf("want 3 conversations; got %d", len(tc.convs))
 	}
 }
 
@@ -30,7 +30,7 @@ func TestTestingChanges(t *testing.T) {
 	c := New(nil, nil, nil, nil)
 	tc := c.Testing()
 	tc.setLimit(1000) // grab everything in one batch
-	check(tc.LoadTxtar("testdata/convs.txt"))
+	check(tc.LoadTxtar("testdata/interrupt_convs.txt"))
 
 	cnt := 0
 	// There should be three conversations matching the criteria.

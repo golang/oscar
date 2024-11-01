@@ -118,6 +118,8 @@ func (tc *TestingClient) LoadTxtarData(data []byte) error {
 			switch key {
 			case "Group":
 				c.Group = val
+			case "Title":
+				c.Title = val
 			case "URL":
 				c.URL = val
 			case "HTML":

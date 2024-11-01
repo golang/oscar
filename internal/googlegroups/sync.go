@@ -33,18 +33,21 @@ import (
 	"golang.org/x/oscar/internal/crawl"
 	"golang.org/x/oscar/internal/secret"
 	"golang.org/x/oscar/internal/storage"
+	"golang.org/x/oscar/internal/storage/timed"
 	"rsc.io/ordered"
 )
 
 const (
-	syncGroupKind    = "google.SyncGroup"
-	conversationKind = "google.GroupConversation"
+	syncGroupKind          = "google.SyncGroup"
+	conversationKind       = "google.GroupConversation"
+	conversationUpdateKind = "google.GroupConversationUpdate"
 )
 
 // This package stores timed entries in the database of the form:
 //
 //	["google.SyncGroup", group] => JSON of groupSync structure
 //	["google.GroupConversation", group, URL] => Conversation JSON
+//      ["google.GroupConversationUpdateByTime", DBTime, group, URL] => []
 //
 // Google Groups do not have an API for querying groups or conversations.
 // Further, iterating through conversations via web page is not possible
@@ -281,6 +284,8 @@ func (c *Client) syncIntervalConversations(ctx context.Context, group *groupSync
 
 			key := o(conversationKind, group.Name, conv.URL)
 			b.Set(key, storage.JSON(conv))
+			// Record that the change was updated.
+			timed.Set(c.db, b, conversationUpdateKind, o(group.Name, conv.URL), nil)
 
 			b.MaybeApply()
 
@@ -381,6 +386,9 @@ func (c *Client) conversations(ctx context.Context, group, after, before string)
 				}
 				if truncate(conv) {
 					c.slog.Warn("ggroups conversation truncated", "conversation", u)
+				} else if len(messages) == 0 {
+					// In case Google Groups HTML structure changes.
+					c.slog.Error("ggroups conversation with no messages", "conversation", u)
 				} else {
 					yield(conv, nil)
 				}

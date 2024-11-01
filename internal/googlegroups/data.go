@@ -53,7 +53,7 @@ type Conversation struct {
 	// page of the conversation. The page
 	// contains conversation messages.
 	URL string
-	// Messages are raw html data that contain
+	// Messages are raw HTML data that contain
 	// individual conversation messages obtained
 	// from URL.
 	Messages []string
@@ -72,18 +72,18 @@ type ConversationEvent struct {
 
 // ConversationWatcher returns a new [timed.Watcher] with the given name.
 // It picks up where any previous Watcher of the same name left off.
-func (c *Client) ConversationWatcher(name string) *timed.Watcher[ConversationEvent] {
-	return timed.NewWatcher(c.slog, c.db, name, conversationKind, c.decodeConversationEvent)
+func (c *Client) ConversationWatcher(name string) *timed.Watcher[*ConversationEvent] {
+	return timed.NewWatcher(c.slog, c.db, name, conversationUpdateKind, c.decodeConversationEvent)
 }
 
 // decodeConversationEvent decodes a conversationKind [timed.Entry] into
 // a conversation event.
-func (c *Client) decodeConversationEvent(t *timed.Entry) ConversationEvent {
+func (c *Client) decodeConversationEvent(t *timed.Entry) *ConversationEvent {
 	ce := ConversationEvent{
 		DBTime: t.ModTime,
 	}
-	if err := ordered.Decode(t.Key, &ce.Group, &ce.URL, nil); err != nil {
+	if err := ordered.Decode(t.Key, &ce.Group, &ce.URL); err != nil {
 		c.db.Panic("ggroups conversation event decode", "key", storage.Fmt(t.Key), "err", err)
 	}
-	return ce
+	return &ce
 }
