@@ -267,6 +267,9 @@ func (c *Client) syncIntervalConversations(ctx context.Context, group *groupSync
 			if err != nil {
 				return err
 			}
+			if err := ctx.Err(); err != nil {
+				return err
+			}
 
 			nConversations++
 
