@@ -19,6 +19,8 @@ import (
 	"golang.org/x/oscar/internal/search"
 )
 
+var _ page = actionLogPage{}
+
 // a searchPage holds the fields needed to display the results
 // of a search.
 type searchPage struct {

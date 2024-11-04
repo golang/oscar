@@ -19,6 +19,8 @@ import (
 	"golang.org/x/oscar/internal/storage"
 )
 
+var _ page = actionLogPage{}
+
 // actionLogPage is the data for the action log HTML template.
 type actionLogPage struct {
 	Start, End         endpoint

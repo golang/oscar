@@ -18,6 +18,8 @@ import (
 	"golang.org/x/oscar/internal/search"
 )
 
+var _ page = overviewPage{}
+
 // overviewPage holds the fields needed to display the results
 // of a search.
 type overviewPage struct {

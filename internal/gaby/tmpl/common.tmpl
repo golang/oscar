@@ -1,0 +1,36 @@
+<!--
+Copyright 2024 The Go Authors. All rights reserved.
+Use of this source code is governed by a BSD-style
+license that can be found in the LICENSE file.
+
+Implement [page] to use templates in this file.
+-->
+{{define "head"}}
+  <title>{{.Title}}</title>
+	{{template "nav-style" .}}
+  {{range .Styles}}
+    <link rel="stylesheet" href="{{.}}"/>
+  {{end}}
+{{end}}
+
+{{define "header"}}
+  {{template "nav"}}
+  <h1>{{.Title}}</h1>
+  <p id="desc">{{.Description}}</p>
+{{end}}
+
+{{define "nav"}}
+  <nav>
+    <a href="/actionlog" class="nav" id="actionlog-nav">Action Log</a> |
+    <a href="/search" class="nav" id="search-nav">Search</a> |
+    <a href="/overview" class="nav" id="overview-nav">Overviews</a>
+  </nav>
+{{end}}
+
+{{define "nav-style"}}
+  <style>
+  nav a#{{.NavID}}-nav {
+    font-weight: bold;
+  }
+  </style>
+{{end}}

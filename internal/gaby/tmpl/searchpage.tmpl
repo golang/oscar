@@ -6,14 +6,11 @@ license that can be found in the LICENSE file.
 <!doctype html>
 <html>
   <head>
-    <title>Oscar Search</title>
-	<link rel="stylesheet" href="static/style.css"/>
-	<link rel="stylesheet" href="static/search.css"/>
+    {{template "head" .}}
   </head>
   <body>
     <div class="section" class="header">
-	 <h1>Gaby search</h1>
-		<p>Search Gaby's database of GitHub issues and Go documentation.</p>
+		{{template "header" .}}
 		<div class="filter-tips-box">
 			<div class="toggle" onclick="toggle()">[show/hide input tips]</div>
 			<ul id="filter-tips">

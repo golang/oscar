@@ -3,9 +3,6 @@ Copyright 2024 The Go Authors. All rights reserved.
 Use of this source code is governed by a BSD-style
 license that can be found in the LICENSE file.
 */
-.header {
-    display: block;
-}
 form span {
     display: block;
     padding-bottom: .2em
@@ -39,9 +36,6 @@ div.result span {
 }
 div.result {
     padding-bottom: 1em;
-}
-div.section {
-    padding: 0em 2em 1em 1em;
 }
 .filter-tips-box {
     font-size: .75em;

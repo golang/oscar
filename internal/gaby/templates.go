@@ -23,12 +23,18 @@ var tmplFS embed.FS
 var staticFS embed.FS
 
 const (
+	// Landing pages
 	actionLogTmplFile    = "actionlog.tmpl"
 	searchPageTmplFile   = "searchpage.tmpl"
 	overviewPageTmplFile = "overviewpage.tmpl"
+
+	// Common template file
+	commonTmpl = "common.tmpl"
 )
 
 func newTemplate(filename string, funcs template.FuncMap) *template.Template {
 	return template.Must(template.New(filename).Funcs(funcs).
-		ParseFS(template.TrustedFSFromEmbed(tmplFS), path.Join("tmpl", filename)))
+		ParseFS(template.TrustedFSFromEmbed(tmplFS),
+			path.Join("tmpl", filename),
+			path.Join("tmpl", commonTmpl)))
 }

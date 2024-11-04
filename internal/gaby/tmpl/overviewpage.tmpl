@@ -6,20 +6,11 @@ license that can be found in the LICENSE file.
 <!doctype html>
 <html>
   <head>
-    <title>Oscar Overviews</title>
-	<link rel="stylesheet" href="static/style.css"/>
-	<link rel="stylesheet" href="static/search.css"/>
-	<link rel="stylesheet" href="static/overview.css"/>
+	{{template "head" .}}
   </head>
   <body>
     <div class="section" class="header">
-	 <h1>Oscar Overviews</h1>
-		<p>This tool can:</p>
-		<ul>
-			<li>Summarize a golang/go issue and its comments</li>
-			<li>Summarize the relationship between a golang/go issue and its "related documents"</li>
-		</ul>
-		<p>This is a first draft. Feedback welcome!</p>
+	  {{template "header" .}}
 		<div class="filter-tips-box">
 			<div class="toggle" onclick="toggleTips()">[show/hide input tips]</div>
 			<ul id="filter-tips">

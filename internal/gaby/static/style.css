@@ -15,6 +15,23 @@ a {
 a:hover {
     text-decoration: underline;
 }
+.header {
+    display: block;
+}
+div.section {
+    padding: 0em 2em 1em 1em;
+}
+nav {
+    padding-top: 1em;
+}
+h1 {
+    margin: .25em 0;
+}
+#desc {
+    min-width: 200px;
+    width: 40%;
+    padding-bottom: .5em;
+}
 
 /* Wrap long text inside <pre>. */
 pre.wrap {
