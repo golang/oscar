@@ -374,7 +374,9 @@ func (c *Client) conversations(ctx context.Context, group, after, before string)
 			// not pointing to the conversation page itself.
 			html, err := getHTML(ctx, c.http, u)
 			if err != nil {
-				yield(nil, err)
+				if !yield(nil, err) {
+					return
+				}
 			} else {
 				title, messages, err := titleAndMessages(html)
 				if err != nil {
@@ -393,7 +395,9 @@ func (c *Client) conversations(ctx context.Context, group, after, before string)
 					// In case Google Groups HTML structure changes.
 					c.slog.Error("ggroups conversation with no messages", "conversation", u)
 				} else {
-					yield(conv, nil)
+					if !yield(conv, nil) {
+						return
+					}
 				}
 			}
 		}
