@@ -137,7 +137,7 @@ func openVecDB(spec string) (storage.VectorDB, error) {
 
 	switch kind {
 	case "pebble":
-		db, err := openDB(spec)
+		db, err := pebble.Open(slog.Default(), dbInfo)
 		if err != nil {
 			return nil, err
 		}
