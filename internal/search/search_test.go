@@ -35,6 +35,7 @@ func TestKind(t *testing.T) {
 		{"https://github.com/golang/go/discussions/123", "GitHubDiscussion"},
 		{"https://github.com/golang/go/discussions/123#discussioncomment-1234", "Unknown"},
 		{"https://go-review.googlesource.com/c/test/+/1#related-content", "GoGerritChange"},
+		{"https://groups.google.com/g/golang-nuts/c/12142142354", "GoogleGroupsConversation"},
 	} {
 		got := docIDKind(test.id)
 		if got != test.want {
@@ -144,6 +145,7 @@ func TestOptions(t *testing.T) {
 		8:  "https://go.dev/wiki/something",
 		9:  "https://pkg.go.dev/",
 		10: "https://go-review.googlesource.com/c/go/+/1",
+		11: "https://groups.google.com/g/golang-nuts/c/2134423",
 	}
 
 	for i, id := range ids {
@@ -208,6 +210,11 @@ func TestOptions(t *testing.T) {
 			VectorResult: storage.VectorResult{ID: ids[10], Score: 0.481},
 		},
 		10: {
+			Kind:         KindGoogleGroupConversation,
+			Title:        "title11",
+			VectorResult: storage.VectorResult{ID: ids[11], Score: 0.471},
+		},
+		11: {
 			Kind:         KindGoBlog,
 			Title:        "title0",
 			VectorResult: storage.VectorResult{ID: ids[0], Score: 0.431},
@@ -285,14 +292,14 @@ func TestOptions(t *testing.T) {
 		{
 			name: "deny",
 			options: Options{
-				DenyKind: []string{KindGoWiki, KindGitHubIssue, KindGoGerritChange},
+				DenyKind: []string{KindGoWiki, KindGitHubIssue, KindGoGerritChange, KindGoogleGroupConversation},
 			},
 			want: []Result{
 				results[0], results[1], results[2], results[3], results[4],
 				// skip 5 (issue) and 6 (wiki)
 				results[7],
-				// skip 8 (issue) and 9 (change)
-				results[10]},
+				// skip 8 (issue), 9 (change), and 10 (group conversation)
+				results[11]},
 		},
 		{
 			name: "allow-deny",

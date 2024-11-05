@@ -179,28 +179,30 @@ const defaultLimit = 20
 
 // Recognized kinds of documents.
 const (
-	KindGitHubIssue      = "GitHubIssue"
-	KindGitHubDiscussion = "GitHubDiscussion"
-	KindGoWiki           = "GoWiki"
-	KindGoDocumentation  = "GoDocumentation"
-	KindGoReference      = "GoReference"
-	KindGoBlog           = "GoBlog"
-	KindGoDevPage        = "GoDevPage"
-	KindGoGerritChange   = "GoGerritChange"
+	KindGitHubIssue             = "GitHubIssue"
+	KindGitHubDiscussion        = "GitHubDiscussion"
+	KindGoWiki                  = "GoWiki"
+	KindGoDocumentation         = "GoDocumentation"
+	KindGoReference             = "GoReference"
+	KindGoBlog                  = "GoBlog"
+	KindGoDevPage               = "GoDevPage"
+	KindGoGerritChange          = "GoGerritChange"
+	KindGoogleGroupConversation = "GoogleGroupsConversation"
 	// Unknown document.
 	KindUnknown = "Unknown"
 )
 
 // Set of recognized document kinds.
 var kinds = map[string]bool{
-	KindGitHubIssue:      true,
-	KindGitHubDiscussion: true,
-	KindGoWiki:           true,
-	KindGoDocumentation:  true,
-	KindGoBlog:           true,
-	KindGoDevPage:        true,
-	KindUnknown:          true,
-	KindGoGerritChange:   true,
+	KindGitHubIssue:             true,
+	KindGitHubDiscussion:        true,
+	KindGoWiki:                  true,
+	KindGoDocumentation:         true,
+	KindGoBlog:                  true,
+	KindGoDevPage:               true,
+	KindUnknown:                 true,
+	KindGoGerritChange:          true,
+	KindGoogleGroupConversation: true,
 }
 
 // docIDKind determines the kind of document from its ID.
@@ -228,6 +230,8 @@ func docIDKind(id string) string {
 		return KindGoDevPage
 	case strings.HasPrefix(hp, "go-review.googlesource.com/"):
 		return KindGoGerritChange
+	case goGoogleGroupConversation(hp):
+		return KindGoogleGroupConversation
 	}
 	return KindUnknown
 }
@@ -261,3 +265,20 @@ func githubKind(hostPath string, fragment string) string {
 
 // Matches GitHub URLs in any project of the form github.com/owner/repo/api/num.
 var githubRE = regexp.MustCompile(`^github\.com/([\w-]+/[\w-]+)/([\w-]+)/\d+$`)
+
+func goGoogleGroupConversation(hostPath string) bool {
+	s := googleGroupRE.FindStringSubmatch(hostPath)
+	if len(s) != 2 { // malformed
+		return false
+	}
+
+	// Group must be "golang-", except in tests.
+	if !strings.HasPrefix(s[1], "golang-") && !testing.Testing() {
+		return false
+	}
+	return true
+}
+
+// Matches Google Groups conversation URLs for any group of the
+// form groups.google.com/g/group/c/conversation.
+var googleGroupRE = regexp.MustCompile(`^groups\.google\.com/g/([\w-]+)/c/[\w-]+$`)
