@@ -272,8 +272,8 @@ func goGoogleGroupConversation(hostPath string) bool {
 		return false
 	}
 
-	// Group must be "golang-", except in tests.
-	if !strings.HasPrefix(s[1], "golang-") && !testing.Testing() {
+	// Group must be "golang-*".
+	if !strings.HasPrefix(s[1], "golang-") {
 		return false
 	}
 	return true

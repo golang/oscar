@@ -22,6 +22,7 @@ import (
 	"golang.org/x/oscar/internal/embeddocs"
 	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/llm"
+	"golang.org/x/oscar/internal/search"
 	"golang.org/x/oscar/internal/storage"
 	"golang.org/x/oscar/internal/testutil"
 )
@@ -207,6 +208,83 @@ func TestPostError(t *testing.T) {
 	})
 }
 
+func TestPostComment(t *testing.T) {
+	lg := testutil.Slogger(t)
+	db := storage.MemDB()
+	gh := github.New(lg, db, nil, nil)
+	p := New(lg, db, gh, nil, nil, t.Name())
+
+	results := []search.Result{
+		{
+			Kind:         search.KindGitHubIssue,
+			VectorResult: storage.VectorResult{ID: "https://github.com/rsc/markdown/issues/1"},
+			Title:        "Support Github Emojis",
+		},
+		{
+			Kind:         search.KindGitHubDiscussion,
+			VectorResult: storage.VectorResult{ID: "https://github.com/golang/go/discussions/67901"},
+			Title:        "gabyhelp feedback",
+		},
+		{
+			Kind:         search.KindGoBlog,
+			VectorResult: storage.VectorResult{ID: "https://go.dev/blog/govulncheck"},
+			Title:        "Govulncheck v1.0.0 is released!",
+		},
+		{
+			Kind:         search.KindGoGerritChange,
+			VectorResult: storage.VectorResult{ID: "https://go-review.googlesource.com/c/test/+/1#related-content"},
+			Title:        "all: update dependencies",
+		},
+		{
+			Kind:         search.KindGoogleGroupConversation,
+			VectorResult: storage.VectorResult{ID: "https://groups.google.com/g/golang-nuts/c/MKgGqer_taI"},
+			Title:        "Returning a pointer or value struct.",
+		},
+		{
+			Kind:         search.KindGitHubIssue,
+			VectorResult: storage.VectorResult{ID: "https://github.com/rsc/markdown/issues/2"},
+			Title:        "allow capital X in task list items",
+		},
+		{
+			Kind:         search.KindGoWiki,
+			VectorResult: storage.VectorResult{ID: "https://go.dev/wiki/Iota"},
+			Title:        "Go Wiki: Iota",
+		},
+		{
+			Kind:         search.KindGoReference,
+			VectorResult: storage.VectorResult{ID: "https://go.dev/ref/spec"},
+			Title:        "The Go Programming Language Specification",
+		},
+	}
+
+	want := `**Related Issues**
+
+ - [Support Github Emojis](https://github.com/rsc/markdown/issues/1) <!-- score=0.00000 -->
+ - [allow capital X in task list items](https://github.com/rsc/markdown/issues/2) <!-- score=0.00000 -->
+
+**Related Code Changes**
+
+ - [all: update dependencies](https://go-review.googlesource.com/c/test/+/1#related-content) <!-- score=0.00000 -->
+
+**Related Documentation**
+
+ - [Govulncheck v1.0.0 is released!](https://go.dev/blog/govulncheck) <!-- score=0.00000 -->
+ - [Go Wiki: Iota](https://go.dev/wiki/Iota) <!-- score=0.00000 -->
+ - [The Go Programming Language Specification](https://go.dev/ref/spec) <!-- score=0.00000 -->
+
+**Related Discussions**
+
+ - [gabyhelp feedback](https://github.com/golang/go/discussions/67901) <!-- score=0.00000 -->
+ - [Returning a pointer or value struct.](https://groups.google.com/g/golang-nuts/c/MKgGqer_taI) <!-- score=0.00000 -->
+
+<sub>(Emoji vote if this was helpful or unhelpful; more detailed feedback welcome in [this discussion](https://github.com/golang/go/discussions/67901).)</sub>
+`
+
+	if got := p.comment(results); want != got {
+		t.Errorf("want %s comment; got %s", want, got)
+	}
+}
+
 func newTestPoster(t *testing.T) (_ *Poster, out *bytes.Buffer, project string, check func(err error)) {
 	t.Helper()
 
@@ -279,7 +357,7 @@ func checkActionLogAfter(t *testing.T, db storage.DB, want map[int64]string, sta
 	return time.Time{}
 }
 
-var post13 = unQUOT(`**Related Issues and Documentation**
+var post13 = unQUOT(`**Related Issues**
 
  - [goldmark and markdown diff with h1 inside p #6 (closed)](https://github.com/rsc/markdown/issues/6) <!-- score=0.92657 -->
  - [Support escaped \QUOT|\QUOT in table cells #9 (closed)](https://github.com/rsc/markdown/issues/9) <!-- score=0.91858 -->
@@ -295,7 +373,7 @@ var post13 = unQUOT(`**Related Issues and Documentation**
 <sub>(Emoji vote if this was helpful or unhelpful; more detailed feedback welcome in [this discussion](https://github.com/golang/go/discussions/67901).)</sub>
 `)
 
-var post19 = unQUOT(`**Related Issues and Documentation**
+var post19 = unQUOT(`**Related Issues**
 
  - [allow capital X in task list items #2 (closed)](https://github.com/rsc/markdown/issues/2) <!-- score=0.92943 -->
  - [Support escaped \QUOT|\QUOT in table cells #9 (closed)](https://github.com/rsc/markdown/issues/9) <!-- score=0.91994 -->

@@ -371,27 +371,84 @@ func (p *Poster) search(u string) (_ []search.Result, ok bool) {
 	return results, true
 }
 
+// relatedContentGroup is used to represent different
+// groupings of the related post content. Examples
+// are groups containing related issues and group
+// with related code changes.
+type relatedContentGroup float64
+
+const (
+	issues relatedContentGroup = iota
+	changes
+	discussions
+	documentation
+)
+
+// relatedGroupTitles are the titles for each
+// related content group, to be displayed in
+// in the related post comment.
+var relatedGroupTitles = map[relatedContentGroup]string{
+	issues:        "Related Issues",
+	changes:       "Related Code Changes",
+	discussions:   "Related Discussions",
+	documentation: "Related Documentation",
+}
+
 // comment returns the comment to post to GitHub for the given related
 // issues.
 func (p *Poster) comment(results []search.Result) string {
-	var comment strings.Builder
-	fmt.Fprintf(&comment, "**Related Issues and Documentation**\n\n")
+	// Break results into issues, changes, discusssions
+	// and documentation sections.
+	rg := make(map[relatedContentGroup][]search.Result)
 	for _, r := range results {
-		title := cleanTitle(r.ID)
-		if r.Title != "" {
-			title = r.Title
+		switch r.Kind {
+		case search.KindGitHubIssue:
+			rg[issues] = append(rg[issues], r)
+		case search.KindGoGerritChange:
+			rg[changes] = append(rg[changes], r)
+		case search.KindGitHubDiscussion, search.KindGoogleGroupConversation:
+			rg[discussions] = append(rg[discussions], r)
+		default:
+			// KindGoDocumentation, KindGoDevPage, KindGoWiki,
+			// KindGoBlog, KindGoReference
+			rg[documentation] = append(rg[documentation], r)
 		}
-		info := ""
-		if issue, err := p.github.LookupIssueURL(r.ID); err == nil {
-			info = fmt.Sprint(" #", issue.Number)
-			if issue.ClosedAt != "" {
-				info += " (closed)"
-			}
-		}
-		fmt.Fprintf(&comment, " - [%s%s](%s) <!-- score=%.5f -->\n", markdownEscape(title), info, r.ID, r.Score)
 	}
-	fmt.Fprintf(&comment, "\n<sub>(Emoji vote if this was helpful or unhelpful; more detailed feedback welcome in [this discussion](https://github.com/golang/go/discussions/67901).)</sub>\n")
-	return comment.String()
+
+	// section generates a comment markdown for a group
+	// of results with a title.
+	section := func(title string, results []search.Result) string {
+		var comment strings.Builder
+		fmt.Fprintf(&comment, "**%s**\n\n", title)
+		for _, r := range results {
+			title := cleanTitle(r.ID)
+			if r.Title != "" {
+				title = r.Title
+			}
+			info := ""
+			if issue, err := p.github.LookupIssueURL(r.ID); err == nil {
+				info = fmt.Sprint(" #", issue.Number)
+				if issue.ClosedAt != "" {
+					info += " (closed)"
+				}
+			}
+			fmt.Fprintf(&comment, " - [%s%s](%s) <!-- score=%.5f -->\n", markdownEscape(title), info, r.ID, r.Score)
+		}
+		return comment.String()
+	}
+
+	var sections []string
+	for _, group := range []relatedContentGroup{issues, changes, documentation, discussions} {
+		res := rg[group]
+		if len(res) == 0 {
+			continue
+		}
+		s := section(relatedGroupTitles[group], res)
+		sections = append(sections, s)
+	}
+
+	footer := "\n<sub>(Emoji vote if this was helpful or unhelpful; more detailed feedback welcome in [this discussion](https://github.com/golang/go/discussions/67901).)</sub>\n"
+	return strings.Join(sections, "\n") + footer
 }
 
 // cleanTitle cleans up document title t to make it more readable
