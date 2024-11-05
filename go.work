@@ -2,8 +2,8 @@ go 1.23
 
 use (
 	.
+	./internal/devtools
 	./internal/gaby
 	./internal/gcp
 	./internal/syncdb
-	./internal/devtools
 )

@@ -5,13 +5,14 @@ go 1.23
 require (
 	github.com/cockroachdb/pebble v1.1.2
 	github.com/google/go-cmp v0.6.0
+	github.com/google/safehtml v0.1.0
 	github.com/shurcooL/githubv4 v0.0.0-20240727222349-48295856cce7
 	golang.org/x/net v0.30.0
-	golang.org/x/oauth2 v0.21.0
+	golang.org/x/oauth2 v0.22.0
 	golang.org/x/tools v0.26.0
 	rsc.io/markdown v0.0.0-20240617154923-1f2ef1438fed
 	rsc.io/omap v1.2.1-0.20240709133045-40dad5c0c0fb
-	rsc.io/ordered v1.1.0
+	rsc.io/ordered v1.1.1
 	rsc.io/top v1.0.2
 )
 
