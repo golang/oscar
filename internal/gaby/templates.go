@@ -26,6 +26,7 @@ const (
 	actionLogTmplFile    = "actionlog.tmpl"
 	searchPageTmplFile   = "searchpage.tmpl"
 	overviewPageTmplFile = "overviewpage.tmpl"
+	rulesPageTmplFile    = "rulespage.tmpl"
 
 	// Common template file
 	commonTmpl = "common.tmpl"

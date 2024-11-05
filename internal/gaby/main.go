@@ -478,6 +478,10 @@ func (g *Gaby) newServer(report func(error)) *http.ServeMux {
 	// /overview?q=...: generate an overview using the value of q as input.
 	mux.HandleFunc("GET /overview", g.handleOverview)
 
+	// /rules: display a form for entering an issue to check for rule violations.
+	// /rules?q=...: generate a list of violated rules for issue q.
+	mux.HandleFunc("GET /rules", g.handleRules)
+
 	// /api/search: perform a vector similarity search.
 	// POST because the arguments to the request are in the body.
 	mux.HandleFunc("POST /api/search", g.handleSearchAPI)

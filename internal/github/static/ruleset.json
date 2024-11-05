@@ -1,0 +1,81 @@
+{
+  "IssueKinds": [
+    {
+      "Name": "bug",
+      "Text": "This issue describes a bug in the Go implementation.",
+      "Details": "",
+      "Rules": [
+	{
+	  "Text": "The issue title must start with a package name followed by a colon.",
+	  "Details": "Like \"encoding/json:\" or \"runtime:\""
+	},
+	{
+	  "Text": "The issue should provide a complete, runnable program to reproduce the issue.",
+	  "Details": "The program should be written in Go. The program may be provided via a link to the Go playground."
+	},
+	{
+	  "Text": "The \"What did you see happen?\" section should not be empty.",
+	  "Details": "A section is empty only if there is no text between the described markdown section header and the next markdown header."
+	},
+	{
+	  "Text": "The \"What did you expect to see?\" section should not be empty.",
+	  "Details": "A section is empty only if there is no text between the described markdown section header and the next markdown header."
+	}
+      ]
+    },
+    {
+      "Name": "proposal",
+      "Text": "This issue describes a requested change to the Go specification.",
+      "Details": "",
+      "Rules": [
+	{
+	  "Text": "The issue title must start with \"proposal:\"."
+	},
+	{
+	  "Text": "The issue should mention which packages the proposal intends to change."
+	},
+	{
+	  "Text": "The issue should describe the proposed changes to the API, typically by listing the declarations which would implement the new API"
+	}
+      ]
+    },
+    {
+      "Name": "implementation",
+      "Text": "This issue describes a semantics-preserving change to the Go implementation."
+    },
+    {
+      "Name": "access request",
+      "Text": "This issue is a request for builder or gomote access."
+    },
+    {
+      "Name": "pkgsite removal request",
+      "Text": "This issue is a pkgsite removal request."
+    },
+    {
+      "Name": "automation",
+      "Text": "This issue is created by gopherbot or watchflakes automation."
+    },
+    {
+      "Name": "builders",
+      "Text": "This issue is about the running of the Go builders."
+    },
+    {
+      "Name": "question",
+      "Text": "This issue is a question about using Go.",
+      "Rules": [
+	{
+	  "Text": "This issue appears to be more of a question than a bug report. Unlike many projects, the Go project does not use GitHub Issues for general discussion or asking questions. GitHub Issues are used for tracking bugs and proposals only. For questions please refer to [our Questions page](https://go.dev/wiki/Questions).",
+	  "Description":"This rule should never be satisfied."
+	}
+      ]
+    },
+    {
+      "Name": "invalid",
+      "Text": "This issue is empty, incomplete, or spam."
+    },
+    {
+      "Name": "other",
+      "Text": "None of the above."
+    }
+  ]
+}
