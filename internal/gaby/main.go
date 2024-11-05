@@ -171,10 +171,11 @@ func main() {
 
 	// Named functions to retrieve latest Watcher times.
 	watcherLatests := map[string]func() timed.DBTime{
-		github.DocWatcherID:     docs.LatestFunc(g.github),
-		gerrit.DocWatcherID:     docs.LatestFunc(g.gerrit),
-		discussion.DocWatcherID: docs.LatestFunc(g.disc),
-		crawl.DocWatcherID:      docs.LatestFunc(cr),
+		github.DocWatcherID:       docs.LatestFunc(g.github),
+		gerrit.DocWatcherID:       docs.LatestFunc(g.gerrit),
+		discussion.DocWatcherID:   docs.LatestFunc(g.disc),
+		crawl.DocWatcherID:        docs.LatestFunc(cr),
+		googlegroups.DocWatcherID: docs.LatestFunc(g.ggroups),
 
 		"embeddocs": func() timed.DBTime { return embeddocs.Latest(g.docs) },
 
@@ -534,6 +535,7 @@ func (g *Gaby) syncAndRunAll(ctx context.Context) (errs []error) {
 		check(g.syncGitHubIssues(ctx))
 		check(g.syncGitHubDiscussions(ctx))
 		check(g.syncGerrit(ctx))
+		check(g.syncGroups(ctx))
 
 		// Embed must happen last.
 		check(g.embedAll(ctx))
@@ -609,11 +611,12 @@ func (g *Gaby) syncGroups(ctx context.Context) error {
 	g.db.Lock(gabyGroupsSyncLock)
 	defer g.db.Unlock(gabyGroupsSyncLock)
 
-	// Download new events from all google groups.
+	// Download updated conversations from all google groups.
 	if err := g.ggroups.Sync(ctx); err != nil {
 		return err
 	}
-	// TODO: add docs
+	// Store newly downloaded conversations in the document database.
+	docs.Sync(g.docs, g.ggroups)
 	return nil
 }
 
