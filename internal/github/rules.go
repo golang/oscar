@@ -41,6 +41,10 @@ func IssueRules(ctx context.Context, llm llm.TextGenerator, db storage.DB, proje
 		return nil, err
 	}
 	result.Issue = i
+	if i.PullRequest != nil {
+		result.Response += "## Issue response text\n**None required (pull request)**"
+		return &result, nil
+	}
 
 	// Extract issue text into a string.
 	var issueText bytes.Buffer

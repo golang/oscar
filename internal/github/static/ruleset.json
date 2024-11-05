@@ -24,15 +24,31 @@
       ]
     },
     {
-      "Name": "proposal",
-      "Text": "This issue describes a requested change to the Go specification.",
+      "Name": "language proposal",
+      "Text": "This issue describes a requested change to the Go language specification.",
       "Details": "",
       "Rules": [
 	{
 	  "Text": "The issue title must start with \"proposal:\"."
 	},
 	{
-	  "Text": "The issue should mention which packages the proposal intends to change."
+	  "Text": "The issue should give examples of using the new language feature. Show how using the new language feature is an improvement on the existing language."
+	},
+	{
+	  "Text": "The issue should indicate whether this change is backwards compatible or not."
+	}
+      ]
+    },
+    {
+      "Name": "library proposal",
+      "Text": "This issue describes a requested change to the Go standard library or x/ libraries.",
+      "Details": "",
+      "Rules": [
+	{
+	  "Text": "The issue title must start with \"proposal:\"."
+	},
+	{
+	  "Text": "The title should mention which packages the proposal intends to change."
 	},
 	{
 	  "Text": "The issue should describe the proposed changes to the API, typically by listing the declarations which would implement the new API"
@@ -54,6 +70,10 @@
     {
       "Name": "automation",
       "Text": "This issue is created by gopherbot or watchflakes automation."
+    },
+    {
+      "Name": "backport",
+      "Text": "This issue is created for requesting a backport of a change to a previous Go version."
     },
     {
       "Name": "builders",
