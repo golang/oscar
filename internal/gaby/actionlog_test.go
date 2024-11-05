@@ -18,7 +18,6 @@ import (
 )
 
 func TestTimeOrDuration(t *testing.T) {
-	now := time.Now()
 	for _, test := range []struct {
 		endpoint endpoint
 		wantTime time.Time
@@ -37,7 +36,7 @@ func TestTimeOrDuration(t *testing.T) {
 			wantDur:  3 * time.Hour,
 		},
 	} {
-		gotTime, gotDur, err := test.endpoint.timeOrDuration(now)
+		gotTime, gotDur, err := test.endpoint.timeOrDuration()
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -6,7 +6,6 @@ package main
 
 import (
 	"embed"
-	_ "embed"
 	"path"
 
 	"github.com/google/safehtml/template"

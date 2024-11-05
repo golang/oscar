@@ -97,8 +97,8 @@ func (e *endpoint) formValues(r *http.Request, prefix string) {
 // times computes the start and end times from the endpoint controls.
 func times(start, end endpoint, now time.Time) (startTime, endTime time.Time, err error) {
 	var ztime time.Time
-	st, sd, err1 := start.timeOrDuration(now)
-	et, ed, err2 := end.timeOrDuration(now)
+	st, sd, err1 := start.timeOrDuration()
+	et, ed, err2 := end.timeOrDuration()
 	if err := errors.Join(err1, err2); err != nil {
 		return ztime, ztime, err
 	}
@@ -127,7 +127,7 @@ func times(start, end endpoint, now time.Time) (startTime, endTime time.Time, er
 
 // timeOrDuration returns the time or duration described by the endpoint's controls.
 // If the controls aren't set, it returns the zero time.
-func (e *endpoint) timeOrDuration(now time.Time) (time.Time, time.Duration, error) {
+func (e *endpoint) timeOrDuration() (time.Time, time.Duration, error) {
 	var ztime time.Time
 	switch e.Radio {
 	case "", "fixed":
