@@ -327,11 +327,21 @@ func prev(t string) (string, error) {
 	return tt.Add(-24 * time.Hour).Format(timeStampLayout), nil
 }
 
-// dbLimitSize is the limit on the value size
+// dbSizeLimit is the limit on the value size
 // that can be stored to firestore, in bytes.
 // See https://firebase.google.com/docs/firestore/quotas
 // for more information.
-var dbLimitSize = 1048576
+const dbSizeLimit = 1048576
+
+// testDBSizeLimit is dbSizeLimit used for testing.
+var testDBSizeLimit = 0
+
+func conversationSizeLimit() int {
+	if testDBSizeLimit != 0 {
+		return testDBSizeLimit
+	}
+	return dbSizeLimit
+}
 
 // conversations returns an iterator, in reverse chronological order, over
 // conversations updated in the interval (before, after).
@@ -378,7 +388,7 @@ func (c *Client) conversations(ctx context.Context, group, after, before string)
 					return
 				}
 			} else {
-				title, messages, err := titleAndMessages(html)
+				title, messages, err := titleAndMessages(c.slog, html)
 				if err != nil {
 					// unreachable unless error in crawler or html package
 					c.db.Panic("ggroups extract messages", "conversation", u, "err", err)
@@ -389,12 +399,13 @@ func (c *Client) conversations(ctx context.Context, group, after, before string)
 					URL:      u,
 					Messages: messages,
 				}
-				if truncate(conv) {
-					c.slog.Warn("ggroups conversation truncated", "conversation", u)
-				} else if len(messages) == 0 {
+				if len(messages) == 0 {
 					// In case Google Groups HTML structure changes.
 					c.slog.Error("ggroups conversation with no messages", "conversation", u)
 				} else {
+					if truncate(conv) {
+						c.slog.Warn("ggroups conversation truncated", "conversation", u)
+					}
 					if !yield(conv, nil) {
 						return
 					}
@@ -466,7 +477,7 @@ func getHTML(ctx context.Context, hc *http.Client, u string) ([]byte, error) {
 // containing individual conversation messages as
 // well as the title.
 // It returns an error if h is not HTML.
-func titleAndMessages(h []byte) (string, []string, error) {
+func titleAndMessages(lg *slog.Logger, h []byte) (string, []string, error) {
 	root, err := html.Parse(bytes.NewReader(h))
 	if err != nil {
 		return "", nil, err
@@ -496,7 +507,8 @@ func titleAndMessages(h []byte) (string, []string, error) {
 		clean(s) // reduce the size of each message
 		var buf bytes.Buffer
 		if err := html.Render(&buf, s); err != nil {
-			return "", nil, err
+			lg.Error("ggroups failed section rendering", "err", err)
+			continue
 		}
 		sections = append(sections, buf.String())
 	}
@@ -507,12 +519,18 @@ func titleAndMessages(h []byte) (string, []string, error) {
 // elements with section HTML tag.
 func sections(n *html.Node) []*html.Node {
 	var secs []*html.Node
-	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		if c.Type == html.ElementNode && c.Data == "section" {
-			secs = append(secs, c)
+
+	var doSec func(*html.Node)
+	doSec = func(n *html.Node) {
+		if n.Type == html.ElementNode && n.Data == "section" {
+			secs = append(secs, n)
 		}
-		secs = append(secs, sections(c)...)
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			doSec(c)
+		}
 	}
+	doSec(n)
+
 	return secs
 }
 
@@ -525,12 +543,13 @@ func clean(n *html.Node) {
 }
 
 // truncate removes trailing messages from c until
-// the total size of c is below dbLimitSize.
+// the total size of c is below conversationLimitSize.
 // It returns true if truncation happened, false otherwise.
 func truncate(c *Conversation) bool {
 	s := size(c)
 	truncated := false
-	for s >= dbLimitSize {
+	limit := conversationSizeLimit()
+	for s >= limit {
 		if len(c.Messages) == 0 {
 			// Sanity check, as this only happens if
 			// conversation title and URL are together
@@ -542,10 +561,10 @@ func truncate(c *Conversation) bool {
 		lms := c.Messages[li]
 		c.Messages = c.Messages[:li]
 		truncated = true
-		// Take into account quotation marks around the
-		// message, potential space before it, and
-		// potential comma after it.
-		s -= len(lms) + 4
+		// Take into account quotation marks only.
+		// Conservatively, do not take into account
+		// potential spaces and commas around the message.
+		s -= len(lms) + 2
 	}
 	return truncated
 }

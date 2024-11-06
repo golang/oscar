@@ -185,36 +185,41 @@ func TestSyncTesting(t *testing.T) {
 
 func TestTitleAndMessages(t *testing.T) {
 	check := testutil.Checker(t)
+	lg := testutil.Slogger(t)
 	h := `<html>
 <head></head>
 <body>
 <script>some javascript</script>
 <div id="go">Go</div>
 <div aria-label="golang-test">
-<section><div>Section 1</div></section>
+<section><div id="section1">Section 1</div></section>
 <div><section>Section 2</section></div>
-<section>Section 3<h1><section>Section 4</section></h1></section>
+<section>Section 3<h1><section id="section4">Section 4</section></h1></section>
 </div>
 </body>
 </html>`
-	title, msgs, err := titleAndMessages([]byte(h))
+	title, msgs, err := titleAndMessages(lg, []byte(h))
 	check(err)
 	if len(msgs) != 4 {
 		t.Errorf("got %d messages; want 4", len(msgs))
 	}
-	want := "<section><div>Section 1</div></section>"
-	if msgs[0] != want {
-		t.Errorf("got %q as the first message; want %s", msgs[0], want)
+	want := []string{
+		"<section><div>Section 1</div></section>",
+		"<section>Section 2</section>",
+		"<section>Section 3<h1><section>Section 4</section></h1></section>",
+		"<section>Section 4</section>",
+	}
+	if !slices.Equal(msgs, want) {
+		t.Errorf("got %v messages; want %v", msgs, want)
 	}
 	if title != "golang-test" {
-		t.Errorf("got %q as title; want 'golang-test'", title)
+		t.Errorf("got %q as title,; want 'golang-test'", title)
 	}
 }
 
 func TestTruncate(t *testing.T) {
-	dls := dbLimitSize
-	dbLimitSize = 120
-	defer func() { dbLimitSize = dls }()
+	testDBSizeLimit = 120
+	defer func() { testDBSizeLimit = 0 }()
 
 	c := &Conversation{
 		URL:      "https://groups.google.com/g/golang/test/c/123456",
@@ -229,7 +234,7 @@ func TestTruncate(t *testing.T) {
 	}
 	want := []string{"open", "reply"}
 	if !slices.Equal(want, c.Messages) {
-		t.Errorf("want %v messages; got %v", want, c.Messages)
+		t.Errorf("got %v messages; want %v", c.Messages, want)
 	}
 
 	if truncate(c) {
