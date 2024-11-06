@@ -87,7 +87,7 @@ func (db *memDB) Get(key []byte) (val []byte, ok bool) {
 	return v, ok
 }
 
-// Scan returns an iterator overall key-value pairs
+// Scan returns an iterator over all key-value pairs
 // in the range start ≤ key ≤ end.
 func (db *memDB) Scan(start, end []byte) iter.Seq2[[]byte, func() []byte] {
 	lo := string(start)
