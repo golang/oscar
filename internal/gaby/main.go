@@ -497,6 +497,9 @@ func (g *Gaby) newServer(report func(error)) *http.ServeMux {
 	// /reviews: display review dashboard
 	mux.HandleFunc("GET /reviews", g.handleReviewDashboard)
 
+	// /dbview: view parts of the database
+	mux.HandleFunc("GET /dbview", g.handleDBview)
+
 	return mux
 }
 

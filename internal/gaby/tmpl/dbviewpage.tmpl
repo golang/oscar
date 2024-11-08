@@ -1,0 +1,54 @@
+<!--
+Copyright 2024 The Go Authors. All rights reserved.
+Use of this source code is governed by a BSD-style
+license that can be found in the LICENSE file.
+-->
+<!doctype html>
+<html>
+  <head>
+	{{template "head" .}}
+  </head>
+  <body>
+    <div class="section" class="header">
+	  {{template "header" .}}
+	 <form id="form" action="/dbview" method="GET">
+		Provide one key to get a single value, or two to get a range.<br/>
+		Keys are comma-separated lists of strings, integers, "inf" or "-inf".<br/>
+		<br/>
+		<span>
+			<label for="startKey"><b>Get</b></label>
+			<input id="startKey" type="text" name="start" value="{{.Form.Start}}" required autofocus />
+		</span>
+		<span>
+			<label for="endKey"><b>To</b></label>
+		 	<input id="endKey" type="text" name="end" value="{{.Form.End}}" required autofocus />
+		</span>
+		<span>
+			<label for="limit"><b>Limit</b></label>
+		 	<input id="limit" type="text" name="limit" value="{{.Form.Limit}}" required autofocus />
+		</span>
+		<span class="submit">
+			<input type="submit" value="Show"/>
+		</span>
+	 </form>
+	</div>
+
+	<div class="section">
+	{{- with .Error -}}
+		<p>Error: {{.Error}}</p>
+	{{- else with .Result -}}
+	    <div class="result">
+		    <table>
+			  <tr><th>Key</th><th>Value</th></tr>
+		      {{range .Items}}
+			    <tr><td>{{.Key}}</td><td>{{.Value}}</td>
+			  {{end}}
+			</table>
+		</div>
+	{{- else }}
+		{{if .Form.Start}}<p>No results.</p>{{end}}
+  	{{- end}}
+   </div>
+  </body>
+</html>
+

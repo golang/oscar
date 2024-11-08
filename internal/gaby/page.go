@@ -33,6 +33,7 @@ type (
 func (actionLogPage) Title() string { return "Oscar Action Log" }
 func (overviewPage) Title() string  { return "Oscar Overviews" }
 func (searchPage) Title() string    { return "Oscar Search" }
+func (dbviewPage) Title() string    { return "Database Viewer" }
 
 func (actionLogPage) Description() string { return "Browse actions taken by Oscar." }
 func (overviewPage) Description() string {
@@ -41,18 +42,22 @@ func (overviewPage) Description() string {
 func (searchPage) Description() string {
 	return "Search Oscar's database of GitHub issues, Go documentation, and other documents."
 }
+func (dbviewPage) Description() string { return "View the database contents." }
 
 func (actionLogPage) NavID() safeCSS { return safehtml.StyleSheetFromConstant("actionlog") }
 func (overviewPage) NavID() safeCSS  { return safehtml.StyleSheetFromConstant("overview") }
 func (searchPage) NavID() safeCSS    { return safehtml.StyleSheetFromConstant("search") }
+func (dbviewPage) NavID() safeCSS    { return safehtml.StyleSheetFromConstant("dbview") }
 
 var (
 	styleCSS     = safehtml.TrustedResourceURLFromConstant("static/style.css")
 	searchCSS    = safehtml.TrustedResourceURLFromConstant("static/search.css")
 	actionLogCSS = safehtml.TrustedResourceURLFromConstant("static/actionlog.css")
 	overviewCSS  = safehtml.TrustedResourceURLFromConstant("static/overview.css")
+	dbviewCSS    = safehtml.TrustedResourceURLFromConstant("static/dbview.css")
 )
 
 func (actionLogPage) Styles() []safeURL { return []safeURL{styleCSS, actionLogCSS} }
 func (overviewPage) Styles() []safeURL  { return []safeURL{styleCSS, searchCSS, overviewCSS} }
 func (searchPage) Styles() []safeURL    { return []safeURL{styleCSS, searchCSS} }
+func (dbviewPage) Styles() []safeURL    { return []safeURL{styleCSS, dbviewCSS} }

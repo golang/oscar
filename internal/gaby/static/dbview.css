@@ -1,0 +1,22 @@
+/*
+Copyright 2024 The Go Authors. All rights reserved.
+Use of this source code is governed by a BSD-style
+license that can be found in the LICENSE file.
+*/
+
+form span {
+    display: block;
+    padding-bottom: .2em
+}
+
+label,input {
+    display: inline-block;
+    width: 20%;
+    min-width: fit-content;
+}
+
+td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-wrap: break-word;
+}
