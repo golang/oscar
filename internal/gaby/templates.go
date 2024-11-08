@@ -34,6 +34,16 @@ const (
 )
 
 func newTemplate(filename string, funcs template.FuncMap) *template.Template {
+	if funcs == nil {
+		funcs = make(template.FuncMap)
+	}
+	// Add common functions.
+	funcs["pages"] = func() []pageID {
+		return pages
+	}
+	funcs["dec"] = func(i int) int {
+		return i - 1
+	}
 	return template.Must(template.New(filename).Funcs(funcs).
 		ParseFS(template.TrustedFSFromEmbed(tmplFS),
 			path.Join("tmpl", filename),

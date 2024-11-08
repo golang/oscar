@@ -37,20 +37,6 @@ div.result span {
 div.result {
     padding-bottom: 1em;
 }
-.filter-tips-box {
-    font-size: .75em;
-    padding-bottom: .5em;
-}
-.toggle {
-    font-weight: bold;
-    color: #007d9c;
-}
-.toggle:hover {
-    text-decoration: underline;
-}
-#filter-tips {
-    display: none;
-}
 .submit {
     padding-top: .5em;
 }

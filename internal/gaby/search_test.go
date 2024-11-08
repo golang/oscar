@@ -5,13 +5,15 @@
 package main
 
 import (
-	"bytes"
 	"context"
+	"errors"
 	"net/http"
 	"reflect"
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"golang.org/x/oscar/internal/docs"
 	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/llm"
@@ -30,7 +32,7 @@ func TestSearchPageTemplate(t *testing.T) {
 		{
 			name: "results",
 			page: searchPage{
-				searchForm: searchForm{
+				Params: searchParams{
 					Query: "some query",
 				},
 				Results: []search.Result{
@@ -55,30 +57,31 @@ func TestSearchPageTemplate(t *testing.T) {
 		{
 			name: "error",
 			page: searchPage{
-				searchForm: searchForm{
+				Params: searchParams{
 					Query: "some query",
 				},
-				SearchError: "some error",
+				Error: errors.New("some error"),
 			},
 		},
 		{
 			name: "no results",
 			page: searchPage{
-				searchForm: searchForm{
+				Params: searchParams{
 					Query: "some query",
 				},
 			},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			var buf bytes.Buffer
-			if err := searchPageTmpl.Execute(&buf, tc.page); err != nil {
+			tc.page.setCommonPage()
+			b, err := Exec(searchPageTmpl, &tc.page)
+			if err != nil {
 				t.Fatal(err)
 			}
-			got := buf.String()
+			got := string(b)
 
 			if len(tc.page.Results) != 0 {
-				wants := []string{tc.page.Query}
+				wants := []string{tc.page.Params.Query}
 				for _, sr := range tc.page.Results {
 					wants = append(wants, sr.VectorResult.ID)
 				}
@@ -88,8 +91,8 @@ func TestSearchPageTemplate(t *testing.T) {
 						t.Errorf("did not find %q in HTML", w)
 					}
 				}
-			} else if e := tc.page.SearchError; e != "" {
-				if !strings.Contains(got, e) {
+			} else if e := tc.page.Error; e != nil {
+				if !strings.Contains(got, e.Error()) {
 					t.Errorf("did not find error %q in HTML", e)
 				}
 			} else {
@@ -105,13 +108,13 @@ func TestSearchPageTemplate(t *testing.T) {
 func TestToOptions(t *testing.T) {
 	tests := []struct {
 		name    string
-		form    searchForm
+		form    searchParams
 		want    *search.Options
 		wantErr bool
 	}{
 		{
 			name: "basic",
-			form: searchForm{
+			form: searchParams{
 				Threshold: ".55",
 				Limit:     "10",
 				Allow:     "GoBlog,GoDevPage,GitHubIssue",
@@ -126,13 +129,13 @@ func TestToOptions(t *testing.T) {
 		},
 		{
 			name: "empty",
-			form: searchForm{},
+			form: searchParams{},
 			// this will cause search to use defaults
 			want: &search.Options{},
 		},
 		{
 			name: "trim spaces",
-			form: searchForm{
+			form: searchParams{
 				Threshold: " .55	 ",
 				Limit:     "  10 ",
 				Allow:     " GoBlog,  GoDevPage,GitHubIssue ",
@@ -147,42 +150,42 @@ func TestToOptions(t *testing.T) {
 		},
 		{
 			name: "unparseable limit",
-			form: searchForm{
+			form: searchParams{
 				Limit: "1.xx",
 			},
 			wantErr: true,
 		},
 		{
 			name: "invalid limit",
-			form: searchForm{
+			form: searchParams{
 				Limit: "1.33",
 			},
 			wantErr: true,
 		},
 		{
 			name: "unparseable threshold",
-			form: searchForm{
+			form: searchParams{
 				Threshold: "1x",
 			},
 			wantErr: true,
 		},
 		{
 			name: "invalid threshold",
-			form: searchForm{
+			form: searchParams{
 				Threshold: "-10",
 			},
 			wantErr: true,
 		},
 		{
 			name: "invalid allow",
-			form: searchForm{
+			form: searchParams{
 				Allow: "NotAKind, also not a kind",
 			},
 			wantErr: true,
 		},
 		{
 			name: "invalid deny",
-			form: searchForm{
+			form: searchParams{
 				Deny: "NotAKind, also not a kind",
 			},
 			wantErr: true,
@@ -192,16 +195,16 @@ func TestToOptions(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			got, err := tc.form.toOptions()
 			if (err != nil) != tc.wantErr {
-				t.Fatalf("searchForm.toOptions() error = %v, wantErr %v", err, tc.wantErr)
+				t.Fatalf("Params.toOptions() error = %v, wantErr %v", err, tc.wantErr)
 			}
 			if !reflect.DeepEqual(got, tc.want) {
-				t.Errorf("searchForm.toOptions() = %v, want %v", got, tc.want)
+				t.Errorf("Params.toOptions() = %v, want %v", got, tc.want)
 			}
 		})
 	}
 }
 
-func TestPopulatePage(t *testing.T) {
+func TestPopulateSearchPage(t *testing.T) {
 	g := newTestGaby(t)
 
 	// Add test data relevant for this test.
@@ -211,13 +214,13 @@ func TestPopulatePage(t *testing.T) {
 	for _, tc := range []struct {
 		name string
 		url  string
-		want searchPage
+		want *searchPage
 	}{
 		{
 			name: "query",
 			url:  "test/search?q=hello",
-			want: searchPage{
-				searchForm: searchForm{
+			want: &searchPage{
+				Params: searchParams{
 					Query: "hello",
 				},
 				Results: []search.Result{
@@ -234,8 +237,8 @@ func TestPopulatePage(t *testing.T) {
 		{
 			name: "id lookup",
 			url:  "test/search?q=id1",
-			want: searchPage{
-				searchForm: searchForm{
+			want: &searchPage{
+				Params: searchParams{
 					Query: "id1",
 				},
 				Results: []search.Result{{
@@ -250,8 +253,8 @@ func TestPopulatePage(t *testing.T) {
 		{
 			name: "options",
 			url:  "test/search?q=id1&threshold=.5&limit=10&allow_kind=&deny_kind=Unknown,GoBlog",
-			want: searchPage{
-				searchForm: searchForm{
+			want: &searchPage{
+				Params: searchParams{
 					Query:     "id1",
 					Threshold: ".5",
 					Limit:     "10",
@@ -264,12 +267,12 @@ func TestPopulatePage(t *testing.T) {
 		{
 			name: "error",
 			url:  "test/search?q=id1&deny_kind=Invalid",
-			want: searchPage{
-				searchForm: searchForm{
+			want: &searchPage{
+				Params: searchParams{
 					Query: "id1",
 					Deny:  "Invalid",
 				},
-				SearchError: `invalid form value: unrecognized deny kind "Invalid" (case-sensitive)`,
+				Error: cmpopts.AnyError,
 			},
 		},
 	} {
@@ -278,9 +281,10 @@ func TestPopulatePage(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			got := g.populatePage(r)
-			if !reflect.DeepEqual(got, tc.want) {
-				t.Errorf("Gaby.search() = %v, want %v", got, tc.want)
+			got := g.populateSearchPage(r)
+			tc.want.setCommonPage()
+			if diff := cmp.Diff(tc.want, got, safeHTMLcmpopt, cmpopts.EquateErrors()); diff != "" {
+				t.Errorf("Gaby.populateSearchPage mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}

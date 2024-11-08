@@ -19,12 +19,12 @@ import (
 	"golang.org/x/oscar/internal/search"
 )
 
-var _ page = overviewPage{}
-
 // overviewPage holds the fields needed to display the results
 // of a search.
 type overviewPage struct {
-	Form   overviewForm // the raw form inputs
+	CommonPage
+
+	Params overviewParams // the raw query params
 	Result *overviewResult
 	Error  error // if non-nil, the error to display instead of the result
 }
@@ -34,39 +34,28 @@ type overviewResult struct {
 	Type                       string // the type of overview
 }
 
-// overviewForm holds the raw inputs to the overview form.
-type overviewForm struct {
+// overviewParams holds the raw HTML parameters.
+type overviewParams struct {
 	Query        string // the issue ID to lookup, or golang/go#12345 or github.com/golang/go/issues/12345 form
 	OverviewType string // the type of overview to generate
 }
 
 // the possible overview types
 const (
-	issueOverviewType   = "issue"
-	relatedOverviewType = "related"
+	issueOverviewType   = "issue_overview"
+	relatedOverviewType = "related_overview"
 )
+
+// validOverviewType reports whether the given type
+// is a recognized overview type.
+func validOverviewType(t string) bool {
+	return t == issueOverviewType || t == relatedOverviewType
+}
 
 // IsIssueOverview reports whether this overview result
 // is of type [issueOverviewType].
 func (r *overviewResult) IsIssueOverview() bool {
 	return r.Type == issueOverviewType
-}
-
-// CheckRadio reports whether radio button with the given id
-// should be checked.
-func (p overviewPage) CheckRadio(id string) bool {
-	// checked returns the id of the radio button that should be checked.
-	checked := func() string {
-		// If there is no result yet, the default option
-		// (issue overview) should be checked.
-		if p.Result == nil {
-			return issueOverviewType
-		}
-		// Otherwise, the button corresponding to the result
-		// type should be checked.
-		return p.Result.Type
-	}
-	return id == checked()
 }
 
 func (g *Gaby) handleOverview(w http.ResponseWriter, r *http.Request) {
@@ -131,14 +120,20 @@ func parseIssueNumber(issueID string) (project string, issue int64, _ error) {
 }
 
 // populateOverviewPage returns the contents of the overview page.
-func (g *Gaby) populateOverviewPage(r *http.Request) overviewPage {
-	p := overviewPage{
-		Form: overviewForm{
-			Query:        r.FormValue("q"),
-			OverviewType: r.FormValue("t"),
-		},
+func (g *Gaby) populateOverviewPage(r *http.Request) *overviewPage {
+	pm := overviewParams{
+		Query:        r.FormValue(paramQuery),
+		OverviewType: r.FormValue(paramOverviewType),
 	}
-	proj, issue, err := parseIssueNumber(p.Form.Query)
+	p := &overviewPage{
+		Params: pm,
+	}
+	p.setCommonPage()
+	q := trim(p.Params.Query)
+	if q == "" {
+		return p
+	}
+	proj, issue, err := parseIssueNumber(p.Params.Query)
 	if err != nil {
 		p.Error = fmt.Errorf("invalid form value: %v", err)
 		return p
@@ -147,19 +142,86 @@ func (g *Gaby) populateOverviewPage(r *http.Request) overviewPage {
 		proj = g.githubProjects[0] // default to first project.
 	}
 	if !slices.Contains(g.githubProjects, proj) {
-		p.Error = fmt.Errorf("invalid form value (unrecognized project): %q", p.Form.Query)
+		p.Error = fmt.Errorf("invalid form value (unrecognized project): %q", p.Params.Query)
 		return p
 	}
-	if issue <= 0 {
-		return p
-	}
-	overview, err := g.overview(r.Context(), proj, issue, p.Form.OverviewType)
+	overview, err := g.overview(r.Context(), proj, issue, p.Params.OverviewType)
 	if err != nil {
 		p.Error = err
 		return p
 	}
 	p.Result = overview
 	return p
+}
+
+func (p *overviewPage) setCommonPage() {
+	p.CommonPage = CommonPage{
+		ID:          overviewID,
+		Description: "Generate overviews of golang/go issues and their comments, or summarize the relationship between a golang/go issue and its related documents.",
+		Styles:      []safeURL{searchID.CSS()},
+		Form: Form{
+			Inputs:     p.Params.inputs(),
+			SubmitText: "generate",
+		},
+	}
+}
+
+const (
+	paramOverviewType = "t"
+)
+
+// inputs converts the params to HTML form inputs.
+func (pm *overviewParams) inputs() []FormInput {
+	return []FormInput{
+		{
+			Label:       "issue",
+			Type:        "int or string",
+			Description: "the issue to summarize, as a number or URL (e.g. 1234, golang/go#1234, or https://github.com/golang/go/issues/1234)",
+			Name:        safeQuery,
+			Required:    true,
+			Typed: TextInput{
+				ID:    safeQuery,
+				Value: pm.Query,
+			},
+		},
+		{
+			Label:       "overview type",
+			Type:        "radio choice",
+			Description: `"issue and comments" generates an overview of the issue and its comments; "related documents" searches for related documents and summarizes them`,
+			Name:        toSafeID(paramOverviewType),
+			Required:    true,
+			Typed: RadioInput{
+				Choices: []RadioChoice{
+					{
+						Label:   "issue overview",
+						ID:      toSafeID(issueOverviewType),
+						Value:   issueOverviewType,
+						Checked: pm.checkRadio(issueOverviewType),
+					},
+					{
+						Label:   "related documents",
+						ID:      toSafeID(relatedOverviewType),
+						Value:   relatedOverviewType,
+						Checked: pm.checkRadio(relatedOverviewType),
+					},
+				},
+			},
+		},
+	}
+}
+
+// checkRadio reports whether radio button with the given value
+// should be checked.
+func (f *overviewParams) checkRadio(value string) bool {
+	// If the overview type is not set, or is set to an invalid value,
+	// the default option (issue overview) should be checked.
+	if !validOverviewType(f.OverviewType) {
+		return value == issueOverviewType
+	}
+
+	// Otherwise, the button corresponding to the result
+	// type should be checked.
+	return value == f.OverviewType
 }
 
 // overview generates an overview of the issue of the given type.

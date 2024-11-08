@@ -3,34 +3,123 @@ Copyright 2024 The Go Authors. All rights reserved.
 Use of this source code is governed by a BSD-style
 license that can be found in the LICENSE file.
 
-Implement [page] to use templates in this file.
+Templates in this file are defined on type [CommonPage].
 -->
 {{define "head"}}
-  <title>{{.Title}}</title>
-	{{template "nav-style" .}}
+<head>
+  <title>Oscar {{.ID.Title}}</title>
+  <link rel="stylesheet" href="/static/style.css"/>
+  <link rel="stylesheet" href="{{.ID.CSS}}"/>
   {{range .Styles}}
     <link rel="stylesheet" href="{{.}}"/>
   {{end}}
+</head>
 {{end}}
 
 {{define "header"}}
-  {{template "nav"}}
-  <h1>{{.Title}}</h1>
+<div class="section" class="header">
+  {{template "nav-title" .}}
+  {{template "filter-tips" .}}
+  {{template "form" .}}
+</div>
+{{end}}
+
+{{define "nav-title"}}
+  {{template "nav" .}}
+  <h1>Oscar {{.ID.Title}}</h1>
   <p id="desc">{{.Description}}</p>
 {{end}}
 
 {{define "nav"}}
-  <nav>
-    <a href="/actionlog" class="nav" id="actionlog-nav">Action Log</a> |
-    <a href="/search" class="nav" id="search-nav">Search</a> |
-    <a href="/overview" class="nav" id="overview-nav">Overviews</a>
-  </nav>
+  {{$current := .ID}}
+  {{with pages}}
+    {{$last := dec (len .)}}
+    <nav>
+      {{range $i, $e := .}}
+        <a href="{{$e.Endpoint}}" class="nav" {{if eq $e $current}}id="current-nav"{{end}}>{{$e.Title}}</a>
+        {{if not (eq $i $last)}} | {{end}}
+      {{end}}
+    </nav>
+  {{end}}
 {{end}}
 
-{{define "nav-style"}}
-  <style>
-  nav a#{{.NavID}}-nav {
-    font-weight: bold;
-  }
-  </style>
+{{define "toggle-script"}}
+<script>
+	function toggle(x) {
+		if (x.style.display === "block") {
+			x.style.display = "none";
+		} else {
+			x.style.display = "block";
+		}
+	}
+</script>
+{{end}}
+
+{{define "filter-tips"}}
+<div class="filter-tips-box">
+	<div class="toggle" onclick="toggleTips()">
+    [show/hide input tips]
+  </div>
+	<ul id="filter-tips">
+    {{range .Form.Inputs}}
+      <li>
+        <b>{{.Label}}</b> (<code>{{.Type}}</code>): {{.Description}}
+      </li>
+    {{end}}
+	</ul>
+</div>
+{{template "toggle-script"}}
+<script>
+  function toggleTips() {
+		var x = document.getElementById("filter-tips");
+		toggle(x)
+	}
+</script>
+{{end}}
+
+{{define "form"}}
+<form id="form" action="{{.ID.Endpoint}}" method="GET">
+  {{with .Form.Description}}
+    <p>{{.}}<p>
+  {{end}}
+  {{range .Form.Inputs}}
+    {{$v := .Typed}}
+    {{$t := $v.InputType}}
+    {{ $name := .Name }}
+    {{ $req := .Required }}
+    {{if (eq $t "text") }}
+      <span>
+        <label for="{{$v.ID}}" {{if .Required}}class="emph"{{end}}>{{.Label}}</label>
+        <input id="{{$v.ID}}" type="text" name="{{$name}}" value="{{$v.Value}}"
+        {{if $req}}required{{else}}optional{{end}} autofocus />
+      </span>
+    {{else if (eq $t "radio") }}
+        <span {{if .Required}}class="emph"{{end}}><label>{{.Label}}</label></span>
+        {{range $c := $v.Choices}}
+        <span>
+          <label for="{{$c.ID}}">{{$c.Label}}</label>
+          <input id="{{$c.ID}}" type="radio" name="{{$name}}" value="{{$c.Value}}"
+          {{if $c.Checked}}checked="checked"{{end}}
+          {{if $req}}required{{else}}optional{{end}} autofocus />
+        </span>
+        {{end}}
+    {{else}}
+      <span> (BUG: unsupported input type) </span>
+    {{end}}
+  {{end}}
+  {{template "submit" . }}
+</form>
+<div id="working"></div>
+<script>
+  const form = document.getElementById("form");
+  form.addEventListener("submit", (event) => {
+  document.getElementById("working").innerHTML = "<p style='margin-top:1rem'>Working...</p>"
+  })
+</script>
+{{end}}
+
+{{define "submit"}}
+<span class="submit">
+	<input type="submit" value="{{.Form.SubmitText}}"/>
+</span>
 {{end}}

@@ -15,18 +15,18 @@ import (
 	"rsc.io/ordered"
 )
 
-var _ page = dbviewPage{}
-
 // dbviewPage holds the fields needed to display a view of the database.
 type dbviewPage struct {
-	Form   dbviewForm // the raw form inputs
+	CommonPage
+
+	Params dbviewParams // the raw parameters
 	Result *dbviewResult
 	Error  error // if non-nil, the error to display instead of the result
 }
 
-type dbviewForm struct {
-	Start, End string // comma-separated lists; see parseOredered for details
-	Limit      int
+type dbviewParams struct {
+	Start, End string // comma-separated lists; see [parseOrdered] for details
+	Limit      string // the maximum number of values to display
 }
 
 type dbviewResult struct {
@@ -46,17 +46,18 @@ func (g *Gaby) handleDBview(w http.ResponseWriter, r *http.Request) {
 }
 
 // populateDBviewPage returns the contents of the dbView page.
-func (g *Gaby) populateDBviewPage(r *http.Request) dbviewPage {
-	limit := parseInt(r.FormValue("limit"), 100)
-	p := dbviewPage{
-		Form: dbviewForm{
+func (g *Gaby) populateDBviewPage(r *http.Request) *dbviewPage {
+	p := &dbviewPage{
+		Params: dbviewParams{
 			Start: r.FormValue("start"),
 			End:   r.FormValue("end"),
-			Limit: limit,
+			Limit: formValue(r, "limit", "100"),
 		},
 	}
-	start := parseOrdered(p.Form.Start)
-	end := parseOrdered(p.Form.End)
+	p.setCommonPage()
+	limit := parseInt(p.Params.Limit, 100)
+	start := parseOrdered(p.Params.Start)
+	end := parseOrdered(p.Params.End)
 	g.slog.Info("calling dbview", "limit", limit)
 	res, err := g.dbview(start, end, limit)
 	g.slog.Info("done")
@@ -66,6 +67,19 @@ func (g *Gaby) populateDBviewPage(r *http.Request) dbviewPage {
 	}
 	p.Result = res
 	return p
+}
+
+func (p *dbviewPage) setCommonPage() {
+	p.CommonPage = CommonPage{
+		ID:          dbviewID,
+		Description: "View the database contents.",
+		Form: Form{
+			Description: `Provide one key to get a single value, or two to get a range.
+Keys are comma-separated lists of strings, integers, "inf" or "-inf".`,
+			Inputs:     p.Params.inputs(),
+			SubmitText: "Show",
+		},
+	}
 }
 
 func (g *Gaby) dbview(start, end []byte, limit int) (*dbviewResult, error) {
@@ -143,4 +157,56 @@ func parseInt(s string, defaultValue int) int {
 		return i
 	}
 	return defaultValue
+}
+
+// formValue returns the form value for the key, or defaultValue
+// if the form value is empty.
+func formValue(r *http.Request, key string, defaultValue string) string {
+	if v := r.FormValue(key); v != "" {
+		return v
+	}
+	return defaultValue
+}
+
+var (
+	safeStart = toSafeID("start")
+	safeEnd   = toSafeID("end")
+)
+
+func (pm *dbviewParams) inputs() []FormInput {
+	return []FormInput{
+		{
+			Label:       "Get",
+			Type:        "db key",
+			Description: "the starting db key",
+			Name:        safeStart,
+			Required:    true,
+			Typed: TextInput{
+				ID:    safeStart,
+				Value: pm.Start,
+			},
+		},
+		{
+			Label:       "To",
+			Type:        "db key",
+			Description: "the ending db key",
+			Name:        safeEnd,
+			// optional
+			Typed: TextInput{
+				ID:    safeEnd,
+				Value: pm.End,
+			},
+		},
+		{
+			Label:       "Limit",
+			Type:        "int",
+			Description: "the maximum number of values to display (default: 100)",
+			Name:        safeLimit,
+			Required:    true,
+			Typed: TextInput{
+				ID:    safeLimit,
+				Value: pm.Limit,
+			},
+		},
+	}
 }

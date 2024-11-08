@@ -26,16 +26,16 @@ func TestTemplates(t *testing.T) {
 	for _, test := range []struct {
 		name  string
 		tmpl  *template.Template
-		value any
+		value testPage
 	}{
-		{"search", searchPageTmpl, searchPage{Results: []search.Result{{Kind: "k", Title: "t"}}}},
-		{"actionlog", actionLogPageTmpl, actionLogPage{
+		{"search", searchPageTmpl, &searchPage{Results: []search.Result{{Kind: "k", Title: "t"}}}},
+		{"actionlog", actionLogPageTmpl, &actionLogPage{
 			StartTime: "t",
 			Entries:   []*actions.Entry{{Kind: "k"}},
 		}},
-		{"overview-initial", overviewPageTmpl, overviewPage{}},
-		{"overview", overviewPageTmpl, overviewPage{
-			Form: overviewForm{Query: "12"},
+		{"overview-initial", overviewPageTmpl, &overviewPage{}},
+		{"overview", overviewPageTmpl, &overviewPage{
+			Params: overviewParams{Query: "12"},
 			Result: &overviewResult{
 				IssueOverviewResult: github.IssueOverviewResult{
 					Issue: &github.Issue{
@@ -52,23 +52,29 @@ func TestTemplates(t *testing.T) {
 				},
 				Type: issueOverviewType,
 			}}},
-		{"overview-error", overviewPageTmpl, overviewPage{
-			Form:  overviewForm{Query: "12"},
-			Error: fmt.Errorf("an error"),
+		{"overview-error", overviewPageTmpl, &overviewPage{
+			Params: overviewParams{Query: "12"},
+			Error:  fmt.Errorf("an error"),
 		}},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			var buf bytes.Buffer
-			if err := test.tmpl.Execute(&buf, test.value); err != nil {
+			test.value.setCommonPage()
+			b, err := Exec(test.tmpl, test.value)
+			if err != nil {
 				t.Fatal(err)
 			}
-			html := buf.String()
+			html := string(b)
 			if err := validateHTML(html); err != nil {
 				printNumbered(html)
 				t.Fatalf("\n%s", err)
 			}
 		})
 	}
+}
+
+type testPage interface {
+	setCommonPage()
+	page
 }
 
 func printNumbered(s string) {

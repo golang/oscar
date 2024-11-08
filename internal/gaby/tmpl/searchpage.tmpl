@@ -5,89 +5,37 @@ license that can be found in the LICENSE file.
 -->
 <!doctype html>
 <html>
-  <head>
-    {{template "head" .}}
-  </head>
+  {{template "head" .}}
   <body>
-    <div class="section" class="header">
-		{{template "header" .}}
-		<div class="filter-tips-box">
-			<div class="toggle" onclick="toggle()">[show/hide input tips]</div>
-			<ul id="filter-tips">
-			    <li><b>query</b> (string): the text to search for neigbors of OR the ID (usually a URL) of a document in the vector database</li>
-				<li><b>min similarity</b> (<code>float64</code> between 0 and 1): similarity cutoff (default: 0, allow all)</li>
-				<li><b>max results</b> (<code>int</code>): maximum number of results to display (default: 20)</li>
-				<li><b>include types</b> (comma-separated list): document types to include, e.g <code>GitHubIssue,GoBlog</code> (default: empty, include all)</li>
-				<li><b>exclude types</b> (comma-separated list): document types to filter out, e.g <code>GitHubIssue,GoBlog</code> (default: empty, exclude none)</li>
-			</ul>
-		</div>
-	 <form id="form" action="/search" method="GET">
-		<span>
-		 <label for="query"><b>query</b></label>
-		 <input id="query" type="text" name="q" value="{{.Query}}" required autofocus />
-		</span>
-		<span>
-		 <label for="threshold">min similarity</label>
-		 <input id="threshold" type="text" name="threshold" value="{{.Threshold}}" optional autofocus />
-		</span>
-		<span>
-		 <label for="limit">max results</label>
-		 <input id="limit" type="text" name="limit" value="{{.Limit}}" optional autofocus />
-		</span>
-		<span>
-		 <label for="allow_kind">include types</label>
-		 <input id="allow_kind" type="text" name="allow_kind" value="{{.Allow}}" optional autofocus />
-		</span>
-		<span>
-		 <label for="deny_kind">exclude types</label>
-		 <input id="deny_kind" type="text" name="deny_kind" value="{{.Deny}}" optional autofocus />
-		</span>
-		<span class="submit">
-		 <input type="submit" value="search"/>
-		</span>
-	 </form>
-	</div>
-
-    <script>
-    const form = document.getElementById("form");
-    form.addEventListener("submit", (event) => {
-		document.getElementById("working").innerHTML = "<p style='margin-top:1rem'>Working...</p>"
-    })
-	function toggle() {
-		var x = document.getElementById("filter-tips");
-		if (x.style.display === "block") {
-			x.style.display = "none";
-		} else {
-			x.style.display = "block";
-		}
-	}
-    </script>
-
-	<div class="section">
-	<div id="working"></div>
-	{{- with .SearchError -}}
-		<p>Error: {{.}}</p>
-	{{- else with .Results -}}
-	  {{- range . -}}
-	    <div class="result">
-	    {{if .IDIsURL -}}
-			 <span><a class="id" href="{{.ID}}">{{.ID}}</a></span>
-			{{if .Title -}}
-			 <span class="title"><a href="{{.ID}}">{{.Title}}</a></span>
-			{{end -}}
-	    {{else -}}
-		  <span class="id">{{.ID -}}</span>
-		  {{with .Title}}
-			<span class="title">>{{.}}</span>
-		  {{end -}}
-	    {{end -}}
-	    <span class="kind">type: {{.Kind}}</span>
-	    <span class="score">similarity: <b>{{.Score}}</b></span>
-		</div>
-	  {{end}}
-	{{- else -}}
-	 {{if .Query}}<p>No results.</p>{{end}}
-  	{{- end}}
-   </div>
+    {{template "header" .}}
+    {{template "search-result" .}}
   </body>
 </html>
+
+{{define "search-result"}}
+<div class="section">
+{{- with .Error -}}
+	<p>Error: {{.}}</p>
+{{- else with .Results -}}
+	{{- range . -}}
+	<div class="result">
+	{{if .IDIsURL -}}
+			<span><a class="id" href="{{.ID}}">{{.ID}}</a></span>
+		{{if .Title -}}
+			<span class="title"><a href="{{.ID}}">{{.Title}}</a></span>
+		{{end -}}
+	{{else -}}
+		<span class="id">{{.ID -}}</span>
+		{{with .Title}}
+		<span class="title">>{{.}}</span>
+		{{end -}}
+	{{end -}}
+	<span class="kind">type: {{.Kind}}</span>
+	<span class="score">similarity: <b>{{.Score}}</b></span>
+	</div>
+	{{end}}
+{{- else -}}
+	{{if .Params.Query}}<p>No results.</p>{{end}}
+{{- end}}
+</div>
+{{end}}

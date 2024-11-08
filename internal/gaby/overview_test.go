@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/google/safehtml"
 	"golang.org/x/oscar/internal/docs"
 	"golang.org/x/oscar/internal/embeddocs"
 	"golang.org/x/oscar/internal/github"
@@ -86,12 +87,12 @@ func TestPopulateOverviewPage(t *testing.T) {
 	for _, tc := range []struct {
 		name string
 		r    *http.Request
-		want overviewPage
+		want *overviewPage
 	}{
 		{
 			name: "empty",
 			r:    &http.Request{},
-			want: overviewPage{},
+			want: &overviewPage{},
 		},
 		{
 			name: "issue overview (default)",
@@ -100,8 +101,8 @@ func TestPopulateOverviewPage(t *testing.T) {
 					"q": {"1"},
 				},
 			},
-			want: overviewPage{
-				Form: overviewForm{
+			want: &overviewPage{
+				Params: overviewParams{
 					Query:        "1",
 					OverviewType: "",
 				},
@@ -123,8 +124,8 @@ func TestPopulateOverviewPage(t *testing.T) {
 					"t": {issueOverviewType},
 				},
 			},
-			want: overviewPage{
-				Form: overviewForm{
+			want: &overviewPage{
+				Params: overviewParams{
 					Query:        "1",
 					OverviewType: issueOverviewType,
 				},
@@ -146,8 +147,8 @@ func TestPopulateOverviewPage(t *testing.T) {
 					"t": {relatedOverviewType},
 				},
 			},
-			want: overviewPage{
-				Form: overviewForm{
+			want: &overviewPage{
+				Params: overviewParams{
 					Query:        "1",
 					OverviewType: relatedOverviewType,
 				},
@@ -168,8 +169,8 @@ func TestPopulateOverviewPage(t *testing.T) {
 					"t": {relatedOverviewType},
 				},
 			},
-			want: overviewPage{
-				Form: overviewForm{
+			want: &overviewPage{
+				Params: overviewParams{
 					Query:        "3",
 					OverviewType: relatedOverviewType,
 				},
@@ -184,8 +185,8 @@ func TestPopulateOverviewPage(t *testing.T) {
 					"t": {relatedOverviewType},
 				},
 			},
-			want: overviewPage{
-				Form: overviewForm{
+			want: &overviewPage{
+				Params: overviewParams{
 					Query:        "unknown/project#3",
 					OverviewType: relatedOverviewType,
 				},
@@ -195,15 +196,19 @@ func TestPopulateOverviewPage(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			got := g.populateOverviewPage(tc.r)
+			tc.want.setCommonPage()
 			if diff := cmp.Diff(got, tc.want,
 				cmpopts.IgnoreFields(llmapp.OverviewResult{}, "Cached"),
-				cmpopts.EquateErrors()); diff != "" {
+				cmpopts.EquateErrors(),
+				safeHTMLcmpopt); diff != "" {
 				t.Errorf("Gaby.populateOverviewPage() mismatch (-got +want):\n%s", diff)
 			}
 		})
 	}
 
 }
+
+var safeHTMLcmpopt = cmpopts.EquateComparable(safehtml.TrustedResourceURL{}, safehtml.Identifier{})
 
 func TestParseOverviewPageQuery(t *testing.T) {
 	tests := []struct {

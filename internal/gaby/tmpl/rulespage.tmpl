@@ -5,69 +5,24 @@ license that can be found in the LICENSE file.
 -->
 <!doctype html>
 <html>
-  <head>
-    <title>Oscar Rule Checker</title>
-	<link rel="stylesheet" href="static/style.css"/>
-	<link rel="stylesheet" href="static/search.css"/>
-  </head>
+  {{template "head" .}}
   <body>
-    <div class="section" class="header">
-	 <h1>Oscar Rule Checker</h1>
-		<p>Generates a list of rule violations for submitted issues. This is a first draft (and currently limited to golang/go GitHub issues). Feedback welcome!</p>
-		<div class="filter-tips-box">
-			<div class="toggle" onclick="toggleTips()">[show/hide input tips]</div>
-			<ul id="filter-tips">
-			    <li><b>issue</b> (<code>int</code>): the issue ID of the issue to check< (e.g. 1234, golang/go#1234, https://github.com/golang/go/issues/1234)/li>
-			</ul>
-		</div>
-	 <form id="form" action="/rules" method="GET">
-		<span>
-		 <label for="query"><b>issue</b></label>
-		 <input id="query" type="text" name="q" value="{{.Query}}" required autofocus />
-		</span>
-		<span class="submit">
-		 <input type="submit" value="generate"/>
-		</span>
-	 </form>
-	</div>
-
-    <script>
-    const form = document.getElementById("form");
-    form.addEventListener("submit", (event) => {
-		document.getElementById("working").innerHTML = "<p style='margin-top:1rem'>Working...</p>"
-    })
-	function toggle(x) {
-		if (x.style.display === "block") {
-			x.style.display = "none";
-		} else {
-			x.style.display = "block";
-		}
-	}
-	function toggleTips() {
-		var x = document.getElementById("filter-tips");
-		toggle(x)
-	}
-	function togglePrompt() {
-		var x = document.getElementById("prompt");
-		toggle(x)
-	}
-    </script>
+	{{template "header" .}}
 
 	<div class="section">
-	<div id="working"></div>
-	{{- with .Error -}}
+	{{- with .Error -}}ß
 		<p>Error: {{.}}</p>
 	{{- else with .Result -}}
-	    <div class="metadata">
-	    	 <h2>Metadata</h2>
+		<div class="metadata">
+			<h2>Metadata</h2>
 			<p><strong>{{.Title}}</strong></p>
 			<p>Author: {{.User.Login}}</p>
 			<p>State: {{.State}}</p>
-	   </div>
-	   <div class="result">
-	   	<p>{{.HTML}}</p>
-	   </div>
-  	{{- end}}
-   </div>
+	</div>
+	<div class="result">
+		<p>{{.HTML}}</p>
+	</div>
+	{{- end}}
+	</div>
   </body>
 </html>

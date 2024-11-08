@@ -5,7 +5,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"strings"
 	"testing"
@@ -95,7 +94,6 @@ func TestTimes(t *testing.T) {
 }
 
 func TestActionTemplate(t *testing.T) {
-	var buf bytes.Buffer
 	page := actionLogPage{
 		Start:     endpoint{DurNum: "3", DurUnit: "days"},
 		StartTime: "whatevs",
@@ -107,10 +105,12 @@ func TestActionTemplate(t *testing.T) {
 			},
 		},
 	}
-	if err := actionLogPageTmpl.Execute(&buf, page); err != nil {
+	page.setCommonPage()
+	b, err := Exec(actionLogPageTmpl, &page)
+	if err != nil {
 		t.Fatal(err)
 	}
-	got := buf.String()
+	got := string(b)
 	wants := []string{
 		`<option value="days" selected>days</option>`,
 		`Project`,

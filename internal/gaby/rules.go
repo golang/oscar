@@ -20,9 +20,11 @@ import (
 // rulesPage holds the fields needed to display the results
 // of an issue rule check.
 type rulesPage struct {
-	rulesForm // the raw form inputs
-	Result    *rulesResult
-	Error     string // if non-empty, the error to display instead of the result
+	CommonPage
+
+	Params rulesParams // the raw parameters
+	Result *rulesResult
+	Error  error // if non-nil, the error to display instead of the result
 }
 
 type rulesResult struct {
@@ -31,8 +33,8 @@ type rulesResult struct {
 	HTML              safehtml.HTML // issue response as HTML
 }
 
-// rulesForm holds the raw inputs to the rules form.
-type rulesForm struct {
+// rulesParams holds the raw inputs to the rules form.
+type rulesParams struct {
 	Query string // the issue ID to lookup
 }
 
@@ -43,26 +45,27 @@ func (g *Gaby) handleRules(w http.ResponseWriter, r *http.Request) {
 var rulesPageTmpl = newTemplate(rulesPageTmplFile, template.FuncMap{})
 
 // populateRulesPage returns the contents of the rules page.
-func (g *Gaby) populateRulesPage(r *http.Request) rulesPage {
-	form := rulesForm{
-		Query: r.FormValue("q"),
+func (g *Gaby) populateRulesPage(r *http.Request) *rulesPage {
+	pm := rulesParams{
+		Query: r.FormValue(paramQuery),
 	}
-	p := rulesPage{
-		rulesForm: form,
+	p := &rulesPage{
+		Params: pm,
 	}
-	if form.Query == "" {
+	p.setCommonPage()
+	if pm.Query == "" {
 		return p
 	}
-	proj, issue, err := parseIssueNumber(form.Query)
+	proj, issue, err := parseIssueNumber(pm.Query)
 	if err != nil {
-		p.Error = fmt.Errorf("invalid form value %q: %w", form.Query, err).Error()
+		p.Error = fmt.Errorf("invalid form value %q: %w", pm.Query, err)
 		return p
 	}
 	if proj == "" && len(g.githubProjects) > 0 {
 		proj = g.githubProjects[0] // default to first project
 	}
 	if !slices.Contains(g.githubProjects, proj) {
-		p.Error = fmt.Errorf("invalid form value (unrecognized project): %q", form.Query).Error()
+		p.Error = fmt.Errorf("invalid form value (unrecognized project): %q", pm.Query)
 		return p
 	}
 	if issue <= 0 {
@@ -71,26 +74,49 @@ func (g *Gaby) populateRulesPage(r *http.Request) rulesPage {
 	// Find issue in database.
 	i, err := github.LookupIssue(g.db, proj, issue)
 	if err != nil {
-		return rulesPage{
-			rulesForm: form,
-			Error:     fmt.Errorf("error looking up issue %q: %w", form.Query, err).Error(),
-		}
+		p.Error = fmt.Errorf("error looking up issue %q: %w", pm.Query, err)
+		return p
 	}
 
 	// TODO: this llm.TextGenerator cast is kind of ugly. Redo somehow.
 	rules, err := rules.Issue(r.Context(), g.embed.(llm.TextGenerator), i)
 	if err != nil {
-		return rulesPage{
-			rulesForm: form,
-			Error:     err.Error(),
-		}
+		p.Error = err
+		return p
 	}
-	return rulesPage{
-		rulesForm: form,
-		Result: &rulesResult{
-			Issue:       i,
-			IssueResult: *rules,
-			HTML:        htmlutil.MarkdownToSafeHTML(rules.Response),
+	p.Result = &rulesResult{
+		Issue:       i,
+		IssueResult: *rules,
+		HTML:        htmlutil.MarkdownToSafeHTML(rules.Response),
+	}
+	return p
+}
+
+func (p *rulesPage) setCommonPage() {
+	p.CommonPage = CommonPage{
+		ID:          rulesID,
+		Description: "Generate a list of rule violations for submitted golang/go issues.",
+		Styles:      []safeURL{searchID.CSS()},
+		Form: Form{
+			Inputs:     p.Params.inputs(),
+			SubmitText: "generate",
+		},
+	}
+}
+
+func (pm *rulesParams) inputs() []FormInput {
+	return []FormInput{
+		{
+
+			Label:       "issue",
+			Type:        "int or string",
+			Description: "the issue to check, as a number or URL (e.g. 1234, golang/go#1234, or https://github.com/golang/go/issues/1234)",
+			Name:        safeQuery,
+			Required:    true,
+			Typed: TextInput{
+				ID:    safeQuery,
+				Value: pm.Query,
+			},
 		},
 	}
 }

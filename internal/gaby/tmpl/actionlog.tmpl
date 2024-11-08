@@ -5,132 +5,14 @@ license that can be found in the LICENSE file.
 -->
 <!doctype html>
 <html>
-  <head>
-    {{template "head" .}}
-    <script>
-      // Toggle the hidden state of a row containing the action.
-      // Also change the button label accordingly..
-      function toggleAction(event) {
-        let row = document.getElementById(event.target.dataset.rowid);
-        row.hidden = !row.hidden;
-        // event.target is the button.
-        event.target.value = row.hidden? 'Show': 'Hide';
-      }
-    </script>
-  </head>
+  {{template "head" .}}
   <body>
     <div class="section" id="header">
-    {{template "header" .}}
-    <form id="form" action="/actionlog" method="GET">
-      <table>
-        <tr>
-          <td>
-                {{- /* Resist the temptation to factor out the endpoint controls into
-                      a single template. That will require that id values are substituted
-                      in, which causes safehtml to complain that they aren't safe identifiers.
-                      It ends up being more complicated than it's worth.
-                */ -}}
-                <fieldset>
-                  <legend>Start</legend>
-                  <div>
-                    <input type="radio" name="start" id="start-fixed" value="fixed"
-                      {{if eq .Start.Radio "fixed"}}checked{{end}}/>
-                    <label for="start-fixed">Beginning</label>
-                  </div>
-                  <div>
-                    <input type="radio" name="start" id="start-dur" value="dur"
-                      {{if eq .Start.Radio "dur"}}checked{{end}}/>
-                    <input type="text" id="start-dur" size="4" name="start-dur-num" value="{{.Start.DurNum}}" autofocus/>
-                      <select name="start-dur-unit">
-                        {{template "dur-unit" .Start.DurUnit}}
-                      </select>
-                    <label for="start-dur">before end</label>
-                  </div>
-                  <div>
-                    <input type="radio" name="start" id="start-date" value="date"
-                      {{if eq .Start.Radio "date"}}checked{{end}}/>
-                    <label for="start-date">From</label>
-                    <input type="datetime-local" name="start-date" value="{{.Start.Date}}"/>
-                  </div>
-                </fieldset>
-              </td>
-
-          <td>
-                <fieldset>
-                  <legend>End</legend>
-                  <div>
-                    <input type="radio" name="end" id="end-fixed" value="fixed"
-                      {{if eq .End.Radio "fixed"}}checked{{end}}/>
-                    <label for="end-fixed">End</label>
-                  </div>
-                  <div>
-                    <input type="radio" name="end" id="end-dur" value="dur"
-                      {{if eq .End.Radio "dur"}}checked{{end}}/>
-                      <input type="text" id="end-dur" size="4" name="end-dur-num" value="1" autofocus/>
-                      <select name="end-dur-unit">
-                        {{template "dur-unit" .End.DurUnit}}
-                      </select>
-                    <label for="end-dur">after start</label>
-                  </div>
-                  <div>
-                    <input type="radio" name="end" id="end-date" value="date"
-                      {{if eq .End.Radio "date"}}checked{{end}}/>
-                    <label for="end-date">To</label>
-                    <input type="datetime-local" name="end-date" value="{{.End.Date}}"ga/>
-                  </div>
-                </fieldset>
-              </td>
-
-              <td> <input type="submit" value="Display"/> </td>
-        </tr>
-          </table>
-      </form>
+      {{template "nav-title" .}}
+      {{template "actionlog-form" .}}
     </div>
-
-    <div class="section">
-    {{if .StartTime}}
-      <h2>Action Log from {{.StartTime}} to {{.EndTime}}</h2>
-
-      {{with .Entries}}
-      <table style="max-width:100%">
-        <thead>
-          <tr>
-            <th>Created</th>
-            <th>Kind</th>
-            <th>Key</th>
-            <th>Action</th>
-            <th>Done</th>
-            <th>Result</th>
-            <th>Error</th>
-          </tr>
-        </thead>
-        {{range $i, $e := .}}
-          <tr>
-            <td>{{$e.Created | fmttime}}</td>
-            <td>{{$e.Kind}}</td>
-            <td>{{$e.Key | fmtkey}}</td>
-            <td>
-              {{- /* clicking the button shows/hides the action on the following row */ -}}
-              <input type="button" value="Show"
-                     data-rowid="id-action-{{$i}}"
-                     onclick="toggleAction(event)"/>
-            </td>
-            <td>{{$e.Done | fmttime}}</td>
-            <td><pre class="wrap">{{$e.Result | fmtval}}</pre></td>
-            <td>{{$e.Error}}</td>
-          </tr>
-          <tr id="{{(print "action-" $i) | safeid}}" hidden="true">
-            <td colspan="7">
-              <pre class="wrap">{{$e.ActionForDisplay}}</pre>
-            </td>
-          </tr>
-        {{end}}
-        </table>
-      {{else}}
-        No entries.
-      {{end}}
-    {{end}}
-    </div>
+    
+    {{template "actionlog-result" .}}
    </body>
 </html>
 
@@ -139,4 +21,130 @@ license that can be found in the LICENSE file.
   <option value="hours"{{if eq . "hours"}} selected{{end}}>hours</option>
   <option value="days"{{if eq . "days"}} selected{{end}}>days</option>
   <option value="weeks"{{if eq . "weeks"}} selected{{end}}>weeks</option>
+{{end}}
+
+{{define "actionlog-form"}}
+<form id="form" action="{{.ID.Endpoint}}" method="GET">
+  <table>
+    <tr>
+      <td>
+        {{- /* Resist the temptation to factor out the endpoint controls into
+              a single template. That will require that id values are substituted
+              in, which causes safehtml to complain that they aren't safe identifiers.
+              It ends up being more complicated than it's worth.
+        */ -}}
+        <fieldset>
+          <legend>Start</legend>
+          <div>
+            <input type="radio" name="start" id="start-fixed" value="fixed"
+              {{if eq .Start.Radio "fixed"}}checked{{end}}/>
+            <label for="start-fixed">Beginning</label>
+          </div>
+          <div>
+            <input type="radio" name="start" id="start-dur" value="dur"
+              {{if eq .Start.Radio "dur"}}checked{{end}}/>
+            <input type="text" id="start-dur" size="4" name="start-dur-num" value="{{.Start.DurNum}}" autofocus/>
+              <select name="start-dur-unit">
+                {{template "dur-unit" .Start.DurUnit}}
+              </select>
+            <label for="start-dur">before end</label>
+          </div>
+          <div>
+            <input type="radio" name="start" id="start-date" value="date"
+              {{if eq .Start.Radio "date"}}checked{{end}}/>
+            <label for="start-date">From</label>
+            <input type="datetime-local" name="start-date" value="{{.Start.Date}}"/>
+          </div>
+        </fieldset>
+      </td>
+
+      <td>
+        <fieldset>
+          <legend>End</legend>
+          <div>
+            <input type="radio" name="end" id="end-fixed" value="fixed"
+              {{if eq .End.Radio "fixed"}}checked{{end}}/>
+            <label for="end-fixed">End</label>
+          </div>
+          <div>
+            <input type="radio" name="end" id="end-dur" value="dur"
+              {{if eq .End.Radio "dur"}}checked{{end}}/>
+              <input type="text" id="end-dur" size="4" name="end-dur-num" value="1" autofocus/>
+              <select name="end-dur-unit">
+                {{template "dur-unit" .End.DurUnit}}
+              </select>
+            <label for="end-dur">after start</label>
+          </div>
+          <div>
+            <input type="radio" name="end" id="end-date" value="date"
+              {{if eq .End.Radio "date"}}checked{{end}}/>
+            <label for="end-date">To</label>
+            <input type="datetime-local" name="end-date" value="{{.End.Date}}"ga/>
+          </div>
+        </fieldset>
+      </td>
+
+      <td> {{template "submit" .}} </td>
+    </tr>
+  </table>
+</form>
+{{end}}
+
+{{define "actionlog-result"}}
+<script>
+  // Toggle the hidden state of a row containing the action.
+  // Also change the button label accordingly..
+  function toggleAction(event) {
+    let row = document.getElementById(event.target.dataset.rowid);
+    row.hidden = !row.hidden;
+    // event.target is the button.
+    event.target.value = row.hidden? 'Show': 'Hide';
+  }
+</script>
+
+{{if .StartTime}}
+<div class="section">
+  <h2>Action Log from {{.StartTime}} to {{.EndTime}}</h2>
+
+  {{with .Entries}}
+  <table style="max-width:100%">
+    <thead>
+      <tr>
+        <th>Created</th>
+        <th>Kind</th>
+        <th>Key</th>
+        <th>Action</th>
+        <th>Done</th>
+        <th>Result</th>
+        <th>Error</th>
+      </tr>
+    </thead>
+    {{range $i, $e := .}}
+      <tr>
+        <td>{{$e.Created | fmttime}}</td>
+        <td>{{$e.Kind}}</td>
+        <td>{{$e.Key | fmtkey}}</td>
+        <td>
+          {{- /* clicking the button shows/hides the action on the following row */ -}}
+          <input type="button" value="Show"
+                  data-rowid="id-action-{{$i}}"
+                  onclick="toggleAction(event)"/>
+        </td>
+        <td>{{$e.Done | fmttime}}</td>
+        <td><pre class="wrap">{{$e.Result | fmtval}}</pre></td>
+        <td>{{$e.Error}}</td>
+      </tr>
+      <tr id="{{(print "action-" $i) | safeid}}" hidden="true">
+        <td colspan="7">
+          <pre class="wrap">{{$e.ActionForDisplay}}</pre>
+        </td>
+      </tr>
+    {{end}}
+    </table>
+  {{else}}
+    No entries.
+  {{end}}
+</div>
+{{end}}
+
 {{end}}

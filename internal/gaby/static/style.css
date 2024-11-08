@@ -32,9 +32,31 @@ h1 {
     width: 40%;
     padding-bottom: .5em;
 }
+.emph {
+    font-weight: bold;
+}
 
 /* Wrap long text inside <pre>. */
 pre.wrap {
     white-space: pre-wrap;
+}
+
+.filter-tips-box {
+    font-size: .75em;
+    padding-bottom: .5em;
+}
+.toggle {
+    font-weight: bold;
+    color: #007d9c;
+}
+.toggle:hover {
+    text-decoration: underline;
+}
+#filter-tips {
+    display: none;
+}
+
+nav a#current-nav {
+    font-weight: bold;
 }
 

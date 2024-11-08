@@ -5,87 +5,49 @@ license that can be found in the LICENSE file.
 -->
 <!doctype html>
 <html>
-  <head>
-	{{template "head" .}}
-  </head>
+  {{template "head" .}}
   <body>
-    <div class="section" class="header">
-	  {{template "header" .}}
-		<div class="filter-tips-box">
-			<div class="toggle" onclick="toggleTips()">[show/hide input tips]</div>
-			<ul id="filter-tips">
-			    <li><b>issue</b> (<code>int</code>): the issue ID of the issue to summarize (e.g. 1234, golang/go#1234, https://github.com/golang/go/issues/1234)</li>
-				<li><b>overview type</b> (choice): "issue and comments" generates an overview of the issue and its comments; "related documents" searches for related documents and summarizes them</li>
-			</ul>
-		</div>
-	 <form id="form" action="/overview" method="GET">
-		<span>
-		 <label for="query"><b>issue</b></label>
-		 <input id="query" type="text" name="q" value="{{.Form.Query}}" required autofocus />
-		</span>
-		<span><label><b>overview type:</b></label></span>
-		<span>
-		  <label for="issue-overview">issue and comments</label>
-		  <input type="radio" id="issue" name="t" value="issue" {{if .CheckRadio "issue"}}checked="checked"{{end}} required autofocus />
-		</span>
-		<span>
-		  <label for="related">related documents</label>
-		  <input type="radio" id="related" name="t" value="related" {{if .CheckRadio "related"}}checked="checked"{{end}} required autofocus />
-		</span>
-		<span class="submit">
-		 <input type="submit" value="generate"/>
-		</span>
-	 </form>
-	</div>
-
-    <script>
-    const form = document.getElementById("form");
-    form.addEventListener("submit", (event) => {
-		document.getElementById("working").innerHTML = "<p style='margin-top:1rem'>Working...</p>"
-    })
-	function toggle(x) {
-		if (x.style.display === "block") {
-			x.style.display = "none";
-		} else {
-			x.style.display = "block";
-		}
-	}
-	function toggleTips() {
-		var x = document.getElementById("filter-tips");
-		toggle(x)
-	}
-	function togglePrompt() {
-		var x = document.getElementById("prompt");
-		toggle(x)
-	}
-    </script>
-
-	<div class="section">
-	<div id="working"></div>
-	{{- with .Error -}}
-		<p>Error: {{.Error}}</p>
-	{{- else with .Result -}}
-	    <div class="result">
-			<p><a href="{{.HTMLURL}}" target="_blank">{{.HTMLURL}}</a></p>
-			<p><strong>{{.Title}}</strong></p>
-			<p>author: {{.User.Login}} | state: {{.State}} | created: {{fmttime .CreatedAt}} | updated: {{fmttime .UpdatedAt}}{{if .IsIssueOverview}} | comments: {{.NumComments}}{{end}}</p>
-			<p><a href="{{.Related}}" target="_blank">[Search for related issues]</a></p>
-			<p>AI-generated overview{{if .Overview.Cached}} (cached){{end}}:</p>
-	    	<div id="overview">{{safehtml .Overview.Overview}}</div>
-		</div>
-		<div class="toggle" onclick="togglePrompt()">[show prompt]</div>
-		<div id="prompt">
-			<ul>
-				{{- range .Overview.Prompt -}}
-				<li>
-					<pre>{{.}}</pre>
-				</li>
-				{{- end -}}
-			</ul>
-		</div>
-	{{- else }}
-		{{if .Form.Query}}<p>No result.</p>{{end}}
-  	{{- end}}
-   </div>
+	{{template "header" .}}
+	{{template "overview-result" .}}
   </body>
 </html>
+
+
+{{define "show-prompt"}}
+<div class="toggle" onclick="togglePrompt()">[show prompt]</div>
+<div id="prompt">
+	<ul>
+		{{- range .Overview.Prompt -}}
+	<li>
+		<pre>{{.}}</pre>
+	</li>
+		{{- end -}}
+	</ul>
+</div>
+<script>
+function togglePrompt() {
+	var x = document.getElementById("prompt");
+	toggle(x)
+}
+</script>
+{{end}}
+
+{{define "overview-result"}}
+<div class="section">
+{{- with .Error -}}
+	<p>Error: {{.Error}}</p>
+{{- else with .Result -}}
+	<div class="result">
+		<p><a href="{{.HTMLURL}}" target="_blank">{{.HTMLURL}}</a></p>
+		<p><strong>{{.Title}}</strong></p>
+		<p>author: {{.User.Login}} | state: {{.State}} | created: {{fmttime .CreatedAt}} | updated: {{fmttime .UpdatedAt}}{{if .IsIssueOverview}} | comments: {{.NumComments}}{{end}}</p>
+		<p><a href="{{.Related}}" target="_blank">[Search for related issues]</a></p>
+		<p>AI-generated overview{{if .Overview.Cached}} (cached){{end}}:</p>
+		<div id="overview">{{safehtml .Overview.Overview}}</div>
+	</div>
+	{{template "show-prompt" .}}
+{{- else }}
+	{{if .Params.Query}}<p>No result.</p>{{end}}
+{{- end}}
+</div>
+{{end}}

@@ -5,7 +5,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -19,10 +18,10 @@ import (
 	"golang.org/x/oscar/internal/storage"
 )
 
-var _ page = actionLogPage{}
-
 // actionLogPage is the data for the action log HTML template.
 type actionLogPage struct {
+	CommonPage
+
 	Start, End         endpoint
 	StartTime, EndTime string // formatted times that the endpoints describe
 	Entries            []*actions.Entry
@@ -79,11 +78,30 @@ func (g *Gaby) doActionLog(r *http.Request) (content []byte, status int, err err
 		page.End.Radio = "fixed"
 	}
 
-	var buf bytes.Buffer
-	if err := actionLogPageTmpl.Execute(&buf, page); err != nil {
+	page.setCommonPage()
+
+	b, err := Exec(actionLogPageTmpl, &page)
+	if err != nil {
 		return nil, http.StatusInternalServerError, err
 	}
-	return buf.Bytes(), http.StatusOK, nil
+	return b, http.StatusOK, nil
+}
+
+func (p *actionLogPage) setCommonPage() {
+	p.CommonPage = *p.toCommonPage()
+}
+
+func (p *actionLogPage) toCommonPage() *CommonPage {
+	return &CommonPage{
+		ID:          actionlogID,
+		Description: "Browse actions taken by Oscar.",
+		Form: Form{
+			// Unset because the action log page defines its form inputs
+			// directly in an HTML template.
+			Inputs:     nil,
+			SubmitText: "display",
+		},
+	}
 }
 
 // formValues populates an endpoint from the values in the form.

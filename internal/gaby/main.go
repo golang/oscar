@@ -493,30 +493,34 @@ func (g *Gaby) newServer(report func(error)) *http.ServeMux {
 		}
 	})
 
+	get := func(p pageID) string {
+		return "GET " + p.Endpoint()
+	}
+
 	// /search: display a form for vector similarity search.
 	// /search?q=...: perform a search using the value of q as input.
-	mux.HandleFunc("GET /search", g.handleSearch)
+	mux.HandleFunc(get(searchID), g.handleSearch)
 
 	// /overview: display a form for LLM-generated overviews of data.
 	// /overview?q=...: generate an overview using the value of q as input.
-	mux.HandleFunc("GET /overview", g.handleOverview)
+	mux.HandleFunc(get(overviewID), g.handleOverview)
 
 	// /rules: display a form for entering an issue to check for rule violations.
 	// /rules?q=...: generate a list of violated rules for issue q.
-	mux.HandleFunc("GET /rules", g.handleRules)
+	mux.HandleFunc(get(rulesID), g.handleRules)
 
 	// /api/search: perform a vector similarity search.
 	// POST because the arguments to the request are in the body.
 	mux.HandleFunc("POST /api/search", g.handleSearchAPI)
 
 	// /actionlog: display action log
-	mux.HandleFunc("GET /actionlog", g.handleActionLog)
+	mux.HandleFunc(get(actionlogID), g.handleActionLog)
 
 	// /reviews: display review dashboard
-	mux.HandleFunc("GET /reviews", g.handleReviewDashboard)
+	mux.HandleFunc(get(reviewsID), g.handleReviewDashboard)
 
 	// /dbview: view parts of the database
-	mux.HandleFunc("GET /dbview", g.handleDBview)
+	mux.HandleFunc(get(dbviewID), g.handleDBview)
 
 	return mux
 }
