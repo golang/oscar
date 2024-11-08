@@ -7,9 +7,9 @@ require (
 	github.com/google/go-cmp v0.6.0
 	github.com/google/safehtml v0.1.0
 	github.com/shurcooL/githubv4 v0.0.0-20240727222349-48295856cce7
-	golang.org/x/net v0.30.0
-	golang.org/x/oauth2 v0.22.0
-	golang.org/x/tools v0.26.0
+	golang.org/x/net v0.31.0
+	golang.org/x/oauth2 v0.24.0
+	golang.org/x/tools v0.27.0
 	rsc.io/markdown v0.0.0-20240617154923-1f2ef1438fed
 	rsc.io/omap v1.2.1-0.20240709133045-40dad5c0c0fb
 	rsc.io/ordered v1.1.1
@@ -40,7 +40,7 @@ require (
 	github.com/rogpeppe/go-internal v1.10.0 // indirect
 	github.com/shurcooL/graphql v0.0.0-20230722043721-ed46e5a46466 // indirect
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
-	golang.org/x/sys v0.26.0 // indirect
-	golang.org/x/text v0.19.0 // indirect
+	golang.org/x/sys v0.27.0 // indirect
+	golang.org/x/text v0.20.0 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 )
