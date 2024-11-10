@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package github
+package rules
 
 import (
 	"bytes"
@@ -14,33 +14,25 @@ import (
 	"strings"
 	"text/template"
 
+	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/llm"
-	"golang.org/x/oscar/internal/storage"
 )
 
 // TODO: this is a one-shot request/response version of this feature.
 // Implement the version that comments on issues as they come in.
 
-// IssueRulesResult is the result of [IssueRules].
+// IssueResult is the result of [Issue].
 // It contains the text (in markdown format) of a response to
 // that issue mentioning any applicable rules that were violated.
 // If Response=="", then nothing to report.
-type IssueRulesResult struct {
-	*Issue   // the issue itself
+type IssueResult struct {
 	Response string
 }
 
-// IssueRules returns text describing the set of rules that the issue does not currently satisfy.
-// It does not make any requests to GitHub; the issue must already be stored in db.
-func IssueRules(ctx context.Context, llm llm.TextGenerator, db storage.DB, project string, issue int64) (*IssueRulesResult, error) {
-	var result IssueRulesResult
+// Issue returns text describing the set of rules that the issue does not currently satisfy.
+func Issue(ctx context.Context, llm llm.TextGenerator, i *github.Issue) (*IssueResult, error) {
+	var result IssueResult
 
-	// Find issue in database.
-	i, err := LookupIssue(db, project, issue)
-	if err != nil {
-		return nil, err
-	}
-	result.Issue = i
 	if i.PullRequest != nil {
 		result.Response += "## Issue response text\n**None required (pull request)**"
 		return &result, nil
@@ -48,7 +40,7 @@ func IssueRules(ctx context.Context, llm llm.TextGenerator, db storage.DB, proje
 
 	// Extract issue text into a string.
 	var issueText bytes.Buffer
-	err = template.Must(template.New("prompt").Parse(body)).Execute(&issueText, bodyArgs{
+	err := template.Must(template.New("prompt").Parse(body)).Execute(&issueText, bodyArgs{
 		Title: i.Title,
 		Body:  i.Body,
 	})

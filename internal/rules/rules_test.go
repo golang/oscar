@@ -2,50 +2,34 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package github
+package rules
 
 import (
 	"context"
 	"strings"
 	"testing"
 
-	"golang.org/x/oscar/internal/storage"
-	"golang.org/x/oscar/internal/storage/timed"
-	"rsc.io/ordered"
+	"golang.org/x/oscar/internal/github"
 )
 
-func TestIssueRules(t *testing.T) {
+func TestIssue(t *testing.T) {
 	ctx := context.Background()
-	db := storage.MemDB()
 	llm := &ruleTestGenerator{}
-	project := "project1"
-	eventKind := "github.Event"
-	api := "/issues"
-	issueID = 999
 
-	// Put an issue into the database.
-	// TODO: this is kind of hacky.
-	i := new(Issue)
-	i.Number = issueID
-	i.User = User{Login: "user"}
+	// Construct a test issue.
+	i := new(github.Issue)
+	i.Number = 999
+	i.User = github.User{Login: "user"}
 	i.Title = "title"
 	i.Body = "body"
-	key := ordered.Encode(project, issueID, api, issueID)
-	val := ordered.Encode(ordered.Raw(storage.JSON(i)))
-	batch := db.Batch()
-	timed.Set(db, batch, eventKind, key, val)
-	batch.Apply()
 
 	// Ask about rule violations.
-	r, err := IssueRules(ctx, llm, db, project, issueID)
+	r, err := Issue(ctx, llm, i)
 	if err != nil {
 		t.Fatalf("IssueRules failed with %v", err)
 	}
 
 	// Check result.
-	if r.Issue.Number != issueID {
-		t.Errorf("issue ID did not round trip correctly, got %d want %d", r.Issue.Number, issueID)
-	}
 	if !strings.Contains(r.Response, "\n- The issue title must start") {
 		t.Errorf("expected the issue title rule failed, but it didn't. Total output: %s", r.Response)
 	}

@@ -15,6 +15,7 @@ import (
 	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/htmlutil"
 	"golang.org/x/oscar/internal/llm"
+	"golang.org/x/oscar/internal/rules"
 )
 
 // rulesPage holds the fields needed to display the results
@@ -26,8 +27,9 @@ type rulesPage struct {
 }
 
 type rulesResult struct {
-	github.IssueRulesResult               // the raw result
-	HTML                    safehtml.HTML // issue response as HTML
+	*github.Issue                   // the issue we're reporting on
+	rules.IssueResult               // the raw result
+	HTML              safehtml.HTML // issue response as HTML
 }
 
 // rulesForm holds the raw inputs to the rules form.
@@ -58,8 +60,17 @@ func (g *Gaby) populateRulesPage(r *http.Request) rulesPage {
 			Error:     fmt.Errorf("invalid form value %q: %w", form.Query, err).Error(),
 		}
 	}
+	// Find issue in database.
+	i, err := github.LookupIssue(g.db, g.githubProject, int64(issue))
+	if err != nil {
+		return rulesPage{
+			rulesForm: form,
+			Error:     fmt.Errorf("error looking up issue %q: %w", form.Query, err).Error(),
+		}
+	}
+
 	// TODO: this llm.TextGenerator cast is kind of ugly. Redo somehow.
-	rules, err := github.IssueRules(r.Context(), g.embed.(llm.TextGenerator), g.db, g.githubProject, int64(issue))
+	rules, err := rules.Issue(r.Context(), g.embed.(llm.TextGenerator), i)
 	if err != nil {
 		return rulesPage{
 			rulesForm: form,
@@ -69,8 +80,9 @@ func (g *Gaby) populateRulesPage(r *http.Request) rulesPage {
 	return rulesPage{
 		rulesForm: form,
 		Result: &rulesResult{
-			IssueRulesResult: *rules,
-			HTML:             htmlutil.MarkdownToSafeHTML(rules.Response),
+			Issue:       i,
+			IssueResult: *rules,
+			HTML:        htmlutil.MarkdownToSafeHTML(rules.Response),
 		},
 	}
 }
