@@ -6,6 +6,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -94,7 +95,17 @@ func (g *Gaby) dbview(start, end []byte, limit int) (*dbviewResult, error) {
 }
 
 func makeItem(k, v []byte) item {
-	return item{Key: storage.Fmt(k), Value: storage.Fmt(v)}
+	var sval string
+	// If v consists of an ordered int64 followed by what might be a JSON object,
+	// guess that it was created by the timed package.
+	var t int64
+	val, err := ordered.DecodePrefix(v, &t)
+	if err == nil && len(val) > 0 && val[0] == '{' {
+		sval = fmt.Sprintf("DBTime(%d)\n%s", t, fmtValue(val))
+	} else {
+		sval = storage.Fmt(v)
+	}
+	return item{Key: storage.Fmt(k), Value: sval}
 }
 
 // parseOrdered parses a comma-separated list into an [ordered] value.
