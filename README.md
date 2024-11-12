@@ -57,8 +57,8 @@ of Oscar:
  1. Indexing and surfacing related project context during
     contributor interactions.
  2. Using natural language to control deterministic tools.
- 3. Analyzing issue reports and CLs/PRs, to help improve them
-    in real time during or shortly after submission,
+ 3. Analyzing issue reports, CLs/PRs and group discussions,
+    to help improve them in real time during or shortly after submission,
     and to label and route them appropriately.
 
 It should make sense that LLMs have something to offer here,
@@ -196,7 +196,8 @@ Finally, note that surfacing project context is extensible,
 so that projects can incorporate their context no matter what form it takes.
 Our prototype's context sources are tailored to the Go project,
 reading issues from GitHub, documentation from [go.dev](https://go.dev),
-and (soon) code reviews from Gerrit,
+code reviews from Gerrit, and discussions from Google Groups like
+[golang-nuts](https://groups.google.com/g/golang-nuts),
 but the architecture makes it easy to add additional sources.
 
 ### Using natural language to control deterministic tools
@@ -272,36 +273,39 @@ analyses customized to the reports they receive.
 
 ## Prototype
 
-Our first prototype to explore open-source contributor agents is called Gaby (for “Go AI bot”)
-and runs in the [Go issue tracker](https://github.com/golang/go/issues),
+Our first prototype, Gaby ("Go AI bot"), explores the potential of
+open-source contributor agents. Gaby operates within
+the [Go issue tracker](https://github.com/golang/go/issues),
 posting as [@gabyhelp](https://github.com/gabyhelp).
 The source code is in [internal/gaby](internal/gaby) in this repository.
 The [gaby package's documentation](https://pkg.go.dev/golang.org/x/oscar/internal/gaby)
 explains the overall structure of the code in the repository as well.
 
-So far, Gaby indexes Go issue content from GitHub
-as well as Go documentation from [go.dev](https://go.dev)
-and replies to new issues with relevant links.
-We plan to add Gerrit code reviews in the near future.
+Currently, Gaby indexes content from various sources:
+
+  * Go issues: GitHub issues for the Go projects.
+  * Go documentation: Official documentation on [go.dev](https://go.dev).
+  * Code reviews: Reviews from [Gerrit](https://go.dev/cl).
+  * Discussions: discussions for the Go project and golang-nuts Google Group.
+
+This allows Gaby to respond to new issues with relevant links and information.
 
 Gaby's structure makes it easy to run on any kind of hosting service,
 using any LLM, any storage layer, and any vector database.
-Right now, it runs on a local workstation, using Google's Gemini LLM,
-[Pebble](https://github.com/cockroachdb/pebble) key-value storage files,
-and an in-memory vector database.
-
-We plan to add support for a variety of other options, including
+Our current prototype runs on [GCP Cloud Run](https://cloud.google.com/run)
+using Google's Gemini LLM, with
 [Google Cloud Firestore](https://firebase.google.com/docs/firestore)
-for key-value storage and vector database.
-Firestore in particular will make it easy to run Gaby on hosted platforms
-like [Cloud Run](https://cloud.google.com/run).
+serving as both the key-value storage and vector database.
+However, as demonstrated in our initial proof-of-concept, Gaby can also function
+on local workstation using [Pebble](https://github.com/cockroachdb/pebble) and
+an in-memory vector database.
 
-Running on hosted platforms with their own URLs
+Running on hosted platforms with dedicated URLs
 (as opposed to a local workstation)
-will enable subscribing to
-[GitHub webhooks](https://docs.github.com/en/webhooks/about-webhooks),
-so that Gaby can respond even more quickly to issues
-and also carry on conversations.
+enables integration with 
+[GitHub webhooks](https://docs.github.com/en/webhooks/about-webhooks).
+This allows for real-time responses to issues and facilitates ongoing
+conversations.
 
 Our experience with all of this will inform the eventual generalized Oscar design.
 
