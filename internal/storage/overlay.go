@@ -23,7 +23,7 @@ type keyRange struct {
 	start, end []byte
 }
 
-// NewOverlayDB is a DB that overlays a MemDB over a base DB.
+// NewOverlayDB returns a DB that overlays a MemDB over a base DB.
 // Reads happen from the overlay first, then the base.
 // All writes go to the overlay.
 func NewOverlayDB(base DB) DB {
@@ -101,7 +101,8 @@ func (db *overlayDB) Scan(start, end []byte) iter.Seq2[[]byte, func() []byte] {
 		}()
 
 		// Filter out all keys in base that have been deleted.
-		fbase := filter2(db.base.Scan(start, end), func(k []byte, v func() []byte) bool { return !db.deleted(k) })
+		fbase := filter2(db.base.Scan(start, end),
+			func(k []byte, v func() []byte) bool { return !db.deleted(k) })
 		// Merge all the keys in overlay with the undeleted ones in base.
 		for k, vf := range unionFunc2(db.overlay.Scan(start, end), fbase, bytes.Compare) {
 			// Release the lock so yield can call methods on db.

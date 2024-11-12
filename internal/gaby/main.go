@@ -52,6 +52,7 @@ type gabyFlags struct {
 	enablesync    bool
 	enablechanges bool
 	level         string
+	overlay       bool
 }
 
 var flags gabyFlags
@@ -63,6 +64,7 @@ func init() {
 	flag.BoolVar(&flags.enablesync, "enablesync", false, "sync the DB with GitHub and other external sources")
 	flag.BoolVar(&flags.enablechanges, "enablechanges", false, "allow changes to GitHub")
 	flag.StringVar(&flags.level, "level", "info", "initial log level")
+	flag.BoolVar(&flags.overlay, "overlay", false, "add writeable overlay to DB")
 }
 
 // Gaby holds the state for gaby's execution.
@@ -247,6 +249,9 @@ func (g *Gaby) initGCP() (shutdown func()) {
 		log.Fatal(err)
 	}
 	g.db = db
+	if flags.overlay {
+		g.db = storage.NewOverlayDB(g.db)
+	}
 
 	vdb, err := firestore.NewVectorDB(g.ctx, g.slog, flags.project, flags.firestoredb, "gaby")
 	if err != nil {
