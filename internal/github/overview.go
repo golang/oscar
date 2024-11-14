@@ -42,7 +42,7 @@ func IssueOverview(ctx context.Context, lc *llmapp.Client, db storage.DB, projec
 		comments = append(comments, doc)
 	}
 	if post == nil {
-		return nil, fmt.Errorf("github.IssueOverview: issue %d not in db", issue)
+		return nil, fmt.Errorf("github.IssueOverview: issue %s#%d not in db", project, issue)
 	}
 	overview, err := lc.PostOverview(ctx, post, comments)
 	if err != nil {

@@ -7,8 +7,6 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"strconv"
-	"strings"
 
 	"github.com/google/safehtml"
 	"github.com/google/safehtml/template"
@@ -48,20 +46,29 @@ func (g *Gaby) populateRulesPage(r *http.Request) rulesPage {
 	form := rulesForm{
 		Query: r.FormValue("q"),
 	}
-	if form.Query == "" {
-		return rulesPage{
-			rulesForm: form,
-		}
+	p := rulesPage{
+		rulesForm: form,
 	}
-	issue, err := strconv.Atoi(strings.TrimSpace(form.Query))
+	if form.Query == "" {
+		return p
+	}
+	proj, issue, err := parseIssueNumber(form.Query)
 	if err != nil {
-		return rulesPage{
-			rulesForm: form,
-			Error:     fmt.Errorf("invalid form value %q: %w", form.Query, err).Error(),
-		}
+		p.Error = fmt.Errorf("invalid form value %q: %w", form.Query, err).Error()
+		return p
+	}
+	if proj == "" {
+		proj = g.githubProject // default to golang/go
+	}
+	if g.githubProject != proj {
+		p.Error = fmt.Errorf("invalid form value (unrecognized project): %q", form.Query).Error()
+		return p
+	}
+	if issue <= 0 {
+		return p
 	}
 	// Find issue in database.
-	i, err := github.LookupIssue(g.db, g.githubProject, int64(issue))
+	i, err := github.LookupIssue(g.db, proj, issue)
 	if err != nil {
 		return rulesPage{
 			rulesForm: form,

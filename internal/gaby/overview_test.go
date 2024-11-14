@@ -188,3 +188,72 @@ func TestPopulateOverviewPage(t *testing.T) {
 	}
 
 }
+
+func TestParseOverviewPageQuery(t *testing.T) {
+	tests := []struct {
+		in          string
+		wantProject string
+		wantIssue   int64
+		wantErr     bool
+	}{
+		{
+			in: "",
+		},
+		{
+			in:        "12345",
+			wantIssue: 12345,
+		},
+		{
+			in:          "golang/go#12345",
+			wantProject: "golang/go",
+			wantIssue:   12345,
+		},
+		{
+			in:        " 123",
+			wantIssue: 123,
+		},
+		{
+			in:      "x012x",
+			wantErr: true,
+		},
+		{
+			in:      "golang/go",
+			wantErr: true,
+		},
+		{
+			in:          "https://github.com/foo/bar/issues/12345",
+			wantProject: "foo/bar",
+			wantIssue:   12345,
+		},
+		{
+			in:          "https://go.dev/issues/234",
+			wantProject: "golang/go",
+			wantIssue:   234,
+		},
+		{
+			in:          "github.com/foo/bar/issues/12345",
+			wantProject: "foo/bar",
+			wantIssue:   12345,
+		},
+		{
+			in:          "go.dev/issues/234",
+			wantProject: "golang/go",
+			wantIssue:   234,
+		},
+		{
+			in:      "https://example.com/foo/bar/issues/12345",
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.in, func(t *testing.T) {
+			proj, issue, err := parseIssueNumber(tt.in)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("parseOverviewPageQuery(%q) error = %v, wantErr %v", tt.in, err, tt.wantErr)
+			}
+			if proj != tt.wantProject || issue != tt.wantIssue {
+				t.Errorf("parseOverviewPageQuery(%q) = (%q, %q, %v), want (%q, %q, _)", tt.in, proj, issue, err, tt.wantProject, tt.wantIssue)
+			}
+		})
+	}
+}

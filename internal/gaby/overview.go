@@ -35,7 +35,7 @@ type overviewResult struct {
 
 // overviewForm holds the raw inputs to the overview form.
 type overviewForm struct {
-	Query        string // the issue ID to lookup
+	Query        string // the issue ID to lookup, or golang/go#12345 or github.com/golang/go/issues/12345 form
 	OverviewType string // the type of overview to generate
 }
 
@@ -90,6 +90,45 @@ func fmtTimeString(s string) string {
 	return t.Format(time.DateOnly)
 }
 
+// parseIssueNumber parses the issue number from the given issue ID string.
+// The issue ID string can be in one of the following formats:
+//   - "12345" (by default, assume it is a golang/go project's issue)
+//   - "golang/go#12345"
+//   - "github.com/golang/go/issues/12345" or "https://github.com/golang/go/issues/12345"
+//   - "go.dev/issues/12345" or "https://go.dev/issues/12345"
+func parseIssueNumber(issueID string) (project string, issue int64, _ error) {
+	issueID = strings.TrimSpace(issueID)
+	if issueID == "" {
+		return "", 0, nil
+	}
+	split := func(q string) (string, string) {
+		q = strings.TrimPrefix(q, "https://")
+		// recognize github.com/golang/go/issues/12345
+		if proj, ok := strings.CutPrefix(q, "github.com/"); ok {
+			i := strings.LastIndex(proj, "/issues/")
+			if i < 0 {
+				return "", q
+			}
+			return proj[:i], proj[i+len("/issues/"):]
+		}
+		// recognize "go.dev/issues/12345"
+		if num, ok := strings.CutPrefix(q, "go.dev/issues/"); ok {
+			return "golang/go", num
+		}
+		// recognize golang/go#12345
+		if proj, num, ok := strings.Cut(q, "#"); ok {
+			return proj, num
+		}
+		return "", q
+	}
+	proj, num := split(issueID)
+	issue, err := strconv.ParseInt(num, 10, 64)
+	if err != nil || issue <= 0 {
+		return "", 0, fmt.Errorf("invalid issue number %q", issueID)
+	}
+	return proj, issue, nil
+}
+
 // populateOverviewPage returns the contents of the overview page.
 func (g *Gaby) populateOverviewPage(r *http.Request) overviewPage {
 	p := overviewPage{
@@ -98,20 +137,22 @@ func (g *Gaby) populateOverviewPage(r *http.Request) overviewPage {
 			OverviewType: r.FormValue("t"),
 		},
 	}
-	q := strings.TrimSpace(p.Form.Query)
-	if q == "" {
-		return p
-	}
-	issue, err := strconv.ParseInt(q, 10, 64)
+	proj, issue, err := parseIssueNumber(p.Form.Query)
 	if err != nil {
-		p.Error = fmt.Errorf("invalid form value %q: %w", q, err)
+		p.Error = fmt.Errorf("invalid form value: %v", err)
 		return p
 	}
-	if issue < 0 {
-		p.Error = fmt.Errorf("invalid form value %q", q)
+	if proj == "" {
+		proj = g.githubProject // default to golang/go
+	}
+	if g.githubProject != proj {
+		p.Error = fmt.Errorf("invalid form value (unrecognized project): %q", p.Form.Query)
 		return p
 	}
-	overview, err := g.overview(r.Context(), issue, p.Form.OverviewType)
+	if issue <= 0 {
+		return p
+	}
+	overview, err := g.overview(r.Context(), proj, issue, p.Form.OverviewType)
 	if err != nil {
 		p.Error = err
 		return p
@@ -121,20 +162,20 @@ func (g *Gaby) populateOverviewPage(r *http.Request) overviewPage {
 }
 
 // overview generates an overview of the issue of the given type.
-func (g *Gaby) overview(ctx context.Context, issue int64, overviewType string) (*overviewResult, error) {
+func (g *Gaby) overview(ctx context.Context, proj string, issue int64, overviewType string) (*overviewResult, error) {
 	switch overviewType {
 	case "", issueOverviewType:
-		return g.issueOverview(ctx, issue)
+		return g.issueOverview(ctx, proj, issue)
 	case relatedOverviewType:
-		return g.relatedOverview(ctx, issue)
+		return g.relatedOverview(ctx, proj, issue)
 	default:
 		return nil, fmt.Errorf("unknown overview type %q", overviewType)
 	}
 }
 
 // issueOverview generates an overview of the issue and its comments.
-func (g *Gaby) issueOverview(ctx context.Context, issue int64) (*overviewResult, error) {
-	overview, err := github.IssueOverview(ctx, g.llm, g.db, g.githubProject, issue)
+func (g *Gaby) issueOverview(ctx context.Context, proj string, issue int64) (*overviewResult, error) {
+	overview, err := github.IssueOverview(ctx, g.llm, g.db, proj, issue)
 	if err != nil {
 		return nil, err
 	}
@@ -145,8 +186,8 @@ func (g *Gaby) issueOverview(ctx context.Context, issue int64) (*overviewResult,
 }
 
 // relatedOverview generates an overview of the issue and its related documents.
-func (g *Gaby) relatedOverview(ctx context.Context, issue int64) (*overviewResult, error) {
-	iss, err := github.LookupIssue(g.db, g.githubProject, issue)
+func (g *Gaby) relatedOverview(ctx context.Context, proj string, issue int64) (*overviewResult, error) {
+	iss, err := github.LookupIssue(g.db, proj, issue)
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +206,7 @@ func (g *Gaby) relatedOverview(ctx context.Context, issue int64) (*overviewResul
 }
 
 // Related returns the relative URL of the related-entity search
-// for the issue.
+// for the issue. This is used in the overview page template.
 func (r *overviewResult) Related() string {
 	return fmt.Sprintf("/search?q=%s", r.Issue.HTMLURL)
 }
