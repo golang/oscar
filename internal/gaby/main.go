@@ -73,7 +73,7 @@ type Gaby struct {
 	cloud          bool              // running on Cloud Run
 	meta           map[string]string // any metadata we want to expose
 	addr           string            // address to serve HTTP on
-	githubProject  string            // github project to monitor and update
+	githubProjects []string          // github projects to monitor and update
 	gerritProjects []string          // gerrit projects to monitor and update
 	googleGroups   []string          // google groups to monitor and update
 
@@ -113,17 +113,19 @@ func main() {
 		slogLevel:      level,
 		http:           http.DefaultClient,
 		addr:           "localhost:4229", // 4229 = gaby on a phone
-		githubProject:  "golang/go",
+		githubProjects: []string{"golang/go"},
 		gerritProjects: []string{"go"},
 		googleGroups:   []string{"golang-nuts"},
 	}
 
-	shutdown := g.initGCP()
+	shutdown := g.initGCP() // sets up g.db, g.vector, g.secret, ...
 	defer shutdown()
 
 	g.github = github.New(g.slog, g.db, g.secret, g.http)
 	g.disc = discussion.New(g.ctx, g.slog, g.secret, g.db)
-	_ = g.disc.Add(g.githubProject) // only needed once per g.db lifetime
+	for _, project := range g.githubProjects {
+		_ = g.disc.Add(project) // FIXME: ignore the error. g.disc.Add returns an error if the project already exists in the db.
+	}
 
 	g.gerrit = gerrit.New("go-review.googlesource.com", g.slog, g.db, g.secret, g.http)
 	for _, project := range g.gerritProjects {
@@ -157,14 +159,19 @@ func main() {
 	}
 
 	cf := commentfix.New(g.slog, g.github, g.db, "gerritlinks")
-	cf.EnableProject(g.githubProject)
+	for _, proj := range g.githubProjects {
+		cf.EnableProject(proj)
+	}
 	cf.AutoLink(`\bCL ([0-9]+)\b`, "https://go.dev/cl/$1")
 	cf.ReplaceURL(`\Qhttps://go-review.git.corp.google.com/\E`, "https://go-review.googlesource.com/")
 	cf.EnableEdits()
 	g.commentFixer = cf
 
 	rp := related.New(g.slog, g.db, g.github, g.vector, g.docs, "related")
-	rp.EnableProject(g.githubProject)
+	for _, proj := range g.githubProjects {
+		rp.EnableProject(proj)
+	}
+	// TODO(hyangah): shouldn't these rules be configured differently for different github projects?
 	rp.SkipBodyContains("— [watchflakes](https://go.dev/wiki/Watchflakes)")
 	rp.SkipTitlePrefix("x/tools/gopls: release version v")
 	rp.SkipTitleSuffix(" backport]")

@@ -24,7 +24,10 @@ import (
 	"golang.org/x/oscar/internal/testutil"
 )
 
-const testProject = "rsc/tmp"
+const (
+	testProject  = "rsc/tmp"
+	testProject2 = "rsc/markdown"
+)
 
 func TestHandleGitHubEvent(t *testing.T) {
 	fl := &gabyFlags{
@@ -82,6 +85,21 @@ func TestHandleGitHubEvent(t *testing.T) {
 			wantHandled: true,
 		},
 		{
+			// Second project is handled too.
+			name: "new issue comment2",
+			payload: &github.WebhookIssueCommentEvent{
+				Action: github.WebhookIssueCommentActionCreated,
+				Issue: github.Issue{
+					Number: 3,
+				},
+				Repository: github.Repository{
+					Project: testProject2,
+				},
+			},
+			payloadType: github.WebhookEventTypeIssueComment,
+			wantHandled: true,
+		},
+		{
 			// Incorrect project skips the event but doesn't return an error.
 			name: "wrong project",
 			payload: &github.WebhookIssueEvent{
@@ -125,24 +143,26 @@ func testGaby(t *testing.T, secret secret.DB) *Gaby {
 
 	rp := related.New(lg, db, gh, vdb, dc, "related")
 	rp.EnableProject(testProject)
+	rp.EnableProject(testProject2)
 	rp.EnablePosts()
 
 	cf := commentfix.New(lg, gh, db, "fix")
 	cf.EnableProject(testProject)
+	cf.EnableProject(testProject2)
 	// No fixes yet.
 	cf.EnableEdits()
 
 	return &Gaby{
-		githubProject: testProject,
-		github:        gh,
-		vector:        vdb,
-		secret:        secret,
-		db:            db,
-		slog:          lg,
-		embed:         emb,
-		docs:          dc,
-		commentFixer:  cf,
-		relatedPoster: rp,
+		githubProjects: []string{testProject, testProject2},
+		github:         gh,
+		vector:         vdb,
+		secret:         secret,
+		db:             db,
+		slog:           lg,
+		embed:          emb,
+		docs:           dc,
+		commentFixer:   cf,
+		relatedPoster:  rp,
 	}
 }
 
@@ -166,6 +186,7 @@ func testGHClient(t *testing.T, check func(error), lg *slog.Logger, db storage.D
 	}
 	c := github.New(lg, db, sdb, rr.Client())
 	check(c.Add(testProject))
+	check(c.Add(testProject2))
 
 	return c
 }

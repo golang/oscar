@@ -22,7 +22,7 @@ func TestPopulateOverviewPage(t *testing.T) {
 
 	// Add test data relevant to this test.
 	project := "hello/world"
-	g.githubProject = project
+	g.githubProjects = []string{project}
 	g.github.Add(project)
 
 	iss1 := &github.Issue{
@@ -161,7 +161,7 @@ func TestPopulateOverviewPage(t *testing.T) {
 			},
 		},
 		{
-			name: "error",
+			name: "error/unknownIssue",
 			r: &http.Request{
 				Form: map[string][]string{
 					"q": {"3"}, // not in DB
@@ -171,6 +171,22 @@ func TestPopulateOverviewPage(t *testing.T) {
 			want: overviewPage{
 				Form: overviewForm{
 					Query:        "3",
+					OverviewType: relatedOverviewType,
+				},
+				Error: cmpopts.AnyError,
+			},
+		},
+		{
+			name: "error/unknownProject",
+			r: &http.Request{
+				Form: map[string][]string{
+					"q": {"unknown/project#3"}, // not in DB
+					"t": {relatedOverviewType},
+				},
+			},
+			want: overviewPage{
+				Form: overviewForm{
+					Query:        "unknown/project#3",
 					OverviewType: relatedOverviewType,
 				},
 				Error: cmpopts.AnyError,

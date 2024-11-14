@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -142,10 +143,10 @@ func (g *Gaby) populateOverviewPage(r *http.Request) overviewPage {
 		p.Error = fmt.Errorf("invalid form value: %v", err)
 		return p
 	}
-	if proj == "" {
-		proj = g.githubProject // default to golang/go
+	if proj == "" && len(g.githubProjects) > 0 {
+		proj = g.githubProjects[0] // default to first project.
 	}
-	if g.githubProject != proj {
+	if !slices.Contains(g.githubProjects, proj) {
 		p.Error = fmt.Errorf("invalid form value (unrecognized project): %q", p.Form.Query)
 		return p
 	}

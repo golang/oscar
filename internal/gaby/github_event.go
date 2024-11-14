@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 
 	"golang.org/x/oscar/internal/actions"
 	"golang.org/x/oscar/internal/docs"
@@ -34,15 +35,15 @@ import (
 // or [gabyFlags.enablechanges] is false.)
 //
 // handleGitHubEvent returns an error if any of the syncs or actions fails,
-// of if the webhook request is invalid according to [github.ValidateWebhookRequest].
+// or if the webhook request is invalid according to [github.ValidateWebhookRequest].
 func (g *Gaby) handleGitHubEvent(r *http.Request, fl *gabyFlags) (handled bool, err error) {
 	event, err := github.ValidateWebhookRequest(r, g.secret)
 	if err != nil {
 		return false, fmt.Errorf("%w: %v", errInvalidWebhookRequest, err)
 	}
 
-	if event.Project() != g.githubProject {
-		g.slog.Warn("unexpected webhook request", "webhook_project", event.Project(), "gaby_project", g.githubProject, "event", event)
+	if !slices.Contains(g.githubProjects, event.Project()) {
+		g.slog.Warn("unexpected webhook request", "webhook_project", event.Project(), "gaby_project", g.githubProjects, "event", event)
 		return false, nil
 	}
 

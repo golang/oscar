@@ -204,7 +204,7 @@ func (c *Client) SyncProject(ctx context.Context, project string) (err error) {
 	// Load sync state.
 	var proj projectSync
 	if val, ok := c.db.Get(key); !ok {
-		return fmt.Errorf("missing project")
+		return fmt.Errorf("missing project %v", project)
 	} else if err := json.Unmarshal(val, &proj); err != nil {
 		return err
 	}

@@ -7,6 +7,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"slices"
 
 	"github.com/google/safehtml"
 	"github.com/google/safehtml/template"
@@ -57,10 +58,10 @@ func (g *Gaby) populateRulesPage(r *http.Request) rulesPage {
 		p.Error = fmt.Errorf("invalid form value %q: %w", form.Query, err).Error()
 		return p
 	}
-	if proj == "" {
-		proj = g.githubProject // default to golang/go
+	if proj == "" && len(g.githubProjects) > 0 {
+		proj = g.githubProjects[0] // default to first project
 	}
-	if g.githubProject != proj {
+	if !slices.Contains(g.githubProjects, proj) {
 		p.Error = fmt.Errorf("invalid form value (unrecognized project): %q", form.Query).Error()
 		return p
 	}
