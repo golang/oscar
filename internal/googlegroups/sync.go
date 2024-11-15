@@ -126,11 +126,12 @@ func (group *groupSync) store(db storage.DB) {
 // It only adds the group sync metadata.
 // The initial data fetch does not happen until [Sync] or [SyncGroup]
 // is called.
-// Add returns an error if the project has already been added.
+// If the group is already present, Add does nothing and returns nil.
 func (c *Client) Add(group string) error {
 	key := o(syncGroupKind, group)
 	if _, ok := c.db.Get(key); ok {
-		return fmt.Errorf("ggroups.Add: already added: %q", group)
+		c.slog.Info("googlegroups.Add: already present", "group", group)
+		return nil
 	}
 	grp := &groupSync{
 		Name: group,

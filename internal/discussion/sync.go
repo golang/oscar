@@ -327,10 +327,11 @@ func (e *Event) key() []byte {
 // to the database.
 // It only adds the project sync metadata.
 // The initial data fetch does not happen until [Sync] or [SyncProject] is called.
-// Add returns an error if the project has already been added.
+// If the project is already present, Add does nothing and returns nil.
 func (c *Client) Add(project string) error {
 	if _, ok, _ := load(c.db, project); ok {
-		return fmt.Errorf("discussion.Add: already added: %q", project)
+		c.slog.Info("discussion.Add: already present", "project", project)
+		return nil
 	}
 	owner, repo, err := splitProject(project)
 	if err != nil {

@@ -124,17 +124,23 @@ func main() {
 	g.github = github.New(g.slog, g.db, g.secret, g.http)
 	g.disc = discussion.New(g.ctx, g.slog, g.secret, g.db)
 	for _, project := range g.githubProjects {
-		_ = g.disc.Add(project) // FIXME: ignore the error. g.disc.Add returns an error if the project already exists in the db.
+		if err := g.disc.Add(project); err != nil {
+			log.Fatalf("discussion.Add failed: %v", err)
+		}
 	}
 
 	g.gerrit = gerrit.New("go-review.googlesource.com", g.slog, g.db, g.secret, g.http)
 	for _, project := range g.gerritProjects {
-		_ = g.gerrit.Add(project) // in principle needed only once per g.db lifetime
+		if err := g.gerrit.Add(project); err != nil {
+			log.Fatalf("gerrit.Add failed: %v", err)
+		}
 	}
 
 	g.ggroups = googlegroups.New(g.slog, g.db, g.secret, g.http)
 	for _, group := range g.googleGroups {
-		_ = g.ggroups.Add(group) // in principle needed only once per g.db lifetime
+		if err := g.ggroups.Add(group); err != nil {
+			log.Fatalf("googlgroups.Add failed: %v", err)
+		}
 	}
 
 	g.docs = docs.New(g.slog, g.db)
