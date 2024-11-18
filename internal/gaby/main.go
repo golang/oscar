@@ -122,6 +122,11 @@ func main() {
 	defer shutdown()
 
 	g.github = github.New(g.slog, g.db, g.secret, g.http)
+	for _, project := range g.githubProjects {
+		if err := g.github.Add(project); err != nil {
+			log.Fatalf("github.Add failed: %v", err)
+		}
+	}
 	g.disc = discussion.New(g.ctx, g.slog, g.secret, g.db)
 	for _, project := range g.githubProjects {
 		if err := g.disc.Add(project); err != nil {

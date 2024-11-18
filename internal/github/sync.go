@@ -155,11 +155,11 @@ func (proj *projectSync) store(db storage.DB) {
 // to the database.
 // It only adds the project sync metadata.
 // The initial data fetch does not happen until [Sync] or [SyncProject] is called.
-// Add returns an error if the project has already been added.
+// If the project is already present, Add does nothing and returns nil.
 func (c *Client) Add(project string) error {
 	key := o(syncProjectKind, project)
 	if _, ok := c.db.Get(key); ok {
-		return fmt.Errorf("github.Add: already added: %q", project)
+		return nil
 	}
 	c.db.Set(key, storage.JSON(&projectSync{Name: project}))
 	return nil
