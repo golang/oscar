@@ -1,0 +1,64 @@
+# Other random tests.
+-- other1.test --
+a[ argument(1) ]: latlng(3.0, 5.3)
+-- other1.out --
+conjunction
+  conjunction
+    a[
+    call      argument
+      1
+  compare :
+    ]
+    call      latlng
+      3.0
+      5.3
+-- other2.test --
+a[ b ] >= 7.6 
+-- other2.out --
+conjunction
+  conjunction
+    a[
+    b
+  compare >=
+    ]
+    7.6
+-- other3.test --
+a[ "b" ] <= 3.14 
+-- other3.out --
+conjunction
+  conjunction
+    a[
+    "b"
+  compare <=
+    ]
+    3.14
+-- other4.test --
+field : parent.child
+-- other4.out --
+compare :
+  field
+  parent.child
+-- other5.test --
+field : foo*
+-- other5.out --
+compare :
+  field
+  foo*
+-- other6.test --
+field : foo\*
+-- other6.out --
+compare :
+  field
+  foo*
+-- other7.test --
+/foo.bar/
+-- other7.out --
+/foo.bar/
+-- other8.test --
+((foo))
+-- other8.out --
+foo
+-- other9.test --
+((foo))
+-- other9.out --
+foo

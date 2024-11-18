@@ -1,0 +1,21 @@
+# Conjunction tests.
+-- conjunction1.test --
+ a : b c = 17 
+-- conjunction1.out --
+conjunction
+  compare :
+    a
+    b
+  compare =
+    c
+    17
+-- conjunction2.test --
+date>yesterday AND size<20
+-- conjunction2.out --
+conjunction
+  compare >
+    date
+    yesterday
+  compare <
+    size
+    20

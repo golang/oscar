@@ -1,0 +1,36 @@
+# Function tests.
+-- func1.test --
+func(val)
+-- func1.out --
+call  func
+  val
+-- func2.test --
+a: func(val)
+-- func2.out --
+compare :
+  a
+  call    func
+    val
+-- func3.test --
+n1.n2.n3.func(val)
+-- func3.out --
+call  n1.n2.n3.func
+  val
+-- func4.test --
+a: n1.n2.func(val)
+-- func4.out --
+compare :
+  a
+  call    n1.n2.func
+    val
+-- func5.test --
+a.b()
+-- func5.out --
+call  a.b
+-- func6.test --
+x > a.b.c(d)
+-- func6.out --
+compare >
+  x
+  call    a.b.c
+    d

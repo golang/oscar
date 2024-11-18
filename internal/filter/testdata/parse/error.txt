@@ -1,0 +1,38 @@
+# Erroneous tests
+-- error1.test --
+x == 42
+-- error1.err --
+1:3: expected identifier or value
+-- error2.test --
+"\+"
+-- error2.out --
+"+"
+-- error3.test --
+"\*"
+-- error3.out --
+"*"
+-- error4.test --
+"\>"
+-- error4.out --
+">"
+-- error5.test --
+"YěHN摁Băo\+钬徯h?+8刄"
+-- error5.out --
+"YěHN摁Băo+钬徯h?+8刄"
+-- error6.test --
+-"ŊWf鿅qĒĘSɇ息¢f\*"
+-- error6.out --
+minus
+  "ŊWf鿅qĒĘSɇ息¢f*"
+-- error7.test --
+"炠Ě戌N*劥y畝\+"
+-- error7.out --
+"炠Ě戌N*劥y畝+"
+-- error8.test --
+"缻\\>Ȥ恶´帛砜Ɏ拟"
+-- error8.out --
+"缻\\>Ȥ恶´帛砜Ɏ拟"
+-- error9.test --
+"\xa0\xa1"
+-- error9.err --
+1:1: expected identifier or value

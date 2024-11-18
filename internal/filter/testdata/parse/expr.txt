@@ -1,0 +1,21 @@
+# Expression tests
+-- expr1.test --
+abc
+-- expr1.out --
+abc
+-- expr2.test --
+\+YěHN摁Băo
+-- expr2.out --
++YěHN摁Băo
+-- expr3.test --
+ŊWf鿅qĒĘSɇ息¢f
+-- expr3.out --
+ŊWf鿅qĒĘSɇ息¢f
+-- expr4.test --
+炠Ě戌N*劥y畝
+-- expr4.out --
+炠Ě戌N*劥y畝
+-- expr5.test --
+缻\>Ȥ恶´帛砜Ɏ拟
+-- expr5.out --
+缻>Ȥ恶´帛砜Ɏ拟

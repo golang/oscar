@@ -1,0 +1,43 @@
+# Equality tests.
+-- equality1.test --
+a!=b
+-- equality1.out --
+compare !=
+  a
+  b
+-- equality2.test --
+a != b
+-- equality2.out --
+compare !=
+  a
+  b
+-- equality3.test --
+a!= b
+-- equality3.out --
+compare !=
+  a
+  b
+-- equality4.test --
+a !=b
+-- equality4.out --
+compare !=
+  a
+  b
+-- equality5.test --
+a!b!=c
+-- equality5.out --
+compare !=
+  a!b
+  c
+-- equality6.test --
+a!=b!c
+-- equality6.out --
+compare !=
+  a
+  b!c
+-- equality7.test --
+a=/b/
+-- equality7.out --
+compare =
+  a
+  /b/

@@ -1,0 +1,19 @@
+# Tests with parentheses
+-- parentheses1.test --
+(a>1) OR ((b<2 AND c:3) AND d=4)
+-- parentheses1.out --
+disjunction
+  compare >
+    a
+    1
+  conjunction
+    conjunction
+      compare <
+        b
+        2
+      compare :
+        c
+        3
+    compare =
+      d
+      4

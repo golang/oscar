@@ -1,0 +1,29 @@
+# Basic parsing tests.
+-- basic1.test --
+x = 42
+-- basic1.out --
+compare =
+  x
+  42
+-- basic2.test --
+a : b c = 17
+-- basic2.out --
+conjunction
+  compare :
+    a
+    b
+  compare =
+    c
+    17
+-- basic3.test --
+x == 42
+-- basic3.err --
+1:3: expected identifier or value
+-- basic4.test --
+a : AND b  c = 17
+-- basic4.err --
+1:4: misplaced AND/OR/NOT
+-- basic5.test --
+a : b c = 17 -
+-- basic5.err --
+2:0: expected identifier or value

@@ -1,0 +1,11 @@
+# Disjunction tests.
+-- disjunction1.test --
+a:1 OR b=2
+-- disjunction1.out --
+disjunction
+  compare :
+    a
+    1
+  compare =
+    b
+    2

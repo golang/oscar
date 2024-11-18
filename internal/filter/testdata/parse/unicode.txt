@@ -1,0 +1,59 @@
+# Unicode tests.
+-- unicode1.test --
+fờö
+-- unicode1.out --
+fờö
+-- unicode2.test --
+answer:Да!
+-- unicode2.out --
+compare :
+  answer
+  Да!
+-- unicode3.test --
+metric.label.subject="ac�n" 
+-- unicode3.out --
+compare =
+  metric.label.subject
+  "ac�n"
+-- unicode4.test --
+metric.label.subject="ac�n" 
+-- unicode4.out --
+compare =
+  metric.label.subject
+  "ac�n"
+-- unicode5.test --
+你好吗
+-- unicode5.out --
+你好吗
+-- unicode6.test --
+"你好吗"
+-- unicode6.out --
+"你好吗"
+-- unicode7.test --
+"你好吗"
+-- unicode7.out --
+"你好吗"
+-- unicode8.test --
+🟦
+-- unicode8.out --
+🟦
+-- unicode9.test --
+"🟦"
+-- unicode9.out --
+"🟦"
+-- unicode10.test --
+"🟦"
+-- unicode10.out --
+"🟦"
+-- unicode11.test --
+"󠅢"
+-- unicode11.out --
+"󠅢"
+-- unicode12.test --
+"\777"
+-- unicode12.out --
+"?7"
+-- unicode13.test --
+"\777"
+-- unicode13.out --
+"?7"

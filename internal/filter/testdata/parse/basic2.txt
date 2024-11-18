@@ -1,0 +1,69 @@
+# More basic parsing tests.
+-- basic10.test --
+foo
+-- basic10.out --
+foo
+-- basic11.test --
+foo()
+-- basic11.out --
+call  foo
+-- basic12.test --
+foo = "bar"
+-- basic12.out --
+compare =
+  foo
+  "bar"
+-- basic13.test --
+foo=42s
+-- basic13.out --
+compare =
+  foo
+  42s
+-- basic14.test --
+foo=4.2.s
+-- basic14.out --
+compare =
+  foo
+  4.2.s
+-- basic15.test --
+foo=42.1s
+-- basic15.out --
+compare =
+  foo
+  42.1s
+-- basic16.test --
+foo=42.1337s
+-- basic16.out --
+compare =
+  foo
+  42.1337s
+-- basic17.test --
+foo=42.1337.24601s
+-- basic17.out --
+compare =
+  foo
+  42.1337.24601s
+-- basic18.test --
+foo=42.s
+-- basic18.out --
+compare =
+  foo
+  42.s
+-- basic19.test --
+foo=.42.s
+-- basic19.out --
+compare =
+  foo
+  .42.s
+-- basic20.test --
+foo..1.2
+-- basic20.out --
+foo..1.2
+-- basic21.test --
+foo..1..2
+-- basic21.out --
+foo..1..2
+-- basic22.test --
+2019-01..2023-01
+-- basic22.out --
+2019-01..2023-01

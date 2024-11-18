@@ -1,0 +1,33 @@
+# Negation tests.
+-- negation1.test --
+-a < 1
+-- negation1.out --
+minus
+  compare <
+    a
+    1
+-- negation2.test --
+NOT a > 3
+-- negation2.out --
+not
+  compare >
+    a
+    3
+-- negation3.test --
+-foo=(bar OR baz)
+-- negation3.out --
+minus
+  compare =
+    foo
+    disjunction
+      bar
+      baz
+-- negation4.test --
+NOT foo=(bar OR baz)
+-- negation4.out --
+not
+  compare =
+    foo
+    disjunction
+      bar
+      baz

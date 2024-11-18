@@ -1,0 +1,12 @@
+# Empty input tests.
+-- empty1.test --
+-- empty1.out --
+-- empty2.test --
+     
+-- empty2.out --
+-- empty3.test --
+route = /a/route*
+-- empty3.out --
+compare =
+  route
+  /a/route*

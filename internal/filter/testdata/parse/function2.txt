@@ -1,0 +1,41 @@
+# More function tests.
+-- func10.test --
+!@#$%^&*()
+-- func10.out --
+call  !@#$%^&*
+-- func11.test --
+!@#$%^&*(arg)
+-- func11.out --
+call  !@#$%^&*
+  arg
+-- func12.test --
+foo()
+-- func12.out --
+call  foo
+-- func13.test --
+a > foo()
+-- func13.out --
+compare >
+  a
+  call    foo
+-- func14.test --
+b < foo(3)
+-- func14.out --
+compare <
+  b
+  call    foo
+    3
+-- func15.test --
+a > b.c.d(e)
+-- func15.out --
+compare >
+  a
+  call    b.c.d
+    e
+-- func16.test --
+a > b.c.d(e)
+-- func16.out --
+compare >
+  a
+  call    b.c.d
+    e

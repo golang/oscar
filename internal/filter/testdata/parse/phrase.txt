@@ -1,0 +1,98 @@
+# Phrase tests.
+-- phrase1.test --
+empty:""
+-- phrase1.out --
+compare :
+  empty
+  ""
+-- phrase2.test --
+non-empty:"phrase"
+-- phrase2.out --
+compare :
+  non-empty
+  "phrase"
+-- phrase3.test --
+unicode:"Да!"
+-- phrase3.out --
+compare :
+  unicode
+  "Да!"
+-- phrase4.test --
+value:"\x66\x6f\x6F"
+-- phrase4.out --
+compare :
+  value
+  "foo"
+-- phrase5.test --
+X XX	XX X
+X
+-- phrase5.out --
+conjunction
+  conjunction
+    conjunction
+      conjunction
+        conjunction
+          conjunction
+            X
+            X
+          X
+        X
+      X
+    X
+  X
+-- phrase6.test --
+payload:"not --a --comment=10 -- foo"
+-- phrase6.out --
+compare :
+  payload
+  "not --a --comment=10 -- foo"
+-- phrase7.test --
+value: "this is a phrase"
+-- phrase7.out --
+compare :
+  value
+  "this is a phrase"
+-- phrase8.test --
+value: "this is a phrase"
+-- phrase8.out --
+compare :
+  value
+  "this is a phrase"
+-- phrase9.test --
+value: "open quote
+-- phrase9.err --
+1:8: expected identifier or value
+-- phrase10.test --
+value: "open quote
+-- phrase10.err --
+1:8: expected identifier or value
+-- phrase11.test --
+value: "\, \: \= \< \> \+ \~ \" \\ \. \*"
+-- phrase11.out --
+compare :
+  value
+  ", : = < > + ~ \" \\ . *"
+-- phrase12.test --
+value: "\a \b \f \n \r \t \v"
+-- phrase12.out --
+compare :
+  value
+  "\a \b \f \n \r \t \v"
+-- phrase13.test --
+value:"(foo)-.bar"
+-- phrase13.out --
+compare :
+  value
+  "(foo)-.bar"
+-- phrase14.test --
+ url = "https\://www\.google\.com/test\?a\=b" 
+-- phrase14.out --
+compare =
+  url
+  "https://www.google.com/test\\?a=b"
+-- phrase15.test --
+ url = "https\://www\.google\.com/test\?a\=b" 
+-- phrase15.out --
+compare =
+  url
+  "https://www.google.com/test\\?a=b"

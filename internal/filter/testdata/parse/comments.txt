@@ -1,0 +1,108 @@
+# Comment tests.
+-- comment1.test --
+--
+-- comment1.out --
+-- comment2.test --
+-- Just a comment single line
+-- comment2.out --
+-- comment3.test --
+    -- Just an indented comment single line
+-- comment3.out --
+-- comment4.test --
+
+    -- Just a comment
+    --
+    -- a lone comment
+  
+-- comment4.out --
+-- comment5.test --
+
+    term
+    -- Ending comment
+  
+-- comment5.out --
+term
+-- comment6.test --
+
+    -- opening comment
+    term
+  
+-- comment6.out --
+term
+-- comment7.test --
+
+    term -- same-line comment
+  
+-- comment7.out --
+term
+-- comment8.test --
+
+    foo
+    -- implicit conjunction preceding comment
+    bar
+    baz
+  
+-- comment8.out --
+conjunction
+  conjunction
+    foo
+    bar
+  baz
+-- comment9.test --
+
+    foo
+    bar -- implicit conjunction inline comment
+    baz
+  
+-- comment9.out --
+conjunction
+  conjunction
+    foo
+    bar
+  baz
+-- comment10.test --
+
+    foo AND
+    bar AND -- explicit conjunction inline comment
+    baz
+  
+-- comment10.out --
+conjunction
+  conjunction
+    foo
+    bar
+  baz
+-- comment11.test --
+
+    foo OR
+    bar OR -- explicit disjunction inline comment
+    baz
+  
+-- comment11.out --
+disjunction
+  disjunction
+    foo
+    bar
+  baz
+-- comment12.test --
+
+    -- multi-line
+    -- comment
+    -- block
+     (foo OR -- next one
+       bar)
+     bar
+     --comment 1
+     baz
+     qux -- comment 2
+     -- comment 3
+-- comment12.out --
+conjunction
+  conjunction
+    conjunction
+      disjunction
+        foo
+        bar
+      bar
+    baz
+  qux

@@ -1,0 +1,9 @@
+# Precedence tests
+-- prec1.test --
+a AND b OR c
+-- prec1.out --
+conjunction
+  a
+  disjunction
+    b
+    c

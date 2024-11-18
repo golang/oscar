@@ -1,0 +1,137 @@
+# Regexp tests.
+-- regexp1.test --
+a=~"b"
+-- regexp1.out --
+compare =~
+  a
+  "b"
+-- regexp2.test --
+a.b.c=~"b.*c"
+-- regexp2.out --
+compare =~
+  a.b.c
+  "b.*c"
+-- regexp3.test --
+a.b.c=~"12[a-zA-Z]+x.*(a|b|c)?"
+-- regexp3.out --
+compare =~
+  a.b.c
+  "12[a-zA-Z]+x.*(a|b|c)?"
+-- regexp4.test --
+a AND b=~"foo.*bar?" AND c AND d.e =~ "baz[^\"]+"
+-- regexp4.out --
+conjunction
+  conjunction
+    conjunction
+      a
+      compare =~
+        b
+        "foo.*bar?"
+    c
+  compare =~
+    d.e
+    "baz[^\"]+"
+-- regexp5.test --
+a =~ ("foo.*bar" AND ("foo.*baz" OR "foo.*qux"))
+-- regexp5.out --
+compare =~
+  a
+  conjunction
+    "foo.*bar"
+    disjunction
+      "foo.*baz"
+      "foo.*qux"
+-- regexp6.test --
+a =~ word
+-- regexp6.err --
+1:6: regular expression is not a quoted string
+-- regexp7.test --
+a =~ ("foo.*" OR bar)
+-- regexp7.err --
+1:18: regular expression is not a quoted string
+-- regexp8.test --
+a =~ "(no|closing|parens"
+-- regexp8.err --
+1:6: invalid regular expression: error parsing regexp: missing closing ): `(no|closing|parens`
+-- regexp9.test --
+a =~ "[no|closing|brace"
+-- regexp9.err --
+1:6: invalid regular expression: error parsing regexp: missing closing ]: `[no|closing|brace`
+-- regexp10.test --
+a!~"b"
+-- regexp10.out --
+compare !~
+  a
+  "b"
+-- regexp11.test --
+a.b.c!~"b.*c"
+-- regexp11.out --
+compare !~
+  a.b.c
+  "b.*c"
+-- regexp12.test --
+a.b.c!~"12[a-zA-Z]+x.*(a|b|c)?"
+-- regexp12.out --
+compare !~
+  a.b.c
+  "12[a-zA-Z]+x.*(a|b|c)?"
+-- regexp13.test --
+a AND b!~"foo.*bar?" AND c AND d.e !~ "baz[^\"]+"
+-- regexp13.out --
+conjunction
+  conjunction
+    conjunction
+      a
+      compare !~
+        b
+        "foo.*bar?"
+    c
+  compare !~
+    d.e
+    "baz[^\"]+"
+-- regexp14.test --
+a !~ ("foo.*bar" AND ("foo.*baz" OR "foo.*qux"))
+-- regexp14.out --
+compare !~
+  a
+  conjunction
+    "foo.*bar"
+    disjunction
+      "foo.*baz"
+      "foo.*qux"
+-- regexp15.test --
+a !~ word
+-- regexp15.err --
+1:6: regular expression is not a quoted string
+-- regexp16.test --
+a !~ ("foo.*" OR bar)
+-- regexp16.err --
+1:18: regular expression is not a quoted string
+-- regexp17.test --
+a !~ "(no|closing|parens"
+-- regexp17.err --
+1:6: invalid regular expression: error parsing regexp: missing closing ): `(no|closing|parens`
+-- regexp18.test --
+a !~ "[no|closing|brace"
+-- regexp18.err --
+1:6: invalid regular expression: error parsing regexp: missing closing ]: `[no|closing|brace`
+-- regexp19.test --
+a !~ "(no|closing|parens"
+-- regexp19.err --
+1:6: invalid regular expression: error parsing regexp: missing closing ): `(no|closing|parens`
+-- regexp20.test --
+a !~ "[no|closing|brace"
+-- regexp20.err --
+1:6: invalid regular expression: error parsing regexp: missing closing ]: `[no|closing|brace`
+-- regexp21.test --
+a=~"b"
+-- regexp21.out --
+compare =~
+  a
+  "b"
+-- regexp22.test --
+a!~"b"
+-- regexp22.out --
+compare !~
+  a
+  "b"
