@@ -1,0 +1,191 @@
+{
+  "resources": [
+    {
+      "bool_field": false,
+      "case_field": "string",
+      "compound": {
+        "int_field": 123,
+        "num": {
+          "array": [1, 23, 456, 7890],
+          "dictionary": {"xyz": 123, "Def": 456, "ghI": 789}
+        },
+        "str": {
+          "array": ["xyz", "Def", "ghI", "JKL"],
+          "dictionary": {"xyz": "one", "Def": "two", "ghI": "three"}
+        },
+        "string_field": "eggman"
+      },
+      "enum_field": "NO_ERROR",
+      "false": false,
+      "float_field": 0.0,
+      "int_field": 0,
+      "members": [
+        {
+          "first": "Bud",
+          "last": "Inski",
+          "id": 123
+        },
+        {
+          "first": "Bud",
+          "last": "Tuggli",
+          "id": 1234
+        },
+        {
+          "first": "Bud",
+          "last": "Uronner",
+          "id": 12345
+        },
+        {
+          "first": "Hugo",
+          "last": "First",
+          "id": 123456
+        },
+        {
+          "first": "Hugo",
+          "last": "Origo",
+          "id": 1234567
+        },
+        {
+          "first": "Stu",
+          "last": "Earley",
+          "id": 12345678
+        }
+      ],
+      "quote_single": "a'z",
+      "quote_double": "a\"z",
+      "string_field": "",
+      "subject": "def",
+      "text": "You're gonna need a <CODE>bigger</CODE> boat.",
+      "timestamp_field": "1970-01-01T00:00:00.000Z",
+      "true": true,
+      "undefined": null,
+      "unicode_field": "résumé",
+      "url": "https://aaa.bbb.ccc/gonna/need/bigger/boat",
+      "words": "Jack and Jill"
+    },
+    {
+      "bool_field": true,
+      "case_field": "StrIng",
+      "compound": {
+        "int_field": 456,
+        "num": {
+          "array": [456, 789],
+          "dictionary": {"ghI": 789, "Jkl": 1024, "MNO": 54321}
+        },
+        "str": {
+          "array": ["ghI", "JKL", "MNO", "pQr"],
+          "dictionary": {"ghI": "three", "Jkl": "four", "MNO": "five"}
+        },
+        "string_field": "eggmen"
+      },
+      "enum_field": "WARNING",
+      "exists_scalar_int": 0,
+      "exists_scalar_string": "",
+      "exists_scalar_message": {},
+      "exists_array_int": [],
+      "exists_array_string": [],
+      "exists_array_message": [],
+      "float_field": 0.5,
+      "int_field": 1,
+      "members": [
+        {
+          "first": "Dot",
+          "last": "Matrix",
+          "id": 102030
+        },
+        {
+          "first": "Dot",
+          "last": "Snice",
+          "id": 4050607
+        },
+        {
+          "first": "Jim",
+          "last": "Shortz",
+          "id": 819203
+        },
+        {
+          "first": "Lou",
+          "last": "Pole",
+          "id": 1926378
+        },
+        {
+          "first": "Sven",
+          "last": "Diagram",
+          "id": 8773003784
+        }
+      ],
+      "quote_single": "a' 'z",
+      "quote_double": "a\" \"z",
+      "string_field": "abc",
+      "subject": "defghi",
+      "text": "I didn't wanna say yes but I couldnt't say no.",
+      "timestamp_field": "2009-02-13T23:31:00.123456000Z",
+      "undefined": null,
+      "unicode_field": "RE\u0301SUMÉ",
+      "url": "https://aaa.bbb.ccc/wanna/say/yes",
+      "words": "good or bad"
+    },
+    {
+      "bool_field": false,
+      "case_field": "STRING",
+      "compound": {
+        "int_field": -123,
+        "num": {
+          "array": [-10, 0, 10],
+          "dictionary": {"Jkl": 4, "MNO": -5, "pqr": 0}
+        },
+        "str": {
+          "array": ["MNO", "pQr", "StU", "vwx"],
+          "dictionary": {"Jkl": "four", "MNO": "five", "pqr": "six"}
+        },
+        "string_field": "wal\"rus"
+      },
+      "enum_field": "ERROR",
+      "exists_scalar_int": 999,
+      "exists_scalar_string": "pdq",
+      "exists_scalar_message": {
+         "first": "Eustace",
+         "last": "Hammer",
+         "id": 34702
+      },
+      "exists_array_int": [999],
+      "exists_array_string": ["pdq"],
+      "exists_array_message": [
+        {
+          "first": "Eustace",
+          "last": "Kane",
+          "id": 1
+        }
+      ],
+      "float_field": -0.5,
+      "int_field": -1,
+      "members": [
+        {
+          "first": "Eustace",
+          "last": "Hammer",
+          "id": 34702
+        },
+        {
+          "first": "Eustace",
+          "last": "Kane",
+          "id": 1
+        },
+        {
+          "first": "Lou",
+          "last": "Segusi",
+          "id": 20
+        }
+      ],
+      "quote_single": "a'\"\"'z",
+      "quote_double": "a\"''\"z",
+      "string_field": "abc.xyz",
+      "subject": "defghijkl",
+      "text": "<P>I thought the leader should be the one with the <B>capacity for abstract thought</B>, but if that <I>doesn't seem to be</I> the case, hell, we'll put it to a vote.",
+      "timestamp_field": "2016-03-02T08:26:46.123456789Z",
+      "undefined": null,
+      "unicode_field": "resume",
+      "url": "https://aaa.bbb.ccc/capacity/for/abstract/thought",
+      "words": "You're gonna need a bigger boat."
+    }
+  ]
+}

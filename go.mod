@@ -10,6 +10,7 @@ require (
 	golang.org/x/net v0.31.0
 	golang.org/x/oauth2 v0.24.0
 	golang.org/x/tools v0.27.0
+	gopkg.in/yaml.v3 v3.0.1
 	rsc.io/markdown v0.0.0-20240617154923-1f2ef1438fed
 	rsc.io/omap v1.2.1-0.20240709133045-40dad5c0c0fb
 	rsc.io/ordered v1.1.1
