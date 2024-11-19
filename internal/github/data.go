@@ -297,8 +297,8 @@ func (x *IssueComment) CommentID() int64 {
 func (x *IssueComment) ID() string                 { return x.URL }
 func (x *IssueComment) Title_() string             { return "" }
 func (x *IssueComment) Body_() string              { return x.Body }
-func (x *IssueComment) CreatedAt_() time.Time      { return parseTimeOrZero(x.CreatedAt) }
-func (x *IssueComment) UpdatedAt_() time.Time      { return parseTimeOrZero(x.UpdatedAt) }
+func (x *IssueComment) CreatedAt_() time.Time      { return mustParseTime(x.CreatedAt) }
+func (x *IssueComment) UpdatedAt_() time.Time      { return mustParseTime(x.UpdatedAt) }
 func (x *IssueComment) Author() *model.Identity    { panic("TODO: convert User to Identity") }
 func (x *IssueComment) CanEdit() bool              { return true }
 func (x *IssueComment) CanHaveChildren() bool      { return false }
@@ -346,8 +346,8 @@ func (i *Issue) DocID() string {
 func (x *Issue) ID() string                 { return x.URL }
 func (x *Issue) Title_() string             { return x.Title }
 func (x *Issue) Body_() string              { return x.Body }
-func (x *Issue) CreatedAt_() time.Time      { return parseTimeOrZero(x.CreatedAt) }
-func (x *Issue) UpdatedAt_() time.Time      { return parseTimeOrZero(x.UpdatedAt) }
+func (x *Issue) CreatedAt_() time.Time      { return mustParseTime(x.CreatedAt) }
+func (x *Issue) UpdatedAt_() time.Time      { return mustParseTime(x.UpdatedAt) }
 func (x *Issue) Author() *model.Identity    { panic("TODO: convert User to Identity") }
 func (x *Issue) CanEdit() bool              { return true }
 func (x *Issue) CanHaveChildren() bool      { return false }
@@ -358,7 +358,13 @@ func (x *Issue) Updates() model.PostUpdates { return &IssueChanges{} }
 
 var _ model.Post = (*Issue)(nil)
 
-func parseTimeOrZero(s string) time.Time {
-	t, _ := time.Parse("2006-01-02 15:04:05", s)
+func mustParseTime(s string) time.Time {
+	if s == "" {
+		return time.Time{}
+	}
+	t, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		storage.Panic("bad time: %v", err)
+	}
 	return t
 }
