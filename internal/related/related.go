@@ -39,8 +39,9 @@ type Poster struct {
 	scoreCutoff float64
 	post        bool
 	// For the action log.
-	actionKind string
-	logAction  actions.BeforeFunc
+	requireApproval bool
+	actionKind      string
+	logAction       actions.BeforeFunc
 }
 
 // New creates and returns a new Poster. It logs to lg, stores state in db,
@@ -136,6 +137,11 @@ func (p *Poster) EnableProject(project string) {
 // See also [Poster.EnableProject], which must also be called to set the projects being considered.
 func (p *Poster) EnablePosts() {
 	p.post = true
+}
+
+// RequireApproval configures the Poster to log actions that require approval.
+func (p *Poster) RequireApproval() {
+	p.requireApproval = true
 }
 
 // An action has all the information needed to post a comment to a GitHub issue.
@@ -281,7 +287,7 @@ func (p *Poster) logPostIssue(ctx context.Context, e *github.Event) (advance boo
 		Issue:   e.Typed.(*github.Issue),
 		Changes: &github.IssueCommentChanges{Body: comment},
 	}
-	p.logAction(p.db, logKey(e), storage.JSON(act), !actions.RequiresApproval)
+	p.logAction(p.db, logKey(e), storage.JSON(act), p.requireApproval)
 	return true, nil
 }
 

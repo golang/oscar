@@ -39,16 +39,17 @@ import (
 //
 // TODO(rsc): Separate the GitHub logic more cleanly from the rewrite logic.
 type Fixer struct {
-	name      string
-	slog      *slog.Logger
-	github    *github.Client
-	watcher   *timed.Watcher[*github.Event]
-	fixes     []func(any, int) any
-	projects  map[string]bool
-	edit      bool
-	timeLimit time.Time
-	db        storage.DB
-	logAction actions.BeforeFunc
+	name            string
+	slog            *slog.Logger
+	github          *github.Client
+	watcher         *timed.Watcher[*github.Event]
+	fixes           []func(any, int) any
+	projects        map[string]bool
+	edit            bool
+	requireApproval bool
+	timeLimit       time.Time
+	db              storage.DB
+	logAction       actions.BeforeFunc
 
 	stderrw io.Writer
 }
@@ -134,6 +135,13 @@ func (f *Fixer) EnableEdits() {
 		panic("commentfix.Fixer: EnableEdits missing GitHub client")
 	}
 	f.edit = true
+}
+
+// RequireApproval configures the fixer to add actions to the action log
+// that require approval.
+func (f *Fixer) RequireApproval() {
+	f.init()
+	f.requireApproval = true
 }
 
 // AutoLink instructs the fixer to turn any text matching the
@@ -394,7 +402,7 @@ func (f *Fixer) logFix(e *github.Event) {
 			return
 		}
 		key := a.logKey()
-		if f.logAction(f.db, key, storage.JSON(a), !actions.RequiresApproval) {
+		if f.logAction(f.db, key, storage.JSON(a), f.requireApproval) {
 			f.slog.Info("logged action", "key", storage.Fmt(key))
 		} else {
 			f.slog.Info("fixer already added action", "key", storage.Fmt(key))

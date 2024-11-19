@@ -46,13 +46,14 @@ import (
 )
 
 type gabyFlags struct {
-	search        bool
-	project       string
-	firestoredb   string
-	enablesync    bool
-	enablechanges bool
-	level         string
-	overlay       bool
+	search          bool
+	project         string
+	firestoredb     string
+	enablesync      bool
+	enablechanges   bool
+	level           string
+	overlay         bool
+	requireApproval bool
 }
 
 var flags gabyFlags
@@ -65,6 +66,7 @@ func init() {
 	flag.BoolVar(&flags.enablechanges, "enablechanges", false, "allow changes to GitHub")
 	flag.StringVar(&flags.level, "level", "info", "initial log level")
 	flag.BoolVar(&flags.overlay, "overlay", false, "add writeable overlay to DB")
+	flag.BoolVar(&flags.requireApproval, "requireapproval", false, "logged actions require approval")
 }
 
 // Gaby holds the state for gaby's execution.
@@ -176,6 +178,9 @@ func main() {
 	cf.AutoLink(`\bCL ([0-9]+)\b`, "https://go.dev/cl/$1")
 	cf.ReplaceURL(`\Qhttps://go-review.git.corp.google.com/\E`, "https://go-review.googlesource.com/")
 	cf.EnableEdits()
+	if flags.requireApproval {
+		cf.RequireApproval()
+	}
 	g.commentFixer = cf
 
 	rp := related.New(g.slog, g.db, g.github, g.vector, g.docs, "related")
@@ -187,6 +192,9 @@ func main() {
 	rp.SkipTitlePrefix("x/tools/gopls: release version v")
 	rp.SkipTitleSuffix(" backport]")
 	rp.EnablePosts()
+	if flags.requireApproval {
+		rp.RequireApproval()
+	}
 	g.relatedPoster = rp
 
 	// Named functions to retrieve latest Watcher times.
