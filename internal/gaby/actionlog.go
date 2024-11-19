@@ -156,7 +156,7 @@ func (e *endpoint) timeOrDuration() (time.Time, time.Duration, error) {
 		// Format described in
 		// https://developer.mozilla.org/en-US/docs/Web/HTML/Date_and_time_formats#local_date_and_time_strings
 		// TODO(jba): times should be local to the user, not the Gaby server.
-		t, err := time.ParseInLocation("2006-01-02T03:04", e.Date, time.Local)
+		t, err := time.ParseInLocation("2006-01-02T15:04", e.Date, time.Local)
 		if err != nil {
 			return ztime, 0, err
 		}
