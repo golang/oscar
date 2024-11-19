@@ -47,7 +47,7 @@ func Overview(ctx context.Context, lc *llmapp.Client, vdb storage.VectorDB, dc *
 
 var maxResults = 5
 
-// searchRelated finds up to 5 documents related to the document
+// searchRelated finds up to [maxResults] documents related to the document
 // identified by id in vdb.
 func searchRelated(vdb storage.VectorDB, dc *docs.Corpus, id string) ([]Result, error) {
 	v, ok := vdb.Get(id)
@@ -72,8 +72,9 @@ func searchRelated(vdb storage.VectorDB, dc *docs.Corpus, id string) ([]Result, 
 }
 
 // llmDoc converts the document in dc identified by id into
-// an [*llmapp.Doc].
-func llmDoc(dc *docs.Corpus, t string, id string) (*llmapp.Doc, bool) {
+// an [*llmapp.Doc] with type t.
+// If the id is not in the corpus, it returns (nil, false).
+func llmDoc(dc *docs.Corpus, t, id string) (*llmapp.Doc, bool) {
 	d, ok := dc.Get(id)
 	if !ok {
 		return nil, false

@@ -32,8 +32,8 @@ func TestOverview(t *testing.T) {
 			Overview: llm.EchoResponse(promptParts...),
 			Prompt:   promptParts,
 		}
-		if diff := cmp.Diff(got, want); diff != "" {
-			t.Errorf("Overview() mismatch (-got +want):\n%s", diff)
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("Overview() mismatch (-want +got):\n%s", diff)
 		}
 	})
 
@@ -47,8 +47,8 @@ func TestOverview(t *testing.T) {
 			Overview: llm.EchoResponse(promptParts...),
 			Prompt:   promptParts,
 		}
-		if diff := cmp.Diff(got, want); diff != "" {
-			t.Errorf("PostOverview() mismatch (-got +want):\n%s", diff)
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("PostOverview() mismatch (-want +got):\n%s", diff)
 		}
 	})
 
@@ -62,8 +62,8 @@ func TestOverview(t *testing.T) {
 			Overview: llm.EchoResponse(promptParts...),
 			Prompt:   promptParts,
 		}
-		if diff := cmp.Diff(got, want); diff != "" {
-			t.Errorf("RelatedOverview() mismatch (-got +want):\n%s", diff)
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("RelatedOverview() mismatch (-want +got):\n%s", diff)
 		}
 	})
 }
