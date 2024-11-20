@@ -51,14 +51,26 @@ func (g *Gaby) doActionLog(r *http.Request) (content []byte, status int, err err
 	page.Start.formValues(r, "start")
 	page.End.formValues(r, "end")
 
+	browserTimezone := r.FormValue("timezone")
+	loc, err := time.LoadLocation(browserTimezone)
+	if err != nil {
+		return nil, http.StatusInternalServerError, fmt.Errorf("no timezone named %q", browserTimezone)
+	}
+
 	startTime, endTime, err := times(page.Start, page.End, time.Now())
 	if err != nil {
 		return nil, http.StatusBadRequest, err
 	}
+	startTime = startTime.In(loc)
+	endTime = endTime.In(loc)
 
 	// Retrieve and display entries if something was set.
 	if r.FormValue("start") != "" {
 		page.Entries = g.actionsBetween(startTime, endTime)
+		for _, e := range page.Entries {
+			e.Created = e.Created.In(loc)
+			e.Done = e.Done.In(loc)
+		}
 
 		if startTime.IsZero() {
 			page.StartTime = "the beginning of time"

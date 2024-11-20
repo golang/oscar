@@ -85,7 +85,6 @@ func TestSearchPageTemplate(t *testing.T) {
 				for _, sr := range tc.page.Results {
 					wants = append(wants, sr.VectorResult.ID)
 				}
-				t.Logf("%s", got)
 				for _, w := range wants {
 					if !strings.Contains(got, w) {
 						t.Errorf("did not find %q in HTML", w)

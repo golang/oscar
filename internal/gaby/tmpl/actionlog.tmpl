@@ -9,9 +9,13 @@ license that can be found in the LICENSE file.
   <body>
     <div class="section" id="header">
       {{template "nav-title" .}}
+      <p>All times are in <span id="tz"></span>.</p>
+      <script>
+        var timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        document.getElementById("tz").innerHTML = timezone;
+      </script>
       {{template "actionlog-form" .}}
     </div>
-    
     {{template "actionlog-result" .}}
    </body>
 </html>
@@ -25,6 +29,10 @@ license that can be found in the LICENSE file.
 
 {{define "actionlog-form"}}
 <form id="form" action="{{.ID.Endpoint}}" method="GET">
+  <input type="hidden" id="form-tz" name="timezone" value=""/>
+  <script>
+    document.getElementById("form-tz").setAttribute("value", timezone);
+  </script>
   <table>
     <tr>
       <td>
@@ -93,7 +101,7 @@ license that can be found in the LICENSE file.
 {{define "actionlog-result"}}
 <script>
   // Toggle the hidden state of a row containing the action.
-  // Also change the button label accordingly..
+  // Also change the button label accordingly.
   function toggleAction(event) {
     let row = document.getElementById(event.target.dataset.rowid);
     row.hidden = !row.hidden;
