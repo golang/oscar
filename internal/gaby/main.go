@@ -24,6 +24,7 @@ import (
 	"golang.org/x/oscar/internal/actions"
 	"golang.org/x/oscar/internal/commentfix"
 	"golang.org/x/oscar/internal/crawl"
+	"golang.org/x/oscar/internal/dbspec"
 	"golang.org/x/oscar/internal/discussion"
 	"golang.org/x/oscar/internal/docs"
 	"golang.org/x/oscar/internal/embeddocs"
@@ -52,7 +53,7 @@ type gabyFlags struct {
 	enablesync      bool
 	enablechanges   bool
 	level           string
-	overlay         bool
+	overlay         string
 	requireApproval bool
 }
 
@@ -65,7 +66,7 @@ func init() {
 	flag.BoolVar(&flags.enablesync, "enablesync", false, "sync the DB with GitHub and other external sources")
 	flag.BoolVar(&flags.enablechanges, "enablechanges", false, "allow changes to GitHub")
 	flag.StringVar(&flags.level, "level", "info", "initial log level")
-	flag.BoolVar(&flags.overlay, "overlay", false, "add writeable overlay to DB")
+	flag.StringVar(&flags.overlay, "overlay", "", "spec for overlay to DB; see internal/dbspec for syntax")
 	flag.BoolVar(&flags.requireApproval, "requireapproval", false, "logged actions require approval")
 }
 
@@ -269,21 +270,39 @@ func (g *Gaby) initGCP() (shutdown func()) {
 	if flags.firestoredb == "" {
 		log.Fatal("missing -firestoredb flag")
 	}
-
-	db, err := firestore.NewDB(g.ctx, g.slog, flags.project, flags.firestoredb)
+	spec := &dbspec.Spec{
+		Kind:     "firestore",
+		Location: flags.project,
+		Name:     flags.firestoredb,
+	}
+	db, err := g.openDB(spec)
 	if err != nil {
 		log.Fatal(err)
 	}
 	g.db = db
-	if flags.overlay {
-		g.db = storage.NewOverlayDB(storage.MemDB(), g.db)
-	}
 
-	vdb, err := firestore.NewVectorDB(g.ctx, g.slog, flags.project, flags.firestoredb, "gaby")
-	if err != nil {
-		log.Fatal(err)
+	const vectorDBNamespace = "gaby"
+	if flags.overlay != "" {
+		spec, err := dbspec.Parse(flags.overlay)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if spec.IsVector {
+			log.Fatal("omit vector DB spec for -overlay")
+		}
+		odb, err := g.openDB(spec)
+		if err != nil {
+			log.Fatal(err)
+		}
+		g.db = storage.NewOverlayDB(odb, g.db)
+		g.vector = storage.MemVectorDB(g.db, g.slog, vectorDBNamespace)
+	} else {
+		vdb, err := firestore.NewVectorDB(g.ctx, g.slog, spec.Location, spec.Name, vectorDBNamespace)
+		if err != nil {
+			log.Fatal(err)
+		}
+		g.vector = vdb
 	}
-	g.vector = vdb
 
 	sdb, err := gcpsecret.NewSecretDB(g.ctx, flags.project)
 	if err != nil {
@@ -313,6 +332,20 @@ func (g *Gaby) initGCP() (shutdown func()) {
 		if err := mp.Shutdown(g.ctx); err != nil {
 			log.Fatal(err)
 		}
+	}
+}
+
+// openDB opens the database described by spec.
+func (g *Gaby) openDB(spec *dbspec.Spec) (storage.DB, error) {
+	switch spec.Kind {
+	case "mem":
+		return storage.MemDB(), nil
+	case "pebble":
+		return pebble.Open(g.slog, spec.Location)
+	case "firestore":
+		return firestore.NewDB(g.ctx, g.slog, spec.Location, spec.Name)
+	default:
+		return nil, fmt.Errorf("unknown DB kind %q", spec.Kind)
 	}
 }
 
