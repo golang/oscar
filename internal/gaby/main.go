@@ -319,24 +319,25 @@ func (g *Gaby) initGCP() (shutdown func()) {
 // searchLoop runs an interactive search loop.
 // It is called when the -search flag is specified.
 func (g *Gaby) searchLoop() {
-	// Search loop.
-	data, err := io.ReadAll(os.Stdin)
-	if err != nil {
-		log.Fatal(err)
-	}
+	fmt.Fprintln(os.Stderr, "# ctrl+d to start search.")
+	fmt.Fprintln(os.Stderr, "# ctrl+c to exit.")
+	fmt.Fprintln(os.Stderr, "")
+	for {
+		fmt.Fprintf(os.Stderr, "> ")
+		data, err := io.ReadAll(os.Stdin)
+		if err != nil {
+			log.Fatal(err)
+		}
+		line := string(data)
+		rs, err := g.search(context.Background(), line, search.Options{})
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	rs, err := search.Query(context.Background(), g.vector, g.docs, g.embed, &search.QueryRequest{
-		Options: search.Options{
-			Limit: 20,
-		},
-		EmbedDoc: llm.EmbedDoc{Text: string(data)},
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, r := range rs {
-		fmt.Printf(" %.5f %s # %s\n", r.Score, r.ID, r.Title)
+		for _, r := range rs {
+			fmt.Printf(" %.5f %s # %s\n", r.Score, r.ID, r.Title)
+		}
+		fmt.Fprintf(os.Stderr, "\n")
 	}
 }
 
