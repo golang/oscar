@@ -10,11 +10,13 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/safehtml"
 	"github.com/google/safehtml/template"
 	"golang.org/x/oscar/internal/actions"
+	"golang.org/x/oscar/internal/filter"
 	"golang.org/x/oscar/internal/storage"
 )
 
@@ -24,6 +26,7 @@ type actionLogPage struct {
 
 	Start, End         endpoint
 	StartTime, EndTime string // formatted times that the endpoints describe
+	Filter             string
 	Entries            []*actions.Entry
 }
 
@@ -48,6 +51,7 @@ func (g *Gaby) doActionLog(r *http.Request) (content []byte, status int, err err
 	var page actionLogPage
 
 	// Fill in the endpoint values from the form on the page.
+	page.Filter = r.FormValue("filter")
 	page.Start.formValues(r, "start")
 	page.End.formValues(r, "end")
 
@@ -66,7 +70,11 @@ func (g *Gaby) doActionLog(r *http.Request) (content []byte, status int, err err
 
 	// Retrieve and display entries if something was set.
 	if r.FormValue("start") != "" {
-		page.Entries = g.actionsBetween(startTime, endTime)
+		filter, err := newFilter(page.Filter)
+		if err != nil {
+			return nil, http.StatusBadRequest, fmt.Errorf("invalid filter: %v", err)
+		}
+		page.Entries = g.actionsBetween(startTime, endTime, filter)
 		for _, e := range page.Entries {
 			e.Created = e.Created.In(loc)
 			e.Done = e.Done.In(loc)
@@ -206,16 +214,38 @@ func (e *endpoint) timeOrDuration() (time.Time, time.Duration, error) {
 }
 
 // actionsBetween returns the action entries between start and end, inclusive.
-func (g *Gaby) actionsBetween(start, end time.Time) []*actions.Entry {
+func (g *Gaby) actionsBetween(start, end time.Time, filter func(*actions.Entry) bool) []*actions.Entry {
 	var es []*actions.Entry
 	// Scan entries created in [start, end].
 	for e := range actions.ScanAfter(g.slog, g.db, start.Add(-time.Nanosecond), nil) {
 		if e.Created.After(end) {
 			break
 		}
-		es = append(es, e)
+		if filter(e) {
+			es = append(es, e)
+		}
 	}
 	return es
+}
+
+func newFilter(s string) (func(*actions.Entry) bool, error) {
+	if s == "" {
+		return func(*actions.Entry) bool { return true }, nil
+	}
+	expr, err := filter.ParseFilter(s)
+	if err != nil {
+		return nil, err
+	}
+	ev, problems := filter.Evaluator[actions.Entry](expr, nil)
+	if len(problems) > 0 {
+		return nil, errors.New(strings.Join(problems, "\n"))
+	}
+	return func(e *actions.Entry) bool {
+		if e == nil {
+			return false
+		}
+		return ev(*e)
+	}, nil
 }
 
 // fmtTime formats a time for display on the action log page.

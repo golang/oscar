@@ -213,7 +213,7 @@ func (ev *eval[T]) member(e *memberExpr) func(T) bool {
 }
 
 // function returns an evaluator function for a [functionExpr].
-func (ev *eval[T]) function(e *functionExpr) func(T) bool {
+func (ev *eval[T]) function(*functionExpr) func(T) bool {
 	ev.msgs = append(ev.msgs, "function not implemented")
 	return ev.alwaysFalse()
 }

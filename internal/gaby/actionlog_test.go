@@ -6,6 +6,7 @@ package main
 
 import (
 	"context"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -142,8 +143,67 @@ func TestActionsBetween(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 	before(db, []byte{2}, nil, false)
 
-	got := g.actionsBetween(start, end)
+	got := g.actionsBetween(start, end, func(*actions.Entry) bool { return true })
 	if len(got) != 1 {
 		t.Errorf("got %d entries, want 1", len(got))
+	}
+}
+
+func TestActionFilter(t *testing.T) {
+	entries := []*actions.Entry{
+		{Kind: "a", Error: ""},
+		{Kind: "b", Error: ""},
+		{Kind: "a", Error: "a bad error"},
+		{Kind: "a", Error: "meh"},
+		{Kind: "b", Error: "bad"},
+		{Kind: "a", ApprovalRequired: true},
+		{Kind: "b", ApprovalRequired: true},
+	}
+
+	applyFilter := func(f func(*actions.Entry) bool) []*actions.Entry {
+		var res []*actions.Entry
+		for _, e := range entries {
+			if f(e) {
+				res = append(res, e)
+			}
+		}
+		return res
+	}
+
+	for _, tc := range []struct {
+		in   string
+		want func(*actions.Entry) bool
+	}{
+		{"", func(*actions.Entry) bool { return true }},
+		{
+			"Kind=a",
+			func(e *actions.Entry) bool { return e.Kind == "a" },
+		},
+		{
+			"Kind=a Error:bad",
+			func(e *actions.Entry) bool {
+				return e.Kind == "a" && strings.Contains(e.Error, "bad")
+			},
+		},
+		{
+			"ApprovalRequired=true",
+			func(e *actions.Entry) bool { return e.ApprovalRequired },
+		},
+		{
+			"ApprovalRequired=true OR Kind=b",
+			func(e *actions.Entry) bool {
+				return e.ApprovalRequired || e.Kind == "b"
+			},
+		},
+	} {
+		gotf, err := newFilter(tc.in)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := applyFilter(gotf)
+		want := applyFilter(tc.want)
+		if !slices.Equal(got, want) {
+			t.Errorf("%q:\ngot  %v\nwant %v", tc.in, got, want)
+		}
 	}
 }
