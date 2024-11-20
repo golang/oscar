@@ -8,29 +8,41 @@ import (
 	"bytes"
 	"iter"
 	"sync"
+
+	"rsc.io/ordered"
 )
 
 type overlayDB struct {
 	MemLocker
-	mu            sync.RWMutex
-	base          DB
-	overlay       *memDB
-	deletedKeys   map[string]bool
-	deletedRanges []keyRange
+	mu      sync.RWMutex
+	overlay DB
+	base    DB
 }
 
 type keyRange struct {
 	start, end []byte
 }
 
-// NewOverlayDB returns a DB that overlays a MemDB over a base DB.
+// Start of keys used for the overlay implementation.
+const overlayPrefix = "__overlay"
+
+// NewOverlayDB returns a DB that combines overlay with base.
 // Reads happen from the overlay first, then the base.
 // All writes go to the overlay.
-func NewOverlayDB(base DB) DB {
+//
+// An overlay DB should only be used for testing. It can violate the
+// specification of [DB] when a process is writing to the base concurrently.
+// Locks held in the overlay will not be observed by the base, so changes
+// from other processes can occur even while the process with the overlay
+// has the lock.
+//
+// The overlay DB assumes that all keys are encoded with [rsc.io/ordered].
+// The part of the key space beginning with ordered.Encode(overlayPrefix) in the overlay
+// DB is reserved for use by the implementation.
+func NewOverlayDB(overlay, base DB) DB {
 	return &overlayDB{
-		base:        base,
-		overlay:     MemDB().(*memDB),
-		deletedKeys: map[string]bool{},
+		overlay: overlay,
+		base:    base,
 	}
 }
 
@@ -58,7 +70,7 @@ func (db *overlayDB) Set(key, val []byte) {
 
 func (db *overlayDB) setLocked(key, val []byte) {
 	db.overlay.Set(key, val)
-	delete(db.deletedKeys, string(key)) // save some space; not strictly necessary
+	db.unmarkDeleted(key)
 }
 
 // Delete deletes any entry with the given key.
@@ -70,7 +82,7 @@ func (db *overlayDB) Delete(key []byte) {
 
 func (db *overlayDB) deleteLocked(key []byte) {
 	db.overlay.Delete(key)
-	db.deletedKeys[string(key)] = true
+	db.markDeleted(key)
 }
 
 // DeleteRange deletes all entries with start ≤ key ≤ end.
@@ -83,7 +95,7 @@ func (db *overlayDB) DeleteRange(start, end []byte) {
 func (db *overlayDB) deleteRangeLocked(start, end []byte) {
 	// TODO(maybe): consolidate ranges
 	db.overlay.DeleteRange(start, end)
-	db.deletedRanges = append(db.deletedRanges, keyRange{start, end})
+	db.markRangeDeleted(start, end)
 }
 
 // Scan returns an iterator over all key-value pairs
@@ -162,16 +174,47 @@ func unionFunc2[K, V any](s1, s2 iter.Seq2[K, V], cmp func(K, K) int) iter.Seq2[
 	}
 }
 
-// deleted reports whether key is a deleted key.
+// markDeleted marks key as deleted.
+// It isn't sufficient to simply delete the key in the overlay, because
+// the key may exist in the base as well.
+func (db *overlayDB) markDeleted(key []byte) {
+	tombstone := ordered.Encode(overlayPrefix, ordered.Raw(key))
+	db.overlay.Set(tombstone, nil)
+}
+
+// unmarkDeleted removes from the database the marker that key is deleted.
+// It is not strictly necessary to do this when a key is set, but it
+// saves some space.
+func (db *overlayDB) unmarkDeleted(key []byte) {
+	tombstone := ordered.Encode(overlayPrefix, ordered.Raw(key))
+	db.overlay.Delete(tombstone)
+}
+
+// markRangeDeleted marks a range of keys as deleted.
+// It isn't sufficient to delete each key in the range that appears in base,
+// because a key in the range might be added to base but not overlay, and then
+// it would be visible.
+func (db *overlayDB) markRangeDeleted(start, end []byte) {
+	// The key for a deleted range is the start of the range.
+	key := ordered.Encode(overlayPrefix, "ranges", ordered.Raw(start))
+	db.overlay.Set(key, end)
+}
+
+// deleted reports whether key is deleted.
 // The result is only valid for db if key is not present in db.overlay;
 // keys in db.overlay are not deleted, regardless of what this function reports.
 // deleted must be called with the lock held.
 func (db *overlayDB) deleted(key []byte) bool {
-	if db.deletedKeys[string(key)] {
+	tombstone := ordered.Encode(overlayPrefix, ordered.Raw(key))
+	if _, ok := db.overlay.Get(tombstone); ok {
 		return true
 	}
-	for _, r := range db.deletedRanges {
-		if bytes.Compare(key, r.start) >= 0 && bytes.Compare(key, r.end) <= 0 {
+	// Scan deleted ranges up to where the start of the range is equal to key.
+	prefix := ordered.Encode(overlayPrefix, "ranges")
+	for _, vf := range db.overlay.Scan(prefix, append(prefix, ordered.Encode(ordered.Raw(key))...)) {
+		// We know start <= key, so just compare end >= key.
+		end := vf()
+		if bytes.Compare(end, key) >= 0 {
 			return true
 		}
 	}

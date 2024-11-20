@@ -8,15 +8,17 @@ import (
 	"bytes"
 	"slices"
 	"testing"
+
+	"rsc.io/ordered"
 )
 
 func TestOverlayDB(t *testing.T) {
-	bs := func(n byte) []byte { return []byte{n} }
+	o := func(n int) []byte { return ordered.Encode(n) }
 
 	newbase := func() DB {
 		db := MemDB()
-		db.Set(bs(0), bs(0))
-		db.Set(bs(9), bs(9))
+		db.Set(o(0), o(0))
+		db.Set(o(9), o(9))
 		return db
 	}
 
@@ -26,25 +28,25 @@ func TestOverlayDB(t *testing.T) {
 	}{
 		{
 			"set3",
-			func(db DB) { db.Set(bs(3), bs(3)) },
+			func(db DB) { db.Set(o(3), o(3)) },
 		},
 		{
 			"del9",
-			func(db DB) { db.Delete(bs(9)) },
+			func(db DB) { db.Delete(o(9)) },
 		},
 		{
 			"del9set9",
-			func(db DB) { db.Delete(bs(9)); db.Set(bs(9), bs(4)) },
+			func(db DB) { db.Delete(o(9)); db.Set(o(9), o(4)) },
 		},
 		{
 			"del5set3",
-			func(db DB) { db.Delete(bs(5)); db.Set(bs(3), bs(3)) },
+			func(db DB) { db.Delete(o(5)); db.Set(o(3), o(3)) },
 		},
 		{
 			"get9",
 			func(db DB) {
-				v, ok := db.Get(bs(9))
-				if !ok || !bytes.Equal(v, bs(9)) {
+				v, ok := db.Get(o(9))
+				if !ok || !bytes.Equal(v, o(9)) {
 					t.Fatal("bad Get")
 				}
 			},
@@ -52,9 +54,9 @@ func TestOverlayDB(t *testing.T) {
 		{
 			"set9get9",
 			func(db DB) {
-				db.Set(bs(9), bs(1))
-				v, ok := db.Get(bs(9))
-				if !ok || !bytes.Equal(v, bs(1)) {
+				db.Set(o(9), o(1))
+				v, ok := db.Get(o(9))
+				if !ok || !bytes.Equal(v, o(1)) {
 					t.Fatal("bad Get")
 				}
 			},
@@ -62,8 +64,8 @@ func TestOverlayDB(t *testing.T) {
 		{
 			"del9get9",
 			func(db DB) {
-				db.Delete(bs(9))
-				if _, ok := db.Get(bs(9)); ok {
+				db.Delete(o(9))
+				if _, ok := db.Get(o(9)); ok {
 					t.Fatal("bad Get")
 				}
 			},
@@ -72,32 +74,52 @@ func TestOverlayDB(t *testing.T) {
 			"batch",
 			func(db DB) {
 				b := db.Batch()
-				b.Set(bs(1), bs(1))
-				b.Set(bs(2), bs(2))
-				b.Delete(bs(9))
-				b.Set(bs(9), bs(9))
-				b.DeleteRange(bs(2), bs(6))
+				b.Set(o(1), o(1))
+				b.Set(o(2), o(2))
+				b.Delete(o(9))
+				b.Set(o(9), o(9))
+				b.DeleteRange(o(2), o(6))
 				b.Apply()
 			},
 		},
 		{
 			"delrange",
 			func(db DB) {
-				for i := range byte(9) {
-					db.Set(bs(i), bs(i))
+				for i := range 9 {
+					db.Set(o(i), o(i))
 				}
-				db.DeleteRange(bs(3), bs(9))
-				db.Set(bs(3), bs(3))
+				db.DeleteRange(o(3), o(9))
+				db.Set(o(3), o(3))
+			},
+		},
+		{
+			"delrange2",
+			func(db DB) {
+				for i := range 20 {
+					db.Set(o(i), o(i))
+				}
+				db.DeleteRange(o(3), o(9))
+				db.DeleteRange(o(8), o(12))
+				db.DeleteRange(o(18), o(22))
+				for _, k := range []int{4, 12, 15, 18, 23} {
+					db.Set(o(k), o(k))
+				}
+				db.Delete(o(4))
+				db.Delete(o(15))
 			},
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			// The overlay DB should behave exactly like an ordinary DB.
+			// Run the operations on an overlay DB.
 			base := newbase()
-			gdb := NewOverlayDB(base)
+			over := MemDB()
+			gdb := NewOverlayDB(over, base)
 			test.ops(gdb)
+
+			// Run the operations directly on the base DB.
 			wdb := newbase()
 			test.ops(wdb)
+			// The overlay DB should behave exactly like an ordinary DB.
 			got := items(gdb)
 			want := items(wdb)
 			if !slices.EqualFunc(got, want, item.Equal) {
@@ -123,7 +145,11 @@ func (i1 item) Equal(i2 item) bool {
 
 func items(db DB) []item {
 	var items []item
-	for k, vf := range db.Scan([]byte{0}, []byte{255}) {
+	for k, vf := range db.Scan(nil, ordered.Encode(ordered.Inf)) {
+		var prefix string
+		if _, err := ordered.DecodePrefix(k, &prefix); err == nil && prefix == overlayPrefix {
+			continue
+		}
 		items = append(items, item{k, vf()})
 	}
 	return items

@@ -268,7 +268,7 @@ func (g *Gaby) initGCP() (shutdown func()) {
 	}
 	g.db = db
 	if flags.overlay {
-		g.db = storage.NewOverlayDB(g.db)
+		g.db = storage.NewOverlayDB(storage.MemDB(), g.db)
 	}
 
 	vdb, err := firestore.NewVectorDB(g.ctx, g.slog, flags.project, flags.firestoredb, "gaby")
