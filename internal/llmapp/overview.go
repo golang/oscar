@@ -72,7 +72,7 @@ func New(lg *slog.Logger, g llm.TextGenerator, db storage.DB) *Client {
 // Overview returns an error if no documents are provided or the LLM is unable
 // to generate a response.
 func (c *Client) Overview(ctx context.Context, docs ...*Doc) (*OverviewResult, error) {
-	return c.overview(ctx, documents, docs)
+	return c.overview(ctx, documents, &docGroup{docs: docs})
 }
 
 // PostOverview returns an LLM-generated overview of the given post and comments,
@@ -82,7 +82,9 @@ func (c *Client) PostOverview(ctx context.Context, post *Doc, comments []*Doc) (
 	if post == nil {
 		return nil, errors.New("llmapp PostOverview: no post")
 	}
-	return c.overview(ctx, postAndComments, append([]*Doc{post}, comments...))
+	return c.overview(ctx, postAndComments,
+		&docGroup{label: "post", docs: []*Doc{post}},
+		&docGroup{label: "comments", docs: comments})
 }
 
 // RelatedOverview returns an LLM-generated overview of the given document and
@@ -96,7 +98,30 @@ func (c *Client) RelatedOverview(ctx context.Context, doc *Doc, related []*Doc) 
 	if len(related) == 0 {
 		return nil, errors.New("llmapp RelatedOverview: no related docs")
 	}
-	return c.overview(ctx, docAndRelated, append([]*Doc{doc}, related...))
+	return c.overview(ctx, docAndRelated,
+		&docGroup{label: "original", docs: []*Doc{doc}},
+		&docGroup{label: "related", docs: related},
+	)
+}
+
+// UpdatedPostOverview returns an LLM-generated overview of the given post and comments,
+// styled with markdown. It summarizes the oldComments and newComments separately.
+// UpdatedPostOverview returns an error if no post is provided or the LLM is unable to generate a response.
+func (c *Client) UpdatedPostOverview(ctx context.Context, post *Doc, oldComments, newComments []*Doc) (*OverviewResult, error) {
+	if post == nil {
+		return nil, errors.New("llmapp PostOverview: no post")
+	}
+	return c.overview(ctx, postAndCommentsUpdated,
+		&docGroup{label: "post", docs: []*Doc{post}},
+		&docGroup{label: "old comments", docs: oldComments},
+		&docGroup{label: "new comments", docs: newComments},
+	)
+}
+
+// a docGroup is a group of documents.
+type docGroup struct {
+	label string // (optional) label for the group to give to the LLM.
+	docs  []*Doc
 }
 
 // overview returns an LLM-generated overview of the given documents,
@@ -105,11 +130,11 @@ func (c *Client) RelatedOverview(ctx context.Context, doc *Doc, related []*Doc) 
 // additional context to the LLM prompt.
 // Overview returns an error if no documents are provided or the LLM is unable
 // to generate a response.
-func (c *Client) overview(ctx context.Context, kind docsKind, docs []*Doc) (*OverviewResult, error) {
-	if len(docs) == 0 {
+func (c *Client) overview(ctx context.Context, kind docsKind, groups ...*docGroup) (*OverviewResult, error) {
+	if len(groups) == 0 {
 		return nil, errors.New("llmapp overview: no documents")
 	}
-	prompt := overviewPrompt(kind, docs)
+	prompt := overviewPrompt(kind, groups)
 	overview, cached, err := c.generateText(ctx, prompt)
 	if err != nil {
 		return nil, err
@@ -124,10 +149,15 @@ func (c *Client) overview(ctx context.Context, kind docsKind, docs []*Doc) (*Ove
 // overviewPrompt converts the given docs into a slice of
 // text prompts, followed by an instruction prompt based
 // on the documents kind.
-func overviewPrompt(kind docsKind, docs []*Doc) []string {
-	var inputs = make([]string, len(docs))
-	for i, d := range docs {
-		inputs[i] = string(storage.JSON(d))
+func overviewPrompt(kind docsKind, groups []*docGroup) []string {
+	var inputs []string
+	for _, g := range groups {
+		if g.label != "" {
+			inputs = append(inputs, g.label)
+		}
+		for _, d := range g.docs {
+			inputs = append(inputs, string(storage.JSON(d)))
+		}
 	}
 	return append(inputs, kind.instructions())
 }
@@ -141,6 +171,9 @@ var (
 	// The documents represent a post and comments/replies
 	// on that post. For example, a GitHub issue and its comments.
 	postAndComments docsKind = "post_and_comments"
+	// The documents represent a post and comments,
+	// followed by a list of *new* comments on that post.
+	postAndCommentsUpdated docsKind = "post_and_comments_updated"
 	// The documents represent a document followed by documents
 	// that are related to it in some way.
 	docAndRelated docsKind = "doc_and_related"

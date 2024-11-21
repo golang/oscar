@@ -42,7 +42,7 @@ func TestOverview(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		promptParts := []string{raw1, raw2, postAndComments.instructions()}
+		promptParts := []string{"post", raw1, "comments", raw2, postAndComments.instructions()}
 		want := &OverviewResult{
 			Overview: llm.EchoResponse(promptParts...),
 			Prompt:   promptParts,
@@ -57,7 +57,7 @@ func TestOverview(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		promptParts := []string{raw1, raw2, docAndRelated.instructions()}
+		promptParts := []string{"original", raw1, "related", raw2, docAndRelated.instructions()}
 		want := &OverviewResult{
 			Overview: llm.EchoResponse(promptParts...),
 			Prompt:   promptParts,
@@ -66,13 +66,30 @@ func TestOverview(t *testing.T) {
 			t.Errorf("RelatedOverview() mismatch (-want +got):\n%s", diff)
 		}
 	})
+
+	t.Run("UpdatedPostOverview", func(t *testing.T) {
+		got, err := c.UpdatedPostOverview(ctx, doc1, []*Doc{doc2}, []*Doc{doc3})
+		if err != nil {
+			t.Fatal(err)
+		}
+		promptParts := []string{"post", raw1, "old comments", raw2, "new comments", raw3, postAndCommentsUpdated.instructions()}
+		want := &OverviewResult{
+			Overview: llm.EchoResponse(promptParts...),
+			Prompt:   promptParts,
+		}
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("UpdatedPostOverview() mismatch (-want +got):\n%s", diff)
+		}
+	})
 }
 
 var (
 	doc1 = &Doc{URL: "https://example.com", Author: "rsc", Title: "title", Text: "some text"}
 	doc2 = &Doc{Text: "some text 2"}
+	doc3 = &Doc{Text: "some text 3"}
 	raw1 = `{"url":"https://example.com","author":"rsc","title":"title","text":"some text"}`
 	raw2 = `{"text":"some text 2"}`
+	raw3 = `{"text":"some text 3"}`
 )
 
 func newTestClient(t *testing.T) *Client {

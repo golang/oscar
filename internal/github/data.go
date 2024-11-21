@@ -52,10 +52,8 @@ func (c *Client) LookupIssueURL(url string) (*Issue, error) {
 // (for example "golang/go", 12345), only consulting the database
 // (not actual GitHub).
 func LookupIssue(db storage.DB, project string, issue int64) (*Issue, error) {
-	for e := range events(db, project, issue, issue) {
-		if e.API == "/issues" {
-			return e.Typed.(*Issue), nil
-		}
+	for e := range eventsByAPI(db, project, issue, "/issues") {
+		return e.Typed.(*Issue), nil
 	}
 	return nil, fmt.Errorf("github.LookupIssue: issue %s#%d not in database", project, issue)
 }
@@ -103,18 +101,14 @@ func CleanBody(body string) string {
 // Within a specific API, the events are ordered by increasing ID,
 // which corresponds to increasing event time on GitHub.
 func (c *Client) Events(project string, issueMin, issueMax int64) iter.Seq[*Event] {
-	return events(c.db, project, issueMin, issueMax)
-}
-
-func events(db storage.DB, project string, issueMin, issueMax int64) iter.Seq[*Event] {
 	return func(yield func(*Event) bool) {
 		start := o(project, issueMin)
 		if issueMax < 0 {
 			issueMax = math.MaxInt64
 		}
 		end := o(project, issueMax, ordered.Inf)
-		for t := range timed.Scan(db, eventKind, start, end) {
-			if !yield(decodeEvent(db, t)) {
+		for t := range timed.Scan(c.db, eventKind, start, end) {
+			if !yield(decodeEvent(c.db, t)) {
 				return
 			}
 		}

@@ -1,0 +1,21 @@
+{{- define "post_and_comments_updated" -}}
+
+{{template "summarize"}}
+
+The documents represent a post, old comments, and new comments on that post.
+The old comments are comments already read by the viewer, and the new comments
+are comments the user has not yet read.
+Your goal is to help that person understand what has happened in the discussion
+since they last read it.
+
+Steps:
+
+1. (Heading ## Original Post) {{template "original-post"}}
+2. If comments are present, follow these steps:
+	1. (Heading ## Old Comments) For the old comments: {{template "find-themes"}}
+	2. (Heading ## New Comments) For the new comments: {{template "find-themes"}}
+3. {{template "no-comments"}}
+
+{{template "requirements"}}
+
+{{- end -}}

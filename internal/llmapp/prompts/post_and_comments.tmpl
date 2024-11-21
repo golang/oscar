@@ -1,15 +1,30 @@
-{{define "post_and_comments"}}
+{{- define "post_and_comments" -}}
 {{template "summarize"}}
+
 The documents represent a post and (possibly) comments on that post.
 Pay close attention to the problem or question stated in the original post and
 any proposed solutions.
 
 Steps:
 
-1. (Heading ## Original Post) Summarize the main points of the original post. Cite any direct quotes or paraphrased information using the format below.
+1. (Heading ## Original Post) {{template "original-post"}}
 2. If comments are present, follow these steps:
-	1. (Heading ## Discussion Themes) Identify the main themes and trends in the discussion. Group comments with similar viewpoints or arguments together and summarize them as a whole. For each theme, summarize the arguments and cite supporting comments.
+	1. (Heading ## Discussion Themes) {{template "find-themes"}}
 	2. (Heading ## Resolution) If a consensus is reached or the original poster indicates a decision, summarize the agreed-upon solution or decision. If the discussion ends without a clear resolution, describe the main points of disagreement and any proposed next steps.
-3. If no comments are available, simply provide a detailed summary of the original post, with citations.
+3. {{template "no-comments"}}
+
 {{template "requirements"}}
-{{end}}
+
+{{- end -}}
+
+{{- define "original-post" -}}
+Summarize the main points of the original post. Cite any direct quotes or paraphrased information using the format below.
+{{- end -}}
+
+{{- define "find-themes" -}}
+Identify the main themes and trends in the discussion. Group comments with similar viewpoints or arguments together and summarize them as a whole. For each theme, summarize the arguments and cite supporting comments.
+{{- end -}}
+
+{{- define "no-comments" -}}
+If no comments are available, simply provide a detailed summary of the original post, with citations.
+{{- end -}}

@@ -33,30 +33,29 @@ type overviewPage struct {
 type overviewResult struct {
 	github.IssueOverviewResult        // the raw result
 	Type                       string // the type of overview
+	// a text description of the type of result (for display), finishing
+	// the sentence "AI-generated Overview of ".
+	Desc string
 }
 
 // overviewParams holds the raw HTML parameters.
 type overviewParams struct {
-	Query        string // the issue ID to lookup, or golang/go#12345 or github.com/golang/go/issues/12345 form
-	OverviewType string // the type of overview to generate
+	Query           string // the issue ID to lookup, or golang/go#12345 or github.com/golang/go/issues/12345 form
+	LastReadComment string // (for [updateOverviewType]: summarize all comments after this comment ID)
+	OverviewType    string // the type of overview to generate
 }
 
 // the possible overview types
 const (
 	issueOverviewType   = "issue_overview"
 	relatedOverviewType = "related_overview"
+	updateOverviewType  = "update_overview"
 )
 
 // validOverviewType reports whether the given type
 // is a recognized overview type.
 func validOverviewType(t string) bool {
-	return t == issueOverviewType || t == relatedOverviewType
-}
-
-// IsIssueOverview reports whether this overview result
-// is of type [issueOverviewType].
-func (r *overviewResult) IsIssueOverview() bool {
-	return r.Type == issueOverviewType
+	return t == issueOverviewType || t == relatedOverviewType || t == updateOverviewType
 }
 
 func (g *Gaby) handleOverview(w http.ResponseWriter, r *http.Request) {
@@ -130,33 +129,35 @@ func parseIssueNumber(issueID string) (project string, issue int64, _ error) {
 	return proj, issue, nil
 }
 
+// parseIssueComment parses the issue comment ID from the given commentID string.
+// The issue ID string can be in one of the following formats:
+//   - "6789": returns 6789 (assumed to be issue comment 6789 for the issue
+//     in [overviewParams.Query] in the "golang/go" repo)
+//
+// TODO(tatianabradley): allow comments to be expressed as URLs, e.g.:
+//   - "golang/go#12345#issuecomment6789"
+//   - "github.com/golang/go/issues/12345#issuecomment6789" or "https://github.com/golang/go/issues/12345#issuecomment6789"
+//   - "go.dev/issues/12345#issuecomment6789" or "https://go.dev/issues/12345#issuecomment6789"
+func parseIssueComment(commentID string) (int64, error) {
+	commentID = trim(commentID)
+	return strconv.ParseInt(commentID, 10, 64)
+}
+
 // populateOverviewPage returns the contents of the overview page.
 func (g *Gaby) populateOverviewPage(r *http.Request) *overviewPage {
 	pm := overviewParams{
-		Query:        r.FormValue(paramQuery),
-		OverviewType: r.FormValue(paramOverviewType),
+		Query:           r.FormValue(paramQuery),
+		OverviewType:    r.FormValue(paramOverviewType),
+		LastReadComment: r.FormValue(paramLastRead),
 	}
 	p := &overviewPage{
 		Params: pm,
 	}
 	p.setCommonPage()
-	q := trim(p.Params.Query)
-	if q == "" {
+	if trim(p.Params.Query) == "" {
 		return p
 	}
-	proj, issue, err := parseIssueNumber(p.Params.Query)
-	if err != nil {
-		p.Error = fmt.Errorf("invalid form value: %v", err)
-		return p
-	}
-	if proj == "" && len(g.githubProjects) > 0 {
-		proj = g.githubProjects[0] // default to first project.
-	}
-	if !slices.Contains(g.githubProjects, proj) {
-		p.Error = fmt.Errorf("invalid form value (unrecognized project): %q", p.Params.Query)
-		return p
-	}
-	overview, err := g.overview(r.Context(), proj, issue, p.Params.OverviewType)
+	overview, err := g.overview(r.Context(), &p.Params)
 	if err != nil {
 		p.Error = err
 		return p
@@ -180,6 +181,11 @@ func (p *overviewPage) setCommonPage() {
 
 const (
 	paramOverviewType = "t"
+	paramLastRead     = "last_read"
+)
+
+var (
+	safeLastRead = toSafeID(paramLastRead)
 )
 
 // inputs converts the params to HTML form inputs.
@@ -199,7 +205,7 @@ func (pm *overviewParams) inputs() []FormInput {
 		{
 			Label:       "overview type",
 			Type:        "radio choice",
-			Description: `"issue and comments" generates an overview of the issue and its comments; "related documents" searches for related documents and summarizes them`,
+			Description: `"issue and comments" generates an overview of the issue and its comments; "related documents" searches for related documents and summarizes them; "comments after" generates a summary of the comments after the specified comment ID`,
 			Name:        toSafeID(paramOverviewType),
 			Required:    true,
 			Typed: RadioInput{
@@ -215,6 +221,19 @@ func (pm *overviewParams) inputs() []FormInput {
 						ID:      toSafeID(relatedOverviewType),
 						Value:   relatedOverviewType,
 						Checked: pm.checkRadio(relatedOverviewType),
+					},
+					{
+						Label: "comments after",
+						Input: &FormInput{
+							Name: safeLastRead,
+							Typed: TextInput{
+								ID:    safeLastRead,
+								Value: pm.LastReadComment,
+							},
+						},
+						ID:      toSafeID(updateOverviewType),
+						Value:   updateOverviewType,
+						Checked: pm.checkRadio(updateOverviewType),
 					},
 				},
 			},
@@ -236,15 +255,32 @@ func (f *overviewParams) checkRadio(value string) bool {
 	return value == f.OverviewType
 }
 
-// overview generates an overview of the issue of the given type.
-func (g *Gaby) overview(ctx context.Context, proj string, issue int64, overviewType string) (*overviewResult, error) {
-	switch overviewType {
+// overview generates an overview of the issue based on the given parameters.
+func (g *Gaby) overview(ctx context.Context, pm *overviewParams) (*overviewResult, error) {
+	proj, issue, err := parseIssueNumber(pm.Query)
+	if err != nil {
+		return nil, fmt.Errorf("invalid form value: %v", err)
+	}
+	if proj == "" && len(g.githubProjects) > 0 {
+		proj = g.githubProjects[0] // default to first project.
+	}
+	if !slices.Contains(g.githubProjects, proj) {
+		return nil, fmt.Errorf("invalid form value (unrecognized project): %q", pm.Query)
+	}
+
+	switch pm.OverviewType {
 	case "", issueOverviewType:
 		return g.issueOverview(ctx, proj, issue)
 	case relatedOverviewType:
 		return g.relatedOverview(ctx, proj, issue)
+	case updateOverviewType:
+		lastReadComment, err := parseIssueComment(pm.LastReadComment)
+		if err != nil {
+			return nil, err
+		}
+		return g.updateOverview(ctx, proj, issue, lastReadComment)
 	default:
-		return nil, fmt.Errorf("unknown overview type %q", overviewType)
+		return nil, fmt.Errorf("unknown overview type %q", pm.OverviewType)
 	}
 }
 
@@ -257,6 +293,7 @@ func (g *Gaby) issueOverview(ctx context.Context, proj string, issue int64) (*ov
 	return &overviewResult{
 		IssueOverviewResult: *overview,
 		Type:                issueOverviewType,
+		Desc:                fmt.Sprintf("issue %d and all %d comments", issue, overview.TotalComments),
 	}, nil
 }
 
@@ -277,6 +314,19 @@ func (g *Gaby) relatedOverview(ctx context.Context, proj string, issue int64) (*
 			Overview: overview.OverviewResult,
 		},
 		Type: relatedOverviewType,
+		Desc: fmt.Sprintf("issue %d and related docs", issue),
+	}, nil
+}
+
+func (g *Gaby) updateOverview(ctx context.Context, proj string, issue int64, lastReadComment int64) (*overviewResult, error) {
+	overview, err := github.UpdateOverview(ctx, g.llm, g.db, proj, issue, lastReadComment)
+	if err != nil {
+		return nil, err
+	}
+	return &overviewResult{
+		IssueOverviewResult: *overview,
+		Type:                updateOverviewType,
+		Desc:                fmt.Sprintf("issue %d and its %d new comments after %d", issue, overview.NewComments, lastReadComment),
 	}, nil
 }
 

@@ -88,12 +88,69 @@ It is a fair point though that this should be explained in the README. I will fi
 	}
 
 	want := &IssueOverviewResult{
-		Issue:       issue,
-		Overview:    wantOverview,
-		NumComments: 1,
+		Issue:         issue,
+		Overview:      wantOverview,
+		TotalComments: 1,
 	}
 
 	if diff := cmp.Diff(got, want, cmpopts.IgnoreFields(llmapp.OverviewResult{}, "Cached")); diff != "" {
 		t.Errorf("IssueOverview() mismatch:\n%s", diff)
+	}
+}
+
+func TestUpdateOverview(t *testing.T) {
+	db := storage.MemDB()
+	lg := testutil.Slogger(t)
+	sdb := secret.Empty()
+	gh := New(lg, db, sdb, nil)
+	lc := llmapp.New(lg, llm.EchoTextGenerator(), db)
+	proj := "hello/world"
+
+	iss := &Issue{Number: 1}
+	comment := &IssueComment{}
+	comment2 := &IssueComment{}
+
+	gh.Testing().AddIssue(proj, iss)
+	gh.Testing().AddIssueComment(proj, iss.Number, comment)
+	gh.Testing().AddIssueComment(proj, iss.Number, comment2)
+
+	got, err := UpdateOverview(ctx, lc, db, proj, iss.Number, comment.CommentID())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// This merely checks that the correct call to [llmapp.UpdatedPostOverview] is made.
+	// The internals of [llmapp.Client.UpdatedPostOverview] are tested in the llmapp package.
+	wantOverview, err := lc.UpdatedPostOverview(ctx, &llmapp.Doc{
+		Type:  "issue",
+		URL:   iss.HTMLURL,
+		Title: iss.Title,
+		Text:  iss.Body,
+	}, []*llmapp.Doc{
+		{
+			Type: "issue comment",
+			URL:  comment.HTMLURL,
+			Text: comment.Body,
+		},
+	}, []*llmapp.Doc{
+		{
+			Type: "issue comment",
+			URL:  comment2.HTMLURL,
+			Text: comment2.Body,
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := &IssueOverviewResult{
+		Issue:         iss,
+		NewComments:   1,
+		TotalComments: 2,
+		Overview:      wantOverview,
+	}
+
+	if diff := cmp.Diff(want, got, cmpopts.IgnoreFields(llmapp.OverviewResult{}, "Cached")); diff != "" {
+		t.Errorf("UpdateOverview() mismatch (-want,+got):\n%s", diff)
 	}
 }

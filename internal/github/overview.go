@@ -7,17 +7,20 @@ package github
 import (
 	"context"
 	"fmt"
+	"iter"
 
 	"golang.org/x/oscar/internal/llmapp"
 	"golang.org/x/oscar/internal/storage"
+	"golang.org/x/oscar/internal/storage/timed"
+	"rsc.io/ordered"
 )
 
-// IssueOverviewResult is the result of [IssueOverview].
-// It contains the generated overview and metadata about
-// the issue.
+// IssueOverviewResult is the result of [IssueOverview] or [UpdateOverview].
+// It contains the generated overview and metadata about the issue.
 type IssueOverviewResult struct {
-	*Issue          // the issue itself
-	NumComments int // number of comments for this issue
+	*Issue            // the issue itself
+	NewComments   int // number of new comments for this issue (for [CommentsAfterOverview])
+	TotalComments int // number of comments for this issue
 
 	Overview *llmapp.OverviewResult // the LLM-generated issue and comment summary
 }
@@ -26,58 +29,112 @@ type IssueOverviewResult struct {
 // It does not make any requests to GitHub; the issue and comment data must already
 // be stored in db.
 func IssueOverview(ctx context.Context, lc *llmapp.Client, db storage.DB, project string, issue int64) (*IssueOverviewResult, error) {
-	var iss *Issue
-	var post *llmapp.Doc
-	var comments []*llmapp.Doc
-	for e := range events(db, project, issue, issue) {
-		doc, isIssue := e.toLLMDoc()
-		if doc == nil {
-			continue
-		}
-		if isIssue {
-			iss = e.Typed.(*Issue)
-			post = doc
-			continue
-		}
-		comments = append(comments, doc)
+	iss, err := LookupIssue(db, project, issue)
+	if err != nil {
+		return nil, err
 	}
-	if post == nil {
-		return nil, fmt.Errorf("github.IssueOverview: issue %s#%d not in db", project, issue)
+	post := iss.toLLMDoc()
+	var cs []*llmapp.Doc
+	for c := range comments(db, project, issue) {
+		cs = append(cs, c.toLLMDoc())
 	}
-	overview, err := lc.PostOverview(ctx, post, comments)
+	overview, err := lc.PostOverview(ctx, post, cs)
 	if err != nil {
 		return nil, err
 	}
 	return &IssueOverviewResult{
-		Issue:       iss,
-		NumComments: len(comments),
-		Overview:    overview,
+		Issue:         iss,
+		TotalComments: len(cs),
+		Overview:      overview,
 	}, nil
 }
 
-// toLLMDoc converts an Event to a format that can be used as
-// an input to an LLM.
-// isIssue is true if the event represents a GitHub issue (as opposed to
-// a comment or another event).
-// It returns (nil, false) if the Event cannot be converted to a document.
-func (e *Event) toLLMDoc() (_ *llmapp.Doc, isIssue bool) {
-	switch v := e.Typed.(type) {
-	case *Issue:
-		return &llmapp.Doc{
-			Type:   "issue",
-			URL:    v.HTMLURL,
-			Author: v.User.Login,
-			Title:  v.Title,
-			Text:   v.Body,
-		}, true
-	case *IssueComment:
-		return &llmapp.Doc{
-			Type:   "issue comment",
-			URL:    v.HTMLURL,
-			Author: v.User.Login,
-			// no title
-			Text: v.Body,
-		}, false
+// UpdateOverview returns an LLM-generated overview of the issue and its
+// comments, separating the comments into "old" and "new" groups broken
+// by the specifed lastRead comment id. (The lastRead comment itself is
+// considered "old", and must be present in the database).
+// UpdateOverview does not make any requests to GitHub; the issue and comment data must already
+// be stored in db.
+func UpdateOverview(ctx context.Context, lc *llmapp.Client, db storage.DB,
+	project string, issue int64, lastRead int64) (*IssueOverviewResult, error) {
+	iss, err := LookupIssue(db, project, issue)
+	if err != nil {
+		return nil, err
 	}
-	return nil, false
+	post := iss.toLLMDoc()
+	var oldComments, newComments []*llmapp.Doc
+	foundTarget := false
+	for c := range comments(db, project, issue) {
+		// New comment.
+		if c.CommentID() > lastRead {
+			newComments = append(newComments, c.toLLMDoc())
+			continue
+		}
+		if c.CommentID() == lastRead {
+			foundTarget = true
+		}
+		oldComments = append(oldComments, c.toLLMDoc())
+	}
+	if !foundTarget {
+		return nil, fmt.Errorf("issue %d comment %d not found in database", issue, lastRead)
+	}
+	overview, err := lc.UpdatedPostOverview(ctx, post, oldComments, newComments)
+	if err != nil {
+		return nil, err
+	}
+	return &IssueOverviewResult{
+		Issue:         iss,
+		NewComments:   len(newComments),
+		TotalComments: len(oldComments) + len(newComments),
+		Overview:      overview,
+	}, nil
+}
+
+// toLLMDoc converts an Issue to a format that can be used as
+// an input to an LLM.
+func (i *Issue) toLLMDoc() *llmapp.Doc {
+	return &llmapp.Doc{
+		Type:   "issue",
+		URL:    i.HTMLURL,
+		Author: i.User.Login,
+		Title:  i.Title,
+		Text:   i.Body,
+	}
+}
+
+// toLLMDoc converts an IssueComment to a format that can be used as
+// an input to an LLM.
+func (ic *IssueComment) toLLMDoc() *llmapp.Doc {
+	return &llmapp.Doc{
+		Type:   "issue comment",
+		URL:    ic.HTMLURL,
+		Author: ic.User.Login,
+		// no title
+		Text: ic.Body,
+	}
+}
+
+// comments returns an iterator over the comments for the issue in the db.
+func comments(db storage.DB, project string, issue int64) iter.Seq[*IssueComment] {
+	return func(yield func(*IssueComment) bool) {
+		for e := range eventsByAPI(db, project, issue, "/issues/comments") {
+			if !yield(e.Typed.(*IssueComment)) {
+				return
+			}
+		}
+	}
+}
+
+// eventsByAPI returns an iterator over the events for the issue in the db
+// with the given API.
+func eventsByAPI(db storage.DB, project string, issue int64, api string) iter.Seq[*Event] {
+	return func(yield func(*Event) bool) {
+		start := o(project, issue, api)
+		end := o(project, issue, api, ordered.Inf)
+		for t := range timed.Scan(db, eventKind, start, end) {
+			if !yield(decodeEvent(db, t)) {
+				return
+			}
+		}
+	}
 }

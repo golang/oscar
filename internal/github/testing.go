@@ -134,7 +134,7 @@ var commentID int64 = 1e10
 // NOTE: Only one TestingClient should be adding issues,
 // since they do not coordinate in the database about ID assignment.
 // Perhaps they should, but normally there is just one Client.
-func (tc *TestingClient) AddIssueComment(project string, issue int64, comment *IssueComment) {
+func (tc *TestingClient) AddIssueComment(project string, issue int64, comment *IssueComment) int64 {
 	id := atomic.AddInt64(&commentID, +1)
 	comment.URL = fmt.Sprintf("https://api.github.com/repos/%s/issues/comments/%d", project, id)
 	comment.HTMLURL = fmt.Sprintf("https://github.com/%s/issues/%d#issuecomment-%d", project, issue, id)
@@ -145,6 +145,7 @@ func (tc *TestingClient) AddIssueComment(project string, issue int64, comment *I
 		ID:      id,
 		Typed:   comment,
 	})
+	return id
 }
 
 var eventID int64 = 1e11

@@ -43,7 +43,7 @@ func TestTemplates(t *testing.T) {
 						CreatedAt: "2023-01-01T0",
 						HTMLURL:   "https://example.com",
 					},
-					NumComments: 2,
+					TotalComments: 2,
 					Overview: &llmapp.OverviewResult{
 						Overview: "an overview",
 						Cached:   true,

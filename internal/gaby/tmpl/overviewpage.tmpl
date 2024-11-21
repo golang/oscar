@@ -53,9 +53,9 @@ function togglePrompt() {
 	<div class="result">
 		<p><a href="{{.HTMLURL}}" target="_blank">{{.HTMLURL}}</a></p>
 		<p><strong>{{.Title}}</strong></p>
-		<p>author: {{.User.Login}} | state: {{.State}} | created: {{fmttime .CreatedAt}} | updated: {{fmttime .UpdatedAt}}{{if .IsIssueOverview}} | comments: {{.NumComments}}{{end}}</p>
+		<p>author: {{.User.Login}} | state: {{.State}} | created: {{fmttime .CreatedAt}} | updated: {{fmttime .UpdatedAt}}{{with .TotalComments}} | total comments: {{.}}{{end}}</p>
 		<p><a href="{{.Related}}" target="_blank">[Search for related issues]</a></p>
-		<p>AI-generated overview{{if .Overview.Cached}} (cached){{end}}:</p>
+		<p>AI-generated overview of {{.Desc}}{{if .Overview.Cached}} (cached){{end}}:</p>
 		<div id="overview">{{safehtml .Overview.Overview}}</div>
 	</div>
 	{{template "show-rawoutput" .}}

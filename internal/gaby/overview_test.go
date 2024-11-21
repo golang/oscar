@@ -6,7 +6,9 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"strconv"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -27,25 +29,29 @@ func TestPopulateOverviewPage(t *testing.T) {
 	g.github.Add(project)
 
 	iss1 := &github.Issue{
-		URL:     "https://api.github.com/repos/hello/world/issues/1",
-		HTMLURL: "https://github.com/hello/world/issues/1",
-		Number:  1,
-		Title:   "hello",
-		Body:    "hello world",
+		Number: 1,
+		Title:  "hello",
+		Body:   "hello world",
 	}
 	iss2 := &github.Issue{
-		URL:     "https://api.github.com/repos/hello/world/issues/2",
-		HTMLURL: "https://github.com/hello/world/issues/2",
-		Number:  2,
-		Title:   "hello 2",
-		Body:    "hello world 2",
+		Number: 2,
+		Title:  "hello 2",
+		Body:   "hello world 2",
 	}
-	g.github.Testing().AddIssue(project, iss1)
 	comment := &github.IssueComment{
 		Body: "a comment",
 	}
+	comment2 := &github.IssueComment{
+		Body: "another comment",
+	}
+	// Note: these calls populate the ID, HTMLURL and URL fields
+	// of the issues and comments.
+	g.github.Testing().AddIssue(project, iss1)
 	g.github.Testing().AddIssueComment(project, 1, comment)
+	g.github.Testing().AddIssueComment(project, 1, comment2)
 	g.github.Testing().AddIssue(project, iss2)
+
+	commentID := strconv.Itoa(int(comment.CommentID()))
 
 	ctx := context.Background()
 	docs.Sync(g.docs, g.github)
@@ -62,6 +68,32 @@ func TestPopulateOverviewPage(t *testing.T) {
 			Type: "issue comment",
 			URL:  comment.HTMLURL,
 			Text: comment.Body,
+		},
+		{
+			Type: "issue comment",
+			URL:  comment2.HTMLURL,
+			Text: comment2.Body,
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantUpdateOverview, err := g.llm.UpdatedPostOverview(ctx, &llmapp.Doc{
+		Type:  "issue",
+		URL:   iss1.HTMLURL,
+		Title: iss1.Title,
+		Text:  iss1.Body,
+	}, []*llmapp.Doc{
+		{
+			Type: "issue comment",
+			URL:  comment.HTMLURL,
+			Text: comment.Body,
+		},
+	}, []*llmapp.Doc{
+		{
+			Type: "issue comment",
+			URL:  comment2.HTMLURL,
+			Text: comment2.Body,
 		},
 	})
 	if err != nil {
@@ -108,11 +140,12 @@ func TestPopulateOverviewPage(t *testing.T) {
 				},
 				Result: &overviewResult{
 					IssueOverviewResult: github.IssueOverviewResult{
-						Issue:       iss1,
-						NumComments: 1,
-						Overview:    wantIssueOverview,
+						Issue:         iss1,
+						TotalComments: 2,
+						Overview:      wantIssueOverview,
 					},
 					Type: issueOverviewType,
+					Desc: "issue 1 and all 2 comments",
 				},
 			},
 		},
@@ -131,11 +164,12 @@ func TestPopulateOverviewPage(t *testing.T) {
 				},
 				Result: &overviewResult{
 					IssueOverviewResult: github.IssueOverviewResult{
-						Issue:       iss1,
-						NumComments: 1,
-						Overview:    wantIssueOverview,
+						Issue:         iss1,
+						TotalComments: 2,
+						Overview:      wantIssueOverview,
 					},
 					Type: issueOverviewType,
+					Desc: "issue 1 and all 2 comments",
 				},
 			},
 		},
@@ -158,6 +192,34 @@ func TestPopulateOverviewPage(t *testing.T) {
 						Overview: wantRelatedOverview,
 					},
 					Type: relatedOverviewType,
+					Desc: "issue 1 and related docs",
+				},
+			},
+		},
+		{
+			name: "update overview",
+			r: &http.Request{
+				Form: map[string][]string{
+					paramQuery:        {"1"},
+					paramOverviewType: {updateOverviewType},
+					paramLastRead:     {commentID},
+				},
+			},
+			want: &overviewPage{
+				Params: overviewParams{
+					Query:           "1",
+					OverviewType:    updateOverviewType,
+					LastReadComment: commentID,
+				},
+				Result: &overviewResult{
+					IssueOverviewResult: github.IssueOverviewResult{
+						Issue:         iss1,
+						NewComments:   1,
+						TotalComments: 2,
+						Overview:      wantUpdateOverview,
+					},
+					Type: updateOverviewType,
+					Desc: fmt.Sprintf("issue 1 and its 1 new comments after %d", comment.CommentID()),
 				},
 			},
 		},

@@ -100,6 +100,7 @@ func (RadioInput) InputType() string {
 // RadioChoice is a single HTML "radio" input.
 type RadioChoice struct {
 	Label   string // display text
+	Input   *FormInput
 	ID      safeID // HTML "id"
 	Value   string // HTML "value"
 	Checked bool   // whether the button should be checked

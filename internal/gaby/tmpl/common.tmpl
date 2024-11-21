@@ -102,7 +102,14 @@ Templates in this file are defined on type [CommonPage].
         <span {{if .Required}}class="emph"{{end}}><label>{{.Label}}</label></span>
         {{range $c := $v.Choices}}
         <span>
-          <label for="{{$c.ID}}">{{$c.Label}}</label>
+          <label for="{{$c.ID}}">
+          {{$c.Label}}
+          {{with $c.Input}}
+            {{if (eq .Typed.InputType "text") }}
+              <input id="{{.Typed.ID}}" type="text" name="{{.Name}}" value="{{.Typed.Value}}" autofocus />
+            {{end}}
+          {{end}}
+          </label>
           <input id="{{$c.ID}}" type="radio" name="{{$name}}" value="{{$c.Value}}"
           {{if $c.Checked}}checked="checked"{{end}}
           {{if $req}}required{{else}}optional{{end}} autofocus />
