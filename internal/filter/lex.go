@@ -452,13 +452,14 @@ func (lex *lexer) handleTextEsc(r rune, sb *strings.Builder) bool {
 	case '0', '1', '2', '3', '4', '5', '6', '7':
 		// A backslash sequence of 1-3 octal digits is an octal escape.
 		if len(lex.input) >= 3 && r <= '3' && isOctalDigit(rune(lex.input[1])) && isOctalDigit(rune(lex.input[2])) {
+			n1 := rune(lex.input[1])
+			n2 := rune(lex.input[2])
+			r = (r - '0') << 6
+			r += (n1 - '0') << 3
+			r += n2 - '0'
 			lex.advance(r, 1)
-			r -= '0'
-			r <<= 6
-			r += rune(lex.input[1]-'0') << 3
-			r += rune(lex.input[2] - '0')
-			lex.advance(rune(lex.input[1]), 1)
-			lex.advance(rune(lex.input[2]), 1)
+			lex.advance(n1, 1)
+			lex.advance(n2, 1)
 			sb.WriteRune(r)
 			return true
 		}

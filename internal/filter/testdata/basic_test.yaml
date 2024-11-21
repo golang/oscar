@@ -854,7 +854,6 @@ tests:
 
   - expr: 'compound.str.array=ab'
     matches: []
-    skip: true
 
   - description: OR precedence over adjacent conjunction
 
@@ -1181,7 +1180,6 @@ tests:
 
   - expr: 'int_field:0 OR int_field:0 AND int_field:0'
     matches: [1]
-    skip: true
   - expr: 'int_field:0 OR int_field:0 AND int_field:1'
     matches: [1]
     skip: true
@@ -2085,7 +2083,6 @@ tests:
 
   - expr: 'compound.num.array!=(1 23)'
     matches: [1, 2, 3]
-    skip: true
 
   - expr: 'compound.num.array!=(-456 -789)'
     matches: [1, 2, 3]
@@ -2653,15 +2650,12 @@ tests:
 
   - expr: 'compound.str.dictionary=ab'
     matches: []
-    skip: true
 
   - expr: 'compound.num.dictionary=1'
     matches: []
-    skip: true
 
   - expr: 'compound.num.dictionary=(1)'
     matches: []
-    skip: true
 
   - expr: 'compound.num.dictionary=4'
     matches: []
@@ -2693,7 +2687,6 @@ tests:
 
   - expr: 'compound.num.dictionary=(3)'
     matches: []
-    skip: true
 
   - expr: 'compound.num.dictionary=(456)'
     matches: []
@@ -2701,15 +2694,12 @@ tests:
 
   - expr: 'compound.num.dictionary=(1 3 5)'
     matches: []
-    skip: true
 
   - expr: "compound.num.dictionary=(1\n3\n5)"
     matches: []
-    skip: true
 
   - expr: "compound.num.dictionary=(1\n-5\n5)"
     matches: []
-    skip: true
 
   - expr: 'compound.num.dictionary=(  aaa  3  zzz )'
     error: operand type mismatch
@@ -3000,7 +2990,6 @@ tests:
 
   - expr: 'timestampField<1980-01-01T00\:00\:00.000Z'
     matches: [1]
-    skip: true
   - expr: 'timestampField<1980-01-01T00\:00\:00\.000Z'
     matches: [1]
   - expr: 'timestampField<1980-01-01T00":"00":"00.000Z'
@@ -3011,7 +3000,6 @@ tests:
 
   - expr: 'timestampField>2010-01-01T00\:00\:00.000Z'
     matches: [3]
-    skip: true
   - expr: 'timestampField>2010-01-01T00\:00\:00\.000Z'
     matches: [3]
   - expr: 'timestampField>2010-01-01T00":"00":"00.000Z'

@@ -1,0 +1,101 @@
+{
+  "resources": [
+    {
+      "bytes_field": "øùúûüýþÿ",
+      "int32_field": -1001,
+      "int64_field": -1001,
+      "uint32_field": 1001,
+      "uint64_field": 1001,
+      "float_field": 1.7976e-38,
+      "float_infinity": "Infinity",
+      "float_negative_infinity": "-Infinity",
+      "float_nan": "NaN",
+      "double_field": -1.7976e+308,
+      "double_infinity": "Infinity",
+      "double_negative_infinity": "-Infinity",
+      "double_nan": "NaN",
+      "bool_field": true,
+      "string_field": "Hello beautiful world.",
+      "enum_field": "VALUE_2",
+      "out_of_order_enum_field": "VALUE_A",
+      "nested": {
+        "uint32_field": 123435,
+        "deeper_nest": {
+          "nice_field": "Foo Bar",
+          "nicer_field": "FooBar Baz"
+        }
+      },
+      "internal_field": "topsecret",
+      "deprecated_field": 200,
+      "repeated_int32_field": [100, 101],
+      "repeated_string_field": [
+        "Apple",
+        "Ball",
+        "Cat Dog Elephant",
+        "sl\\as\\\\h",
+        "qu\"ot\"es",
+        "t,e:s=[tin]+g~o.nly",
+        "t,e:s=t<i>n+g~o.nly",
+        "t,e:s=tin+g~m.at*ch",
+        "/",
+        "//",
+        "//foo.bar/baz",
+        "//foo.bar/baz*"
+      ],
+      "repeated_enum_field": ["VALUE_3", "VALUE_4"],
+      "repeated_message_field": [
+        {
+          "uint32_field": 5555,
+          "deeper_nest": {
+            "nice_field": "nice55",
+            "nicer_field": "nicer55"
+          },
+          "repeated_uint32_field": [6666, 6667]
+        },
+        {
+          "uint32_field": 7777,
+          "deeper_nest": {
+            "nice_field": "nice66",
+            "nicer_field": "nicer66"
+          },
+          "repeated_uint32_field": [8888, 8889],
+          "string_field": "red"
+        }
+      ],
+      "map_string_int32_field": {
+        "foobar": 9876,
+        "foobar.abcd": 9877,
+        "barFoo": 1234
+      },
+      "map_int32_int32_field": {
+        "1234": 4321,
+        "1235": 5321
+      },
+      "map_string_nested_field": {
+        "foobar": {
+          "uint32_field": 1111,
+          "deeper_nest": {
+            "nice_field": "nice11",
+            "nicer_field": "nicer11"
+          },
+          "repeated_uint32_field": [2222, 2223]
+        }
+      },
+      "timestamp": "1970-01-01T00:00:10.000Z",
+      "duration": "5.0s",
+      "string_value": "OneOfAKind",
+      "struct_field": {
+        "foo": "bar",
+        "fooBar": "xyz",
+        "foo.foo": "bar.bar",
+        "foo_bool": true,
+        "foo_number": 12345,
+        "sports": "soccer"
+      },
+      "unicode_pathe": "Path\u00E9",
+      "unicode_resume": "Résumé",
+      "unicode_unicode": "Ṳᾔḯ¢◎ⅾℯ",
+      "url_field": "http://foo.bar/baz*"
+    }
+  ]
+}

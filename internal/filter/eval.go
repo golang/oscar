@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"iter"
+	"math"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -109,6 +110,16 @@ func (ev *eval[T]) unary(e *unaryExpr) func(T) bool {
 func (ev *eval[T]) comparison(e *comparisonExpr) func(T) bool {
 	if e.op == tokenHas {
 		return ev.has(e)
+	}
+
+	// Although it's not clearly documented,
+	// some existing implementations permit a > 3
+	// where a is a slice. This matches if any
+	// element of a is > 3. Since supporting this
+	// makes the evaluator less efficient and since
+	// it is not the common case, handle it specially.
+	if multi, _ := ev.isMultiple(e.left); multi {
+		return ev.multipleCompare(e)
 	}
 
 	left, leftType := ev.fieldValue(e.left)
@@ -216,6 +227,66 @@ func (ev *eval[T]) member(e *memberExpr) func(T) bool {
 func (ev *eval[T]) function(*functionExpr) func(T) bool {
 	ev.msgs = append(ev.msgs, "function not implemented")
 	return ev.alwaysFalse()
+}
+
+// isMultiple takes the left hand side of a comparison operation
+// and returns either true, nil if it contains multiple values,
+// or false, type if it does not. An expression contains
+// multiple values if it includes a reference to a slice or a map.
+func (ev *eval[T]) isMultiple(e Expr) (bool, reflect.Type) {
+	isMultipleType := func(typ reflect.Type) bool {
+		switch typ.Kind() {
+		case reflect.Map, reflect.Slice, reflect.Array:
+			return true
+		default:
+			return false
+		}
+	}
+
+	switch e := e.(type) {
+	case *nameExpr:
+		var typ reflect.Type
+		if sf, ok := fieldName(reflect.TypeFor[T](), e.name); ok {
+			typ = sf.Type
+		} else if cfn, ok := ev.functions[e.name]; ok {
+			typ = reflect.TypeOf(cfn).Out(0)
+		} else if e.isString {
+			typ = reflect.TypeFor[string]()
+		} else {
+			return false, nil
+		}
+
+		if isMultipleType(typ) {
+			return true, nil
+		}
+		return false, typ
+
+	case *memberExpr:
+		hmultiple, htype := ev.isMultiple(e.holder)
+		if hmultiple {
+			return true, nil
+		}
+		if htype == nil {
+			return false, nil
+		}
+		if htype.Kind() == reflect.Struct {
+			sf, ok := fieldName(htype, e.member)
+			if ok {
+				if isMultipleType(sf.Type) {
+					return true, nil
+				}
+				return false, sf.Type
+			}
+		}
+		return false, nil
+
+	case *functionExpr:
+		ev.msgs = append(ev.msgs, "isMultiple of functionExpr not implemented")
+		return false, nil
+
+	default:
+		return false, nil
+	}
 }
 
 // fieldValue takes the left hand side of a comparison operation.
@@ -381,6 +452,20 @@ func (ev *eval[T]) fieldAccessor(pos position, holderType reflect.Type, name str
 		return fn, holderType.Elem()
 
 	default:
+		// Special case: we can get the "seconds" field of a
+		// time.Duration. For flexibility we permit that on
+		// any int64 field.
+		if strings.EqualFold(name, "seconds") && holderType.Kind() == reflect.Int64 {
+			fn := func(v reflect.Value) reflect.Value {
+				if !v.IsValid() {
+					return v
+				}
+				secs := time.Duration(v.Int()).Seconds()
+				return reflect.ValueOf(secs)
+			}
+			return fn, reflect.TypeFor[float64]()
+		}
+
 		ev.msgs = append(ev.msgs, fmt.Sprintf("%s: type %s has no fields (looking for field %s)", pos, holderType, name))
 		return nil, nil
 	}
@@ -446,12 +531,29 @@ func (ev *eval[T]) compareVal(op tokenKind, leftType reflect.Type, right Expr) f
 	case *functionExpr:
 		return ev.compareFunction(op, leftType, right)
 
+	case *memberExpr:
+		// An a.b on the right of a comparison is just the
+		// string "a.b".
+		var stringifyHolder func(e *memberExpr) string
+		stringifyHolder = func(e *memberExpr) string {
+			switch h := e.holder.(type) {
+			case *nameExpr:
+				return h.name
+			case *memberExpr:
+				return stringifyHolder(h) + "." + h.member
+			default:
+				panic("can't happen")
+			}
+		}
+		name := stringifyHolder(right) + "." + right.member
+		ne := &nameExpr{
+			name: name,
+			pos:  right.pos,
+		}
+		return ev.compareName(op, leftType, ne)
+
 	case *comparisonExpr:
 		ev.msgs = append(ev.msgs, fmt.Sprintf("%s: invalid comparison on right of comparison", right.pos))
-		return nil
-
-	case *memberExpr:
-		ev.msgs = append(ev.msgs, fmt.Sprintf("%s: invalid member expression on right of comparison", right.pos))
 		return nil
 
 	default:
@@ -597,11 +699,11 @@ func (ev *eval[T]) compareName(op tokenKind, leftType reflect.Type, right *nameE
 		return fn
 	}
 
-	var cmpfn func(v reflect.Value) int
+	var cmpFn func(v reflect.Value) int
 	switch leftType.Kind() {
 	case reflect.Bool:
 		rbval := rval.Bool()
-		cmpfn = func(v reflect.Value) int {
+		cmpFn = func(v reflect.Value) int {
 			if v.Bool() {
 				if rbval {
 					return 0
@@ -617,40 +719,63 @@ func (ev *eval[T]) compareName(op tokenKind, leftType reflect.Type, right *nameE
 
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		rival := rval.Int()
-		cmpfn = func(v reflect.Value) int {
+		cmpFn = func(v reflect.Value) int {
 			return cmp.Compare(v.Int(), rival)
 		}
 
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
 		ruval := rval.Uint()
-		cmpfn = func(v reflect.Value) int {
+		cmpFn = func(v reflect.Value) int {
 			return cmp.Compare(v.Uint(), ruval)
 		}
 
 	case reflect.Float32, reflect.Float64:
 		rfval := rval.Float()
-		cmpfn = func(v reflect.Value) int {
+		cmpFn = func(v reflect.Value) int {
 			return cmp.Compare(v.Float(), rfval)
+		}
+		cmpOp := ev.compareOp(op, cmpFn)
+		return func(v reflect.Value) bool {
+			if !v.IsValid() {
+				return false
+			}
+			// Comparisons with NaN are always false,
+			// except that we treat NaN == NaN as true.
+			if math.IsNaN(v.Float()) {
+				return math.IsNaN(rfval)
+			}
+			return cmpOp(v)
 		}
 
 	case reflect.String:
 		rsval := rval.String()
-		cmpfn = func(v reflect.Value) int {
+		cmpFn = func(v reflect.Value) int {
 			return strings.Compare(v.String(), rsval)
+		}
+
+	case reflect.Interface:
+		// This call to Convert won't panic.
+		// rval comes from parseLiteral,
+		// which verified that the conversion
+		// is OK using CanConvert.
+		rival := rval.Convert(leftType).Interface()
+		rsval := fmt.Sprint(rival)
+		cmpFn = func(v reflect.Value) int {
+			// This comparison can't panic.
+			// rival comes from parseLiteral,
+			// which only returns comparable types.
+			if v.Interface() == rival {
+				return 0
+			}
+			// Compare as strings. Seems to be the best we can do.
+			return strings.Compare(fmt.Sprint(v.Interface()), rsval)
 		}
 
 	case reflect.Struct:
 		if leftType == reflect.TypeFor[time.Time]() {
 			rtval := rval.Interface().(time.Time)
-			cmpfn = func(v reflect.Value) int {
+			cmpFn = func(v reflect.Value) int {
 				return v.Interface().(time.Time).Compare(rtval)
-			}
-			break
-		}
-		if leftType == reflect.TypeFor[time.Duration]() {
-			rdval := rval.Interface().(time.Duration)
-			cmpfn = func(v reflect.Value) int {
-				return cmp.Compare(v.Interface().(time.Duration), rdval)
 			}
 			break
 		}
@@ -660,7 +785,7 @@ func (ev *eval[T]) compareName(op tokenKind, leftType reflect.Type, right *nameE
 		panic("can't happen")
 	}
 
-	return ev.compareOp(op, cmpfn)
+	return ev.compareOp(op, cmpFn)
 }
 
 // compareOp returns a function that takes a comparison function
@@ -700,6 +825,26 @@ func (ev *eval[T]) compareOp(op tokenKind, cmpFn func(reflect.Value) int) func(r
 func (ev *eval[T]) compareFunction(op tokenKind, leftType reflect.Type, right *functionExpr) func(reflect.Value) bool {
 	ev.msgs = append(ev.msgs, "compareFunction not implemented")
 	return func(reflect.Value) bool { return false }
+}
+
+// multipleCompare returns a function that returns the result of a
+// comparison, where the left hand side of the comparison contains
+// multiple values.
+func (ev *eval[T]) multipleCompare(e *comparisonExpr) func(T) bool {
+	switch el := e.left.(type) {
+	case *nameExpr:
+		left, leftType := ev.fieldValue(el)
+		if left == nil {
+			return ev.alwaysFalse()
+		}
+		return ev.multipleName(e.op, left, leftType, e.right)
+
+	case *memberExpr:
+		return ev.multipleMember(e.pos, e.op, el, e.right)
+
+	default:
+		panic("can't happen")
+	}
 }
 
 // match returns a function that takes a value of type typ
@@ -750,6 +895,24 @@ func (ev *eval[T]) match(typ reflect.Type, e *nameExpr) func(reflect.Value) bool
 		esval := strings.ToLower(eval.String())
 		return func(v reflect.Value) bool {
 			return strings.Contains(strings.ToLower(v.String()), esval)
+		}
+
+	case reflect.Interface:
+		// This call to Convert won't panic.
+		// eval comes from parseLiteral,
+		// which verified that the conversion
+		// is OK using CanConvert.
+		eival := eval.Convert(typ).Interface()
+		esval := fmt.Sprint(eival)
+		return func(v reflect.Value) bool {
+			// This comparison can't panic.
+			// rival comes from parseLiteral,
+			// which only returns comparable types.
+			if v.Interface() == eival {
+				return true
+			}
+			// Compare as strings. Seems to be the best we can do.
+			return fmt.Sprint(v.Interface()) == esval
 		}
 
 	default:
@@ -835,7 +998,7 @@ func (ev *eval[T]) parseLiteral(pos position, typ reflect.Type, val string, warn
 	var rval reflect.Value
 	switch typ.Kind() {
 	case reflect.Bool:
-		bval, err := strconv.ParseBool(val)
+		bval, err := strconv.ParseBool(strings.ToLower(val))
 		if err != nil {
 			return badParse(err)
 		}
@@ -844,6 +1007,17 @@ func (ev *eval[T]) parseLiteral(pos position, typ reflect.Type, val string, warn
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		ival, err := strconv.ParseInt(val, 0, 64)
 		if err != nil {
+			if (strings.HasSuffix(val, "s") || strings.HasSuffix(val, "S")) && typ.Kind() == reflect.Int64 {
+				// Try parsing this as a duration.
+				d, err := time.ParseDuration(strings.ToLower(val))
+				if err != nil {
+					return badParse(err)
+				}
+
+				rval = reflect.ValueOf(d)
+				break
+			}
+
 			return badParse(err)
 		}
 		rval = reflect.ValueOf(ival)
@@ -882,17 +1056,6 @@ func (ev *eval[T]) parseLiteral(pos position, typ reflect.Type, val string, warn
 			rval = reflect.ValueOf(tval)
 			break
 		}
-		if typ == reflect.TypeFor[time.Duration]() {
-			s, ok := strings.CutSuffix(val, "s")
-			if !ok {
-				return badParse(errors.New(`duration does not end in "s"`))
-			}
-			ival, err := strconv.ParseInt(s, 0, 64)
-			if err != nil {
-				return badParse(err)
-			}
-			rval = reflect.ValueOf(time.Duration(ival) * time.Second)
-		}
 
 		fallthrough
 	default:
@@ -920,7 +1083,7 @@ func (ev *eval[T]) has(e *comparisonExpr) func(T) bool {
 		return ev.hasName(el, e.right)
 
 	case *memberExpr:
-		return ev.hasMember(e.pos, el, e.right)
+		return ev.multipleMember(e.pos, tokenHas, el, e.right)
 
 	case *binaryExpr, *unaryExpr, *comparisonExpr, *functionExpr:
 		ev.msgs = append(ev.msgs, "invalid expression on left of has operator")
@@ -956,52 +1119,25 @@ func (ev *eval[T]) hasName(el *nameExpr, er Expr) func(T) bool {
 			}
 		}
 
-		cmpFn := ev.hasCompareVal(leftType.Elem(), er)
-		if cmpFn == nil {
-			return ev.alwaysFalse()
-		}
-
-		return func(v T) bool {
-			mval := left(v)
-			if !mval.IsValid() {
-				return false
-			}
-			seq := func(yield func(reflect.Value) bool) {
-				mi := mval.MapRange()
-				for mi.Next() {
-					if !yield(mi.Value()) {
-						return
-					}
-				}
-			}
-			return cmpFn(seq)
-		}
+		return ev.multipleName(tokenHas, left, leftType, er)
 
 	case reflect.Slice, reflect.Array:
 		// This reports whether the slice contains an element
 		// that matches er.
 
-		cmpFn := ev.hasCompareVal(leftType.Elem(), er)
-		if cmpFn == nil {
-			return ev.alwaysFalse()
-		}
-
-		return func(v T) bool {
-			sval := left(v)
-			if !sval.IsValid() {
-				return false
-			}
-			seq := func(yield func(reflect.Value) bool) {
-				for i := range sval.Len() {
-					if !yield(sval.Index(i)) {
-						return
-					}
-				}
-			}
-			return cmpFn(seq)
-		}
+		return ev.multipleName(tokenHas, left, leftType, er)
 
 	case reflect.Struct:
+		if leftType == reflect.TypeFor[time.Time]() {
+			cmpFn := ev.compareVal(tokenHas, leftType, er)
+			if cmpFn == nil {
+				return ev.alwaysFalse()
+			}
+			return func(v T) bool {
+				return cmpFn(left(v))
+			}
+		}
+
 		// This reports whether the struct has a member
 		// that matches er. We don't need an iter.Seq for this case.
 
@@ -1035,7 +1171,55 @@ func (ev *eval[T]) hasName(el *nameExpr, er Expr) func(T) bool {
 	}
 }
 
-// holderEmptyStringType tells hasMemberHolder whether we are
+// multipleVal returns a function that reports whether the value
+// left, of type leftType, matches the value in er.
+// leftType is expected to have multiple values.
+func (ev *eval[T]) multipleName(op tokenKind, left func(T) reflect.Value, leftType reflect.Type, er Expr) func(T) bool {
+	cmpFn := ev.multipleCompareVal(op, leftType.Elem(), er)
+	if cmpFn == nil {
+		return ev.alwaysFalse()
+	}
+
+	switch leftType.Kind() {
+	case reflect.Map:
+		return func(v T) bool {
+			mval := left(v)
+			if !mval.IsValid() {
+				return false
+			}
+			seq := func(yield func(reflect.Value) bool) {
+				mi := mval.MapRange()
+				for mi.Next() {
+					if !yield(mi.Value()) {
+						return
+					}
+				}
+			}
+			return cmpFn(seq)
+		}
+
+	case reflect.Slice, reflect.Array:
+		return func(v T) bool {
+			sval := left(v)
+			if !sval.IsValid() {
+				return false
+			}
+			seq := func(yield func(reflect.Value) bool) {
+				for i := range sval.Len() {
+					if !yield(sval.Index(i)) {
+						return
+					}
+				}
+			}
+			return cmpFn(seq)
+		}
+
+	default:
+		panic("can't happen")
+	}
+}
+
+// holderEmptyStringType tells multipleMemberHolder whether we are
 // comparing against an empty string.
 type holderEmptyStringType bool
 
@@ -1044,15 +1228,15 @@ const (
 	holderEmptyString    holderEmptyStringType = true
 )
 
-// hasMember returns a function that returns whether the member el
-// has the value in er.
-func (ev *eval[T]) hasMember(pos position, el *memberExpr, er Expr) func(T) bool {
+// multipleMember returns a function that returns whether the member el
+// matches the value in er.
+func (ev *eval[T]) multipleMember(pos position, op tokenKind, el *memberExpr, er Expr) func(T) bool {
 	emptyString := holderNonEmptyString
 	if erName, ok := er.(*nameExpr); ok && erName.isString && erName.name == "" {
 		emptyString = holderEmptyString
 	}
 
-	hfn, htype := ev.hasMemberHolder(el, emptyString)
+	hfn, htype := ev.multipleMemberHolder(el, emptyString)
 	if hfn == nil {
 		return ev.alwaysFalse()
 	}
@@ -1062,7 +1246,7 @@ func (ev *eval[T]) hasMember(pos position, el *memberExpr, er Expr) func(T) bool
 
 	switch htype.Kind() {
 	case reflect.Map:
-		cmpFn = ev.hasCompareVal(htype.Elem(), er)
+		cmpFn = ev.multipleCompareVal(op, htype.Elem(), er)
 		if cmpFn == nil {
 			return ev.alwaysFalse()
 		}
@@ -1081,7 +1265,7 @@ func (ev *eval[T]) hasMember(pos position, el *memberExpr, er Expr) func(T) bool
 		}
 
 	case reflect.Slice, reflect.Array:
-		cmpFn = ev.hasCompareVal(htype.Elem(), er)
+		cmpFn = ev.multipleCompareVal(op, htype.Elem(), er)
 		if cmpFn == nil {
 			return ev.alwaysFalse()
 		}
@@ -1101,7 +1285,7 @@ func (ev *eval[T]) hasMember(pos position, el *memberExpr, er Expr) func(T) bool
 	case reflect.Struct:
 		cmpStructFn := ev.compareStructFields(htype,
 			func(ftype reflect.Type) func(reflect.Value) bool {
-				return ev.compareVal(tokenHas, ftype, er)
+				return ev.compareVal(op, ftype, er)
 			},
 		)
 		if cmpStructFn == nil {
@@ -1122,7 +1306,7 @@ func (ev *eval[T]) hasMember(pos position, el *memberExpr, er Expr) func(T) bool
 		}
 
 	default:
-		cmpFn = ev.hasCompareVal(htype, er)
+		cmpFn = ev.multipleCompareVal(op, htype, er)
 		if cmpFn == nil {
 			return ev.alwaysFalse()
 		}
@@ -1140,8 +1324,8 @@ func (ev *eval[T]) hasMember(pos position, el *memberExpr, er Expr) func(T) bool
 	}
 }
 
-// hasMemberHolder is called when we are using the has operator
-// on an aggregate A, and we are fetching a field F from that aggregate.
+// multipleMemberHolder is called when we are comparing against
+// an aggregate A, and we are fetching a field F from that aggregate.
 // If A is a map then F is a key in the map.
 // If A is a slice then F is checked against each element of the slice.
 // If A is a struct then F is a field of the struct.
@@ -1150,13 +1334,13 @@ func (ev *eval[T]) hasMember(pos position, el *memberExpr, er Expr) func(T) bool
 // takes the value A and returns a sequence of reflect.Value's.
 // We also return the type of those reflect.Value's.
 // This returns nil, nil on failure.
-func (ev *eval[T]) hasMemberHolder(e *memberExpr, emptyString holderEmptyStringType) (func(iter.Seq[reflect.Value]) iter.Seq[reflect.Value], reflect.Type) {
+func (ev *eval[T]) multipleMemberHolder(e *memberExpr, emptyString holderEmptyStringType) (func(iter.Seq[reflect.Value]) iter.Seq[reflect.Value], reflect.Type) {
 	var hfn func(iter.Seq[reflect.Value]) iter.Seq[reflect.Value]
 	var htype reflect.Type
 
 	switch holder := e.holder.(type) {
 	case *memberExpr:
-		hfn, htype = ev.hasMemberHolder(holder, emptyString)
+		hfn, htype = ev.multipleMemberHolder(holder, emptyString)
 		if hfn == nil {
 			return nil, nil
 		}
@@ -1238,7 +1422,7 @@ func (ev *eval[T]) hasMemberHolder(e *memberExpr, emptyString holderEmptyStringT
 		}
 		return rhfn, ftype
 
-	case reflect.Struct:
+	default:
 		ffn, ftype := ev.fieldAccessor(e.pos, htype, e.member)
 		if ffn == nil {
 			return nil, nil
@@ -1257,24 +1441,20 @@ func (ev *eval[T]) hasMemberHolder(e *memberExpr, emptyString holderEmptyStringT
 			}
 		}
 		return rhfn, ftype
-
-	default:
-		ev.msgs = append(ev.msgs, fmt.Sprintf("%s: request for member %s in non-aggregate type %s", e.pos, e.member, htype))
-		return nil, nil
 	}
 }
 
-// hasCompareVal returns a function that takes a sequence of reflect.Value,
+// multipleCompareVal returns a function that takes a sequence of reflect.Value,
 // where each element of the sequence has type leftType,
-// and evaluate that sequence with the parameter right.
+// and evaluates that sequence with the parameter right.
 // The function may evaluate the sequence multiple times.
 // The right value may be a logical expression with AND and OR.
 // This returns nil on error.
-func (ev *eval[T]) hasCompareVal(leftType reflect.Type, right Expr) func(iter.Seq[reflect.Value]) bool {
+func (ev *eval[T]) multipleCompareVal(op tokenKind, leftType reflect.Type, right Expr) func(iter.Seq[reflect.Value]) bool {
 	switch right := right.(type) {
 	case *binaryExpr:
-		lf := ev.hasCompareVal(leftType, right.left)
-		rf := ev.hasCompareVal(leftType, right.right)
+		lf := ev.multipleCompareVal(op, leftType, right.left)
+		rf := ev.multipleCompareVal(op, leftType, right.right)
 		if lf == nil || rf == nil {
 			return nil
 		}
@@ -1292,7 +1472,7 @@ func (ev *eval[T]) hasCompareVal(leftType reflect.Type, right Expr) func(iter.Se
 		}
 
 	case *unaryExpr:
-		uf := ev.hasCompareVal(leftType, right.expr)
+		uf := ev.multipleCompareVal(op, leftType, right.expr)
 		if uf == nil {
 			return nil
 		}
@@ -1306,7 +1486,7 @@ func (ev *eval[T]) hasCompareVal(leftType reflect.Type, right Expr) func(iter.Se
 		}
 
 	default:
-		cmpFn := ev.compareVal(tokenHas, leftType, right)
+		cmpFn := ev.compareVal(op, leftType, right)
 		if cmpFn == nil {
 			return nil
 		}

@@ -10,6 +10,8 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -98,6 +100,121 @@ func TestEvalBasic(t *testing.T) {
 	runTests(t, tests.Tests, data.Resources)
 }
 
+type filterMiscTestData struct {
+	Resources []testMessage `json:"resources"`
+}
+
+type testMessage struct {
+	Int32Field                 int32                    `json:"int32_field"`
+	Int64Field                 int64                    `json:"int64_field"`
+	Uint32Field                uint32                   `json:"uint32_field"`
+	Uint64Field                uint64                   `json:"uint64_field"`
+	FloatField                 float32                  `json:"float_field"`
+	FloatInfinity              float32Special           `json:"float_infinity"`
+	FloatNegativeInfinity      float32Special           `json:"float_negative_infinity"`
+	FloatNaN                   float32Special           `json:"float_nan"`
+	DoubleField                float64Special           `json:"double_field"`
+	DoubleInfinity             float64Special           `json:"double_infinity"`
+	DoubleNegativeInfinity     float64Special           `json:"double_negative_infinity"`
+	DoubleNaN                  float64Special           `json:"double_nan"`
+	BoolField                  bool                     `json:"bool_field"`
+	StringField                string                   `json:"string_field"`
+	EnumField                  string                   `json:"enum_field"`
+	OutOfOrderEnumField        string                   `json:"out_of_order_enum_field"`
+	BytesField                 string                   `json:"bytes_field"`
+	NoValueField               string                   `json:"no_value_field"`
+	Nested                     nestedMessage            `json:"nested"`
+	DeprecatedField            int64                    `json:"deprecated_field"`
+	InternalField              string                   `json:"internal_field"`
+	RepeatedInt32Field         []int32                  `json:"repeated_int32_field"`
+	RepeatedStringField        []string                 `json:"repeated_string_field"`
+	NonUTF8StringField         string                   `json:"non_utf8_string_field"`
+	NonUTF8RepeatedStringField []string                 `json:"non_utf8_repeated_string_field"`
+	RepeatedEnumField          []string                 `json:"repeated_enum_field"`
+	RepeatedMessageField       []nestedMessage          `json:"repeated_message_field"`
+	RepeatedEmptyMessageField  []nestedMessage          `json:"repeated_empty_message_field"`
+	MapStringIn32Field         map[string]int32         `json:"map_string_int32_field"`
+	MapInt32Int32Field         map[int32]int32          `json:"map_int32_int32_field"`
+	MapStringNestedField       map[string]nestedMessage `json:"map_string_nested_field"`
+	AnyField                   any                      `json:"any_field"`
+	RepeatedAnyField           []any                    `json:"repeated_any_field"`
+	Timestamp                  time.Time                `json:"timestamp"`
+	Duration                   duration                 `json:"duration"`
+	StructField                map[string]any           `json:"struct_field"`
+	JSON                       map[string]any           `json:"json"`
+	StringValue                string                   `json:"string_value"`
+	NestedValue                nestedMessage            `json:"nested_value"`
+	UnicodePathe               string                   `json:"unicode_pathe"`
+	UnicodeResume              string                   `json:"unicode_resume"`
+	UnicodeUnicode             string                   `json:"unicode_unicode"`
+	URLField                   string                   `json:"url_field"`
+}
+
+type nestedMessage struct {
+	Uint32Field         uint32              `json:"uint32_field"`
+	DeeperNest          deeperNestedMessage `json:"deeper_nest"`
+	RepeatedUint32Field []uint32            `json:"repeated_uint32_field"`
+	RepeatedEmptyUint32 []uint32            `json:"repeated_empty_uint32"`
+	StringField         string              `json:"string_field"`
+	NovalueField        string              `json:"no_value_field"`
+}
+
+type deeperNestedMessage struct {
+	NiceField  string `json:"nice_field"`
+	NicerField string `json:"nicer_field"`
+}
+
+// float32Special is a version of float32 that supports JSON
+// unmarshaling of Infinity and NaN.
+type float32Special float32
+
+func (pf *float32Special) UnmarshalJSON(text []byte) error {
+	str := strings.Trim(string(text), `"`)
+	f, err := strconv.ParseFloat(str, 32)
+	if err != nil {
+		return err
+	}
+	*pf = float32Special(f)
+	return nil
+}
+
+// float64Special is a version of float64 that supports JSON
+// unmarshaling of Infinity and NaN.
+type float64Special float64
+
+func (pf *float64Special) UnmarshalJSON(text []byte) error {
+	str := strings.Trim(string(text), `"`)
+	f, err := strconv.ParseFloat(str, 64)
+	if err != nil {
+		return err
+	}
+	*pf = float64Special(f)
+	return nil
+}
+
+// duration is a version of time.Duration that supports JSON unmarshaling.
+type duration time.Duration
+
+func (pd *duration) UnmarshalJSON(text []byte) error {
+	str := strings.Trim(string(text), `"`)
+	d, err := time.ParseDuration(str)
+	if err != nil {
+		return err
+	}
+	*pd = duration(d)
+	return nil
+}
+
+func TestEvalMisc(t *testing.T) {
+	var data filterMiscTestData
+	unmarshalJSON(t, "misc_test.json", &data)
+
+	var tests yamlTests
+	unmarshalYAML(t, "misc_test.yaml", &tests)
+
+	runTests(t, tests.Tests, data.Resources)
+}
+
 // runTests runs a set of YAML tests on a set of input data.
 func runTests[T any](t *testing.T, tests []yamlTest, data []T) {
 	var desc string
@@ -112,6 +229,23 @@ func runTests[T any](t *testing.T, tests []yamlTest, data []T) {
 		}
 
 		if test.Skip {
+			// Check whether the test passes.
+			e, err := ParseFilter(test.Expr)
+			if err == nil {
+				eval, msgs := Evaluator[T](e, nil)
+				if len(msgs) == 0 && test.Error == "" {
+					var matches []int
+					for i, d := range data {
+						if eval(d) {
+							matches = append(matches, i+1)
+						}
+					}
+					if slices.Equal(matches, test.Matches) {
+						t.Errorf("%s %d passes unexpectedly", desc, idx)
+					}
+				}
+			}
+
 			idx++
 			continue
 		}
@@ -192,5 +326,66 @@ func unmarshalYAML(t *testing.T, filename string, v any) {
 	dec.KnownFields(true)
 	if err := dec.Decode(v); err != nil {
 		t.Fatal(err)
+	}
+}
+
+// Test that we don't panic on an incomparable literal.
+func TestIncomparable(t *testing.T) {
+	e1, err := ParseFilter("A:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	e2, err := ParseFilter("0")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	type Incomparable1 struct {
+		A [][]byte
+	}
+
+	// Building the evaluator should fail,
+	// because we can't compare 0 to []byte.
+	_, msgs := Evaluator[Incomparable1](e1, nil)
+	if len(msgs) == 0 {
+		t.Error("expected evaluator errors")
+	} else {
+		for _, msg := range msgs {
+			t.Log(msg)
+		}
+	}
+
+	eval, msgs := Evaluator[Incomparable1](e2, nil)
+	if len(msgs) != 0 {
+		t.Error("evaluator failed")
+		for _, msg := range msgs {
+			t.Log(msg)
+		}
+	} else {
+		// Running this should not panic.
+		if eval(Incomparable1{A: [][]byte{[]byte{1}}}) {
+			t.Error("unexpected match")
+		}
+	}
+
+	type Incomparable2 struct {
+		A []any
+	}
+
+	for i, expr := range []Expr{e1, e2} {
+		// This case should succeed, because we can compare 0 to any.
+		eval, msgs := Evaluator[Incomparable2](expr, nil)
+		if len(msgs) != 0 {
+			t.Errorf("%d: evaluator failed", i)
+			for _, msg := range msgs {
+				t.Logf("%d: %s", i, msg)
+			}
+		} else {
+			// Running this with an incomparable type in a
+			// should not panic.
+			if eval(Incomparable2{A: []any{[]byte{0}}}) {
+				t.Errorf("%d: unexpected match", i)
+			}
+		}
 	}
 }

@@ -1,0 +1,1196 @@
+tests:
+
+  - description: empty expressions
+
+  - expr: ""
+    matches: [1]
+  - expr: " "
+    matches: [1]
+  - expr: "\n"
+    matches: [1]
+
+  - description: unknown fields
+
+  - expr: "fooField:3"
+    error: unknown field
+
+  - expr: "nested.foo:3"
+    error: unknown field
+
+  - description: Int32Field
+
+  - expr: "int32Field = -1001"
+    matches: [1]
+  - expr: "int32Field != 1001"
+    matches: [1]
+  - expr: "int32Field > -2000"
+    matches: [1]
+  - expr: "int32Field < 0"
+    matches: [1]
+  - expr: "int32Field >= -1001"
+    matches: [1]
+  - expr: "int32Field <= -1001"
+    matches: [1]
+
+  - expr: "int32Field = -1002"
+    matches: []
+  - expr: "int32Field != -1001"
+    matches: []
+  - expr: "int32Field > -1001"
+    matches: []
+  - expr: "int32Field < -2000"
+    matches: []
+  - expr: "int32Field >= -1000"
+    matches: []
+  - expr: "int32Field <= -1002"
+    matches: []
+
+  - expr: "int32Field > 0.0001"
+    error: operand type mismatch
+
+  - description: Int64Field
+
+  - expr: "int64Field = -1001"
+    matches: [1]
+  - expr: "int64Field != 1001"
+    matches: [1]
+  - expr: "int64Field > -2000"
+    matches: [1]
+  - expr: "int64Field < 0"
+    matches: [1]
+  - expr: "int64Field >= -1001"
+    matches: [1]
+  - expr: "int64Field <= -1001"
+    matches: [1]
+
+  - expr: "int64Field = -1002"
+    matches: []
+  - expr: "int64Field != -1001"
+    matches: []
+  - expr: "int64Field > -1001"
+    matches: []
+  - expr: "int64Field < -2000"
+    matches: []
+  - expr: "int64Field >= -1000"
+    matches: []
+  - expr: "int64Field <= -1002"
+    matches: []
+
+  - description: Uint32Field
+
+  - expr: "uint32Field = 1001"
+    matches: [1]
+  - expr: "uint32Field != 1002"
+    matches: [1]
+  - expr: "uint32Field > 1000"
+    matches: [1]
+  - expr: "uint32Field < 2000"
+    matches: [1]
+  - expr: "uint32Field >= 1001"
+    matches: [1]
+  - expr: "uint32Field <= 1001"
+    matches: [1]
+
+  - expr: "uint32Field = 1002"
+    matches: []
+  - expr: "uint32Field != 1001"
+    matches: []
+  - expr: "uint32Field > 1001"
+    matches: []
+  - expr: "uint32Field < 1001"
+    matches: []
+  - expr: "uint32Field >= 1002"
+    matches: []
+  - expr: "uint32Field <= 1000"
+    matches: []
+
+  - expr: "uint32Field <= -1001"
+    error: operand type mismatch
+
+  - description: Uint64Field
+
+  - expr: "uint64Field = 1001"
+    matches: [1]
+  - expr: "uint64Field != 1002"
+    matches: [1]
+  - expr: "uint64Field > 1000"
+    matches: [1]
+  - expr: "uint64Field < 2000"
+    matches: [1]
+  - expr: "uint64Field >= 1001"
+    matches: [1]
+  - expr: "uint64Field <= 1001"
+    matches: [1]
+
+  - expr: "uint64Field = 1002"
+    matches: []
+  - expr: "uint64Field != 1001"
+    matches: []
+  - expr: "uint64Field > 1001"
+    matches: []
+  - expr: "uint64Field < 1001"
+    matches: []
+  - expr: "uint64Field >= 1002"
+    matches: []
+  - expr: "uint64Field <= 1000"
+    matches: []
+
+  - expr: "uint64Field <= -1001"
+    error: operand type mismatch
+
+  - description: FloatField
+
+  - expr: "floatField = 1.7976e-38"
+    matches: [1]
+
+  - expr: "floatField != 1.7976e-37"
+    matches: [1]
+  - expr: "floatField != 1.79761e-38"
+    matches: [1]
+  - expr: "floatField > 1.7976e-39"
+    matches: [1]
+  - expr: "floatField < 1.7976e-37"
+    matches: [1]
+  - expr: "floatField >= 1.797e-38"
+    matches: [1]
+  - expr: "floatField <= 1.7977e-38"
+    matches: [1]
+
+  - expr: "floatField = 1.7976e-37"
+    matches: []
+  - expr: "floatField != 1.7976e-38"
+    matches: []
+
+  - expr: "floatField > 1.7976e-38"
+    matches: []
+  - expr: "floatField < 1.7976e-39"
+    matches: []
+  - expr: "floatField >= 1.79761e-38"
+    matches: []
+  - expr: "floatField <= 1.7976e-39"
+    matches: []
+  - expr: "floatField <= -20"
+    matches: []
+
+  - expr: "floatField =  NaN"
+    matches: []
+  - expr: "floatField =  Infinity"
+    matches: []
+
+  - description: float extremes
+
+  - expr: "float_infinity = Infinity"
+    matches: [1]
+  - expr: "float_infinity: infinity"
+    matches: [1]
+
+  - expr: "float_infinity > 100"
+    matches: [1]
+  - expr: "float_infinity != -Infinity"
+    matches: [1]
+    skip: true
+
+  - expr: "float_infinity = -Infinity"
+    matches: []
+    skip: true
+
+  - expr: "float_infinity = NaN"
+    matches: []
+  - expr: 'float_infinity = "infinity"'
+    matches: [1]
+
+  - expr: 'float_infinity != "-Infinity"'
+    matches: [1]
+  - expr: 'float_infinity = "-infinity"'
+    matches: []
+
+  - expr: 'float_infinity = "NaN"'
+    matches: []
+
+  - expr: "float_negative_infinity = -Infinity"
+    matches: [1]
+    skip: true
+
+  - expr: "float_negative_infinity: -infinity"
+    matches: [1]
+    skip: true
+
+  - expr: "float_negative_infinity < 100"
+    matches: [1]
+  - expr: "float_negative_infinity != Infinity"
+    matches: [1]
+  - expr: "float_negative_infinity = Infinity"
+    matches: []
+  - expr: "float_negative_infinity = NaN"
+    matches: []
+  - expr: 'float_negative_infinity = "-Infinity"'
+    matches: [1]
+  - expr: 'float_negative_infinity != "Infinity"'
+    matches: [1]
+  - expr: 'float_negative_infinity = "infinity"'
+    matches: []
+
+  - expr: 'float_negative_infinity = "NaN"'
+    matches: []
+
+  - expr: "float_nan:nan"
+    matches: [1]
+
+  - expr: "float_nan = NaN"
+    matches: [1]
+  - expr: "float_nan < 100"
+    matches: []
+  - expr: "float_nan = 100"
+    matches: []
+  - expr: "float_nan > 100"
+    matches: []
+
+  - description: DoubleField
+
+  - expr: "doubleField =  -1.7976e+308"
+    matches: [1]
+  - expr: "doubleField != -1.7976e+307"
+    matches: [1]
+  - expr: "doubleField != -1.7975e+308"
+    matches: [1]
+  - expr: "doubleField >  -1.79761e+308"
+    matches: [1]
+  - expr: "doubleField < 0"
+    matches: [1]
+  - expr: "doubleField >= -1.79761e+308"
+    matches: [1]
+  - expr: "doubleField <= -1"
+    matches: [1]
+
+  - expr: "doubleField =  -1.79762e+308"
+    matches: []
+  - expr: "doubleField != -1.7976e+308"
+    matches: []
+  - expr: "doubleField > 1"
+    matches: []
+  - expr: "doubleField < -1.79761e+308"
+    matches: []
+  - expr: "doubleField >= -1"
+    matches: []
+  - expr: "doubleField <= -1.79761e+308"
+    matches: []
+
+  - expr: "doubleField =  NaN"
+    matches: []
+  - expr: "doubleField =  Infinity"
+    matches: []
+
+  - description: double extremes
+
+  - expr: "double_infinity = Infinity"
+    matches: [1]
+  - expr: "double_infinity: infinity"
+    matches: [1]
+
+  - expr: "double_infinity > 100"
+    matches: [1]
+  - expr: "double_infinity != -Infinity"
+    matches: [1]
+    skip: true
+
+  - expr: "double_infinity = -Infinity"
+    matches: []
+    skip: true
+
+  - expr: "double_infinity = NaN"
+    matches: []
+  - expr: 'double_infinity = "infinity"'
+    matches: [1]
+
+  - expr: 'double_infinity != "-Infinity"'
+    matches: [1]
+  - expr: 'double_infinity = "-infinity"'
+    matches: []
+
+  - expr: 'double_infinity = "NaN"'
+    matches: []
+
+  - expr: "double_negative_infinity = -Infinity"
+    matches: [1]
+    skip: true
+
+  - expr: "double_negative_infinity: -infinity"
+    matches: [1]
+    skip: true
+
+  - expr: "double_negative_infinity < 100"
+    matches: [1]
+  - expr: "double_negative_infinity != Infinity"
+    matches: [1]
+  - expr: "double_negative_infinity = Infinity"
+    matches: []
+  - expr: "double_negative_infinity = NaN"
+    matches: []
+  - expr: 'double_negative_infinity = "-Infinity"'
+    matches: [1]
+  - expr: 'double_negative_infinity != "Infinity"'
+    matches: [1]
+  - expr: 'double_negative_infinity = "infinity"'
+    matches: []
+
+  - expr: 'double_negative_infinity = "NaN"'
+    matches: []
+
+  - expr: "double_nan:nan"
+    matches: [1]
+
+  - expr: "double_nan = NaN"
+    matches: [1]
+  - expr: "double_nan < 100"
+    matches: []
+  - expr: "double_nan = 100"
+    matches: []
+  - expr: "double_nan > 100"
+    matches: []
+
+  - description: BoolField
+
+  - expr: "boolField = true"
+    matches: [1]
+  - expr: "boolField > false"
+    matches: [1]
+  - expr: "boolField >= false"
+    matches: [1]
+  - expr: "boolField <= true"
+    matches: [1]
+  - expr: "boolField = tRUe"
+    matches: [1]
+  - expr: "boolField = TRUE"
+    matches: [1]
+  - expr: "boolField:True"
+    matches: [1]
+  - expr: "boolField != False"
+    matches: [1]
+
+  - expr: "boolField = false"
+    matches: []
+  - expr: "boolField = faLSe"
+    matches: []
+  - expr: "boolField = FALSE"
+    matches: []
+  - expr: "boolField < false"
+    matches: []
+  - expr: "boolField:False"
+    matches: []
+  - expr: "boolField != True"
+    matches: []
+
+  - expr: "boolField = 0"
+    matches: []
+  - expr: "boolField = 1"
+    matches: [1]
+
+  - expr: "boolField = x"
+    error: operand type mismatch
+
+  - description: StringField
+
+  - expr: "stringField : Hello"
+    matches: [1]
+
+  - expr: "stringField :Hello"
+    matches: [1]
+
+  - expr: "stringField: Hello"
+    matches: [1]
+
+  - expr: "stringField:Hello"
+    matches: [1]
+
+  - expr: "stringField:hello"
+    matches: [1]
+
+  - expr: "stringField:bye OR stringField:hello"
+    matches: [1]
+
+  - expr: "stringField:world"
+    matches: [1]
+
+  - expr: "stringField:hello AND stringField:world"
+    matches: [1]
+
+  - expr: 'stringField="Hello beautiful world."'
+    matches: [1]
+  - expr: 'stringField = "Hello beautiful world."'
+    matches: [1]
+  - expr: 'stringField=  "Hello beautiful world."'
+    matches: [1]
+  - expr: "stringField != Google"
+    matches: [1]
+  - expr: "stringField!= Google"
+    matches: [1]
+  - expr: "stringField !=Google"
+    matches: [1]
+  - expr: 'stringField >= "Hello beautiful world."'
+    matches: [1]
+  - expr: 'stringField <= "Hello beautiful world."'
+    matches: [1]
+  - expr: 'stringField:"\150\145\154\154\157"'
+    matches: [1]
+
+  - expr: 'stringField:"\x48\x65\x6C\x6C\x6F"'
+    matches: [1]
+
+  - expr: 'stringField: "\150\145\u013E\u013E\157"'
+    matches: [1]
+    skip: true
+
+  - expr: 'stringField:"Hello World"'
+    matches: []
+  - expr: "stringField:foo"
+    matches: []
+  - expr: "stringField:hello AND stringField:bar"
+    matches: []
+  - expr: "stringField:bye OR stringField:foo"
+    matches: []
+  - expr: 'stringField!= "Hello beautiful world."'
+    matches: []
+  - expr: 'stringField !=  "Hello beautiful world."'
+    matches: []
+  - expr: "stringField = Hello"
+    matches: []
+  - expr: 'stringField < "Hello beautiful world."'
+    matches: []
+  - expr: 'stringField > "Hello beautiful world."'
+    matches: []
+
+  - description: unicode
+
+  - expr: 'unicode_pathe: Pathe\u0301'
+    matches: []
+  - expr: 'unicode_pathe: "Pathe\u0301"'
+    matches: [1]
+    skip: true
+  - expr: "unicode_pathe: Pathé"
+    matches: [1]
+    skip: true
+  - expr: "unicode_pathe: Pathe"
+    matches: [1]
+    skip: true
+
+  - expr: "unicode_pathe: pAtHe"
+    matches: [1]
+    skip: true
+
+  - expr: "unicode_resume: Résumé"
+    matches: [1]
+  - expr: "unicode_resume: Resume"
+    matches: [1]
+    skip: true
+
+  - expr: "unicode_resume: rEsUmE"
+    matches: [1]
+    skip: true
+
+  - expr: "unicode_unicode: Ṳᾔḯ¢◎ⅾℯ"
+    matches: [1]
+  - expr: "unicode_unicode: U*"
+    matches: [1]
+    skip: true
+
+  - expr: "unicode_unicode: u*"
+    matches: [1]
+    skip: true
+
+  - description: invalid UTF-8 (TBD)
+
+  - description: EscapedValues
+
+  - expr: 'bytes_field:"\370\371\372\373\374\375\376\377"'
+    matches: [1]
+
+  - expr: 'bytes_field="\370\371\372\373\374\375\376\377"'
+    matches: [1]
+
+  - expr: 'bytes_field:"\370"'
+    matches: [1]
+    skip: true
+
+  - expr: 'bytes_field="\370"'
+    matches: []
+  - expr: 'bytes_field: "\372\373"'
+    matches: [1]
+    skip: true
+
+  - expr: 'bytes_field: "\374"'
+    matches: [1]
+    skip: true
+
+  - expr: 'bytes_field: "\360"'
+    matches: []
+  - expr: 'bytes_field:"\370\371\372\373\374\375\376"'
+    matches: [1]
+    skip: true
+
+  - expr: 'bytes_field="\370\371\372\373\374\375\376"'
+    matches: []
+
+  - description: escaped values
+
+  - expr: 'repeatedStringField:Apple'
+    matches: [1]
+  - expr: 'repeatedStringField:"Apple"'
+    matches: [1]
+  - expr: 'repeatedStringField:apple'
+    matches: [1]
+  - expr: 'repeatedStringField:"apple"'
+    matches: [1]
+  - expr: 'repeatedStringField:cat'
+    matches: [1]
+
+  - expr: 'repeatedStringField:dog'
+    matches: [1]
+
+  - expr: 'repeatedStringField:elephant'
+    matches: [1]
+
+  - expr: 'repeatedStringField:ant'
+    matches: []
+
+  - expr: 'repeatedStringField:"sl\\as\\\\h"'
+    matches: [1]
+  - expr: 'repeatedStringField:"qu\"ot\"es"'
+    matches: [1]
+
+  - expr: 'repeatedStringField:"t,e:s=[tin]+g~o.nly"'
+    matches: [1]
+  - expr: 'repeatedStringField:"t,e:s=+g~o.nly"'
+    matches: []
+  - expr: 'repeatedStringField:"t,e:s=[tin]+g~o.n*"'
+    matches: [1]
+
+  - expr: 'repeatedStringField:"t,e:s=t<i>n+g~o.nly"'
+    matches: [1]
+  - expr: 'repeatedStringField:"t,e:s=t<i>n+g~o.n*"'
+    matches: [1]
+
+  - expr: 'repeatedStringField:"t,e:s=tn+g~o.nly"'
+    matches: [1]
+    skip: true
+
+  - expr: 'repeatedStringField:"t,e:s=tn+g~o.n*"'
+    matches: [1]
+    skip: true
+
+  - expr: 'repeatedStringField:"t,e:s=tin+g~m.at*"'
+    matches: [1]
+  - expr: 'repeatedStringField:"t,e:s=tin+g~m.at*ch"'
+    error: suffix matching not supported
+    skip: true
+
+  - description: Any (TBD)
+
+  - description: repeated Any (TBD)
+
+  - description: OneOf
+
+  - expr: "kind.stringValue: OneOfAKind"
+    matches: [1]
+    skip: true
+
+  - expr: "kind.string_value=OneOfAKind"
+    matches: [1]
+    skip: true
+
+  - expr: "OneOfAKind"
+    matches: [1]
+
+  - expr: "string_value:*"
+    matches: [1]
+
+  - expr: "stringValue:*"
+    matches: [1]
+
+  - expr: "nested_value:*"
+    matches: []
+
+  - expr: "nestedValue:*"
+    matches: []
+
+  - description: Negation
+
+  - expr: "-stringField:Google"
+    matches: [1]
+  - expr: "NOT stringField:Google"
+    matches: [1]
+  - expr: "stringField : (NOT Google)"
+    matches: [1]
+
+  - expr: "-stringField:Hello"
+    matches: []
+
+  - expr: "NOT stringField:Hello"
+    matches: []
+
+  - expr: "stringField:(NOT Hello)"
+    matches: []
+
+  - description: ComplexRHS
+
+  - expr: "stringField:(Hello World)"
+    matches: [1]
+
+  - expr: "stringField:(Hello OR Goodbye)"
+    matches: [1]
+
+  - expr: "stringField:(Hello OR (Goodbye OR Bye))"
+    matches: [1]
+
+  - expr: "enumField = (VALUE_2 OR VALUE_3)"
+    matches: [1]
+
+  - expr: "stringField:(Hello AND Goodbye)"
+    matches: []
+
+  - expr: "stringField:(Hello Goodbye)"
+    matches: []
+
+  - expr: "stringField:(Hello:Goodbye)"
+    error: terms not supported in operand subexpression
+
+  - expr: "stringField=(A OR foo=bar)"
+    error: terms not supported in operand subexpression
+
+  - description: EnumField
+
+  - expr: "enumField = VALUE_2"
+    matches: [1]
+  - expr: "enumField = value_2"
+    matches: [1]
+  - expr: "enumField != VALUE_3"
+    matches: [1]
+  - expr: "enumField < VALUE_MAX"
+    matches: [1]
+  - expr: "enumField > VALUE_1"
+    matches: [1]
+  - expr: "enumField > VALUE_1 AND enumField < VALUE_MAX"
+    matches: [1]
+
+  - expr: "enumField=VALUE_1"
+    matches: []
+  - expr: "enumField=VALUE_X"
+    error: unknown enum identifier
+
+  - description: OutOfOrderEnumField
+
+  - expr: "outOfOrderEnumField = VALUE_A"
+    matches: [1]
+  - expr: "outOfOrderEnumField = value_a"
+    matches: [1]
+  - expr: "outOfOrderEnumField != VALUE_B"
+    matches: [1]
+
+  - expr: "outOfOrderEnumField < VALUE_B"
+    matches: []
+    skip: true
+
+  - expr: "outOfOrderEnumField <= VALUE_B"
+    matches: []
+    skip: true
+
+  - expr: "outOfOrderEnumField > VALUE_B"
+    matches: [1]
+    skip: true
+
+  - expr: "outOfOrderEnumField >= VALUE_B"
+    matches: [1]
+    skip: true
+
+  - expr: "outOfOrderEnumField < VALUE_A"
+    matches: []
+  - expr: "outOfOrderEnumField <= VALUE_A"
+    matches: [1]
+  - expr: "outOfOrderEnumField > VALUE_A"
+    matches: []
+  - expr: "outOfOrderEnumField >= VALUE_A"
+    matches: [1]
+
+  - description: GlobalSearch
+
+  - expr: "hello world"
+    matches: [1]
+
+  - expr: "hello bar"
+    matches: [1]
+
+  - expr: "BAZ"
+    matches: [1]
+
+  - expr: "1001"
+    matches: [1]
+
+  - expr: "123435"
+    matches: [1]
+
+  - expr: "1002"
+    matches: []
+
+  - expr: "123436"
+    matches: []
+
+  - expr: "nested"
+    matches: []
+
+  - expr: "Googley"
+    matches: []
+
+  - description: NestedFields
+
+  - expr: "nested.uint32Field = 123435"
+    matches: [1]
+  - expr: "nested.uint32Field > 123434"
+    matches: [1]
+  - expr: "nested.uint32Field < 123436"
+    matches: [1]
+
+  - expr: "nested:*"
+    matches: [1]
+
+  - expr: "nested=12345"
+    error: only :* supported on structs
+
+  - expr: "nested.deeperNest:*"
+    matches: [1]
+
+  - expr: "nested.deeperNest=12345"
+    error: only :* supported on structs
+
+  - description: DeepNestedFields
+
+  - expr: "nested.deeperNest.niceField:foo"
+    matches: [1]
+
+  - expr: "nested.deeperNest.niceField:bAr"
+    matches: [1]
+
+  - expr: 'nested.deeperNest.niceField:"foo bar"'
+    matches: [1]
+  - expr: 'nested.deeperNest.nicerField:"foobar"'
+    matches: [1]
+
+  - expr: "nested.deeperNest.niceField.nonexistent:foo"
+    error: unknown field
+
+  - description: RepeatedFields
+
+  - expr: "repeatedInt32Field > 100"
+    matches: [1]
+
+  - expr: "repeatedInt32Field: *"
+    matches: [1]
+  - expr: "repeatedStringField:Elephant"
+    matches: [1]
+
+  - expr: "dog"
+    matches: [1]
+
+  - expr: "apple dog"
+    matches: [1]
+
+  - expr: '"cat dog"'
+    matches: [1]
+
+  - expr: "repeatedEnumField=(VALUE_3 AND VALUE_4)"
+    matches: [1]
+
+  - expr: "repeatedEnumField != VALUE_2"
+    matches: [1]
+
+  - expr: "repeatedEnumField=VALUE_3"
+    matches: [1]
+
+  - expr: "repeatedEnumField!=VALUE_3"
+    matches: [1]
+
+  - expr: "repeatedMessageField.uint32_field = 5555"
+    matches: [1]
+
+  - expr: "repeatedMessageField.uint32_field = 7777"
+    matches: [1]
+
+  - expr: "repeatedMessageField.deeperNest.niceField = nice55"
+    matches: [1]
+
+  - expr: "repeatedMessageField.deeperNest.niceField = nice66"
+    matches: [1]
+
+  - expr: "repeatedInt32Field > 101"
+    matches: []
+
+  - expr: "repeatedStringField:Fish"
+    matches: []
+  - expr: "dogs"
+    matches: []
+
+  - expr: "apples dog"
+    matches: []
+
+  - expr: '"ball dog"'
+    matches: []
+
+  - expr: "repeatedEnumField=(VALUE_3 AND NOT VALUE_4)"
+    matches: []
+
+  - expr: "NOT repeatedEnumField=VALUE_3"
+    matches: []
+
+  - expr: "nested.repeatedEmptyUint32: 100"
+    matches: []
+  - expr: "nested.repeatedEmptyUint32: *"
+    matches: []
+  - expr: "repeatedEmptyMessageField.uint32Field: 100"
+    matches: []
+  - expr: "repeatedEmptyMessageField.repeatedEmptyUint32:*"
+    matches: []
+  - expr: "repeatedEmptyMessageField.repeatedEmptyUint32: 100"
+    matches: []
+  - expr: "repeatedMessageField.deeperNest.niceField = nice77"
+    matches: []
+
+  - expr: "repeatedMessageField:*"
+    matches: [1]
+
+  - expr: "repeatedMessageField = 5555"
+    error: only :* supported on structs
+
+  - expr: "repeatedMessageField.deeperNest = 5555"
+    error: only :* supported on structs
+
+  - expr: "repeatedMessageField.uint32_field = foo(5555)"
+    error: operand functions not supported
+
+  - description: PresenceTest
+
+  - expr: "stringField: *"
+    matches: [1]
+  - expr: "repeatedMessageField.stringField: *"
+    matches: [1]
+  - expr: "map_int32_int32_field.1234:*"
+    matches: [1]
+  - expr: "map_string_int32_field.foobar:*"
+    matches: [1]
+
+  - expr: "noValueField: *"
+    matches: []
+
+  - expr: "repeatedMessageField.noValueField: *"
+    matches: []
+
+  - expr: "map_string_int32_field.foobaz:*"
+    matches: []
+  - expr: "map_int32_int32_field.1236:*"
+    matches: []
+
+  - description: EmptyValue
+
+  - expr: 'noValueField=""'
+    matches: [1]
+  - expr: "noValueField!=foo"
+    matches: [1]
+  - expr: "noValueField=foo"
+    matches: []
+
+  - description: MapFields
+
+  - expr: "map_string_int32_field.foobar>9800"
+    matches: [1]
+  - expr: "map_string_int32_field.foobar<9877"
+    matches: [1]
+  - expr: "map_string_int32_field.barFoo>1200"
+    matches: [1]
+  - expr: 'map_string_int32_field."foobar.abcd":9877'
+    matches: [1]
+
+  - expr: "map_int32_int32_field.1234 = 4321"
+    matches: [1]
+  - expr: 'map_int32_int32_field."1235" = 5321'
+    matches: [1]
+
+  - expr: "map_string_nested_field.foobar.uint32_field = 1111"
+    matches: [1]
+
+  - expr: "map_string_nested_field.foobar.deeper_nest.nice_field = nice11"
+    matches: [1]
+
+  - expr: "9876"
+    matches: [1]
+
+  - expr: "nice11"
+    matches: [1]
+
+  - expr: "map_string_int32_field.foobar>9876"
+    matches: []
+  - expr: "map_string_int32_field.foobar!=9876"
+    matches: []
+  - expr: "map_string_int32_field.barfoo>1200"
+    matches: []
+
+  - expr: 'map_string_int32_field."foobar.abcd"<9877'
+    matches: []
+
+  - expr: "map_int32_int32_field.1236 = 4321"
+    matches: []
+  - expr: "map_int32_int32_field.1234 = 4320"
+    matches: []
+  - expr: 'map_int32_int32_field."1235" = 5320'
+    matches: []
+
+  - description:  Label keys are case-sensitive.
+
+  - expr: "map_string_int32_field.fooBAR>9800"
+    matches: []
+
+  - expr: "map_string_int32_field = 5555"
+    error: only :* supported on structs
+
+  - description: TimeStampTests
+
+  - expr: 'timestamp = "1970-01-01T00:00:10Z"'
+    matches: [1]
+
+  - expr: 'timestamp = "1970-01-01t00:00:10z"'
+    matches: [1]
+    skip: true
+
+  - expr: 'timestamp = "1970-01-01T05:45:10+05:45"'
+    matches: [1]
+
+  - expr: 'timestamp = "1970-01-01T00:00:10.000000000Z"'
+    matches: [1]
+
+  - expr: 'timestamp < "1970-01-01T00:00:10.000000001Z"'
+    matches: [1]
+
+  - expr: 'timestamp != "1970-01-01T00:00:11Z"'
+    matches: [1]
+
+  - expr: 'timestamp > "1970-01-01T00:00:09Z"'
+    matches: [1]
+
+  - expr: 'timestamp >= "1970-01-01T00:00:10Z"'
+    matches: [1]
+
+  - expr: 'timestamp < "1970-01-01T00:00:11Z"'
+    matches: [1]
+
+  - expr: 'timestamp <= "1970-01-01T00:00:10Z"'
+    matches: [1]
+
+  - expr: 'timestamp:"1970-01-01T00:00:10Z"'
+    matches: [1]
+
+  - expr: 'timestamp = "1970-01-01T00:00:11Z"'
+    matches: []
+
+  - expr: 'timestamp != "1970-01-01T00:00:10Z"'
+    matches: []
+
+  - expr: 'timestamp > "1970-01-01T00:00:10Z"'
+    matches: []
+
+  - expr: 'timestamp >= "1970-01-01T00:00:11Z"'
+    matches: []
+
+  - expr: 'timestamp < "1970-01-01T00:00:10Z"'
+    matches: []
+
+  - expr: 'timestamp <= "1970-01-01T00:00:09Z"'
+    matches: []
+
+  - expr: 'timestamp:"1970-01-01T00:00:01Z"'
+    matches: []
+
+  - expr: 'timestamp < 1970-01-01T00:00:11Z'
+    matches: [1]
+    skip: true
+
+  - expr: 'timestamp <= 1970-01-01T00:00:10Z'
+    matches: [1]
+    skip: true
+
+  - expr: 'timestamp = 1970-01-01T00:00:10Z'
+    matches: [1]
+    skip: true
+
+  - expr: 'timestamp >= 1970-01-01T00:00:10Z'
+    matches: [1]
+    skip: true
+
+  - expr: 'timestamp > 1970-01-01T00:00:09Z'
+    matches: [1]
+    skip: true
+
+  - expr: 'timestamp.seconds = 10'
+    matches: [1]
+    skip: true
+
+  - description: DurationTests
+
+  - expr: "duration = 5s"
+    matches: [1]
+
+  - expr: "duration = 5S"
+    matches: [1]
+
+  - expr: "duration = 5.0s"
+    matches: [1]
+
+  - expr: "duration = 5.s"
+    matches: [1]
+
+  - expr: "duration < 5.000000001s"
+    matches: [1]
+
+  - expr: "duration = 5.0000000001s"
+    matches: [1]
+
+  - expr: "duration != 4s"
+    matches: [1]
+
+  - expr: "duration > 4s"
+    matches: [1]
+
+  - expr: "duration >= 5s"
+    matches: [1]
+
+  - expr: "duration < 6s"
+    matches: [1]
+
+  - expr: "duration > -6s"
+    matches: [1]
+
+  - expr: "duration > .1s"
+    matches: [1]
+
+  - expr: "duration <= 5s"
+    matches: [1]
+
+  - expr: "duration:5s"
+    matches: [1]
+
+  - expr: "duration = 5000.0ms"
+    matches: [1]
+
+  - expr: "duration > 10ms"
+    matches: [1]
+
+  - expr: "duration = -5.0s"
+    matches: []
+
+  - expr: "duration = 6s"
+    matches: []
+
+  - expr: "duration != 5s"
+    matches: []
+
+  - expr: "duration > 5s"
+    matches: []
+
+  - expr: "duration >= 6s"
+    matches: []
+
+  - expr: "duration < 5s"
+    matches: []
+
+  - expr: "duration <= 4s"
+    matches: []
+
+  - expr: "duration:1s"
+    matches: []
+
+  - expr: "duration:5"
+    error: invalid duration literal
+
+  - expr: "duration.seconds:5"
+    matches: [1]
+  - expr: "duration.seconds:1"
+    matches: []
+  - expr: 'duration = "1970-01-01T00:00:10Z"'
+    error: invalid duration literal
+
+  - description: StructFields
+
+  - expr: "struct_field.foo = bar"
+    matches: [1]
+
+  - expr: "struct_field.fooBar = xyz"
+    matches: [1]
+
+  - expr: 'struct_field."foo.foo" = bar.bar'
+    matches: [1]
+
+  - expr: "struct_field.foo_number = 12345"
+    matches: [1]
+
+  - expr: "struct_field.foo_bool = true"
+    matches: [1]
+
+  - expr: "soccer"
+    matches: [1]
+
+  - expr: "struct_field.foo = barz"
+    matches: []
+
+  - expr: "struct_field.foobar = xyz"
+    matches: []
+
+  - expr: 'struct_field."foo.foo" = bar'
+    matches: []
+
+  - expr: "struct_field.foo_number > 12345"
+    matches: []
+
+  - expr: "struct_field.foo_bool = false"
+    matches: []
+
+  - description: Global restriction.
+
+  - expr: "beautiful"
+    matches: [1]
+
+  - description: restricted field data not present client side
+
+  - expr: "internalField:*"
+    error: cannot access restricted field
+    skip: true
+
+  - expr: "topsecret"
+    matches: []
+    skip: true
+
+  - description: deprecated fields are visible
+
+  - expr: "deprecatedField:*"
+    matches: [1]
+
+  - expr: "/"
+    matches: [1]
+
+  - expr: "//"
+    matches: [1]
+
+  - expr: "repeated_string_field:/"
+    matches: [1]
+
+  - expr: "repeated_string_field://"
+    matches: [1]
+
+  - expr: "repeated_string_field:\"//foo.bar/baz\""
+    matches: [1]
+
+  - expr: "repeated_string_field:\"//foo.bar/baz*\""
+    matches: [1]
+
+  - expr: "url_field:\"//foo.bar/baz\""
+    matches: [1]
+
+  - expr: "url_field: \"http://foo.bar/baz*\""
+    matches: [1]
+
+  - expr: "/foo AND \"/foo.bar/\""
+    matches: [1]
