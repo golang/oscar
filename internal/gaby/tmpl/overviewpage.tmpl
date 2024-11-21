@@ -12,10 +12,23 @@ license that can be found in the LICENSE file.
   </body>
 </html>
 
+{{define "show-rawoutput"}}
+<div class="toggle" onclick="toggleRawOutput()">[show raw LLM output]</div>
+<div id="rawoutput" class="start-hidden">
+	<pre>{{.Overview.Overview}}</pre>
+</div>
+<script>
+function toggleRawOutput() {
+	var x = document.getElementById("rawoutput");
+	toggle(x)
+}
+</script>
+{{end}}
+
 
 {{define "show-prompt"}}
 <div class="toggle" onclick="togglePrompt()">[show prompt]</div>
-<div id="prompt">
+<div id="prompt" class="start-hidden">
 	<ul>
 		{{- range .Overview.Prompt -}}
 	<li>
@@ -45,6 +58,7 @@ function togglePrompt() {
 		<p>AI-generated overview{{if .Overview.Cached}} (cached){{end}}:</p>
 		<div id="overview">{{safehtml .Overview.Overview}}</div>
 	</div>
+	{{template "show-rawoutput" .}}
 	{{template "show-prompt" .}}
 {{- else }}
 	{{if .Params.Query}}<p>No result.</p>{{end}}

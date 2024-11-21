@@ -11,7 +11,7 @@ input {
     min-width: fit-content;
     width: 1em;
 }
-#prompt {
+.start-hidden {
     display: none;
 }
 #prompt ul {

@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/safehtml"
 	"github.com/google/safehtml/template"
 	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/htmlutil"
@@ -62,9 +63,19 @@ func (g *Gaby) handleOverview(w http.ResponseWriter, r *http.Request) {
 	handlePage(w, g.populateOverviewPage(r), overviewPageTmpl)
 }
 
+// fixMarkdown fixes mistakes that we have observed the LLM make
+// when generating markdown.
+func fixMarkdown(text string) string {
+	// add newline after backticks followed by a space
+	return strings.ReplaceAll(text, "``` ", "```\n")
+}
+
 var overviewPageTmpl = newTemplate(overviewPageTmplFile, template.FuncMap{
-	"fmttime":  fmtTimeString,
-	"safehtml": htmlutil.MarkdownToSafeHTML,
+	"fmttime": fmtTimeString,
+	"safehtml": func(md string) safehtml.HTML {
+		md = fixMarkdown(md)
+		return htmlutil.MarkdownToSafeHTML(md)
+	},
 })
 
 // fmtTimeString formats an [time.RFC3339]-encoded time string
