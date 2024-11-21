@@ -11,9 +11,10 @@ require (
 	github.com/shurcooL/githubv4 v0.0.0-20240727222349-48295856cce7
 	go.opentelemetry.io/otel v1.32.0
 	go.opentelemetry.io/otel/metric v1.32.0
+	golang.org/x/mod v0.22.0
 	golang.org/x/net v0.31.0
 	golang.org/x/oauth2 v0.24.0
-	golang.org/x/oscar/internal/gcp v0.0.0-20241121213744-9a4fac3173f0
+	golang.org/x/oscar/internal/gcp v0.0.0-20241122155449-dd28296a9ae0
 	golang.org/x/term v0.26.0
 	golang.org/x/tools v0.27.0
 	gopkg.in/yaml.v3 v3.0.1
