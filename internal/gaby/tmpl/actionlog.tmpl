@@ -132,6 +132,8 @@ license that can be found in the LICENSE file.
         <th>Kind</th>
         <th>Key</th>
         <th>Action</th>
+        <th>Approval Req</th>
+        <th>Approved</th>
         <th>Done</th>
         <th>Result</th>
         <th>Error</th>
@@ -148,6 +150,8 @@ license that can be found in the LICENSE file.
                   data-rowid="id-action-{{$i}}"
                   onclick="toggleAction(event)"/>
         </td>
+        <td>{{$e.ApprovalRequired}}</td>
+        <td>{{$e.Approved}}</td>
         <td>{{$e.Done | fmttime}}</td>
         <td><pre class="wrap">{{$e.Result | fmtval}}</pre></td>
         <td>{{$e.Error}}</td>
