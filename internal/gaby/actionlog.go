@@ -65,6 +65,9 @@ func (g *Gaby) doActionLog(r *http.Request) (content []byte, status int, err err
 	if err != nil {
 		return nil, http.StatusBadRequest, err
 	}
+	if startTime.After(time.Now()) {
+		return nil, http.StatusBadRequest, errors.New("start time is after the current time")
+	}
 	startTime = startTime.In(loc)
 	endTime = endTime.In(loc)
 
