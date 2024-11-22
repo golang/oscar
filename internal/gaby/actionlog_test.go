@@ -36,7 +36,7 @@ func TestTimeOrDuration(t *testing.T) {
 			wantDur:  3 * time.Hour,
 		},
 	} {
-		gotTime, gotDur, err := test.endpoint.timeOrDuration()
+		gotTime, gotDur, err := test.endpoint.timeOrDuration(time.Local)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -83,7 +83,7 @@ func TestTimes(t *testing.T) {
 			wantEnd:   dt(2002, 1, 2, 11, 21),
 		},
 	} {
-		gotStart, gotEnd, err := times(test.start, test.end, now)
+		gotStart, gotEnd, err := times(test.start, test.end, now, time.Local)
 		if err != nil {
 			t.Fatal(err)
 		}

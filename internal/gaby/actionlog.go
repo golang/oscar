@@ -61,7 +61,7 @@ func (g *Gaby) doActionLog(r *http.Request) (content []byte, status int, err err
 		return nil, http.StatusInternalServerError, fmt.Errorf("no timezone named %q", browserTimezone)
 	}
 
-	startTime, endTime, err := times(page.Start, page.End, time.Now())
+	startTime, endTime, err := times(page.Start, page.End, time.Now(), loc)
 	if err != nil {
 		return nil, http.StatusBadRequest, err
 	}
@@ -136,10 +136,10 @@ func (e *endpoint) formValues(r *http.Request, prefix string) {
 }
 
 // times computes the start and end times from the endpoint controls.
-func times(start, end endpoint, now time.Time) (startTime, endTime time.Time, err error) {
+func times(start, end endpoint, now time.Time, browserLoc *time.Location) (startTime, endTime time.Time, err error) {
 	var ztime time.Time
-	st, sd, err1 := start.timeOrDuration()
-	et, ed, err2 := end.timeOrDuration()
+	st, sd, err1 := start.timeOrDuration(browserLoc)
+	et, ed, err2 := end.timeOrDuration(browserLoc)
 	if err := errors.Join(err1, err2); err != nil {
 		return ztime, ztime, err
 	}
@@ -168,7 +168,7 @@ func times(start, end endpoint, now time.Time) (startTime, endTime time.Time, er
 
 // timeOrDuration returns the time or duration described by the endpoint's controls.
 // If the controls aren't set, it returns the zero time.
-func (e *endpoint) timeOrDuration() (time.Time, time.Duration, error) {
+func (e *endpoint) timeOrDuration(browserLoc *time.Location) (time.Time, time.Duration, error) {
 	var ztime time.Time
 	switch e.Radio {
 	case "", "fixed":
@@ -178,8 +178,7 @@ func (e *endpoint) timeOrDuration() (time.Time, time.Duration, error) {
 	case "date":
 		// Format described in
 		// https://developer.mozilla.org/en-US/docs/Web/HTML/Date_and_time_formats#local_date_and_time_strings
-		// TODO(jba): times should be local to the user, not the Gaby server.
-		t, err := time.ParseInLocation("2006-01-02T15:04", e.Date, time.Local)
+		t, err := time.ParseInLocation("2006-01-02T15:04", e.Date, browserLoc)
 		if err != nil {
 			return ztime, 0, err
 		}
