@@ -24,14 +24,3 @@ before sending patches.
 
 Unless otherwise noted, the Go source files are distributed under
 the BSD-style license found in the LICENSE file.
-
-## Developing code
-
-This repo consists of a number of modules:
-
-  - The top-level one, golang.org/x/oscar
-  - A nested module, golang.org/x/oscar/internal/gcp, for packages that
-    depend on Google Cloud Platform.
-  - Per-tool modules for tools that make use of any nested modules.
-
-The `go.work` file at the repo root allows you to work on all modules together.
