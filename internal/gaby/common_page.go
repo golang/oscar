@@ -35,6 +35,8 @@ type CommonPage struct {
 	ID pageID
 	// A plain text description of the webpage.
 	Description string
+	// Link to the feedback page for this page.
+	FeedbackURL string
 	// A list of additional stylesheets to use for this webpage.
 	// "/static/style.css" and [pageID.CSS] are always included
 	// without needing to be listed here.

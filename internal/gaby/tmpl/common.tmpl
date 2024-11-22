@@ -27,7 +27,12 @@ Templates in this file are defined on type [CommonPage].
 {{define "nav-title"}}
   {{template "nav" .}}
   <h1>Oscar {{.ID.Title}}</h1>
-  <p id="desc">{{.Description}}</p>
+  <p id="desc">
+  {{.Description}}
+  {{with .FeedbackURL}}
+    <a href="{{.}}" target="_blank">[provide feedback]</a>
+  {{end}}
+  </p>
 {{end}}
 
 {{define "nav"}}

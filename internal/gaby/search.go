@@ -124,6 +124,7 @@ func (p *searchPage) setCommonPage() {
 	p.CommonPage = CommonPage{
 		ID:          searchID,
 		Description: "Search Oscar's database of GitHub issues, Go documentation, and other documents.",
+		FeedbackURL: "https://github.com/golang/oscar/issues/60#issuecomment-new",
 		Form: Form{
 			Inputs:     p.Params.inputs(),
 			SubmitText: "search",

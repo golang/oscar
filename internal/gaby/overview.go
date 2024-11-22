@@ -169,6 +169,7 @@ func (p *overviewPage) setCommonPage() {
 	p.CommonPage = CommonPage{
 		ID:          overviewID,
 		Description: "Generate overviews of golang/go issues and their comments, or summarize the relationship between a golang/go issue and its related documents.",
+		FeedbackURL: "https://github.com/golang/oscar/issues/61#issuecomment-new",
 		Styles:      []safeURL{searchID.CSS()},
 		Form: Form{
 			Inputs:     p.Params.inputs(),
