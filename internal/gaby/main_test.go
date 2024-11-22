@@ -27,7 +27,7 @@ func TestNewServer(t *testing.T) {
 	}
 
 	// create in-memory test server
-	report := func(err error) { t.Error(err) }
+	report := func(err error, _ *http.Request) { t.Error(err) }
 	mux := g.newServer(report)
 	s := httptest.NewServer(mux)
 	defer s.Close()

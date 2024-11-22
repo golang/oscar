@@ -343,9 +343,9 @@ func (g *Gaby) searchLoop() {
 
 // serveHTTP serves HTTP endpoints for Gaby.
 func (g *Gaby) serveHTTP() {
-	report := func(err error) {
+	report := func(err error, r *http.Request) {
 		g.slog.Error("reporting", "err", err)
-		g.report.Report(errorreporting.Entry{Error: err})
+		g.report.Report(errorreporting.Entry{Error: err, Req: r})
 	}
 	mux := g.newServer(report)
 	// Listen in this goroutine so that we can return a synchronous error
@@ -353,12 +353,12 @@ func (g *Gaby) serveHTTP() {
 	// Run the actual server in a background goroutine.
 	l, err := net.Listen("tcp", g.addr)
 	if err != nil {
-		report(err)
+		report(err, nil)
 		log.Fatal(err)
 	}
 	go func() {
 		if err := http.Serve(l, mux); err != nil {
-			report(err)
+			report(err, nil)
 			log.Fatal(err)
 		}
 	}()
@@ -366,7 +366,7 @@ func (g *Gaby) serveHTTP() {
 
 // newServer creates a new [http.ServeMux] that uses report to
 // process server creation and endpoint errors.
-func (g *Gaby) newServer(report func(error)) *http.ServeMux {
+func (g *Gaby) newServer(report func(error, *http.Request)) *http.ServeMux {
 	const (
 		cronEndpoint        = "cron"
 		syncEndpoint        = "sync"
@@ -393,7 +393,7 @@ func (g *Gaby) newServer(report func(error)) *http.ServeMux {
 	// Usage: /setlevel?l=LEVEL
 	mux.HandleFunc("GET /"+setLevelEndpoint, func(w http.ResponseWriter, r *http.Request) {
 		if err := g.slogLevel.UnmarshalText([]byte(r.FormValue("l"))); err != nil {
-			report(err)
+			report(err, r)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -412,7 +412,7 @@ func (g *Gaby) newServer(report func(error)) *http.ServeMux {
 
 		if errs := g.syncAndRunAll(g.ctx); len(errs) != 0 {
 			for _, err := range errs {
-				report(err)
+				report(err, r)
 			}
 		}
 		cronEndpointCounter.Add(r.Context(), 1)
@@ -430,7 +430,7 @@ func (g *Gaby) newServer(report func(error)) *http.ServeMux {
 		defer g.db.Unlock(lock)
 
 		if err := g.crawl(r.Context()); err != nil {
-			report(err)
+			report(err, r)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 
@@ -448,7 +448,7 @@ func (g *Gaby) newServer(report func(error)) *http.ServeMux {
 		defer g.db.Unlock(githubEventLock)
 
 		if handled, err := g.handleGitHubEvent(r, &flags); err != nil {
-			report(err)
+			report(err, r)
 			slog.Warn(githubEventEndpoint, "err", err)
 		} else if handled {
 			slog.Info(githubEventEndpoint + " success")
