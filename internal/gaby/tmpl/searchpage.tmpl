@@ -13,7 +13,7 @@ license that can be found in the LICENSE file.
 </html>
 
 {{define "search-result"}}
-<div class="section">
+<div class="section" id="result">
 {{- with .Error -}}
 	<p>Error: {{.}}</p>
 {{- else with .Results -}}

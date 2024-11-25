@@ -11,7 +11,7 @@ license that can be found in the LICENSE file.
   <body>
   	{{template "header" .}}
 
-	<div class="section">
+	<div class="section" id="result">
 	{{- with .Error -}}
 		<p>Error: {{.Error}}</p>
 	{{- else with .Result -}}

@@ -46,7 +46,7 @@ function togglePrompt() {
 {{end}}
 
 {{define "overview-result"}}
-<div class="section">
+<div class="section" id="result">
 {{- with .Error -}}
 	<p>Error: {{.Error}}</p>
 {{- else with .Result -}}

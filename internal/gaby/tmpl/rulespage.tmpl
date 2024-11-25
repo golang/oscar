@@ -9,8 +9,8 @@ license that can be found in the LICENSE file.
   <body>
 	{{template "header" .}}
 
-	<div class="section">
-	{{- with .Error -}}ß
+	<div class="section" id="result">
+	{{- with .Error -}}
 		<p>Error: {{.}}</p>
 	{{- else with .Result -}}
 		<div class="metadata">
