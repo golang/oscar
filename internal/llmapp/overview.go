@@ -31,28 +31,6 @@ import (
 	"golang.org/x/oscar/internal/storage"
 )
 
-// A Doc is a document to provide to an LLM as part of a prompt.
-type Doc struct {
-	// Freeform text describing the type of document.
-	// Used to help the LLM distinguish between kinds of
-	// documents, or understand their relative importance.
-	Type string `json:"type,omitempty"`
-	// The URL of the document, if one exists.
-	URL string `json:"url,omitempty"`
-	// The author of the document, if known.
-	Author string `json:"author,omitempty"`
-	// The title of the document, if known.
-	Title string `json:"title,omitempty"`
-	Text  string `json:"text"` // required
-}
-
-// OverviewResult is the result of [Overview] or [PostOverview].
-type OverviewResult struct {
-	Overview string // the LLM-generated summary
-	Cached   bool   // whether the summary was cached
-	Prompt   []any  // the prompt(s) used to generate the result
-}
-
 // Client is a client for accessing the LLM application functionality.
 type Client struct {
 	slog *slog.Logger
@@ -71,14 +49,14 @@ func New(lg *slog.Logger, g llm.ContentGenerator, db storage.DB) *Client {
 // styled with markdown.
 // Overview returns an error if no documents are provided or the LLM is unable
 // to generate a response.
-func (c *Client) Overview(ctx context.Context, docs ...*Doc) (*OverviewResult, error) {
+func (c *Client) Overview(ctx context.Context, docs ...*Doc) (*Result, error) {
 	return c.overview(ctx, documents, &docGroup{docs: docs})
 }
 
 // PostOverview returns an LLM-generated overview of the given post and comments,
 // styled with markdown.
 // PostOverview returns an error if no post is provided or the LLM is unable to generate a response.
-func (c *Client) PostOverview(ctx context.Context, post *Doc, comments []*Doc) (*OverviewResult, error) {
+func (c *Client) PostOverview(ctx context.Context, post *Doc, comments []*Doc) (*Result, error) {
 	if post == nil {
 		return nil, errors.New("llmapp PostOverview: no post")
 	}
@@ -87,27 +65,10 @@ func (c *Client) PostOverview(ctx context.Context, post *Doc, comments []*Doc) (
 		&docGroup{label: "comments", docs: comments})
 }
 
-// RelatedOverview returns an LLM-generated overview of the given document and
-// related documents, styled with markdown.
-// RelatedOverview returns an error if no initial document is provided, no related docs are
-// provided, or the LLM is unable to generate a response.
-func (c *Client) RelatedOverview(ctx context.Context, doc *Doc, related []*Doc) (*OverviewResult, error) {
-	if doc == nil {
-		return nil, errors.New("llmapp RelatedOverview: no doc")
-	}
-	if len(related) == 0 {
-		return nil, errors.New("llmapp RelatedOverview: no related docs")
-	}
-	return c.overview(ctx, docAndRelated,
-		&docGroup{label: "original", docs: []*Doc{doc}},
-		&docGroup{label: "related", docs: related},
-	)
-}
-
 // UpdatedPostOverview returns an LLM-generated overview of the given post and comments,
 // styled with markdown. It summarizes the oldComments and newComments separately.
 // UpdatedPostOverview returns an error if no post is provided or the LLM is unable to generate a response.
-func (c *Client) UpdatedPostOverview(ctx context.Context, post *Doc, oldComments, newComments []*Doc) (*OverviewResult, error) {
+func (c *Client) UpdatedPostOverview(ctx context.Context, post *Doc, oldComments, newComments []*Doc) (*Result, error) {
 	if post == nil {
 		return nil, errors.New("llmapp PostOverview: no post")
 	}
@@ -124,32 +85,33 @@ type docGroup struct {
 	docs  []*Doc
 }
 
-// overview returns an LLM-generated overview of the given documents,
-// styled with markdown.
-// The kind argument is a descriptor for the given documents, used to add
-// additional context to the LLM prompt.
-// Overview returns an error if no documents are provided or the LLM is unable
+// overview returns an LLM-generated overview of the given documents.
+// The kind argument is a descriptor for the given documents, used to
+// determine which prompt and schema to pass to to the LLM.
+// overview returns an error if no documents are provided or the LLM is unable
 // to generate a response.
-func (c *Client) overview(ctx context.Context, kind docsKind, groups ...*docGroup) (*OverviewResult, error) {
+func (c *Client) overview(ctx context.Context, kind docsKind, groups ...*docGroup) (*Result, error) {
 	if len(groups) == 0 {
 		return nil, errors.New("llmapp overview: no documents")
 	}
-	prompt := overviewPrompt(kind, groups)
-	overview, cached, err := c.generateText(ctx, prompt)
+	prompt := prompt(kind, groups)
+	schema := kind.schema()
+	overview, cached, err := c.generate(ctx, schema, prompt)
 	if err != nil {
 		return nil, err
 	}
-	return &OverviewResult{
-		Overview: overview,
+	return &Result{
+		Response: overview,
 		Cached:   cached,
+		Schema:   schema,
 		Prompt:   prompt,
 	}, nil
 }
 
-// overviewPrompt converts the given docs into a slice of
+// prompt converts the given docs into a slice of
 // text prompts, followed by an instruction prompt based
 // on the documents kind.
-func overviewPrompt(kind docsKind, groups []*docGroup) []any {
+func prompt(kind docsKind, groups []*docGroup) []any {
 	var inputs []any
 	for _, g := range groups {
 		if g.label != "" {
@@ -193,4 +155,13 @@ func (k docsKind) instructions() string {
 		panic(err)
 	}
 	return w.String()
+}
+
+// schema returns the JSON schema for the given document kind,
+// or nil if there is no corresponding JSON schema.
+func (k docsKind) schema() *llm.Schema {
+	if k == docAndRelated {
+		return relatedSchema
+	}
+	return nil
 }

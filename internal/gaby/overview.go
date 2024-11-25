@@ -5,6 +5,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net/http"
@@ -17,6 +18,7 @@ import (
 	"github.com/google/safehtml/template"
 	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/htmlutil"
+	"golang.org/x/oscar/internal/llmapp"
 	"golang.org/x/oscar/internal/search"
 )
 
@@ -31,8 +33,10 @@ type overviewPage struct {
 }
 
 type overviewResult struct {
-	github.IssueOverviewResult        // the raw result
-	Type                       string // the type of overview
+	Raw   *llmapp.Result // the raw result
+	Issue *github.Issue  // the issue that was analyzed
+	Typed any            // additional, type-specific results
+	Type  string         // the type of result
 	// a text description of the type of result (for display), finishing
 	// the sentence "AI-generated Overview of ".
 	Desc string
@@ -71,10 +75,6 @@ func fixMarkdown(text string) string {
 
 var overviewPageTmpl = newTemplate(overviewPageTmplFile, template.FuncMap{
 	"fmttime": fmtTimeString,
-	"safehtml": func(md string) safehtml.HTML {
-		md = fixMarkdown(md)
-		return htmlutil.MarkdownToSafeHTML(md)
-	},
 })
 
 // fmtTimeString formats an [time.RFC3339]-encoded time string
@@ -267,66 +267,70 @@ func (g *Gaby) overview(ctx context.Context, pm *overviewParams) (*overviewResul
 	if !slices.Contains(g.githubProjects, proj) {
 		return nil, fmt.Errorf("invalid form value (unrecognized project): %q", pm.Query)
 	}
+	iss, err := github.LookupIssue(g.db, proj, issue)
+	if err != nil {
+		return nil, err
+	}
 
 	switch pm.OverviewType {
 	case "", issueOverviewType:
-		return g.issueOverview(ctx, proj, issue)
+		return g.issueOverview(ctx, iss)
 	case relatedOverviewType:
-		return g.relatedOverview(ctx, proj, issue)
+		return g.relatedOverview(ctx, iss)
 	case updateOverviewType:
 		lastReadComment, err := parseIssueComment(pm.LastReadComment)
 		if err != nil {
 			return nil, err
 		}
-		return g.updateOverview(ctx, proj, issue, lastReadComment)
+		return g.updateOverview(ctx, iss, lastReadComment)
 	default:
 		return nil, fmt.Errorf("unknown overview type %q", pm.OverviewType)
 	}
 }
 
 // issueOverview generates an overview of the issue and its comments.
-func (g *Gaby) issueOverview(ctx context.Context, proj string, issue int64) (*overviewResult, error) {
-	overview, err := github.IssueOverview(ctx, g.llm, g.db, proj, issue)
+func (g *Gaby) issueOverview(ctx context.Context, iss *github.Issue) (*overviewResult, error) {
+	overview, err := github.IssueOverview(ctx, g.llm, g.db, iss)
 	if err != nil {
 		return nil, err
 	}
 	return &overviewResult{
-		IssueOverviewResult: *overview,
-		Type:                issueOverviewType,
-		Desc:                fmt.Sprintf("issue %d and all %d comments", issue, overview.TotalComments),
+		Raw:   overview.Overview,
+		Issue: iss,
+		Typed: overview,
+		Type:  issueOverviewType,
+		Desc:  fmt.Sprintf("issue %d and all %d comments", iss.Number, overview.TotalComments),
 	}, nil
 }
 
 // relatedOverview generates an overview of the issue and its related documents.
-func (g *Gaby) relatedOverview(ctx context.Context, proj string, issue int64) (*overviewResult, error) {
-	iss, err := github.LookupIssue(g.db, proj, issue)
-	if err != nil {
-		return nil, err
-	}
-	overview, err := search.Overview(ctx, g.llm, g.vector, g.docs, iss.DocID())
+func (g *Gaby) relatedOverview(ctx context.Context, iss *github.Issue) (*overviewResult, error) {
+	analysis, err := search.Analyze(ctx, g.llm, g.vector, g.docs, iss.DocID())
 	if err != nil {
 		return nil, err
 	}
 	return &overviewResult{
-		IssueOverviewResult: github.IssueOverviewResult{
-			Issue: iss,
-			// number of comments not displayed for related type
-			Overview: overview.OverviewResult,
-		},
-		Type: relatedOverviewType,
-		Desc: fmt.Sprintf("issue %d and related docs", issue),
+		Raw:   &analysis.Result,
+		Issue: iss,
+		Typed: analysis,
+		Type:  relatedOverviewType,
+		Desc:  fmt.Sprintf("issue %d and %d related docs", iss.Number, len(analysis.Output.Related)),
 	}, nil
 }
 
-func (g *Gaby) updateOverview(ctx context.Context, proj string, issue int64, lastReadComment int64) (*overviewResult, error) {
-	overview, err := github.UpdateOverview(ctx, g.llm, g.db, proj, issue, lastReadComment)
+// updateOverview generates an overview of the issue and its comments, split
+// into "old" and "new" groups by lastReadComment.
+func (g *Gaby) updateOverview(ctx context.Context, iss *github.Issue, lastReadComment int64) (*overviewResult, error) {
+	overview, err := github.UpdateOverview(ctx, g.llm, g.db, iss, lastReadComment)
 	if err != nil {
 		return nil, err
 	}
 	return &overviewResult{
-		IssueOverviewResult: *overview,
-		Type:                updateOverviewType,
-		Desc:                fmt.Sprintf("issue %d and its %d new comments after %d", issue, overview.NewComments, lastReadComment),
+		Raw:   overview.Overview,
+		Issue: iss,
+		Typed: overview,
+		Type:  updateOverviewType,
+		Desc:  fmt.Sprintf("issue %d and its %d new comments after %d", iss.Number, overview.NewComments, lastReadComment),
 	}, nil
 }
 
@@ -334,4 +338,60 @@ func (g *Gaby) updateOverview(ctx context.Context, proj string, issue int64, las
 // for the issue. This is used in the overview page template.
 func (r *overviewResult) Related() string {
 	return fmt.Sprintf("/search?q=%s", r.Issue.HTMLURL)
+}
+
+// TotalComments returns the total number of comments for the
+// analyzed issue, or 0 if not known.
+func (r *overviewResult) TotalComments() int {
+	if ir, ok := r.Typed.(*github.IssueOverviewResult); ok {
+		return ir.TotalComments
+	}
+	return 0
+}
+
+// Display returns the overview result as safe HTML.
+func (r *overviewResult) Display() safehtml.HTML {
+	switch r.Type {
+	case issueOverviewType, updateOverviewType:
+		md := r.Raw.Response
+		md = fixMarkdown(md)
+		return htmlutil.MarkdownToSafeHTML(md)
+	case relatedOverviewType:
+		return displayRelated(r.Typed.(*search.Analysis))
+	}
+	return safehtml.HTML{}
+}
+
+// Template for converting a [search.Analysis] to Markdown.
+const relatedMD = `
+## Original Post
+
+{{.Output.Summary}}
+
+## Related Documents
+{{range .Output.Related}}
+### {{.Title}} ([{{.URL}}]({{.URL}}))
+
+* **Summary**: {{.Summary}}
+* **Relationship**: {{.Relationship}}
+* **Relevance**: {{.Relevance}}
+* **Relevance reason**: {{.RelevanceReason}}
+{{end}}
+
+`
+
+var relatedMDTmpl = template.Must(template.New("relatedMD").Parse(relatedMD))
+
+// displayRelated returns the result of a related documents
+// analysis as safe HTML.
+func displayRelated(a *search.Analysis) safehtml.HTML {
+	// Convert to Markdown, then HTML.
+	// We could instead convert directly to HTML, but Markdown is easier
+	// to work with, and we will likely publish these summaries to GitHub,
+	// which uses Markdown.
+	var buf bytes.Buffer
+	if err := relatedMDTmpl.Execute(&buf, a); err != nil {
+		panic(err)
+	}
+	return htmlutil.MarkdownToSafeHTML(buf.String())
 }

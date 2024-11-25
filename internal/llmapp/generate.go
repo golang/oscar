@@ -14,10 +14,10 @@ import (
 	"rsc.io/ordered"
 )
 
-// generateText returns a (possibly cached) text response for the prompts.
-func (c *Client) generateText(ctx context.Context, prompts []any) (_ string, cached bool, _ error) {
+// generate returns a (possibly cached) response for the prompts.
+func (c *Client) generate(ctx context.Context, schema *llm.Schema, prompts []any) (string, bool, error) {
 	model := c.g.Model()
-	h := hash(prompts)
+	h := hash(schema, prompts)
 	k := ordered.Encode(generateTextKind, model, h)
 	c.db.Lock(string(k))
 	defer c.db.Unlock(string(k))
@@ -29,10 +29,11 @@ func (c *Client) generateText(ctx context.Context, prompts []any) (_ string, cac
 	}
 
 	// cache miss
-	result, err := c.g.GenerateContent(ctx, nil, prompts)
+	result, err := c.g.GenerateContent(ctx, schema, prompts)
 	if err != nil {
 		return "", false, err
 	}
+
 	c.db.Set(k, storage.JSON(response{
 		Model:      model,
 		PromptHash: h,
@@ -61,20 +62,22 @@ func (c *Client) load(key []byte) *response {
 	return nil
 }
 
-// response is a cached response to a
-// [llm.TextGenerator.GenerateText] query.
+// response is a cached response to a [Client.generate] query.
 type response struct {
 	// The generative model used to generate the response.
 	Model string
-	// The SHA-256 hash of the prompts used to generate the response.
+	// The SHA-256 hash of the schema and prompts used to generate the response.
 	PromptHash []byte
-	// The generated response.
+	// The raw generated response.
 	Response string
 }
 
-// hash returns the SHA-256 hash of the strings or blobs.
-func hash(parts []any) []byte {
+// hash returns the SHA-256 hash of the schema, and the strings or blobs.
+func hash(schema *llm.Schema, parts []any) []byte {
 	h := sha256.New()
+	if schema != nil {
+		h.Write(storage.JSON(schema))
+	}
 	for _, p := range parts {
 		switch p := p.(type) {
 		case string:

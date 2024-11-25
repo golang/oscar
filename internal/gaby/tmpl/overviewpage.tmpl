@@ -15,7 +15,7 @@ license that can be found in the LICENSE file.
 {{define "show-rawoutput"}}
 <div class="toggle" onclick="toggleRawOutput()">[show raw LLM output]</div>
 <div id="rawoutput" class="start-hidden">
-	<pre>{{.Overview.Overview}}</pre>
+	<pre>{{.Raw.Response}}</pre>
 </div>
 <script>
 function toggleRawOutput() {
@@ -30,7 +30,7 @@ function toggleRawOutput() {
 <div class="toggle" onclick="togglePrompt()">[show prompt]</div>
 <div id="prompt" class="start-hidden">
 	<ul>
-		{{- range .Overview.Prompt -}}
+		{{- range .Raw.Prompt -}}
 	<li>
 		<pre>{{.}}</pre>
 	</li>
@@ -51,12 +51,12 @@ function togglePrompt() {
 	<p>Error: {{.Error}}</p>
 {{- else with .Result -}}
 	<div class="result">
-		<p><a href="{{.HTMLURL}}" target="_blank">{{.HTMLURL}}</a></p>
-		<p><strong>{{.Title}}</strong></p>
-		<p>author: {{.User.Login}} | state: {{.State}} | created: {{fmttime .CreatedAt}} | updated: {{fmttime .UpdatedAt}}{{with .TotalComments}} | total comments: {{.}}{{end}}</p>
+		<p><a href="{{.Issue.HTMLURL}}" target="_blank">{{.Issue.HTMLURL}}</a></p>
+		<p><strong>{{.Issue.Title}}</strong></p>
+		<p>author: {{.Issue.User.Login}} | state: {{.Issue.State}} | created: {{fmttime .Issue.CreatedAt}} | updated: {{fmttime .Issue.UpdatedAt}}{{with .TotalComments}} | total comments: {{.}}{{end}}</p>
 		<p><a href="{{.Related}}" target="_blank">[Search for related issues]</a></p>
-		<p>AI-generated overview of {{.Desc}}{{if .Overview.Cached}} (cached){{end}}:</p>
-		<div id="overview">{{safehtml .Overview.Overview}}</div>
+		<p>AI-generated overview of {{.Desc}}{{if .Raw.Cached}} (cached){{end}}:</p>
+		<div id="overview">{{.Display}}</div>
 	</div>
 	{{template "show-rawoutput" .}}
 	{{template "show-prompt" .}}

@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"golang.org/x/oscar/internal/docs"
 	"golang.org/x/oscar/internal/embeddocs"
 	"golang.org/x/oscar/internal/llm"
@@ -17,10 +18,11 @@ import (
 	"golang.org/x/oscar/internal/testutil"
 )
 
-func TestOverview(t *testing.T) {
+func TestAnalyze(t *testing.T) {
 	ctx := context.Background()
 	lg := testutil.Slogger(t)
-	g := llm.EchoContentGenerator()
+
+	g := llmapp.RelatedTestGenerator(t, 1)
 	db := storage.MemDB()
 	lc := llmapp.New(lg, g, db)
 	vdb := storage.MemVectorDB(db, lg, "test")
@@ -40,7 +42,7 @@ func TestOverview(t *testing.T) {
 	// Add the documents to vdb.
 	testutil.Check(t, embeddocs.Sync(ctx, lg, vdb, llm.QuoteEmbedder(), dc))
 
-	got, err := Overview(ctx, lc, vdb, dc, id)
+	got, err := Analyze(ctx, lc, vdb, dc, id)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -59,21 +61,17 @@ func TestOverview(t *testing.T) {
 	}
 
 	// This checks that the expected call to
-	// [llmapp.Client.RelatedOverview] is made by [Overview].
-	ro, err := lc.RelatedOverview(ctx, doc1, []*llmapp.Doc{doc2})
+	// [llmapp.Client.AnalyzeRelated] is made by [Analyze].
+	ro, err := lc.AnalyzeRelated(ctx, doc1, []*llmapp.Doc{doc2})
 	if err != nil {
 		t.Fatal(err)
 	}
-	prompt := ro.Prompt
 
-	want := &OverviewResult{
-		&llmapp.OverviewResult{
-			Overview: llm.EchoTextResponse(prompt...),
-			Prompt:   prompt,
-		},
+	want := &Analysis{
+		RelatedAnalysis: *ro,
 	}
 
-	if cmp.Diff(got, want) != "" {
-		t.Errorf("Overview() mismatch (-got +want):\n%s", cmp.Diff(got, want))
+	if cmp.Diff(got, want, cmpopts.IgnoreFields(llmapp.Result{}, "Cached")) != "" {
+		t.Errorf("Analyze() mismatch (-got +want):\n%s", cmp.Diff(got, want))
 	}
 }

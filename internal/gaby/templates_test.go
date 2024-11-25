@@ -37,18 +37,23 @@ func TestTemplates(t *testing.T) {
 		{"overview", overviewPageTmpl, &overviewPage{
 			Params: overviewParams{Query: "12"},
 			Result: &overviewResult{
-				IssueOverviewResult: github.IssueOverviewResult{
-					Issue: &github.Issue{
-						User:      github.User{Login: "abc"},
-						CreatedAt: "2023-01-01T0",
-						HTMLURL:   "https://example.com",
-					},
+				Raw: &llmapp.Result{
+					Response: "an overview",
+					Cached:   true,
+					Prompt:   []any{"a prompt"},
+				},
+				Typed: github.IssueOverviewResult{
 					TotalComments: 2,
-					Overview: &llmapp.OverviewResult{
-						Overview: "an overview",
+					Overview: &llmapp.Result{
+						Response: "an overview",
 						Cached:   true,
 						Prompt:   []any{"a prompt"},
 					},
+				},
+				Issue: &github.Issue{
+					User:      github.User{Login: "abc"},
+					CreatedAt: "2023-01-01T0",
+					HTMLURL:   "https://example.com",
 				},
 				Type: issueOverviewType,
 			}}},

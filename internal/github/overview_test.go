@@ -36,11 +36,6 @@ func TestIssueOverview(t *testing.T) {
 
 	lc := llmapp.New(lg, llm.EchoContentGenerator(), db)
 
-	got, err := IssueOverview(ctx, lc, db, "robpike/ivy", 19)
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	issue := &Issue{
 		URL:     "https://api.github.com/repos/robpike/ivy/issues/19",
 		HTMLURL: "https://github.com/robpike/ivy/issues/19",
@@ -58,6 +53,11 @@ could you get me a hand！
 		Assignees: []User{},
 		State:     "closed",
 		Labels:    []Label{},
+	}
+
+	got, err := IssueOverview(ctx, lc, db, issue)
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	// This merely checks that the correct call to [llmapp.PostOverview] is made.
@@ -88,12 +88,11 @@ It is a fair point though that this should be explained in the README. I will fi
 	}
 
 	want := &IssueOverviewResult{
-		Issue:         issue,
 		Overview:      wantOverview,
 		TotalComments: 1,
 	}
 
-	if diff := cmp.Diff(got, want, cmpopts.IgnoreFields(llmapp.OverviewResult{}, "Cached")); diff != "" {
+	if diff := cmp.Diff(got, want, cmpopts.IgnoreFields(llmapp.Result{}, "Cached")); diff != "" {
 		t.Errorf("IssueOverview() mismatch:\n%s", diff)
 	}
 }
@@ -114,7 +113,7 @@ func TestUpdateOverview(t *testing.T) {
 	gh.Testing().AddIssueComment(proj, iss.Number, comment)
 	gh.Testing().AddIssueComment(proj, iss.Number, comment2)
 
-	got, err := UpdateOverview(ctx, lc, db, proj, iss.Number, comment.CommentID())
+	got, err := UpdateOverview(ctx, lc, db, iss, comment.CommentID())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -143,14 +142,13 @@ func TestUpdateOverview(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := &IssueOverviewResult{
-		Issue:         iss,
+	want := &UpdateOverviewResult{
 		NewComments:   1,
 		TotalComments: 2,
 		Overview:      wantOverview,
 	}
 
-	if diff := cmp.Diff(want, got, cmpopts.IgnoreFields(llmapp.OverviewResult{}, "Cached")); diff != "" {
+	if diff := cmp.Diff(want, got, cmpopts.IgnoreFields(llmapp.Result{}, "Cached")); diff != "" {
 		t.Errorf("UpdateOverview() mismatch (-want,+got):\n%s", diff)
 	}
 }

@@ -13,18 +13,18 @@ import (
 	"golang.org/x/oscar/internal/storage"
 )
 
-// OverviewResult is the result of [Overview].
-type OverviewResult struct {
-	*llmapp.OverviewResult // the LLM-generated overview
+// Analysis is the result of [Analyze].
+type Analysis struct {
+	llmapp.RelatedAnalysis
 }
 
-// Overview returns an LLM-generated overview of a document and its related documents.
+// Analyze returns an LLM-generated analysis of a document with respect to its related documents.
 // id is the ID of the main document, which must be present in both the docs corpus and the vector db.
-// Overview finds related documents using vector search (see [Vector]) with fixed options.
-func Overview(ctx context.Context, lc *llmapp.Client, vdb storage.VectorDB, dc *docs.Corpus, id string) (*OverviewResult, error) {
+// Analyze finds related documents using vector search (see [Vector]) with fixed options.
+func Analyze(ctx context.Context, lc *llmapp.Client, vdb storage.VectorDB, dc *docs.Corpus, id string) (*Analysis, error) {
 	doc, ok := llmDoc(dc, "main", id)
 	if !ok {
-		return nil, fmt.Errorf("search.Overview: main doc %q not in docs corpus", id)
+		return nil, fmt.Errorf("search.Analyze: main doc %q not in docs corpus", id)
 	}
 	rs, err := searchRelated(vdb, dc, id)
 	if err != nil {
@@ -34,15 +34,17 @@ func Overview(ctx context.Context, lc *llmapp.Client, vdb storage.VectorDB, dc *
 	for _, r := range rs {
 		d, ok := llmDoc(dc, "related", r.ID)
 		if !ok {
-			return nil, fmt.Errorf("search.Overview: related doc %s not in docs corpus", id)
+			return nil, fmt.Errorf("search.Analyze: related doc %s not in docs corpus", id)
 		}
 		related = append(related, d)
 	}
-	overview, err := lc.RelatedOverview(ctx, doc, related)
+	a, err := lc.AnalyzeRelated(ctx, doc, related)
 	if err != nil {
 		return nil, err
 	}
-	return &OverviewResult{overview}, nil
+	return &Analysis{
+		RelatedAnalysis: *a,
+	}, nil
 }
 
 var maxResults = 5

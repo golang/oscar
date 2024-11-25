@@ -15,27 +15,20 @@ import (
 	"rsc.io/ordered"
 )
 
-// IssueOverviewResult is the result of [IssueOverview] or [UpdateOverview].
+// IssueOverviewResult is the result of [IssueOverview].
 // It contains the generated overview and metadata about the issue.
 type IssueOverviewResult struct {
-	*Issue            // the issue itself
-	NewComments   int // number of new comments for this issue (for [CommentsAfterOverview])
-	TotalComments int // number of comments for this issue
-
-	Overview *llmapp.OverviewResult // the LLM-generated issue and comment summary
+	TotalComments int            // number of comments for this issue
+	Overview      *llmapp.Result // the LLM-generated issue and comment summary
 }
 
 // IssueOverview returns an LLM-generated overview of the issue and its comments.
 // It does not make any requests to GitHub; the issue and comment data must already
 // be stored in db.
-func IssueOverview(ctx context.Context, lc *llmapp.Client, db storage.DB, project string, issue int64) (*IssueOverviewResult, error) {
-	iss, err := LookupIssue(db, project, issue)
-	if err != nil {
-		return nil, err
-	}
+func IssueOverview(ctx context.Context, lc *llmapp.Client, db storage.DB, iss *Issue) (*IssueOverviewResult, error) {
 	post := iss.toLLMDoc()
 	var cs []*llmapp.Doc
-	for c := range comments(db, project, issue) {
+	for c := range comments(db, iss.Project(), iss.Number) {
 		cs = append(cs, c.toLLMDoc())
 	}
 	overview, err := lc.PostOverview(ctx, post, cs)
@@ -43,10 +36,17 @@ func IssueOverview(ctx context.Context, lc *llmapp.Client, db storage.DB, projec
 		return nil, err
 	}
 	return &IssueOverviewResult{
-		Issue:         iss,
 		TotalComments: len(cs),
 		Overview:      overview,
 	}, nil
+}
+
+// UpdateOverviewResult is the result of [UpdateOverview].
+// It contains the generated overview and metadata about the issue.
+type UpdateOverviewResult struct {
+	NewComments   int            // number of new comments for this issue
+	TotalComments int            // number of comments for this issue
+	Overview      *llmapp.Result // the LLM-generated issue and comment summary
 }
 
 // UpdateOverview returns an LLM-generated overview of the issue and its
@@ -56,15 +56,11 @@ func IssueOverview(ctx context.Context, lc *llmapp.Client, db storage.DB, projec
 // UpdateOverview does not make any requests to GitHub; the issue and comment data must already
 // be stored in db.
 func UpdateOverview(ctx context.Context, lc *llmapp.Client, db storage.DB,
-	project string, issue int64, lastRead int64) (*IssueOverviewResult, error) {
-	iss, err := LookupIssue(db, project, issue)
-	if err != nil {
-		return nil, err
-	}
+	iss *Issue, lastRead int64) (*UpdateOverviewResult, error) {
 	post := iss.toLLMDoc()
 	var oldComments, newComments []*llmapp.Doc
 	foundTarget := false
-	for c := range comments(db, project, issue) {
+	for c := range comments(db, iss.Project(), iss.Number) {
 		// New comment.
 		if c.CommentID() > lastRead {
 			newComments = append(newComments, c.toLLMDoc())
@@ -76,14 +72,13 @@ func UpdateOverview(ctx context.Context, lc *llmapp.Client, db storage.DB,
 		oldComments = append(oldComments, c.toLLMDoc())
 	}
 	if !foundTarget {
-		return nil, fmt.Errorf("issue %d comment %d not found in database", issue, lastRead)
+		return nil, fmt.Errorf("issue %d comment %d not found in database", iss.Number, lastRead)
 	}
 	overview, err := lc.UpdatedPostOverview(ctx, post, oldComments, newComments)
 	if err != nil {
 		return nil, err
 	}
-	return &IssueOverviewResult{
-		Issue:         iss,
+	return &UpdateOverviewResult{
 		NewComments:   len(newComments),
 		TotalComments: len(oldComments) + len(newComments),
 		Overview:      overview,

@@ -17,11 +17,27 @@ import (
 	"golang.org/x/oscar/internal/docs"
 	"golang.org/x/oscar/internal/embeddocs"
 	"golang.org/x/oscar/internal/github"
+	"golang.org/x/oscar/internal/llm"
 	"golang.org/x/oscar/internal/llmapp"
+	"golang.org/x/oscar/internal/search"
+	"golang.org/x/oscar/internal/secret"
+	"golang.org/x/oscar/internal/storage"
+	"golang.org/x/oscar/internal/testutil"
 )
 
 func TestPopulateOverviewPage(t *testing.T) {
-	g := newTestGaby(t)
+	lg := testutil.Slogger(t)
+	db := storage.MemDB()
+
+	g := &Gaby{
+		slog:   lg,
+		db:     db,
+		vector: storage.MemVectorDB(db, lg, "vector"),
+		github: github.New(lg, db, secret.Empty(), nil),
+		llm:    llmapp.New(lg, llmapp.RelatedTestGenerator(t, 1), db),
+		docs:   docs.New(lg, db),
+		embed:  llm.QuoteEmbedder(),
+	}
 
 	// Add test data relevant to this test.
 	project := "hello/world"
@@ -58,60 +74,18 @@ func TestPopulateOverviewPage(t *testing.T) {
 	embeddocs.Sync(ctx, g.slog, g.vector, g.embed, g.docs)
 
 	// Generate expected overviews.
-	wantIssueOverview, err := g.llm.PostOverview(ctx, &llmapp.Doc{
-		Type:  "issue",
-		URL:   iss1.HTMLURL,
-		Title: iss1.Title,
-		Text:  iss1.Body,
-	}, []*llmapp.Doc{
-		{
-			Type: "issue comment",
-			URL:  comment.HTMLURL,
-			Text: comment.Body,
-		},
-		{
-			Type: "issue comment",
-			URL:  comment2.HTMLURL,
-			Text: comment2.Body,
-		},
-	})
+	// This only tests that the correct calls are made; the internals
+	// of these functions are tested in their respective packages.
+	wantIssueResult, err := github.IssueOverview(ctx, g.llm, g.db, iss1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	wantUpdateOverview, err := g.llm.UpdatedPostOverview(ctx, &llmapp.Doc{
-		Type:  "issue",
-		URL:   iss1.HTMLURL,
-		Title: iss1.Title,
-		Text:  iss1.Body,
-	}, []*llmapp.Doc{
-		{
-			Type: "issue comment",
-			URL:  comment.HTMLURL,
-			Text: comment.Body,
-		},
-	}, []*llmapp.Doc{
-		{
-			Type: "issue comment",
-			URL:  comment2.HTMLURL,
-			Text: comment2.Body,
-		},
-	})
+	wantUpdateResult, err := github.UpdateOverview(ctx, g.llm, g.db, iss1,
+		comment.CommentID())
 	if err != nil {
 		t.Fatal(err)
 	}
-	wantRelatedOverview, err := g.llm.RelatedOverview(ctx, &llmapp.Doc{
-		Type:  "main",
-		URL:   iss1.HTMLURL,
-		Title: iss1.Title,
-		Text:  iss1.Body,
-	}, []*llmapp.Doc{
-		{
-			Type:  "related",
-			URL:   iss2.HTMLURL,
-			Title: iss2.Title,
-			Text:  iss2.Body,
-		},
-	})
+	wantRelatedResult, err := search.Analyze(ctx, g.llm, g.vector, g.docs, iss1.HTMLURL)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -139,13 +113,14 @@ func TestPopulateOverviewPage(t *testing.T) {
 					OverviewType: "",
 				},
 				Result: &overviewResult{
-					IssueOverviewResult: github.IssueOverviewResult{
-						Issue:         iss1,
+					Raw: wantIssueResult.Overview,
+					Typed: &github.IssueOverviewResult{
 						TotalComments: 2,
-						Overview:      wantIssueOverview,
+						Overview:      wantIssueResult.Overview,
 					},
-					Type: issueOverviewType,
-					Desc: "issue 1 and all 2 comments",
+					Issue: iss1,
+					Type:  issueOverviewType,
+					Desc:  "issue 1 and all 2 comments",
 				},
 			},
 		},
@@ -163,13 +138,14 @@ func TestPopulateOverviewPage(t *testing.T) {
 					OverviewType: issueOverviewType,
 				},
 				Result: &overviewResult{
-					IssueOverviewResult: github.IssueOverviewResult{
-						Issue:         iss1,
+					Raw: wantIssueResult.Overview,
+					Typed: &github.IssueOverviewResult{
 						TotalComments: 2,
-						Overview:      wantIssueOverview,
+						Overview:      wantIssueResult.Overview,
 					},
-					Type: issueOverviewType,
-					Desc: "issue 1 and all 2 comments",
+					Issue: iss1,
+					Type:  issueOverviewType,
+					Desc:  "issue 1 and all 2 comments",
 				},
 			},
 		},
@@ -187,12 +163,13 @@ func TestPopulateOverviewPage(t *testing.T) {
 					OverviewType: relatedOverviewType,
 				},
 				Result: &overviewResult{
-					IssueOverviewResult: github.IssueOverviewResult{
-						Issue:    iss1,
-						Overview: wantRelatedOverview,
+					Raw: &wantRelatedResult.Result,
+					Typed: &search.Analysis{
+						RelatedAnalysis: wantRelatedResult.RelatedAnalysis,
 					},
-					Type: relatedOverviewType,
-					Desc: "issue 1 and related docs",
+					Issue: iss1,
+					Type:  relatedOverviewType,
+					Desc:  "issue 1 and 1 related docs",
 				},
 			},
 		},
@@ -212,14 +189,15 @@ func TestPopulateOverviewPage(t *testing.T) {
 					LastReadComment: commentID,
 				},
 				Result: &overviewResult{
-					IssueOverviewResult: github.IssueOverviewResult{
-						Issue:         iss1,
+					Raw: wantUpdateResult.Overview,
+					Typed: &github.UpdateOverviewResult{
 						NewComments:   1,
 						TotalComments: 2,
-						Overview:      wantUpdateOverview,
+						Overview:      wantUpdateResult.Overview,
 					},
-					Type: updateOverviewType,
-					Desc: fmt.Sprintf("issue 1 and its 1 new comments after %d", comment.CommentID()),
+					Issue: iss1,
+					Type:  updateOverviewType,
+					Desc:  fmt.Sprintf("issue 1 and its 1 new comments after %d", comment.CommentID()),
 				},
 			},
 		},
@@ -260,7 +238,7 @@ func TestPopulateOverviewPage(t *testing.T) {
 			got := g.populateOverviewPage(tc.r)
 			tc.want.setCommonPage()
 			if diff := cmp.Diff(got, tc.want,
-				cmpopts.IgnoreFields(llmapp.OverviewResult{}, "Cached"),
+				cmpopts.IgnoreFields(llmapp.Result{}, "Cached"),
 				cmpopts.EquateErrors(),
 				safeHTMLcmpopt); diff != "" {
 				t.Errorf("Gaby.populateOverviewPage() mismatch (-got +want):\n%s", diff)
