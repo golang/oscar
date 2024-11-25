@@ -20,7 +20,7 @@ import (
 func TestOverview(t *testing.T) {
 	ctx := context.Background()
 	lg := testutil.Slogger(t)
-	g := llm.EchoTextGenerator()
+	g := llm.EchoContentGenerator()
 	db := storage.MemDB()
 	lc := llmapp.New(lg, g, db)
 	vdb := storage.MemVectorDB(db, lg, "test")
@@ -68,7 +68,7 @@ func TestOverview(t *testing.T) {
 
 	want := &OverviewResult{
 		&llmapp.OverviewResult{
-			Overview: llm.EchoResponse(prompt...),
+			Overview: llm.EchoTextResponse(prompt...),
 			Prompt:   prompt,
 		},
 	}

@@ -1,0 +1,44 @@
+httprr trace v1
+654 798
+POST https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?%24alt=json%3Benum-encoding%3Dint HTTP/1.1
+Host: generativelanguage.googleapis.com
+User-Agent: Go-http-client/1.1
+Content-Length: 336
+Content-Type: application/json
+x-goog-request-params: model=models%2Fgemini-1.5-pro
+
+{"model":"models/gemini-1.5-pro","contents":[{"parts":[{"text":"(confidence is between 0 and 100)"},{"text":"What is the tallest mountain in the world?"}],"role":"user"}],"generationConfig":{"candidateCount":1,"responseMimeType":"application/json","responseSchema":{"type":6,"properties":{"answer":{"type":1},"confidence":{"type":3}}}}}HTTP/2.0 200 OK
+Alt-Svc: h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+Content-Type: application/json; charset=UTF-8
+Date: Mon, 02 Dec 2024 16:36:20 GMT
+Server: scaffolding on HTTPServer2
+Server-Timing: gfet4t7; dur=1028
+Vary: Origin
+Vary: X-Origin
+Vary: Referer
+X-Content-Type-Options: nosniff
+X-Frame-Options: SAMEORIGIN
+X-Xss-Protection: 0
+
+{
+  "candidates": [
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "{\"answer\": \"Mount Everest\", \"confidence\": 100}"
+          }
+        ],
+        "role": "model"
+      },
+      "finishReason": 1,
+      "avgLogprobs": -0.0023204249640305838
+    }
+  ],
+  "usageMetadata": {
+    "promptTokenCount": 22,
+    "candidatesTokenCount": 15,
+    "totalTokenCount": 37
+  },
+  "modelVersion": "gemini-1.5-pro-002"
+}

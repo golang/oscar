@@ -79,7 +79,7 @@ func (g *Gaby) populateRulesPage(r *http.Request) *rulesPage {
 	}
 
 	// TODO: this llm.TextGenerator cast is kind of ugly. Redo somehow.
-	rules, err := rules.Issue(r.Context(), g.embed.(llm.TextGenerator), i)
+	rules, err := rules.Issue(r.Context(), g.embed.(llm.ContentGenerator), i)
 	if err != nil {
 		p.Error = err
 		return p

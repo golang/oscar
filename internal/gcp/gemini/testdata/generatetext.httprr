@@ -1,24 +1,38 @@
 httprr trace v1
-858 3193
+890 5098
 POST https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?%24alt=json%3Benum-encoding%3Dint HTTP/1.1
 Host: generativelanguage.googleapis.com
 User-Agent: Go-http-client/1.1
-Content-Length: 540
+Content-Length: 572
 Content-Type: application/json
 x-goog-request-params: model=models%2Fgemini-1.5-pro
 
-{"model":"models/gemini-1.5-pro","contents":[{"parts":[{"text":"CanonicalHeaderKey returns the canonical format of the header key s. The canonicalization converts the first letter and any letter following a hyphen to upper case; the rest are converted to lowercase. For example, the canonical key for 'accept-encoding' is 'Accept-Encoding'. If s contains a space or invalid header field bytes, it is returned without modifications."},{"text":"When should I use CanonicalHeaderKey?"}],"role":"user"}],"generationConfig":{"candidateCount":1}}HTTP/2.0 200 OK
+{"model":"models/gemini-1.5-pro","contents":[{"parts":[{"text":"CanonicalHeaderKey returns the canonical format of the header key s. The canonicalization converts the first letter and any letter following a hyphen to upper case; the rest are converted to lowercase. For example, the canonical key for 'accept-encoding' is 'Accept-Encoding'. If s contains a space or invalid header field bytes, it is returned without modifications."},{"text":"When should I use CanonicalHeaderKey?"}],"role":"user"}],"generationConfig":{"candidateCount":1,"responseMimeType":"text/plain"}}HTTP/2.0 200 OK
 Alt-Svc: h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-Cache-Control: private
 Content-Type: application/json; charset=UTF-8
-Date: Mon, 28 Oct 2024 18:02:47 GMT
+Date: Tue, 26 Nov 2024 18:25:24 GMT
 Server: scaffolding on HTTPServer2
-Server-Timing: gfet4t7; dur=8601
+Server-Timing: gfet4t7; dur=12098
 Vary: Origin
 Vary: X-Origin
 Vary: Referer
 X-Content-Type-Options: nosniff
 X-Frame-Options: SAMEORIGIN
+X-Google-Backends: unix:/tmp/esfbackend.1732316583.290196.2252932,/bns/ma/borg/ma/bns/genai-api/prod.genai-api/6,/bns/lclgaa/borg/lclgaa/bns/blue-layer1-gfe-prod-edge/prod.blue-layer1-gfe.lga25s79/12
+X-Google-Dos-Service-Trace: main:genai-api-api-prod,main:GLOBAL_all_non_cloud
+X-Google-Esf-Cloud-Client-Params: backend_service_name: "generativelanguage.googleapis.com" backend_fully_qualified_method: "google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent"
+X-Google-Gfe-Handshake-Trace: GFE: /bns/lclgaa/borg/lclgaa/bns/blue-layer1-gfe-prod-edge/prod.blue-layer1-gfe.lga25s79/12,Mentat oracle: [2002:a05:7004:a30a:b0:6c:2c0b:e5fb]:9801
+X-Google-Gfe-Request-Trace: aclgaii7:443,/bns/ma/borg/ma/bns/genai-api/prod.genai-api/6,aclgaii7:443
+X-Google-Gfe-Response-Body-Transformations: chunked
+X-Google-Gfe-Response-Code-Details-Trace: response_code_set_by_backend
+X-Google-Gfe-Service-Trace: genai-api-api-prod/gfespec_googleapis-generativelanguage_generativelanguage-url-map-global_generativelanguage-genai-api-api-prod
+X-Google-Gfe-Version: 2.903.2
+X-Google-Netmon-Label: /bns/ma/borg/ma/bns/genai-api/prod.genai-api/6
+X-Google-Security-Signals: FRAMEWORK=ONE_PLATFORM,ENV=borg,ENV_DEBUG=borg_user:genai-api;borg_job:prod.genai-api
+X-Google-Security-Signals: FRAMEWORK=HTTPSERVER2,BUILD=GOOGLE3,BUILD_DEBUG=cl:699051654,ENV=borg,ENV_DEBUG=borg_user:genai-api;borg_job:prod.genai-api
+X-Google-Service: genai-api-api-prod/gfespec_googleapis-generativelanguage_generativelanguage-url-map-global_generativelanguage-genai-api-api-prod
+X-Google-Session-Info: GgQYECgLIAE6IxIhZ2VuZXJhdGl2ZWxhbmd1YWdlLmdvb2dsZWFwaXMuY29t
+X-Google-Shellfish-Status: CA0gBEBG
 X-Xss-Protection: 0
 
 {
@@ -27,37 +41,19 @@ X-Xss-Protection: 0
       "content": {
         "parts": [
           {
-            "text": "You should use `CanonicalHeaderKey` **when you need to compare or interact with HTTP headers in a case-insensitive way, ensuring compatibility across different systems and implementations.**\n\nHere's a breakdown of when to use it:\n\n**Situations where `CanonicalHeaderKey` is beneficial:**\n\n* **Comparing HTTP Headers:** Different systems might use varying capitalization for header keys (e.g., \"Content-Type\" vs. \"content-type\"). `CanonicalHeaderKey` provides a standardized format, ensuring consistent comparisons.\n* **Accessing Headers in Maps/Dictionaries:** Many programming languages use case-sensitive keys for maps/dictionaries. Using the canonical form as the key when storing or retrieving headers avoids issues arising from inconsistent capitalization.\n* **Interacting with HTTP Libraries/Frameworks:** Some libraries might have specific requirements or expectations regarding header key capitalization. Using `CanonicalHeaderKey` ensures compliance.\n* **Generating HTTP Messages:** When constructing HTTP requests or responses, using canonicalized header keys promotes consistency and adherence to standards.\n\n**Example:**\n\nImagine you're building an HTTP client library. You want to allow users to access headers case-insensitively:\n\n```python\ndef get_header(headers, key):\n    canonical_key = CanonicalHeaderKey(key)\n    return headers.get(canonical_key)\n\n# Example usage\nheaders = {'Content-Type': 'application/json'}\ncontent_type = get_header(headers, 'content-type')  # Returns 'application/json'\n```\n\n**Points to Note:**\n\n* **Standard Compliance:** The canonicalization process in `CanonicalHeaderKey` typically follows the HTTP standard (RFC 7230) for header key formatting.\n* **Language/Library Specifics:** The availability and exact implementation of `CanonicalHeaderKey` might vary depending on the programming language or HTTP library you're using.\n\nIn summary, **use `CanonicalHeaderKey` whenever you need to handle HTTP header keys in a standardized, case-insensitive manner to ensure interoperability and avoid potential issues due to varying capitalization.** \n"
+            "text": "You should use `CanonicalHeaderKey` when you need to compare or look up HTTP header keys in a case-insensitive way, while still adhering to the standard canonical form.  This is crucial in situations where you're interacting with systems or specifications that mandate this form.  Here are some specific scenarios:\n\n* **Implementing HTTP Servers or Clients:** When parsing or generating HTTP messages, you should use canonicalized header keys to ensure interoperability with other HTTP implementations. RFC 2616 (and its successors) specify the canonical form, and deviations can lead to communication problems.\n* **Working with HTTP Libraries or Frameworks:**  Many HTTP libraries internally use canonicalized header keys.  Understanding this helps you interact correctly with these libraries.  For instance, when setting or retrieving headers, using the canonical form ensures consistent behavior.\n* **Caching HTTP Responses:**  When caching HTTP responses, using canonicalized header keys helps avoid duplicate cache entries due to case variations.\n* **Implementing HTTP Proxies or Gateways:**  Proxies and gateways often need to inspect and manipulate HTTP headers. Using canonicalized keys ensures correct handling regardless of the original case used by the client or server.\n* **Security-sensitive contexts:**  In security-related HTTP header processing (e.g., authorization headers), using the canonical form can prevent vulnerabilities arising from case-insensitive comparisons that might unintentionally match non-canonical forms.\n* **Comparing headers for equality:**  If you need to compare two header keys for equality, regardless of their original case, canonicalizing them first ensures a correct comparison.\n* **Unit testing HTTP-related code:** Using `CanonicalHeaderKey` in tests helps ensure that your code handles headers correctly, regardless of the case used in the test data.\n\n**Example in Go:**\n\n```go\nimport (\n    \"fmt\"\n    \"net/http\"\n)\n\nfunc main() {\n    headers := http.Header{}\n    headers.Add(\"accept-encoding\", \"gzip, deflate\")\n    headers.Add(\"CONTENT-TYPE\", \"application/json\")\n    headers.Add(\"x-custom-header\", \"some value\")\n\n    for key := range headers {\n        canonicalKey := http.CanonicalHeaderKey(key)\n        fmt.Printf(\"Original: %s, Canonical: %s\\n\", key, canonicalKey)\n    }\n}\n```\n\nThis example demonstrates how `CanonicalHeaderKey` converts header keys to their canonical form, which is essential for robust and interoperable HTTP handling.  Using the canonical form ensures that your code interacts correctly with other HTTP systems and adheres to the HTTP specifications.\n"
           }
         ],
         "role": "model"
       },
       "finishReason": 1,
-      "index": 0,
-      "safetyRatings": [
-        {
-          "category": 9,
-          "probability": 1
-        },
-        {
-          "category": 8,
-          "probability": 1
-        },
-        {
-          "category": 7,
-          "probability": 1
-        },
-        {
-          "category": 10,
-          "probability": 1
-        }
-      ]
+      "avgLogprobs": -0.2713126717032967
     }
   ],
   "usageMetadata": {
     "promptTokenCount": 81,
-    "candidatesTokenCount": 433,
-    "totalTokenCount": 514
+    "candidatesTokenCount": 546,
+    "totalTokenCount": 627
   },
-  "modelVersion": "gemini-1.5-pro-001"
+  "modelVersion": "gemini-1.5-pro-002"
 }

@@ -143,19 +143,71 @@ func (c *Client) EmbedDocs(ctx context.Context, docs []llm.EmbedDoc) ([]llm.Vect
 	return vecs, nil
 }
 
-var _ llm.TextGenerator = (*Client)(nil)
+var _ llm.ContentGenerator = (*Client)(nil)
 
 // Model returns the name of the client's generative model.
 func (c *Client) Model() string {
 	return c.generativeModel
 }
 
-// GenerateText returns model's text response for the prompt parts,
-// implementing [llm.TextGenerator].
-func (c *Client) GenerateText(ctx context.Context, promptParts ...any) (string, error) {
+// GenerateContent returns the model's response for the prompt parts,
+// implementing [llm.ContentGenerator.GenerateContent].
+// The schema must nil, or of type [*genai.Schema].
+func (c *Client) GenerateContent(ctx context.Context, schema any, promptParts []any) (string, error) {
+	// Generate plain text.
+	if schema == nil {
+		texts, err := c.generate(ctx, "text/plain", nil, promptParts...)
+		if err != nil {
+			return "", fmt.Errorf("gemini.GenerateContent: %w", err)
+		}
+		return strings.Join(texts, "\n"), nil
+	}
+
+	// Generate JSON.
+	gSchema, ok := schema.(*genai.Schema)
+	if !ok {
+		return "", fmt.Errorf("gemini.GenerateContent: invalid schema type %T", schema)
+	}
+	texts, err := c.generate(ctx, "application/json", gSchema, promptParts...)
+	if err != nil {
+		return "", fmt.Errorf("gemini.GenerateContent: %w", err)
+	}
+	// Return just the first response, as it's not clear how to concatenate
+	// multiple JSON responses.
+	return texts[0], nil
+}
+
+// generate returns the model's response (of the specified MIME type) for the prompt parts.
+// It returns an error if a response cannot be generated.
+func (c *Client) generate(ctx context.Context, mimeType string, schema *genai.Schema, promptParts ...any) ([]string, error) {
+	parts, err := c.parts(promptParts)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := c.model(mimeType, schema).GenerateContent(ctx, parts...)
+	if err != nil {
+		return nil, err
+	}
+	if texts := responses(resp); len(texts) > 0 {
+		return texts, nil
+	}
+	return nil, errors.New("no content generated")
+}
+
+// model returns a new instance of the generative model
+// for this client, with the candidate count set to 1, and
+// the MIME type set to mimeType.
+func (c *Client) model(mimeType string, schema *genai.Schema) *genai.GenerativeModel {
 	model := c.genai.GenerativeModel(c.generativeModel)
 	model.SetCandidateCount(1)
+	model.ResponseMIMEType = mimeType
+	model.ResponseSchema = schema
+	return model
+}
 
+// parts converts the given prompt parts to [genai.Part]s of
+// their corresponding type.
+func (c *Client) parts(promptParts []any) ([]genai.Part, error) {
 	var parts = make([]genai.Part, len(promptParts))
 	for i, p := range promptParts {
 		switch p := p.(type) {
@@ -167,24 +219,22 @@ func (c *Client) GenerateText(ctx context.Context, promptParts ...any) (string, 
 				Data:     p.Data,
 			}
 		default:
-			return "", fmt.Errorf("bad type for part: %T; need string or llm.Blob.", p)
+			return nil, fmt.Errorf("bad type for part: %T; need string or llm.Blob.", p)
 		}
 	}
+	return parts, nil
+}
 
-	resp, err := model.GenerateContent(ctx, parts...)
-	if err != nil {
-		return "", fmt.Errorf("gemini.GenerateText: %w", err)
-	}
-
+// responses parses all text responses from the response.
+func responses(resp *genai.GenerateContentResponse) (rs []string) {
 	for _, c := range resp.Candidates {
 		if c.Content != nil {
-			parts := make([]string, len(c.Content.Parts))
-			for i, p := range c.Content.Parts {
-				parts[i] = fmt.Sprintf("%s", p)
+			for _, p := range c.Content.Parts {
+				if txt, ok := p.(genai.Text); ok {
+					rs = append(rs, string(txt))
+				}
 			}
-			return strings.Join(parts, "\n"), nil
 		}
 	}
-
-	return "", errors.New("gemini.GenerateText: no content")
+	return rs
 }

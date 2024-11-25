@@ -29,7 +29,7 @@ func (c *Client) generateText(ctx context.Context, prompts []any) (_ string, cac
 	}
 
 	// cache miss
-	result, err := c.g.GenerateText(ctx, prompts...)
+	result, err := c.g.GenerateContent(ctx, nil, prompts)
 	if err != nil {
 		return "", false, err
 	}

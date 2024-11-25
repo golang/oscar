@@ -74,25 +74,26 @@ func (v *Vector) Decode(enc []byte) {
 	}
 }
 
-// A TextGenerator generates a text response given one or more text
-// or image prompts.
-//
-// See [EchoTextGenerator] for a generator, useful for testing, that
-// always responds with a deterministic message derived from the prompts.
-//
-// See [golang.org/x/oscar/internal/gcp/gemini] for a real implementation.
-type TextGenerator interface {
-	// Model returns the name of the generative model
-	// used by this TextGenerator.
-	Model() string
-	// GenerateText generates a text response given one or more text
-	// or binary prompts.
-	// Each part must be either a string or a [Blob].
-	GenerateText(ctx context.Context, parts ...any) (string, error)
-}
-
 // A Blob is binary data, like an image or video.
 type Blob struct {
 	MIMEType string
 	Data     []byte
+}
+
+// A ContentGenerator generates content in response to prompts.
+//
+// See [EchoContentGenerator] for a generator, useful for testing, that
+// always responds with a deterministic message derived from the prompts.
+//
+// See [golang.org/x/oscar/internal/gcp/gemini] for a real implementation.
+type ContentGenerator interface {
+	// Model returns the name of the generative model
+	// used by this ContentGenerator.
+	Model() string
+	// GenerateContent generates a text response given a JSON schema
+	// and one or more prompt parts.
+	// The types of the prompt parts and the JSON schema are determined by
+	// the implementation.
+	// If the JSON schema is nil, GenerateContent outputs a plain text response.
+	GenerateContent(ctx context.Context, schema any, parts []any) (string, error)
 }

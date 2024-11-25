@@ -30,7 +30,7 @@ type IssueResult struct {
 }
 
 // Issue returns text describing the set of rules that the issue does not currently satisfy.
-func Issue(ctx context.Context, llm llm.TextGenerator, i *github.Issue) (*IssueResult, error) {
+func Issue(ctx context.Context, llm llm.ContentGenerator, i *github.Issue) (*IssueResult, error) {
 	var result IssueResult
 
 	if i.PullRequest != nil {
@@ -60,7 +60,7 @@ func Issue(ctx context.Context, llm llm.TextGenerator, i *github.Issue) (*IssueR
 	}
 
 	// Ask about the kind of issue.
-	res, err := llm.GenerateText(ctx, systemPrompt.String(), issueText.String())
+	res, err := llm.GenerateContent(ctx, nil, []any{systemPrompt.String(), issueText.String()})
 	if err != nil {
 		return nil, fmt.Errorf("llm request failed: %w\n", err)
 	}
@@ -91,7 +91,7 @@ func Issue(ctx context.Context, llm llm.TextGenerator, i *github.Issue) (*IssueR
 		systemPrompt.Reset()
 		systemPrompt.WriteString(fmt.Sprintf(rulePrompt, rule.Text, rule.Details))
 
-		res, err := llm.GenerateText(ctx, systemPrompt.String(), issueText.String())
+		res, err := llm.GenerateContent(ctx, nil, []any{systemPrompt.String(), issueText.String()})
 		if err != nil {
 			return nil, fmt.Errorf("llm request failed: %w\n", err)
 		}

@@ -56,14 +56,14 @@ type OverviewResult struct {
 // Client is a client for accessing the LLM application functionality.
 type Client struct {
 	slog *slog.Logger
-	g    llm.TextGenerator
+	g    llm.ContentGenerator
 	db   storage.DB // cache for LLM responses
 }
 
 // New returns a new client.
-// g is the underlying LLM text generator to use, and db is the database
+// g is the underlying LLM content generator to use, and db is the database
 // to use as a cache.
-func New(lg *slog.Logger, g llm.TextGenerator, db storage.DB) *Client {
+func New(lg *slog.Logger, g llm.ContentGenerator, db storage.DB) *Client {
 	return &Client{slog: lg, g: g, db: db}
 }
 

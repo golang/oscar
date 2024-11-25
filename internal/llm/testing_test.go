@@ -42,8 +42,8 @@ func TestQuote(t *testing.T) {
 
 func TestEcho(t *testing.T) {
 	ctx := context.Background()
-	gen := EchoTextGenerator()
-	resp, err := gen.GenerateText(ctx, "abc", Blob{MIMEType: "image/jpg"}, "123")
+	gen := EchoContentGenerator()
+	resp, err := gen.GenerateContent(ctx, nil, []any{"abc", Blob{MIMEType: "image/jpg"}, "123"})
 	if err != nil {
 		t.Fatal(err)
 	}

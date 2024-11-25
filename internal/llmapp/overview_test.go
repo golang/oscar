@@ -29,7 +29,7 @@ func TestOverview(t *testing.T) {
 		}
 		promptParts := []any{raw1, raw2, documents.instructions()}
 		want := &OverviewResult{
-			Overview: llm.EchoResponse(promptParts...),
+			Overview: llm.EchoTextResponse(promptParts...),
 			Prompt:   promptParts,
 		}
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -44,7 +44,7 @@ func TestOverview(t *testing.T) {
 		}
 		promptParts := []any{"post", raw1, "comments", raw2, postAndComments.instructions()}
 		want := &OverviewResult{
-			Overview: llm.EchoResponse(promptParts...),
+			Overview: llm.EchoTextResponse(promptParts...),
 			Prompt:   promptParts,
 		}
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -59,7 +59,7 @@ func TestOverview(t *testing.T) {
 		}
 		promptParts := []any{"original", raw1, "related", raw2, docAndRelated.instructions()}
 		want := &OverviewResult{
-			Overview: llm.EchoResponse(promptParts...),
+			Overview: llm.EchoTextResponse(promptParts...),
 			Prompt:   promptParts,
 		}
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -74,7 +74,7 @@ func TestOverview(t *testing.T) {
 		}
 		promptParts := []any{"post", raw1, "old comments", raw2, "new comments", raw3, postAndCommentsUpdated.instructions()}
 		want := &OverviewResult{
-			Overview: llm.EchoResponse(promptParts...),
+			Overview: llm.EchoTextResponse(promptParts...),
 			Prompt:   promptParts,
 		}
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -94,7 +94,7 @@ var (
 
 func newTestClient(t *testing.T) *Client {
 	t.Helper()
-	return New(testutil.Slogger(t), llm.EchoTextGenerator(), storage.MemDB())
+	return New(testutil.Slogger(t), llm.EchoContentGenerator(), storage.MemDB())
 }
 
 func TestGenerateText(t *testing.T) {
@@ -104,12 +104,12 @@ func TestGenerateText(t *testing.T) {
 	db := storage.MemDB()
 
 	t.Run("echo", func(t *testing.T) {
-		c := New(lg, llm.EchoTextGenerator(), db)
+		c := New(lg, llm.EchoContentGenerator(), db)
 		got, cached, err := c.generateText(ctx, []any{"a", "b", "c"})
 		if err != nil {
 			t.Fatal(err)
 		}
-		want := llm.EchoResponse("a", "b", "c")
+		want := llm.EchoTextResponse("a", "b", "c")
 		if got != want {
 			t.Errorf("generateText() = %q, want %q", got, want)
 		}
@@ -133,7 +133,7 @@ func TestGenerateText(t *testing.T) {
 	// Test with a non-deterministic text generator to ensure
 	// caching actually works.
 	t.Run("random", func(t *testing.T) {
-		c := New(lg, random{}, db)
+		c := New(lg, randomContentGenerator(), db)
 		got1, cached, err := c.generateText(ctx, []any{"a", "b", "c"})
 		if err != nil {
 			t.Fatal(err)
@@ -155,16 +155,19 @@ func TestGenerateText(t *testing.T) {
 	})
 }
 
-// random is an [llm.TextGenerator] that ignores its prompt and
-// returns a random integer.
-type random struct{}
-
-func (random) Model() string {
-	return "random"
-}
-
-func (random) GenerateText(context.Context, ...any) (string, error) {
-	return strconv.Itoa(rand.IntN(1000)), nil
+// randomContentGenerator returns an [llm.ContentGenerator] that ignores
+// its prompt and returns a random integer.
+func randomContentGenerator() llm.ContentGenerator {
+	return llm.TestContentGenerator(
+		"random",
+		func(_ context.Context, s any, _ []any) (string, error) {
+			n := strconv.Itoa(rand.IntN(1000))
+			if s != nil {
+				return `{"value":` + n + "}", nil
+			}
+			return n, nil
+		},
+	)
 }
 
 func TestResponseUnmarshal(t *testing.T) {

@@ -6,15 +6,17 @@ package rules
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 
 	"golang.org/x/oscar/internal/github"
+	"golang.org/x/oscar/internal/llm"
 )
 
 func TestIssue(t *testing.T) {
 	ctx := context.Background()
-	llm := &ruleTestGenerator{}
+	llm := ruleTestGenerator()
 
 	// Construct a test issue.
 	i := new(github.Issue)
@@ -38,28 +40,30 @@ func TestIssue(t *testing.T) {
 	}
 }
 
-// Implements llm.TextGenerator
-type ruleTestGenerator struct {
-}
+func ruleTestGenerator() llm.ContentGenerator {
+	return llm.TestContentGenerator(
+		"ruleTestGenerator",
+		func(_ context.Context, schema any, promptParts []any) (string, error) {
+			if schema != nil {
+				return "", fmt.Errorf("not implemented")
+			}
+			var strs []string
+			for _, p := range promptParts {
+				strs = append(strs, p.(string))
+			}
+			req := strings.Join(strs, " ")
+			if strings.Contains(req, "Your job is to categorize") {
+				// categorize request. Always report it as a "bug".
+				return "bug\nI think this is a bug.", nil
+			}
+			if strings.Contains(req, "Your job is to decide") {
+				// rule request. Report that the title rule failed and the others succeeded.
+				if strings.Contains(req, "The issue title must start") {
+					return "no\nThe title is malformed.", nil
+				}
+				return "yes\nThe rule is obeyed.", nil
 
-func (g *ruleTestGenerator) Model() string { return "ruleTestGenerator" }
-func (g *ruleTestGenerator) GenerateText(ctx context.Context, promptParts ...any) (string, error) {
-	var strs []string
-	for _, p := range promptParts {
-		strs = append(strs, p.(string))
-	}
-	req := strings.Join(strs, " ")
-	if strings.Contains(req, "Your job is to categorize") {
-		// categorize request. Always report it as a "bug".
-		return "bug\nI think this is a bug.", nil
-	}
-	if strings.Contains(req, "Your job is to decide") {
-		// rule request. Report that the title rule failed and the others succeeded.
-		if strings.Contains(req, "The issue title must start") {
-			return "no\nThe title is malformed.", nil
-		}
-		return "yes\nThe rule is obeyed.", nil
-
-	}
-	return "UNK", nil
+			}
+			return "UNK", nil
+		})
 }

@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/google/generative-ai-go/genai"
 	"golang.org/x/oscar/internal/httprr"
 	"golang.org/x/oscar/internal/llm"
 	"golang.org/x/oscar/internal/secret"
@@ -94,11 +95,35 @@ func TestEmbedBatch(t *testing.T) {
 	}
 }
 
-func TestGenerateText(t *testing.T) {
+func TestGenerateContentText(t *testing.T) {
 	ctx := context.Background()
 	check := testutil.Checker(t)
 	c := newTestClient(t, "testdata/generatetext.httprr")
-	responses, err := c.GenerateText(ctx, "CanonicalHeaderKey returns the canonical format of the header key s. The canonicalization converts the first letter and any letter following a hyphen to upper case; the rest are converted to lowercase. For example, the canonical key for 'accept-encoding' is 'Accept-Encoding'. If s contains a space or invalid header field bytes, it is returned without modifications.", "When should I use CanonicalHeaderKey?")
+	responses, err := c.GenerateContent(ctx, nil, []any{"CanonicalHeaderKey returns the canonical format of the header key s. The canonicalization converts the first letter and any letter following a hyphen to upper case; the rest are converted to lowercase. For example, the canonical key for 'accept-encoding' is 'Accept-Encoding'. If s contains a space or invalid header field bytes, it is returned without modifications.", "When should I use CanonicalHeaderKey?"})
+	check(err)
+	if len(responses) == 0 {
+		t.Fatal("no responses")
+	}
+}
+
+func TestGenerateContentJSON(t *testing.T) {
+	ctx := context.Background()
+	check := testutil.Checker(t)
+	c := newTestClient(t, "testdata/generatejson.httprr")
+	responses, err := c.GenerateContent(ctx,
+		&genai.Schema{
+			Type: genai.TypeObject,
+			Properties: map[string]*genai.Schema{
+				"answer": {
+					Type: genai.TypeString,
+				},
+				"confidence": {
+					Type: genai.TypeInteger,
+				},
+			},
+		},
+		[]any{"(confidence is between 0 and 100)",
+			"What is the tallest mountain in the world?"})
 	check(err)
 	if len(responses) == 0 {
 		t.Fatal("no responses")

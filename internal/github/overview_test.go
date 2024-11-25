@@ -34,7 +34,7 @@ func TestIssueOverview(t *testing.T) {
 	check(c.Add("robpike/ivy"))
 	check(c.Sync(ctx))
 
-	lc := llmapp.New(lg, llm.EchoTextGenerator(), db)
+	lc := llmapp.New(lg, llm.EchoContentGenerator(), db)
 
 	got, err := IssueOverview(ctx, lc, db, "robpike/ivy", 19)
 	if err != nil {
@@ -103,7 +103,7 @@ func TestUpdateOverview(t *testing.T) {
 	lg := testutil.Slogger(t)
 	sdb := secret.Empty()
 	gh := New(lg, db, sdb, nil)
-	lc := llmapp.New(lg, llm.EchoTextGenerator(), db)
+	lc := llmapp.New(lg, llm.EchoContentGenerator(), db)
 	proj := "hello/world"
 
 	iss := &Issue{Number: 1}

@@ -82,28 +82,34 @@ func UnquoteVector(v Vector) string {
 	return string(b)
 }
 
-// EchoTextGenerator returns an implementation
-// of [TextGenerator] that responds with the prompt itself.
+// EchoContentGenerator returns an implementation
+// of [ContentGenerator] that responds to Generate calls
+// with responses trivially derived from the prompt.
 //
 // For testing.
-func EchoTextGenerator() TextGenerator {
+func EchoContentGenerator() ContentGenerator {
 	return echo{}
 }
 
 type echo struct{}
 
-// Implements [TextGenerator.GenerativeModel].
+// Implements [ContentGenerator.Model].
 func (echo) Model() string { return "echo" }
 
-// GenerateText echoes the prompts (for testing).
-// Implements [TextGenerator].
-func (echo) GenerateText(ctx context.Context, promptParts ...any) (string, error) {
-	return EchoResponse(promptParts...), nil
+// GenerateContent echoes the prompts.
+// If the schema is non nil, the output is wrapped as a JSON object with a
+// single value "prompt" (for testing). The schema can be of any type.
+// Implements [ContentGenerator.GenerateContent].
+func (echo) GenerateContent(_ context.Context, schema any, promptParts []any) (string, error) {
+	if schema == nil {
+		return EchoTextResponse(promptParts...), nil
+	}
+	return EchoJSONResponse(promptParts...), nil
 }
 
-// EchoResponse returns the concatenation of the prompt parts.
+// EchoTextResponse returns the concatenation of the prompt parts.
 // For testing.
-func EchoResponse(promptParts ...any) string {
+func EchoTextResponse(promptParts ...any) string {
 	var echos []string
 	for i, p := range promptParts {
 		switch p := p.(type) {
@@ -116,4 +122,47 @@ func EchoResponse(promptParts ...any) string {
 		}
 	}
 	return strings.Join(echos, "")
+}
+
+// EchoJSONResponse returns the concatenation of the prompt parts,
+// wrapped as a JSON object with a single value "prompt".
+// For testing.
+func EchoJSONResponse(promptParts ...any) string {
+	return fmt.Sprintf(`{"prompt":%q}`, EchoTextResponse(promptParts...))
+}
+
+type generateContentFunc func(ctx context.Context, schema any, promptParts []any) (string, error)
+
+// TestContentGenerator returns a [ContentGenerator] with the given implementations
+// of [GenerateContent].
+//
+// This is a convenience function for quickly creating custom test implementations
+// of [ContentGenerator].
+func TestContentGenerator(name string, generateContent generateContentFunc) ContentGenerator {
+	if generateContent == nil {
+		generateContent = echo{}.GenerateContent
+	}
+	return &generator{generateContent: generateContent}
+}
+
+// generator is a flexible test implementation of [ContentGenerator].
+type generator struct {
+	model           string
+	generateContent generateContentFunc
+}
+
+// Model implements [llm.Model].
+func (g *generator) Model() string {
+	if g.model == "" {
+		return "test-model"
+	}
+	return g.model
+}
+
+// GenerateContent implements [llm.GenerateContent].
+func (g *generator) GenerateContent(ctx context.Context, schema any, promptParts []any) (string, error) {
+	if g.generateContent == nil {
+		return "", fmt.Errorf("GenerateContent: not implemented")
+	}
+	return g.generateContent(ctx, schema, promptParts)
 }
