@@ -97,10 +97,10 @@ type echo struct{}
 func (echo) Model() string { return "echo" }
 
 // GenerateContent echoes the prompts.
-// If the schema is non nil, the output is wrapped as a JSON object with a
-// single value "prompt" (for testing). The schema can be of any type.
+// If the schema is non-nil, the output is wrapped as a JSON object with a
+// single value "prompt", ignoring the actual schema contents (for testing).
 // Implements [ContentGenerator.GenerateContent].
-func (echo) GenerateContent(_ context.Context, schema any, promptParts []any) (string, error) {
+func (echo) GenerateContent(_ context.Context, schema *Schema, promptParts []any) (string, error) {
 	if schema == nil {
 		return EchoTextResponse(promptParts...), nil
 	}
@@ -131,7 +131,7 @@ func EchoJSONResponse(promptParts ...any) string {
 	return fmt.Sprintf(`{"prompt":%q}`, EchoTextResponse(promptParts...))
 }
 
-type generateContentFunc func(ctx context.Context, schema any, promptParts []any) (string, error)
+type generateContentFunc func(ctx context.Context, schema *Schema, promptParts []any) (string, error)
 
 // TestContentGenerator returns a [ContentGenerator] with the given implementations
 // of [GenerateContent].
@@ -151,7 +151,7 @@ type generator struct {
 	generateContent generateContentFunc
 }
 
-// Model implements [llm.Model].
+// Model implements [ContentGenerator.Model].
 func (g *generator) Model() string {
 	if g.model == "" {
 		return "test-model"
@@ -159,8 +159,8 @@ func (g *generator) Model() string {
 	return g.model
 }
 
-// GenerateContent implements [llm.GenerateContent].
-func (g *generator) GenerateContent(ctx context.Context, schema any, promptParts []any) (string, error) {
+// GenerateContent implements [ContentGenerator.GenerateContent].
+func (g *generator) GenerateContent(ctx context.Context, schema *Schema, promptParts []any) (string, error) {
 	if g.generateContent == nil {
 		return "", fmt.Errorf("GenerateContent: not implemented")
 	}

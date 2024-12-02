@@ -92,8 +92,7 @@ type ContentGenerator interface {
 	Model() string
 	// GenerateContent generates a text response given a JSON schema
 	// and one or more prompt parts.
-	// The types of the prompt parts and the JSON schema are determined by
-	// the implementation.
+	// The types of the prompt parts are determined by the implementation.
 	// If the JSON schema is nil, GenerateContent outputs a plain text response.
-	GenerateContent(ctx context.Context, schema any, parts []any) (string, error)
+	GenerateContent(ctx context.Context, schema *Schema, parts []any) (string, error)
 }

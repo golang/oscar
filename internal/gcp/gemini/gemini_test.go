@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/google/generative-ai-go/genai"
 	"golang.org/x/oscar/internal/httprr"
 	"golang.org/x/oscar/internal/llm"
 	"golang.org/x/oscar/internal/secret"
@@ -111,14 +110,14 @@ func TestGenerateContentJSON(t *testing.T) {
 	check := testutil.Checker(t)
 	c := newTestClient(t, "testdata/generatejson.httprr")
 	responses, err := c.GenerateContent(ctx,
-		&genai.Schema{
-			Type: genai.TypeObject,
-			Properties: map[string]*genai.Schema{
+		&llm.Schema{
+			Type: llm.TypeObject,
+			Properties: map[string]*llm.Schema{
 				"answer": {
-					Type: genai.TypeString,
+					Type: llm.TypeString,
 				},
 				"confidence": {
-					Type: genai.TypeInteger,
+					Type: llm.TypeInteger,
 				},
 			},
 		},

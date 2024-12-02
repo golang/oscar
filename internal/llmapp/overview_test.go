@@ -160,7 +160,7 @@ func TestGenerateText(t *testing.T) {
 func randomContentGenerator() llm.ContentGenerator {
 	return llm.TestContentGenerator(
 		"random",
-		func(_ context.Context, s any, _ []any) (string, error) {
+		func(_ context.Context, s *llm.Schema, _ []any) (string, error) {
 			n := strconv.Itoa(rand.IntN(1000))
 			if s != nil {
 				return `{"value":` + n + "}", nil

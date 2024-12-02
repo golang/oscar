@@ -43,7 +43,7 @@ func TestIssue(t *testing.T) {
 func ruleTestGenerator() llm.ContentGenerator {
 	return llm.TestContentGenerator(
 		"ruleTestGenerator",
-		func(_ context.Context, schema any, promptParts []any) (string, error) {
+		func(_ context.Context, schema *llm.Schema, promptParts []any) (string, error) {
 			if schema != nil {
 				return "", fmt.Errorf("not implemented")
 			}

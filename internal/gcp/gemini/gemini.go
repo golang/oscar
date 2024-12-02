@@ -153,7 +153,7 @@ func (c *Client) Model() string {
 // GenerateContent returns the model's response for the prompt parts,
 // implementing [llm.ContentGenerator.GenerateContent].
 // The schema must nil, or of type [*genai.Schema].
-func (c *Client) GenerateContent(ctx context.Context, schema any, promptParts []any) (string, error) {
+func (c *Client) GenerateContent(ctx context.Context, schema *llm.Schema, promptParts []any) (string, error) {
 	// Generate plain text.
 	if schema == nil {
 		texts, err := c.generate(ctx, "text/plain", nil, promptParts...)
@@ -164,11 +164,7 @@ func (c *Client) GenerateContent(ctx context.Context, schema any, promptParts []
 	}
 
 	// Generate JSON.
-	gSchema, ok := schema.(*genai.Schema)
-	if !ok {
-		return "", fmt.Errorf("gemini.GenerateContent: invalid schema type %T", schema)
-	}
-	texts, err := c.generate(ctx, "application/json", gSchema, promptParts...)
+	texts, err := c.generate(ctx, "application/json", toGenAISchema(schema), promptParts...)
 	if err != nil {
 		return "", fmt.Errorf("gemini.GenerateContent: %w", err)
 	}
@@ -195,8 +191,9 @@ func (c *Client) generate(ctx context.Context, mimeType string, schema *genai.Sc
 }
 
 // model returns a new instance of the generative model
-// for this client, with the candidate count set to 1, and
-// the MIME type set to mimeType.
+// for this client, with the candidate count set to 1,
+// the MIME type set to mimeType, and the response schema set
+// to schema.
 func (c *Client) model(mimeType string, schema *genai.Schema) *genai.GenerativeModel {
 	model := c.genai.GenerativeModel(c.generativeModel)
 	model.SetCandidateCount(1)
