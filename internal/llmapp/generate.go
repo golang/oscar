@@ -9,12 +9,13 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 
+	"golang.org/x/oscar/internal/llm"
 	"golang.org/x/oscar/internal/storage"
 	"rsc.io/ordered"
 )
 
 // generateText returns a (possibly cached) text response for the prompts.
-func (c *Client) generateText(ctx context.Context, prompts []string) (_ string, cached bool, _ error) {
+func (c *Client) generateText(ctx context.Context, prompts []any) (_ string, cached bool, _ error) {
 	model := c.g.Model()
 	h := hash(prompts)
 	k := ordered.Encode(generateTextKind, model, h)
@@ -71,11 +72,17 @@ type response struct {
 	Response string
 }
 
-// hash returns the SHA-256 hash of the strings.
-func hash(strs []string) []byte {
+// hash returns the SHA-256 hash of the strings or blobs.
+func hash(parts []any) []byte {
 	h := sha256.New()
-	for _, s := range strs {
-		h.Write([]byte(s))
+	for _, p := range parts {
+		switch p := p.(type) {
+		case string:
+			h.Write([]byte(p))
+		case llm.Blob:
+			h.Write([]byte(p.MIMEType))
+			h.Write(p.Data)
+		}
 	}
 	return h.Sum(nil)
 }

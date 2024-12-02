@@ -43,11 +43,12 @@ func TestQuote(t *testing.T) {
 func TestEcho(t *testing.T) {
 	ctx := context.Background()
 	gen := EchoTextGenerator()
-	resp, err := gen.GenerateText(ctx, "abc", "123")
+	resp, err := gen.GenerateText(ctx, "abc", Blob{MIMEType: "image/jpg"}, "123")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resp != "abc123" {
-		t.Errorf("resp  = %q, want %q", resp[0], "abc123")
+	const want = "abcimage/jpg1123"
+	if resp != want {
+		t.Errorf("resp  = %q, want %q", resp, want)
 	}
 }

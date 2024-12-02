@@ -43,8 +43,12 @@ type ruleTestGenerator struct {
 }
 
 func (g *ruleTestGenerator) Model() string { return "ruleTestGenerator" }
-func (g *ruleTestGenerator) GenerateText(ctx context.Context, promptParts ...string) (string, error) {
-	req := strings.Join(promptParts, " ")
+func (g *ruleTestGenerator) GenerateText(ctx context.Context, promptParts ...any) (string, error) {
+	var strs []string
+	for _, p := range promptParts {
+		strs = append(strs, p.(string))
+	}
+	req := strings.Join(strs, " ")
 	if strings.Contains(req, "Your job is to categorize") {
 		// categorize request. Always report it as a "bug".
 		return "bug\nI think this is a bug.", nil

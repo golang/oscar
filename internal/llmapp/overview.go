@@ -48,9 +48,9 @@ type Doc struct {
 
 // OverviewResult is the result of [Overview] or [PostOverview].
 type OverviewResult struct {
-	Overview string   // the LLM-generated summary
-	Cached   bool     // whether the summary was cached
-	Prompt   []string // the prompt(s) used to generate the result
+	Overview string // the LLM-generated summary
+	Cached   bool   // whether the summary was cached
+	Prompt   []any  // the prompt(s) used to generate the result
 }
 
 // Client is a client for accessing the LLM application functionality.
@@ -149,8 +149,8 @@ func (c *Client) overview(ctx context.Context, kind docsKind, groups ...*docGrou
 // overviewPrompt converts the given docs into a slice of
 // text prompts, followed by an instruction prompt based
 // on the documents kind.
-func overviewPrompt(kind docsKind, groups []*docGroup) []string {
-	var inputs []string
+func overviewPrompt(kind docsKind, groups []*docGroup) []any {
+	var inputs []any
 	for _, g := range groups {
 		if g.label != "" {
 			inputs = append(inputs, g.label)

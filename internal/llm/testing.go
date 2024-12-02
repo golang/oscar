@@ -6,6 +6,7 @@ package llm
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"strings"
 )
@@ -96,12 +97,23 @@ func (echo) Model() string { return "echo" }
 
 // GenerateText echoes the prompts (for testing).
 // Implements [TextGenerator].
-func (echo) GenerateText(ctx context.Context, promptParts ...string) (string, error) {
+func (echo) GenerateText(ctx context.Context, promptParts ...any) (string, error) {
 	return EchoResponse(promptParts...), nil
 }
 
 // EchoResponse returns the concatenation of the prompt parts.
 // For testing.
-func EchoResponse(promptParts ...string) string {
-	return strings.Join(promptParts, "")
+func EchoResponse(promptParts ...any) string {
+	var echos []string
+	for i, p := range promptParts {
+		switch p := p.(type) {
+		case string:
+			echos = append(echos, p)
+		case Blob:
+			echos = append(echos, fmt.Sprintf("%s%d", p.MIMEType, i))
+		default:
+			panic(fmt.Sprintf("bad type for part: %T; need string or llm.Blob.", p))
+		}
+	}
+	return strings.Join(echos, "")
 }

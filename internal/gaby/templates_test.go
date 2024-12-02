@@ -47,7 +47,7 @@ func TestTemplates(t *testing.T) {
 					Overview: &llmapp.OverviewResult{
 						Overview: "an overview",
 						Cached:   true,
-						Prompt:   []string{"a prompt"},
+						Prompt:   []any{"a prompt"},
 					},
 				},
 				Type: issueOverviewType,

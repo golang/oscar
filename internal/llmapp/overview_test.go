@@ -27,7 +27,7 @@ func TestOverview(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		promptParts := []string{raw1, raw2, documents.instructions()}
+		promptParts := []any{raw1, raw2, documents.instructions()}
 		want := &OverviewResult{
 			Overview: llm.EchoResponse(promptParts...),
 			Prompt:   promptParts,
@@ -42,7 +42,7 @@ func TestOverview(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		promptParts := []string{"post", raw1, "comments", raw2, postAndComments.instructions()}
+		promptParts := []any{"post", raw1, "comments", raw2, postAndComments.instructions()}
 		want := &OverviewResult{
 			Overview: llm.EchoResponse(promptParts...),
 			Prompt:   promptParts,
@@ -57,7 +57,7 @@ func TestOverview(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		promptParts := []string{"original", raw1, "related", raw2, docAndRelated.instructions()}
+		promptParts := []any{"original", raw1, "related", raw2, docAndRelated.instructions()}
 		want := &OverviewResult{
 			Overview: llm.EchoResponse(promptParts...),
 			Prompt:   promptParts,
@@ -72,7 +72,7 @@ func TestOverview(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		promptParts := []string{"post", raw1, "old comments", raw2, "new comments", raw3, postAndCommentsUpdated.instructions()}
+		promptParts := []any{"post", raw1, "old comments", raw2, "new comments", raw3, postAndCommentsUpdated.instructions()}
 		want := &OverviewResult{
 			Overview: llm.EchoResponse(promptParts...),
 			Prompt:   promptParts,
@@ -105,7 +105,7 @@ func TestGenerateText(t *testing.T) {
 
 	t.Run("echo", func(t *testing.T) {
 		c := New(lg, llm.EchoTextGenerator(), db)
-		got, cached, err := c.generateText(ctx, []string{"a", "b", "c"})
+		got, cached, err := c.generateText(ctx, []any{"a", "b", "c"})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -118,7 +118,7 @@ func TestGenerateText(t *testing.T) {
 		}
 
 		// The result should be cached on the second call.
-		got, cached, err = c.generateText(ctx, []string{"a", "b", "c"})
+		got, cached, err = c.generateText(ctx, []any{"a", "b", "c"})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -134,7 +134,7 @@ func TestGenerateText(t *testing.T) {
 	// caching actually works.
 	t.Run("random", func(t *testing.T) {
 		c := New(lg, random{}, db)
-		got1, cached, err := c.generateText(ctx, []string{"a", "b", "c"})
+		got1, cached, err := c.generateText(ctx, []any{"a", "b", "c"})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -142,7 +142,7 @@ func TestGenerateText(t *testing.T) {
 			t.Error("generateText() = cached, want not cached")
 		}
 
-		got2, cached, err := c.generateText(ctx, []string{"a", "b", "c"})
+		got2, cached, err := c.generateText(ctx, []any{"a", "b", "c"})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -163,7 +163,7 @@ func (random) Model() string {
 	return "random"
 }
 
-func (random) GenerateText(_ context.Context, s ...string) (string, error) {
+func (random) GenerateText(context.Context, ...any) (string, error) {
 	return strconv.Itoa(rand.IntN(1000)), nil
 }
 

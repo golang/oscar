@@ -152,13 +152,23 @@ func (c *Client) Model() string {
 
 // GenerateText returns model's text response for the prompt parts,
 // implementing [llm.TextGenerator].
-func (c *Client) GenerateText(ctx context.Context, promptParts ...string) (string, error) {
+func (c *Client) GenerateText(ctx context.Context, promptParts ...any) (string, error) {
 	model := c.genai.GenerativeModel(c.generativeModel)
 	model.SetCandidateCount(1)
 
 	var parts = make([]genai.Part, len(promptParts))
 	for i, p := range promptParts {
-		parts[i] = genai.Text(p)
+		switch p := p.(type) {
+		case string:
+			parts[i] = genai.Text(p)
+		case llm.Blob:
+			parts[i] = genai.Blob{
+				MIMEType: p.MIMEType,
+				Data:     p.Data,
+			}
+		default:
+			return "", fmt.Errorf("bad type for part: %T; need string or llm.Blob.", p)
+		}
 	}
 
 	resp, err := model.GenerateContent(ctx, parts...)

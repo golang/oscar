@@ -75,7 +75,7 @@ func (v *Vector) Decode(enc []byte) {
 }
 
 // A TextGenerator generates a text response given one or more text
-// prompts.
+// or image prompts.
 //
 // See [EchoTextGenerator] for a generator, useful for testing, that
 // always responds with a deterministic message derived from the prompts.
@@ -86,6 +86,13 @@ type TextGenerator interface {
 	// used by this TextGenerator.
 	Model() string
 	// GenerateText generates a text response given one or more text
-	// prompts.
-	GenerateText(ctx context.Context, parts ...string) (string, error)
+	// or binary prompts.
+	// Each part must be either a string or a [Blob].
+	GenerateText(ctx context.Context, parts ...any) (string, error)
+}
+
+// A Blob is binary data, like an image or video.
+type Blob struct {
+	MIMEType string
+	Data     []byte
 }
