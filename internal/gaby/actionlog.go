@@ -5,6 +5,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -230,6 +231,53 @@ func (g *Gaby) actionsBetween(start, end time.Time, filter func(*actions.Entry) 
 	return es
 }
 
+func (g *Gaby) handleActionDecision(w http.ResponseWriter, r *http.Request) {
+	data, status, err := g.doActionDecision(r)
+	if err != nil {
+		http.Error(w, err.Error(), status)
+	} else {
+		_, _ = w.Write(data)
+	}
+}
+
+// doActionDecision approves or denies an action.
+// It expects these query parameters:
+//
+//	decision: either "Approve" or "Deny"
+//	kind: the action kind
+//	key: hex-encoded value of the action key
+func (g *Gaby) doActionDecision(r *http.Request) (data []byte, status int, err error) {
+	decision := r.FormValue("decision")
+	if decision != "Approve" && decision != "Deny" {
+		return nil, http.StatusBadRequest, errors.New("invalid decision value: need 'Approve' or 'Deny'")
+	}
+	kind := r.FormValue("kind")
+	if kind == "" {
+		return nil, http.StatusBadRequest, errors.New("empty kind")
+	}
+	keyParam := r.FormValue("key")
+	key, err := hex.DecodeString(keyParam)
+	if err != nil {
+		return nil, http.StatusBadRequest, fmt.Errorf("decoding key: %v", err)
+	}
+	entry, ok := actions.Get(g.db, kind, key)
+	if !ok {
+		return nil, http.StatusBadRequest, fmt.Errorf("cannot find action with kind %q and key %s", kind, keyParam)
+	}
+	if !entry.ApprovalRequired {
+		return nil, http.StatusBadRequest, errors.New("action does not require approval")
+	}
+	g.slog.Info("deciding action", "kind", kind, "key", keyParam, "decision", decision)
+	d := actions.Decision{
+		// TODO(jba): propagate the user to the Cloud Run service in internal/gcp/crproxy/main.go.
+		Name:     "unknown",
+		Time:     time.Now(),
+		Approved: decision == "Approve",
+	}
+	actions.AddDecision(g.db, kind, key, d)
+	return []byte(fmt.Sprintf("decision: %+v", d)), http.StatusOK, nil
+}
+
 func newFilter(s string) (func(*actions.Entry) bool, error) {
 	if s == "" {
 		return func(*actions.Entry) bool { return true }, nil
@@ -277,6 +325,7 @@ var actionLogPageTmpl = newTemplate(actionLogTmplFile, template.FuncMap{
 	"fmttime": fmtTime,
 	"fmtkey":  func(key []byte) string { return storage.Fmt(key) },
 	"fmtval":  fmtValue,
+	"hex":     func(b []byte) string { return hex.EncodeToString(b) },
 	"safeid": func(s string) safehtml.Identifier {
 		return safehtml.IdentifierFromConstantPrefix("id", s)
 	},

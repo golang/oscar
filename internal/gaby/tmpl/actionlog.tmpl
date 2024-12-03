@@ -132,8 +132,7 @@ license that can be found in the LICENSE file.
         <th>Kind</th>
         <th>Key</th>
         <th>Action</th>
-        <th>Approval Req</th>
-        <th>Approved</th>
+        <th>Approval</th>
         <th>Done</th>
         <th>Result</th>
         <th>Error</th>
@@ -150,8 +149,23 @@ license that can be found in the LICENSE file.
                   data-rowid="id-action-{{$i}}"
                   onclick="toggleAction(event)"/>
         </td>
-        <td>{{$e.ApprovalRequired}}</td>
-        <td>{{$e.Approved}}</td>
+        <td>
+          {{if not $e.ApprovalRequired}}
+            Not Required
+          {{else if $e.Approved}}
+            Approved
+          {{else if .Decisions}}
+             {{/* not approved but non-empty decisions means denied */}}
+            Denied
+          {{else}}
+            <form action="/action-decision" method="GET">
+              <input type="hidden" name="kind" value="{{$e.Kind}}">
+              <input type="hidden" name="key" value="{{$e.Key | hex}}">
+              <input type="submit" name="decision" value="Approve"/>
+              <input type="submit" name="decision" value="Deny"/>
+            </form>
+          {{end}}
+        </td>
         <td>{{$e.Done | fmttime}}</td>
         <td><pre class="wrap">{{$e.Result | fmtval}}</pre></td>
         <td>{{$e.Error}}</td>

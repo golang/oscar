@@ -4,3 +4,5 @@ Use of this source code is governed by a BSD-style
 license that can be found in the LICENSE file.
 */
 thead { background-color: rgb(220, 220, 220)}
+
+table { border-spacing: 6px 0 }

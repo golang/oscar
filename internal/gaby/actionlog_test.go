@@ -6,6 +6,9 @@ package main
 
 import (
 	"context"
+	"encoding/hex"
+	"fmt"
+	"net/http/httptest"
 	"slices"
 	"strings"
 	"testing"
@@ -205,5 +208,103 @@ func TestActionFilter(t *testing.T) {
 		if !slices.Equal(got, want) {
 			t.Errorf("%q:\ngot  %v\nwant %v", tc.in, got, want)
 		}
+	}
+}
+
+func TestDoActionDecision(t *testing.T) {
+	const kind = "actionlog"
+	db := storage.MemDB()
+	before := actions.Register(kind, testActioner{})
+
+	// Register some actions.
+	var (
+		noApproveKey   = []byte{1} // approval not required
+		approveKey     = []byte{2} // will be approved
+		denyKey        = []byte{3} // wil be denied
+		approveDenyKey = []byte{4} // will be approved, then denied
+	)
+	before(db, noApproveKey, nil, false)
+	before(db, approveKey, nil, true)
+	before(db, denyKey, nil, true)
+	before(db, approveDenyKey, nil, true)
+	actions.AddDecision(db, kind, approveDenyKey, actions.Decision{Approved: true})
+
+	g := &Gaby{slog: testutil.Slogger(t), db: db}
+	for _, tc := range []struct {
+		name           string
+		key            []byte // key for the action, value for "key" query param
+		decision       string // value for "decision" query param
+		approvedBefore bool   // sanity check: was this action already approved?
+		wantApproved   bool   // is the action approved aferwards?
+		wantErr        string // if non-empty, error should contain this
+	}{
+		{
+			name:           "not required",
+			key:            noApproveKey,
+			decision:       "Approve",
+			approvedBefore: true,
+			wantErr:        "does not require approval",
+		},
+		{
+			name:         "deny",
+			key:          denyKey,
+			decision:     "Deny",
+			wantApproved: false,
+		},
+		{
+			name:         "approve",
+			key:          approveKey,
+			decision:     "Approve",
+			wantApproved: true,
+		},
+		{
+			name: "redeny",
+			// You can deny a previously approved request, though the UI doesn't
+			// make it possible (no buttons will appear).
+			key:            approveDenyKey,
+			decision:       "Deny",
+			approvedBefore: true,
+			wantApproved:   false,
+		},
+		{
+			name:     "nonexistent",
+			key:      []byte("does not exist"),
+			decision: "Deny",
+			wantErr:  "cannot find",
+		},
+		{
+			name:     "bad decision",
+			key:      denyKey,
+			decision: "maybe",
+			wantErr:  "invalid decision",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if entry, ok := actions.Get(db, kind, tc.key); ok {
+				if g, w := entry.Approved(), tc.approvedBefore; g != w {
+					t.Fatalf("approved before: got %t, want %t", g, w)
+				}
+			}
+			url := fmt.Sprintf("/action-decision?kind=%s&key=%s&decision=%s",
+				kind, hex.EncodeToString(tc.key), tc.decision)
+			r := httptest.NewRequest("GET", url, nil)
+			_, _, err := g.doActionDecision(r)
+			if err != nil {
+				if tc.wantErr == "" {
+					t.Fatal(err)
+				}
+				if !strings.Contains(err.Error(), tc.wantErr) {
+					t.Fatalf("got %q, want it to contain %q", err, tc.wantErr)
+				}
+				return
+			}
+			entry, ok := actions.Get(db, kind, tc.key)
+			if !ok {
+				t.Fatal("action not found")
+			}
+			if g, w := entry.Approved(), tc.wantApproved; g != w {
+				t.Errorf("approved: got %t, want %t", g, w)
+			}
+		})
 	}
 }

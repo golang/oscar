@@ -550,6 +550,9 @@ func (g *Gaby) newServer(report func(error, *http.Request)) *http.ServeMux {
 		}
 	})
 
+	// action-decision: approve or deny an action
+	mux.HandleFunc("GET /action-decision", g.handleActionDecision)
+
 	get := func(p pageID) string {
 		return "GET " + p.Endpoint()
 	}
