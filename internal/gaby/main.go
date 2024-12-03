@@ -89,7 +89,8 @@ type Gaby struct {
 	secret    secret.DB              // secret database to use
 	docs      *docs.Corpus           // document corpus to use
 	embed     llm.Embedder           // LLM embedder to use
-	llm       *llmapp.Client         // LLM client to use
+	llm       llm.ContentGenerator   // LLM content generator to use
+	llmapp    *llmapp.Client         // LLM client to use
 	github    *github.Client         // github client to use
 	disc      *discussion.Client     // github discussion client to use
 	gerrit    *gerrit.Client         // gerrit client to use
@@ -159,7 +160,8 @@ func main() {
 		log.Fatal(err)
 	}
 	g.embed = ai
-	g.llm = llmapp.New(g.slog, ai, g.db)
+	g.llm = ai
+	g.llmapp = llmapp.New(g.slog, ai, g.db)
 
 	cr := crawl.New(g.slog, g.db, g.http)
 	cr.Add("https://go.dev/")

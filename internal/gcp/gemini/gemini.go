@@ -4,7 +4,7 @@
 
 // Package gemini implements access to Google's Gemini model.
 //
-// [Client] implements [llm.Embedder] and [llm.GenerateText]. Use [NewClient] to connect.
+// [Client] implements [llm.Embedder] and [llm.GenerateContent]. Use [NewClient] to connect.
 package gemini
 
 import (
@@ -216,7 +216,7 @@ func (c *Client) parts(promptParts []any) ([]genai.Part, error) {
 				Data:     p.Data,
 			}
 		default:
-			return nil, fmt.Errorf("bad type for part: %T; need string or llm.Blob.", p)
+			return nil, fmt.Errorf("bad type for part: %T; need string or llm.Blob", p)
 		}
 	}
 	return parts, nil

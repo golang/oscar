@@ -300,7 +300,7 @@ func newTestGaby(t *testing.T) *Gaby {
 		db:     db,
 		vector: storage.MemVectorDB(db, lg, "vector"),
 		github: github.New(lg, db, secret.Empty(), nil),
-		llm:    llmapp.New(lg, llm.EchoContentGenerator(), db),
+		llmapp: llmapp.New(lg, llm.EchoContentGenerator(), db),
 		docs:   docs.New(lg, db),
 		embed:  llm.QuoteEmbedder(),
 	}

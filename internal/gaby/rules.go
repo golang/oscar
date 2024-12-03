@@ -13,7 +13,6 @@ import (
 	"github.com/google/safehtml/template"
 	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/htmlutil"
-	"golang.org/x/oscar/internal/llm"
 	"golang.org/x/oscar/internal/rules"
 )
 
@@ -78,8 +77,7 @@ func (g *Gaby) populateRulesPage(r *http.Request) *rulesPage {
 		return p
 	}
 
-	// TODO: this llm.TextGenerator cast is kind of ugly. Redo somehow.
-	rules, err := rules.Issue(r.Context(), g.embed.(llm.ContentGenerator), i)
+	rules, err := rules.Issue(r.Context(), g.llm, i)
 	if err != nil {
 		p.Error = err
 		return p

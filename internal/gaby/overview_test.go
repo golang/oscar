@@ -34,7 +34,7 @@ func TestPopulateOverviewPage(t *testing.T) {
 		db:     db,
 		vector: storage.MemVectorDB(db, lg, "vector"),
 		github: github.New(lg, db, secret.Empty(), nil),
-		llm:    llmapp.New(lg, llmapp.RelatedTestGenerator(t, 1), db),
+		llmapp: llmapp.New(lg, llmapp.RelatedTestGenerator(t, 1), db),
 		docs:   docs.New(lg, db),
 		embed:  llm.QuoteEmbedder(),
 	}
@@ -76,16 +76,16 @@ func TestPopulateOverviewPage(t *testing.T) {
 	// Generate expected overviews.
 	// This only tests that the correct calls are made; the internals
 	// of these functions are tested in their respective packages.
-	wantIssueResult, err := github.IssueOverview(ctx, g.llm, g.db, iss1)
+	wantIssueResult, err := github.IssueOverview(ctx, g.llmapp, g.db, iss1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	wantUpdateResult, err := github.UpdateOverview(ctx, g.llm, g.db, iss1,
+	wantUpdateResult, err := github.UpdateOverview(ctx, g.llmapp, g.db, iss1,
 		comment.CommentID())
 	if err != nil {
 		t.Fatal(err)
 	}
-	wantRelatedResult, err := search.Analyze(ctx, g.llm, g.vector, g.docs, iss1.HTMLURL)
+	wantRelatedResult, err := search.Analyze(ctx, g.llmapp, g.vector, g.docs, iss1.HTMLURL)
 	if err != nil {
 		t.Fatal(err)
 	}

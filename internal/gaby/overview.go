@@ -290,7 +290,7 @@ func (g *Gaby) overview(ctx context.Context, pm *overviewParams) (*overviewResul
 
 // issueOverview generates an overview of the issue and its comments.
 func (g *Gaby) issueOverview(ctx context.Context, iss *github.Issue) (*overviewResult, error) {
-	overview, err := github.IssueOverview(ctx, g.llm, g.db, iss)
+	overview, err := github.IssueOverview(ctx, g.llmapp, g.db, iss)
 	if err != nil {
 		return nil, err
 	}
@@ -305,7 +305,7 @@ func (g *Gaby) issueOverview(ctx context.Context, iss *github.Issue) (*overviewR
 
 // relatedOverview generates an overview of the issue and its related documents.
 func (g *Gaby) relatedOverview(ctx context.Context, iss *github.Issue) (*overviewResult, error) {
-	analysis, err := search.Analyze(ctx, g.llm, g.vector, g.docs, iss.DocID())
+	analysis, err := search.Analyze(ctx, g.llmapp, g.vector, g.docs, iss.DocID())
 	if err != nil {
 		return nil, err
 	}
@@ -321,7 +321,7 @@ func (g *Gaby) relatedOverview(ctx context.Context, iss *github.Issue) (*overvie
 // updateOverview generates an overview of the issue and its comments, split
 // into "old" and "new" groups by lastReadComment.
 func (g *Gaby) updateOverview(ctx context.Context, iss *github.Issue, lastReadComment int64) (*overviewResult, error) {
-	overview, err := github.UpdateOverview(ctx, g.llm, g.db, iss, lastReadComment)
+	overview, err := github.UpdateOverview(ctx, g.llmapp, g.db, iss, lastReadComment)
 	if err != nil {
 		return nil, err
 	}
