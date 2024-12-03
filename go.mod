@@ -3,6 +3,7 @@ module golang.org/x/oscar
 go 1.23
 
 require (
+	cloud.google.com/go/cloudtasks v1.12.10
 	cloud.google.com/go/compute/metadata v0.5.0
 	cloud.google.com/go/errorreporting v0.3.1
 	cloud.google.com/go/firestore v1.16.0
@@ -26,6 +27,7 @@ require (
 	golang.org/x/tools v0.28.0
 	google.golang.org/api v0.189.0
 	google.golang.org/grpc v1.64.1
+	google.golang.org/protobuf v1.34.2
 	gopkg.in/yaml.v3 v3.0.1
 	rsc.io/markdown v0.0.0-20240617154923-1f2ef1438fed
 	rsc.io/omap v1.2.1-0.20240709133045-40dad5c0c0fb
@@ -87,5 +89,4 @@ require (
 	google.golang.org/genproto v0.0.0-20240722135656-d784300faade // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240722135656-d784300faade // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240722135656-d784300faade // indirect
-	google.golang.org/protobuf v1.34.2 // indirect
 )
