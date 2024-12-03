@@ -73,6 +73,33 @@ func LookupIssues(db storage.DB, project string, issueMin, issueMax int64) iter.
 	}
 }
 
+// Comments returns an iterator over the comments for the issue in the db.
+func (c *Client) Comments(iss *Issue) iter.Seq[*IssueComment] {
+	return func(yield func(*IssueComment) bool) {
+		project := iss.Project()
+		issue := iss.Number
+		for e := range eventsByAPI(c.db, project, issue, "/issues/comments") {
+			if !yield(e.Typed.(*IssueComment)) {
+				return
+			}
+		}
+	}
+}
+
+// eventsByAPI returns an iterator over the events for the issue in the db
+// with the given API.
+func eventsByAPI(db storage.DB, project string, issue int64, api string) iter.Seq[*Event] {
+	return func(yield func(*Event) bool) {
+		start := o(project, issue, api)
+		end := o(project, issue, api, ordered.Inf)
+		for t := range timed.Scan(db, eventKind, start, end) {
+			if !yield(decodeEvent(db, t)) {
+				return
+			}
+		}
+	}
+}
+
 // An Event is a single GitHub issue event stored in the database.
 type Event struct {
 	DBTime  timed.DBTime // when event was last written

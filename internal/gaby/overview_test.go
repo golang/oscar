@@ -19,6 +19,7 @@ import (
 	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/llm"
 	"golang.org/x/oscar/internal/llmapp"
+	"golang.org/x/oscar/internal/overview"
 	"golang.org/x/oscar/internal/search"
 	"golang.org/x/oscar/internal/secret"
 	"golang.org/x/oscar/internal/storage"
@@ -28,15 +29,17 @@ import (
 func TestPopulateOverviewPage(t *testing.T) {
 	lg := testutil.Slogger(t)
 	db := storage.MemDB()
-
+	gh := github.New(lg, db, secret.Empty(), nil)
+	lc := llmapp.New(lg, llmapp.RelatedTestGenerator(t, 1), db)
 	g := &Gaby{
-		slog:   lg,
-		db:     db,
-		vector: storage.MemVectorDB(db, lg, "vector"),
-		github: github.New(lg, db, secret.Empty(), nil),
-		llmapp: llmapp.New(lg, llmapp.RelatedTestGenerator(t, 1), db),
-		docs:   docs.New(lg, db),
-		embed:  llm.QuoteEmbedder(),
+		slog:     lg,
+		db:       db,
+		vector:   storage.MemVectorDB(db, lg, "vector"),
+		github:   github.New(lg, db, secret.Empty(), nil),
+		llmapp:   lc,
+		overview: overview.New(lc, gh),
+		docs:     docs.New(lg, db),
+		embed:    llm.QuoteEmbedder(),
 	}
 
 	// Add test data relevant to this test.
@@ -76,12 +79,11 @@ func TestPopulateOverviewPage(t *testing.T) {
 	// Generate expected overviews.
 	// This only tests that the correct calls are made; the internals
 	// of these functions are tested in their respective packages.
-	wantIssueResult, err := github.IssueOverview(ctx, g.llmapp, g.db, iss1)
+	wantIssueResult, err := g.overview.ForIssue(ctx, iss1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	wantUpdateResult, err := github.UpdateOverview(ctx, g.llmapp, g.db, iss1,
-		comment.CommentID())
+	wantUpdateResult, err := g.overview.ForIssueUpdate(ctx, iss1, comment.CommentID())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -114,7 +116,7 @@ func TestPopulateOverviewPage(t *testing.T) {
 				},
 				Result: &overviewResult{
 					Raw: wantIssueResult.Overview,
-					Typed: &github.IssueOverviewResult{
+					Typed: &overview.IssueResult{
 						TotalComments: 2,
 						Overview:      wantIssueResult.Overview,
 					},
@@ -139,7 +141,7 @@ func TestPopulateOverviewPage(t *testing.T) {
 				},
 				Result: &overviewResult{
 					Raw: wantIssueResult.Overview,
-					Typed: &github.IssueOverviewResult{
+					Typed: &overview.IssueResult{
 						TotalComments: 2,
 						Overview:      wantIssueResult.Overview,
 					},
@@ -190,7 +192,7 @@ func TestPopulateOverviewPage(t *testing.T) {
 				},
 				Result: &overviewResult{
 					Raw: wantUpdateResult.Overview,
-					Typed: &github.UpdateOverviewResult{
+					Typed: &overview.IssueUpdateResult{
 						NewComments:   1,
 						TotalComments: 2,
 						Overview:      wantUpdateResult.Overview,

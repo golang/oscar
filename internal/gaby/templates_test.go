@@ -20,6 +20,7 @@ import (
 	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/llm"
 	"golang.org/x/oscar/internal/llmapp"
+	"golang.org/x/oscar/internal/overview"
 	"golang.org/x/oscar/internal/search"
 )
 
@@ -43,7 +44,7 @@ func TestTemplates(t *testing.T) {
 					Cached:   true,
 					Prompt:   []llm.Part{llm.Text("a prompt")},
 				},
-				Typed: github.IssueOverviewResult{
+				Typed: overview.IssueResult{
 					TotalComments: 2,
 					Overview: &llmapp.Result{
 						Response: "an overview",

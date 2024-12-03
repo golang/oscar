@@ -19,6 +19,7 @@ import (
 	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/htmlutil"
 	"golang.org/x/oscar/internal/llmapp"
+	"golang.org/x/oscar/internal/overview"
 	"golang.org/x/oscar/internal/search"
 )
 
@@ -157,7 +158,7 @@ func (g *Gaby) populateOverviewPage(r *http.Request) *overviewPage {
 	if trim(p.Params.Query) == "" {
 		return p
 	}
-	overview, err := g.overview(r.Context(), &p.Params)
+	overview, err := g.newOverview(r.Context(), &p.Params)
 	if err != nil {
 		p.Error = err
 		return p
@@ -255,8 +256,8 @@ func (f *overviewParams) checkRadio(value string) bool {
 	return value == f.OverviewType
 }
 
-// overview generates an overview of the issue based on the given parameters.
-func (g *Gaby) overview(ctx context.Context, pm *overviewParams) (*overviewResult, error) {
+// newOverview generates an newOverview of the issue based on the given parameters.
+func (g *Gaby) newOverview(ctx context.Context, pm *overviewParams) (*overviewResult, error) {
 	proj, issue, err := parseIssueNumber(pm.Query)
 	if err != nil {
 		return nil, fmt.Errorf("invalid form value: %v", err)
@@ -290,7 +291,7 @@ func (g *Gaby) overview(ctx context.Context, pm *overviewParams) (*overviewResul
 
 // issueOverview generates an overview of the issue and its comments.
 func (g *Gaby) issueOverview(ctx context.Context, iss *github.Issue) (*overviewResult, error) {
-	overview, err := github.IssueOverview(ctx, g.llmapp, g.db, iss)
+	overview, err := g.overview.ForIssue(ctx, iss)
 	if err != nil {
 		return nil, err
 	}
@@ -321,7 +322,7 @@ func (g *Gaby) relatedOverview(ctx context.Context, iss *github.Issue) (*overvie
 // updateOverview generates an overview of the issue and its comments, split
 // into "old" and "new" groups by lastReadComment.
 func (g *Gaby) updateOverview(ctx context.Context, iss *github.Issue, lastReadComment int64) (*overviewResult, error) {
-	overview, err := github.UpdateOverview(ctx, g.llmapp, g.db, iss, lastReadComment)
+	overview, err := g.overview.ForIssueUpdate(ctx, iss, lastReadComment)
 	if err != nil {
 		return nil, err
 	}
@@ -343,7 +344,7 @@ func (r *overviewResult) Related() string {
 // TotalComments returns the total number of comments for the
 // analyzed issue, or 0 if not known.
 func (r *overviewResult) TotalComments() int {
-	if ir, ok := r.Typed.(*github.IssueOverviewResult); ok {
+	if ir, ok := r.Typed.(*overview.IssueResult); ok {
 		return ir.TotalComments
 	}
 	return 0

@@ -2,14 +2,16 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package github
+package overview
 
 import (
+	"context"
 	"net/http"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/httprr"
 	"golang.org/x/oscar/internal/llm"
 	"golang.org/x/oscar/internal/llmapp"
@@ -18,28 +20,30 @@ import (
 	"golang.org/x/oscar/internal/testutil"
 )
 
-func TestIssueOverview(t *testing.T) {
+func TestIssue(t *testing.T) {
 	check := testutil.Checker(t)
 	lg := testutil.Slogger(t)
 	db := storage.MemDB()
 
 	rr, err := httprr.Open("testdata/ivy.httprr", http.DefaultTransport)
 	check(err)
-	rr.ScrubReq(Scrub)
+	rr.ScrubReq(github.Scrub)
 	sdb := secret.Empty()
 	if rr.Recording() {
 		sdb = secret.Netrc()
 	}
-	c := New(lg, db, sdb, rr.Client())
-	check(c.Add("robpike/ivy"))
-	check(c.Sync(ctx))
+	gh := github.New(lg, db, sdb, rr.Client())
+	check(gh.Add("robpike/ivy"))
+	ctx := context.Background()
+	check(gh.Sync(ctx))
 
 	lc := llmapp.New(lg, llm.EchoContentGenerator(), db)
+	c := New(lc, gh)
 
-	issue := &Issue{
+	issue := &github.Issue{
 		URL:     "https://api.github.com/repos/robpike/ivy/issues/19",
 		HTMLURL: "https://github.com/robpike/ivy/issues/19",
-		User:    User{Login: "xunshicheng"},
+		User:    github.User{Login: "xunshicheng"},
 		Title:   "cannot get",
 		Body: `when i get the source code by the command: go get github.com/robpike/ivy
 it print: can't load package: package github.com/robpike/ivy: code in directory D:\gocode\src\github.com\robpike\ivy expects import "robpike.io/ivy"
@@ -50,12 +54,12 @@ could you get me a hand！
 		CreatedAt: "2016-01-05T11:57:53Z",
 		UpdatedAt: "2016-01-05T22:39:41Z",
 		ClosedAt:  "2016-01-05T22:39:41Z",
-		Assignees: []User{},
+		Assignees: []github.User{},
 		State:     "closed",
-		Labels:    []Label{},
+		Labels:    []github.Label{},
 	}
 
-	got, err := IssueOverview(ctx, lc, db, issue)
+	got, err := c.ForIssue(ctx, issue)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -87,7 +91,7 @@ It is a fair point though that this should be explained in the README. I will fi
 		t.Fatal(err)
 	}
 
-	want := &IssueOverviewResult{
+	want := &IssueResult{
 		Overview:      wantOverview,
 		TotalComments: 1,
 	}
@@ -97,23 +101,25 @@ It is a fair point though that this should be explained in the README. I will fi
 	}
 }
 
-func TestUpdateOverview(t *testing.T) {
+func TestIssueUpdate(t *testing.T) {
+	ctx := context.Background()
 	db := storage.MemDB()
 	lg := testutil.Slogger(t)
 	sdb := secret.Empty()
-	gh := New(lg, db, sdb, nil)
+	gh := github.New(lg, db, sdb, nil)
 	lc := llmapp.New(lg, llm.EchoContentGenerator(), db)
+	c := New(lc, gh)
 	proj := "hello/world"
 
-	iss := &Issue{Number: 1}
-	comment := &IssueComment{}
-	comment2 := &IssueComment{}
+	iss := &github.Issue{Number: 1}
+	comment := &github.IssueComment{}
+	comment2 := &github.IssueComment{}
 
 	gh.Testing().AddIssue(proj, iss)
 	gh.Testing().AddIssueComment(proj, iss.Number, comment)
 	gh.Testing().AddIssueComment(proj, iss.Number, comment2)
 
-	got, err := UpdateOverview(ctx, lc, db, iss, comment.CommentID())
+	got, err := c.ForIssueUpdate(ctx, iss, comment.CommentID())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -142,7 +148,7 @@ func TestUpdateOverview(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := &UpdateOverviewResult{
+	want := &IssueUpdateResult{
 		NewComments:   1,
 		TotalComments: 2,
 		Overview:      wantOverview,

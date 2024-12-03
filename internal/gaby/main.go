@@ -41,6 +41,7 @@ import (
 	"golang.org/x/oscar/internal/googlegroups"
 	"golang.org/x/oscar/internal/llm"
 	"golang.org/x/oscar/internal/llmapp"
+	"golang.org/x/oscar/internal/overview"
 	"golang.org/x/oscar/internal/pebble"
 	"golang.org/x/oscar/internal/related"
 	"golang.org/x/oscar/internal/search"
@@ -106,6 +107,7 @@ type Gaby struct {
 
 	relatedPoster *related.Poster   // used to post related issues
 	commentFixer  *commentfix.Fixer // used to fix GitHub comments
+	overview      *overview.Client  // used to generate and post overviews
 }
 
 func main() {
@@ -172,6 +174,7 @@ func main() {
 	g.embed = ai
 	g.llm = ai
 	g.llmapp = llmapp.NewWithChecker(g.slog, ai, g.policy, g.db)
+	g.overview = overview.New(g.llmapp, g.github)
 
 	cr := crawl.New(g.slog, g.db, g.http)
 	cr.Add("https://go.dev/")
