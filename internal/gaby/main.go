@@ -782,6 +782,11 @@ var godevDeny = []string{
 	"https://go.dev/s/",
 	"https://go.dev/src/",
 	"https://go.dev/test/",
+
+	// The following pages will be removed at the start of go1.25.
+	// TODO(golang/oscar#63): remove these rules.
+	"https://go.dev/doc/go1.17_spec",
+	"https://go.dev/doc/go1.17_spec.html",
 }
 
 func godevClean(u *url.URL) error {
