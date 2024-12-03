@@ -21,6 +21,7 @@ import (
 	"cloud.google.com/go/compute/metadata"
 	"cloud.google.com/go/errorreporting"
 	ometric "go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/metric/noop"
 	"golang.org/x/oscar/internal/actions"
 	"golang.org/x/oscar/internal/commentfix"
 	"golang.org/x/oscar/internal/crawl"
@@ -242,6 +243,8 @@ func (g *Gaby) initLocal() {
 
 // initGCP initializes a Gaby instance to use GCP databases and other resources.
 func (g *Gaby) initGCP() (shutdown func()) {
+	shutdown = func() {}
+
 	if flags.project == "" {
 		projectID, err := metadata.ProjectIDWithContext(g.ctx)
 		if err != nil {
@@ -310,29 +313,37 @@ func (g *Gaby) initGCP() (shutdown func()) {
 	}
 	g.secret = sdb
 
-	// Initialize error reporting.
-	rep, err := errorreporting.NewClient(g.ctx, flags.project, errorreporting.Config{
-		ServiceName: os.Getenv("K_SERVICE"),
-		OnError: func(err error) {
-			g.slog.Error("error reporting", "err", err)
-		},
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-	g.report = rep
-
-	// Initialize metric collection.
-	mp, err := gcpmetrics.NewMeterProvider(g.ctx, g.slog, flags.project)
-	if err != nil {
-		log.Fatal(err)
-	}
-	g.meter = mp.Meter("gcp")
-	return func() {
-		if err := mp.Shutdown(g.ctx); err != nil {
+	// Initialize error reporting if we are running on Cloud Run.
+	if g.cloud {
+		rep, err := errorreporting.NewClient(g.ctx, flags.project, errorreporting.Config{
+			ServiceName: os.Getenv("K_SERVICE"),
+			OnError: func(err error) {
+				g.slog.Error("error reporting", "err", err)
+			},
+		})
+		if err != nil {
 			log.Fatal(err)
 		}
+		g.report = rep
 	}
+
+	// Initialize metric collection if we are running on Cloud Run.
+	if g.cloud {
+		mp, err := gcpmetrics.NewMeterProvider(g.ctx, g.slog, flags.project)
+		if err != nil {
+			log.Fatal(err)
+		}
+		g.meter = mp.Meter("gcp")
+
+		shutdown = func() {
+			if err := mp.Shutdown(g.ctx); err != nil {
+				log.Fatal(err)
+			}
+		}
+	} else {
+		g.meter = noop.Meter{}
+	}
+	return shutdown
 }
 
 // openDB opens the database described by spec.
@@ -378,7 +389,9 @@ func (g *Gaby) searchLoop() {
 func (g *Gaby) serveHTTP() {
 	report := func(err error, r *http.Request) {
 		g.slog.Error("reporting", "err", err)
-		g.report.Report(errorreporting.Entry{Error: err, Req: r})
+		if g.report != nil {
+			g.report.Report(errorreporting.Entry{Error: err, Req: r})
+		}
 	}
 	mux := g.newServer(report)
 	// Listen in this goroutine so that we can return a synchronous error
