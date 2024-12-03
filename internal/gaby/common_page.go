@@ -136,6 +136,5 @@ type (
 
 // Shorthands for safehtml functions.
 var (
-	toSafeID  = safehtml.IdentifierFromConstant
-	toSafeURL = safehtml.TrustedResourceURLFromConstant
+	toSafeID = safehtml.IdentifierFromConstant
 )
