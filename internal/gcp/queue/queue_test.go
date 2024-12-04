@@ -5,12 +5,11 @@
 package queue
 
 import (
-	"context"
-	"fmt"
 	"testing"
 
 	taskspb "cloud.google.com/go/cloudtasks/apiv2/cloudtaskspb"
 	"github.com/google/go-cmp/cmp"
+	gqueue "golang.org/x/oscar/internal/queue"
 	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
@@ -48,7 +47,7 @@ func TestNewTaskID(t *testing.T) {
 }
 
 func TestNewTaskRequest(t *testing.T) {
-	m := &Metadata{
+	m := &gqueue.Metadata{
 		Project:        "Project",
 		QueueName:      "queueID",
 		QueueURL:       "http://1.2.3.4:8000",
@@ -77,7 +76,7 @@ func TestNewTaskRequest(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	opts := &Options{
+	opts := &gqueue.Options{
 		TaskNameSuffix: "suf",
 	}
 	sreq := &testTask{
@@ -91,36 +90,5 @@ func TestNewTaskRequest(t *testing.T) {
 	}
 	if diff := cmp.Diff(want, got, protocmp.Transform()); diff != "" {
 		t.Errorf("mismatch (-want, +got):\n%s", diff)
-	}
-}
-
-func TestInMemoryQueue(t *testing.T) {
-	t1 := &testTask{"name1", "path1", "params1"}
-	t2 := &testTask{"name2", "path2", "params2"}
-	t3 := &testTask{"", "path1", "params1"}
-
-	process := func(_ context.Context, t Task) error {
-		if t.Name() == "" {
-			return fmt.Errorf("name not set for task with path %s", t.Path())
-		}
-		return nil
-	}
-
-	ctx := context.Background()
-	q := NewInMemory(ctx, 2, process)
-	q.Enqueue(ctx, t1, nil)
-	q.Enqueue(ctx, t2, nil)
-	q.Enqueue(ctx, t3, nil)
-	q.Wait(ctx)
-
-	errs := q.Errors()
-	if len(errs) != 1 {
-		t.Fatalf("want 1 error; got %d", len(errs))
-	}
-
-	want := "name not set for task with path path1"
-	got := errs[0].Error()
-	if want != got {
-		t.Errorf("want '%s' as error message; got '%s'", want, got)
 	}
 }
