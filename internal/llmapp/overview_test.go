@@ -27,7 +27,7 @@ func TestOverview(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		promptParts := []any{raw1, raw2, documents.instructions()}
+		promptParts := []llm.Part{raw1, raw2, llm.Text(documents.instructions())}
 		want := &Result{
 			Response: llm.EchoTextResponse(promptParts...),
 			Prompt:   promptParts,
@@ -42,7 +42,7 @@ func TestOverview(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		promptParts := []any{"post", raw1, "comments", raw2, postAndComments.instructions()}
+		promptParts := []llm.Part{llm.Text("post"), raw1, llm.Text("comments"), raw2, llm.Text(postAndComments.instructions())}
 		want := &Result{
 			Response: llm.EchoTextResponse(promptParts...),
 			Prompt:   promptParts,
@@ -57,7 +57,7 @@ func TestOverview(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		promptParts := []any{"post", raw1, "old comments", raw2, "new comments", raw3, postAndCommentsUpdated.instructions()}
+		promptParts := []llm.Part{llm.Text("post"), raw1, llm.Text("old comments"), raw2, llm.Text("new comments"), raw3, llm.Text(postAndCommentsUpdated.instructions())}
 		want := &Result{
 			Response: llm.EchoTextResponse(promptParts...),
 			Prompt:   promptParts,
@@ -72,9 +72,9 @@ var (
 	doc1 = &Doc{URL: "https://example.com", Author: "rsc", Title: "title", Text: "some text"}
 	doc2 = &Doc{Text: "some text 2"}
 	doc3 = &Doc{Text: "some text 3"}
-	raw1 = `{"url":"https://example.com","author":"rsc","title":"title","text":"some text"}`
-	raw2 = `{"text":"some text 2"}`
-	raw3 = `{"text":"some text 3"}`
+	raw1 = llm.Text(`{"url":"https://example.com","author":"rsc","title":"title","text":"some text"}`)
+	raw2 = llm.Text(`{"text":"some text 2"}`)
+	raw3 = llm.Text(`{"text":"some text 3"}`)
 )
 
 func newTestClient(t *testing.T) *Client {
@@ -90,11 +90,12 @@ func TestGenerate(t *testing.T) {
 
 	t.Run("echo", func(t *testing.T) {
 		c := New(lg, llm.EchoContentGenerator(), db)
-		got, cached, err := c.generate(ctx, nil, []any{"a", "b", "c"})
+		prompt := []llm.Part{llm.Text("a"), llm.Text("b"), llm.Text("c")}
+		got, cached, err := c.generate(ctx, nil, prompt)
 		if err != nil {
 			t.Fatal(err)
 		}
-		want := llm.EchoTextResponse("a", "b", "c")
+		want := llm.EchoTextResponse(llm.Text("a"), llm.Text("b"), llm.Text("c"))
 		if got != want {
 			t.Errorf("generate() = %q, want %q", got, want)
 		}
@@ -103,7 +104,7 @@ func TestGenerate(t *testing.T) {
 		}
 
 		// The result should be cached on the second call.
-		got, cached, err = c.generate(ctx, nil, []any{"a", "b", "c"})
+		got, cached, err = c.generate(ctx, nil, prompt)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -119,7 +120,8 @@ func TestGenerate(t *testing.T) {
 	// caching actually works.
 	t.Run("random", func(t *testing.T) {
 		c := New(lg, randomContentGenerator(), db)
-		got1, cached, err := c.generate(ctx, nil, []any{"a", "b", "c"})
+		prompt := []llm.Part{llm.Text("a"), llm.Text("b"), llm.Text("c")}
+		got1, cached, err := c.generate(ctx, nil, prompt)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -127,7 +129,7 @@ func TestGenerate(t *testing.T) {
 			t.Error("generate() = cached, want not cached")
 		}
 
-		got2, cached, err := c.generate(ctx, nil, []any{"a", "b", "c"})
+		got2, cached, err := c.generate(ctx, nil, prompt)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -145,7 +147,7 @@ func TestGenerate(t *testing.T) {
 func randomContentGenerator() llm.ContentGenerator {
 	return llm.TestContentGenerator(
 		"random",
-		func(_ context.Context, s *llm.Schema, _ []any) (string, error) {
+		func(_ context.Context, s *llm.Schema, _ []llm.Part) (string, error) {
 			n := strconv.Itoa(rand.IntN(1000))
 			if s != nil {
 				return `{"value":` + n + "}", nil

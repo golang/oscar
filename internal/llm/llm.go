@@ -74,11 +74,22 @@ func (v *Vector) Decode(enc []byte) {
 	}
 }
 
-// A Blob is binary data, like an image or video.
+// A Part is part of a prompt to a [ContentGenerator].
+type Part interface {
+	isPart()
+}
+
+// A Text is a [Part] that is a string.
+type Text string
+
+// A Blob is a [Part] that is binary data, like an image or video.
 type Blob struct {
 	MIMEType string
 	Data     []byte
 }
+
+func (Text) isPart() {}
+func (Blob) isPart() {}
 
 // A ContentGenerator generates content in response to prompts.
 //
@@ -92,7 +103,6 @@ type ContentGenerator interface {
 	Model() string
 	// GenerateContent generates a text response given a JSON schema
 	// and one or more prompt parts.
-	// The types of the prompt parts are determined by the implementation.
 	// If the JSON schema is nil, GenerateContent outputs a plain text response.
-	GenerateContent(ctx context.Context, schema *Schema, parts []any) (string, error)
+	GenerateContent(ctx context.Context, schema *Schema, parts []Part) (string, error)
 }

@@ -26,5 +26,5 @@ type Result struct {
 	Response string      // the raw LLM-generated response
 	Cached   bool        // whether the response was cached
 	Schema   *llm.Schema // the JSON schema used to generate the result (nil if none)
-	Prompt   []any       // the prompt(s) used to generate the result
+	Prompt   []llm.Part  // the prompt(s) used to generate the result
 }

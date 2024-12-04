@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"golang.org/x/oscar/internal/llm"
 	"golang.org/x/oscar/internal/storage"
 	"golang.org/x/oscar/internal/testutil"
 )
@@ -20,7 +21,7 @@ func TestAnalyzeRelated(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		promptParts := []any{"original", raw1, "related", raw2, docAndRelated.instructions()}
+		promptParts := []llm.Part{llm.Text("original"), raw1, llm.Text("related"), raw2, llm.Text(docAndRelated.instructions())}
 		rawOut, out := relatedTestOutput(t, 1)
 		want := &RelatedAnalysis{
 			Result: Result{

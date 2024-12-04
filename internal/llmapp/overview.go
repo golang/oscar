@@ -111,17 +111,17 @@ func (c *Client) overview(ctx context.Context, kind docsKind, groups ...*docGrou
 // prompt converts the given docs into a slice of
 // text prompts, followed by an instruction prompt based
 // on the documents kind.
-func prompt(kind docsKind, groups []*docGroup) []any {
-	var inputs []any
+func prompt(kind docsKind, groups []*docGroup) []llm.Part {
+	var inputs []llm.Part
 	for _, g := range groups {
 		if g.label != "" {
-			inputs = append(inputs, g.label)
+			inputs = append(inputs, llm.Text(g.label))
 		}
 		for _, d := range g.docs {
-			inputs = append(inputs, string(storage.JSON(d)))
+			inputs = append(inputs, llm.Text(storage.JSON(d)))
 		}
 	}
-	return append(inputs, kind.instructions())
+	return append(inputs, llm.Text(kind.instructions()))
 }
 
 // docsKind is a descriptor for a group of documents.

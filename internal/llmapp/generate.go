@@ -15,7 +15,7 @@ import (
 )
 
 // generate returns a (possibly cached) response for the prompts.
-func (c *Client) generate(ctx context.Context, schema *llm.Schema, prompts []any) (string, bool, error) {
+func (c *Client) generate(ctx context.Context, schema *llm.Schema, prompts []llm.Part) (string, bool, error) {
 	model := c.g.Model()
 	h := hash(schema, prompts)
 	k := ordered.Encode(generateTextKind, model, h)
@@ -73,14 +73,14 @@ type response struct {
 }
 
 // hash returns the SHA-256 hash of the schema, and the strings or blobs.
-func hash(schema *llm.Schema, parts []any) []byte {
+func hash(schema *llm.Schema, parts []llm.Part) []byte {
 	h := sha256.New()
 	if schema != nil {
 		h.Write(storage.JSON(schema))
 	}
 	for _, p := range parts {
 		switch p := p.(type) {
-		case string:
+		case llm.Text:
 			h.Write([]byte(p))
 		case llm.Blob:
 			h.Write([]byte(p.MIMEType))

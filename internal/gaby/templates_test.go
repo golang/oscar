@@ -18,6 +18,7 @@ import (
 	"golang.org/x/net/html/atom"
 	"golang.org/x/oscar/internal/actions"
 	"golang.org/x/oscar/internal/github"
+	"golang.org/x/oscar/internal/llm"
 	"golang.org/x/oscar/internal/llmapp"
 	"golang.org/x/oscar/internal/search"
 )
@@ -40,14 +41,14 @@ func TestTemplates(t *testing.T) {
 				Raw: &llmapp.Result{
 					Response: "an overview",
 					Cached:   true,
-					Prompt:   []any{"a prompt"},
+					Prompt:   []llm.Part{llm.Text("a prompt")},
 				},
 				Typed: github.IssueOverviewResult{
 					TotalComments: 2,
 					Overview: &llmapp.Result{
 						Response: "an overview",
 						Cached:   true,
-						Prompt:   []any{"a prompt"},
+						Prompt:   []llm.Part{llm.Text("a prompt")},
 					},
 				},
 				Issue: &github.Issue{

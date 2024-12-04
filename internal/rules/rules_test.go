@@ -43,13 +43,13 @@ func TestIssue(t *testing.T) {
 func ruleTestGenerator() llm.ContentGenerator {
 	return llm.TestContentGenerator(
 		"ruleTestGenerator",
-		func(_ context.Context, schema *llm.Schema, promptParts []any) (string, error) {
+		func(_ context.Context, schema *llm.Schema, promptParts []llm.Part) (string, error) {
 			if schema != nil {
 				return "", fmt.Errorf("not implemented")
 			}
 			var strs []string
 			for _, p := range promptParts {
-				strs = append(strs, p.(string))
+				strs = append(strs, string(p.(llm.Text)))
 			}
 			req := strings.Join(strs, " ")
 			if strings.Contains(req, "Your job is to categorize") {

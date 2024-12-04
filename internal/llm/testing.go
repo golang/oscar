@@ -100,7 +100,7 @@ func (echo) Model() string { return "echo" }
 // If the schema is non-nil, the output is wrapped as a JSON object with a
 // single value "prompt", ignoring the actual schema contents (for testing).
 // Implements [ContentGenerator.GenerateContent].
-func (echo) GenerateContent(_ context.Context, schema *Schema, promptParts []any) (string, error) {
+func (echo) GenerateContent(_ context.Context, schema *Schema, promptParts []Part) (string, error) {
 	if schema == nil {
 		return EchoTextResponse(promptParts...), nil
 	}
@@ -109,16 +109,16 @@ func (echo) GenerateContent(_ context.Context, schema *Schema, promptParts []any
 
 // EchoTextResponse returns the concatenation of the prompt parts.
 // For testing.
-func EchoTextResponse(promptParts ...any) string {
+func EchoTextResponse(promptParts ...Part) string {
 	var echos []string
 	for i, p := range promptParts {
 		switch p := p.(type) {
-		case string:
-			echos = append(echos, p)
+		case Text:
+			echos = append(echos, string(p))
 		case Blob:
 			echos = append(echos, fmt.Sprintf("%s%d", p.MIMEType, i))
 		default:
-			panic(fmt.Sprintf("bad type for part: %T; need string or llm.Blob.", p))
+			panic(fmt.Sprintf("bad type for part: %T; need llm.Text or llm.Blob.", p))
 		}
 	}
 	return strings.Join(echos, "")
@@ -127,11 +127,11 @@ func EchoTextResponse(promptParts ...any) string {
 // EchoJSONResponse returns the concatenation of the prompt parts,
 // wrapped as a JSON object with a single value "prompt".
 // For testing.
-func EchoJSONResponse(promptParts ...any) string {
+func EchoJSONResponse(promptParts ...Part) string {
 	return fmt.Sprintf(`{"prompt":%q}`, EchoTextResponse(promptParts...))
 }
 
-type generateContentFunc func(ctx context.Context, schema *Schema, promptParts []any) (string, error)
+type generateContentFunc func(ctx context.Context, schema *Schema, promptParts []Part) (string, error)
 
 // TestContentGenerator returns a [ContentGenerator] with the given implementations
 // of [GenerateContent].
@@ -160,7 +160,7 @@ func (g *generator) Model() string {
 }
 
 // GenerateContent implements [ContentGenerator.GenerateContent].
-func (g *generator) GenerateContent(ctx context.Context, schema *Schema, promptParts []any) (string, error) {
+func (g *generator) GenerateContent(ctx context.Context, schema *Schema, promptParts []Part) (string, error) {
 	if g.generateContent == nil {
 		return "", fmt.Errorf("GenerateContent: not implemented")
 	}

@@ -153,7 +153,7 @@ func (c *Client) Model() string {
 // GenerateContent returns the model's response for the prompt parts,
 // implementing [llm.ContentGenerator.GenerateContent].
 // The schema must nil, or of type [*genai.Schema].
-func (c *Client) GenerateContent(ctx context.Context, schema *llm.Schema, promptParts []any) (string, error) {
+func (c *Client) GenerateContent(ctx context.Context, schema *llm.Schema, promptParts []llm.Part) (string, error) {
 	// Generate plain text.
 	if schema == nil {
 		texts, err := c.generate(ctx, "text/plain", nil, promptParts...)
@@ -175,7 +175,7 @@ func (c *Client) GenerateContent(ctx context.Context, schema *llm.Schema, prompt
 
 // generate returns the model's response (of the specified MIME type) for the prompt parts.
 // It returns an error if a response cannot be generated.
-func (c *Client) generate(ctx context.Context, mimeType string, schema *genai.Schema, promptParts ...any) ([]string, error) {
+func (c *Client) generate(ctx context.Context, mimeType string, schema *genai.Schema, promptParts ...llm.Part) ([]string, error) {
 	parts, err := c.parts(promptParts)
 	if err != nil {
 		return nil, err
@@ -204,11 +204,11 @@ func (c *Client) model(mimeType string, schema *genai.Schema) *genai.GenerativeM
 
 // parts converts the given prompt parts to [genai.Part]s of
 // their corresponding type.
-func (c *Client) parts(promptParts []any) ([]genai.Part, error) {
+func (c *Client) parts(promptParts []llm.Part) ([]genai.Part, error) {
 	var parts = make([]genai.Part, len(promptParts))
 	for i, p := range promptParts {
 		switch p := p.(type) {
-		case string:
+		case llm.Text:
 			parts[i] = genai.Text(p)
 		case llm.Blob:
 			parts[i] = genai.Blob{

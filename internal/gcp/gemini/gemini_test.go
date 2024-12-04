@@ -98,7 +98,7 @@ func TestGenerateContentText(t *testing.T) {
 	ctx := context.Background()
 	check := testutil.Checker(t)
 	c := newTestClient(t, "testdata/generatetext.httprr")
-	responses, err := c.GenerateContent(ctx, nil, []any{"CanonicalHeaderKey returns the canonical format of the header key s. The canonicalization converts the first letter and any letter following a hyphen to upper case; the rest are converted to lowercase. For example, the canonical key for 'accept-encoding' is 'Accept-Encoding'. If s contains a space or invalid header field bytes, it is returned without modifications.", "When should I use CanonicalHeaderKey?"})
+	responses, err := c.GenerateContent(ctx, nil, []llm.Part{llm.Text("CanonicalHeaderKey returns the canonical format of the header key s. The canonicalization converts the first letter and any letter following a hyphen to upper case; the rest are converted to lowercase. For example, the canonical key for 'accept-encoding' is 'Accept-Encoding'. If s contains a space or invalid header field bytes, it is returned without modifications."), llm.Text("When should I use CanonicalHeaderKey?")})
 	check(err)
 	if len(responses) == 0 {
 		t.Fatal("no responses")
@@ -121,8 +121,10 @@ func TestGenerateContentJSON(t *testing.T) {
 				},
 			},
 		},
-		[]any{"(confidence is between 0 and 100)",
-			"What is the tallest mountain in the world?"})
+		[]llm.Part{
+			llm.Text("(confidence is between 0 and 100)"),
+			llm.Text("What is the tallest mountain in the world?"),
+		})
 	check(err)
 	if len(responses) == 0 {
 		t.Fatal("no responses")

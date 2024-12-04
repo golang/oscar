@@ -139,7 +139,7 @@ func RelatedTestGenerator(t *testing.T, numRelated int) llm.ContentGenerator {
 	raw, _ := relatedTestOutput(t, numRelated)
 	return llm.TestContentGenerator(
 		"related-test-generator",
-		func(context.Context, *llm.Schema, []any) (string, error) {
+		func(context.Context, *llm.Schema, []llm.Part) (string, error) {
 			return raw, nil
 		},
 	)
