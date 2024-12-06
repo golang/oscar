@@ -31,6 +31,9 @@ repo_root=$(git rev-parse --show-toplevel)
 
 set -x
 
+# Convert the commented config files to valid json.
+sed '/^[ \t]*#/d' internal/bisect/bisect_config.json.commented > internal/bisect/bisect_config.json
+
 docker build -f internal/gaby/Dockerfile \
 	-t $image \
 	--build-arg FIRESTORE_DB=devel \
@@ -40,6 +43,6 @@ docker build -f internal/gaby/Dockerfile \
 
 docker push $image
 
-gcloud run deploy gaby-devel --image $image --region $region --memory 4G --quiet
+gcloud run deploy gaby-devel --image $image --region $region --cpu 8 --memory 32G --quiet --execution-environment gen2
 gcloud run services update-traffic gaby-devel --to-latest --region $region
 

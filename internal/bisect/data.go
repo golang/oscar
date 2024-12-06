@@ -5,7 +5,9 @@
 package bisect
 
 import (
+	"encoding/json"
 	"fmt"
+	"iter"
 	"time"
 
 	"golang.org/x/oscar/internal/storage"
@@ -91,6 +93,27 @@ func (t *Task) Path() string {
 // Params encodes task ID.
 func (t *Task) Params() string {
 	return "id=" + t.ID
+}
+
+// BisectionTasks returns an iterator over the bisection tasks.
+// The first iterator value is the task ID and the other value
+// is the task itself.
+func (c *Client) BisectionTasks() iter.Seq2[string, *Task] {
+	return func(yield func(string, *Task) bool) {
+		for key, fn := range c.db.Scan(o(taskKind), o(taskKind, ordered.Inf)) {
+			var id string
+			if err := ordered.Decode(key, nil, &id); err != nil {
+				c.db.Panic("bisect client task decode", "key", storage.Fmt(key), "err", err)
+			}
+			var t Task
+			if err := json.Unmarshal(fn(), &t); err != nil {
+				c.db.Panic("bisect client task unmarshal", "key", storage.Fmt(key), "err", err)
+			}
+			if !yield(id, &t) {
+				return
+			}
+		}
+	}
 }
 
 // TaskWatcher returns a new [timed.Watcher] with the given name.

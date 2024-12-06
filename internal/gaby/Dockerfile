@@ -35,14 +35,14 @@ RUN go mod download
 # directory, so that we can use it to build the binary.
 COPY . /src
 
-# Build the binary.
+# Build the gaby binary and the bisection gvisor runner.
 RUN go build -mod=readonly ./internal/gaby
+RUN go build -mod=readonly -o bisect_runner ./internal/bisect/runner.go
 
 ################################################################
-# Use a smaller image to run the program.
-# The resulting image is about 8x smaller than a golang image.
+# Use a a fresh instance but with less things.
 # Among other benefits, the space savings means more room for /tmp on Cloud Run.
-FROM debian:stable-slim
+FROM golang:1.23.0
 
 LABEL maintainer="Go Oscar Team <oscar-team@google.com>"
 
@@ -52,6 +52,12 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certifi
 WORKDIR app
 
 COPY --from=builder src/gaby gaby
+COPY --from=builder src/bisect_runner bisect_runner
+COPY --from=builder src/internal/bisect/bisect_config.json bisect_config.json
+
+# Install runsc.
+ADD https://storage.googleapis.com/gvisor/releases/release/20241118.0/x86_64/runsc /usr/local/bin/
+RUN chmod a+rx /usr/local/bin/runsc
 
 # To pass flag values to the command from docker build args, we must set environment
 # variables. The ARG names cannot be substituted into a CMD.

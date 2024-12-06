@@ -6,6 +6,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -24,6 +25,7 @@ import (
 	ometric "go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/noop"
 	"golang.org/x/oscar/internal/actions"
+	"golang.org/x/oscar/internal/bisect"
 	"golang.org/x/oscar/internal/commentfix"
 	"golang.org/x/oscar/internal/crawl"
 	"golang.org/x/oscar/internal/dbspec"
@@ -36,6 +38,7 @@ import (
 	"golang.org/x/oscar/internal/gcp/gcpmetrics"
 	"golang.org/x/oscar/internal/gcp/gcpsecret"
 	"golang.org/x/oscar/internal/gcp/gemini"
+	gcpqueue "golang.org/x/oscar/internal/gcp/queue"
 	"golang.org/x/oscar/internal/gerrit"
 	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/googlegroups"
@@ -44,6 +47,7 @@ import (
 	"golang.org/x/oscar/internal/llmapp"
 	"golang.org/x/oscar/internal/overview"
 	"golang.org/x/oscar/internal/pebble"
+	"golang.org/x/oscar/internal/queue"
 	"golang.org/x/oscar/internal/related"
 	"golang.org/x/oscar/internal/rules"
 	"golang.org/x/oscar/internal/search"
@@ -104,6 +108,7 @@ type Gaby struct {
 	gerrit    *gerrit.Client         // gerrit client to use
 	ggroups   *googlegroups.Client   // google groups client to use
 	crawler   *crawl.Crawler         // web crawler to use
+	bisect    *bisect.Client         // bisect client to use
 	meter     ometric.Meter          // used to create Open Telemetry instruments
 	report    *errorreporting.Client // used to report important gaby errors to Cloud Error Reporting service
 
@@ -165,7 +170,7 @@ func main() {
 	g.ggroups = googlegroups.New(g.slog, g.db, g.secret, g.http)
 	for _, group := range g.googleGroups {
 		if err := g.ggroups.Add(group); err != nil {
-			log.Fatalf("googlgroups.Add failed: %v", err)
+			log.Fatalf("googlegroups.Add failed: %v", err)
 		}
 	}
 
@@ -186,6 +191,13 @@ func main() {
 	cr.Deny(godevDeny...)
 	cr.Clean(godevClean)
 	g.crawler = cr
+
+	q, err := taskQueue(g)
+	if err != nil {
+		log.Fatalf("task Queue creation failed: %v", err)
+	}
+	bs := bisect.New(g.slog, g.db, q)
+	g.bisect = bs
 
 	if flags.search {
 		g.searchLoop()
@@ -418,6 +430,48 @@ func (g *Gaby) initGCP() (shutdown func()) {
 	return shutdown
 }
 
+// taskQueue returns a bisection Cloud Task queue.
+func taskQueue(g *Gaby) (queue.Queue, error) {
+	sa, err := metadata.Email("")
+	if err != nil {
+		return nil, err
+	}
+
+	const location = "us-central1"
+	project := flags.project
+	service := os.Getenv("K_SERVICE")
+
+	mode := ""
+	if strings.Contains(service, "prod") {
+		mode = "prod"
+	} else if strings.Contains(service, "devel") {
+		mode = "devel"
+	} else {
+		return nil, fmt.Errorf("K_SERVICE in unexpected format: %s", service)
+	}
+
+	projID, err := metadata.NumericProjectIDWithContext(g.ctx)
+	if err != nil {
+		return nil, err
+	}
+	// We can create the service URL from mode, project number, and location.
+	// The actual service URL might change, but this value will always be valid.
+	qurl := fmt.Sprintf("https://gaby-%s-%s.%s.run.app", mode, projID, location)
+
+	qm := &queue.Metadata{
+		ServiceAccount: sa,
+		Location:       location,
+		Project:        project,
+		// {prod|devel}-bisection-tasks are two
+		// existing bisection Cloud Tasks.
+		QueueName: mode + "-bisection-tasks",
+		QueueURL:  qurl,
+	}
+	g.slog.Info("queue.Info meta", "data", fmt.Sprintf("%+v", qm))
+
+	return gcpqueue.New(g.ctx, qm)
+}
+
 // openDB opens the database described by spec.
 func (g *Gaby) openDB(spec *dbspec.Spec) (storage.DB, error) {
 	switch spec.Kind {
@@ -491,6 +545,7 @@ func (g *Gaby) newServer(report func(error, *http.Request)) *http.ServeMux {
 		setLevelEndpoint    = "setlevel"
 		githubEventEndpoint = "github-event"
 		crawlEndpoint       = "crawl"
+		bisectEndpoint      = "bisect"
 	)
 	cronEndpointCounter := g.newEndpointCounter(cronEndpoint)
 	crawlEndpointCounter := g.newEndpointCounter(crawlEndpoint)
@@ -575,6 +630,37 @@ func (g *Gaby) newServer(report func(error, *http.Request)) *http.ServeMux {
 		}
 
 		githubEventEndpointCounter.Add(r.Context(), 1)
+	})
+
+	// bisectEndpoint executes bisection tasks.
+	// TODO: separate bisection into a separate service.
+	// That would allow us to better handle concurrency
+	// and resource requirements.
+	mux.HandleFunc("POST /"+bisectEndpoint, func(w http.ResponseWriter, r *http.Request) {
+		g.slog.Info(bisectEndpoint + " start")
+		defer g.slog.Info(bisectEndpoint + " end")
+
+		// Do not respond a 4xx error code as that can
+		// make Cloud Task repeat the bisection. Instead,
+		// we use a dedicated 2xx code.
+		const errorCode = 299
+
+		tid := r.FormValue("id")
+		if tid == "" {
+			w.WriteHeader(errorCode)
+			report(errors.New("bisection: no task id provided"), r)
+			return
+		}
+
+		// c.bisect.Bisect below will lock on a specific
+		// bisection task, so there is no need to do
+		// locking here.
+
+		if err := g.bisect.Bisect(tid); err != nil {
+			w.WriteHeader(errorCode)
+			report(err, r)
+			g.slog.Info(bisectEndpoint+" failure", "err", err)
+		}
 	})
 
 	// syncEndpoint is called manually to invoke a specific sync job.
@@ -717,6 +803,7 @@ func (g *Gaby) syncAndRunAll(ctx context.Context) (errs []error) {
 		check(g.postAllRelated(ctx))
 		check(g.labelAll(ctx))
 		check(g.postAllRules(ctx))
+		check(g.postAllBisections(ctx))
 		// Apply all actions.
 		actions.Run(ctx, g.slog, g.db)
 	}
@@ -732,10 +819,11 @@ const (
 	gabyEmbedLock          = "gabyembedsync"
 	gabyCrawlLock          = "gabycrawlsync"
 
-	gabyFixCommentLock  = "gabyfixcommentaction"
-	gabyPostRelatedLock = "gabyrelatedaction"
-	gabyPostRulesLock   = "gabyrulesaction"
-	gabyLabelLock       = "gabylabelaction"
+	gabyFixCommentLock    = "gabyfixcommentaction"
+	gabyPostRelatedLock   = "gabyrelatedaction"
+	gabyPostRulesLock     = "gabyrulesaction"
+	gabyLabelLock         = "gabylabelaction"
+	gabyPostBisectionLock = "gabybisectionaction"
 )
 
 func (g *Gaby) syncGitHubIssues(ctx context.Context) error {
@@ -828,6 +916,19 @@ func (g *Gaby) labelAll(ctx context.Context) error {
 	defer g.db.Unlock(gabyLabelLock)
 
 	return g.labeler.Run(ctx)
+}
+
+func (g *Gaby) postAllBisections(ctx context.Context) error {
+	g.db.Lock(gabyPostBisectionLock)
+	defer g.db.Unlock(gabyPostBisectionLock)
+
+	// TODO: implement bisection poster. For now, just
+	// log the current state of each task.
+	for id, t := range g.bisect.BisectionTasks() {
+		g.slog.Info("bisect.Post status", "id", id, "status", t.Status,
+			"created", t.Created, "updated", t.Updated, "output", t.Output)
+	}
+	return nil
 }
 
 // localCron simulates Cloud Scheduler by fetching our server's /cron endpoint once per minute.

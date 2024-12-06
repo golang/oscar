@@ -62,6 +62,7 @@ func TestBisectAsync(t *testing.T) {
 	}
 	q := queue.NewInMemory(ctx, 1, process)
 	c = New(lg, db, q)
+	c.testing = true
 
 	trigger1 := &github.IssueComment{
 		URL:      "https://api.github.com/repos/golang/go/issues/00001#issuecomment-000001",
@@ -92,9 +93,16 @@ func TestBisectAsync(t *testing.T) {
 	if len(tasks) != 2 {
 		t.Errorf("want 2 tasks; got %d", len(tasks))
 	}
+	wantResult := "000000000001 is the first bad commit"
 	for _, task := range tasks {
-		if task.Status != StatusQueued {
-			t.Errorf("want %d status for %v; got %d", StatusQueued, task, task.Status)
+		if task.Status != StatusSucceeded {
+			t.Errorf("got %d status for %v; want %d", task.Status, task, StatusSucceeded)
+		}
+		if task.Error != "" {
+			t.Errorf("got error %s for %v; want none", task.Error, task)
+		}
+		if task.Result != wantResult {
+			t.Errorf("got %s status for %v; want %s", task.Result, task, wantResult)
 		}
 	}
 }
