@@ -152,7 +152,6 @@ func (c *Client) Model() string {
 
 // GenerateContent returns the model's response for the prompt parts,
 // implementing [llm.ContentGenerator.GenerateContent].
-// The schema must nil, or of type [*genai.Schema].
 func (c *Client) GenerateContent(ctx context.Context, schema *llm.Schema, promptParts []llm.Part) (string, error) {
 	// Generate plain text.
 	if schema == nil {
