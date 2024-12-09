@@ -1,0 +1,39 @@
+<!--
+Copyright 2024 The Go Authors. All rights reserved.
+Use of this source code is governed by a BSD-style
+license that can be found in the LICENSE file.
+-->
+<!doctype html>
+<html>
+  {{template "head" .}}
+  <body>
+	{{template "header" .}}
+
+	<div class="section" id="result">
+	{{- with .Error -}}
+		<p>Error: {{.}}</p>
+	{{- else -}}
+	  {{- range .Results -}}
+		<div style="padding-bottom: 3rem">
+		<table width="40%">
+			<tr><td>Issue</td><td><a href="{{.HTMLURL}}">#{{.Number}}</a></td></tr>
+			<tr><td>Title</td><td><strong>{{.Title}}</strong></td></tr>
+			<tr><td valign="top">Body</td>
+				<td><details><summary>Contents</Summary>{{.BodyHTML}}</details></td>
+			</tr>
+			<tr><td>Author</td><td>{{.User.Login}}</td></tr>
+			<tr><td>State</td><td>{{.State}}</td></tr>
+			<tr><td>Labels</td>
+				<td>{{range .Labels}}{{.Name}} {{end}}</td>
+			</tr>
+			<tr><td colspan=2 height="10rem"></td><tr>
+			<tr><td>Category</td><td>{{.Category.Name}} ({{.Category.Description}})</td></tr>
+			<tr><td valign="top">Explanation</td><td>{{.Explanation}}</td></tr>
+		</table>
+		</div>
+	  {{- end}}
+	{{- end}}
+	</div>
+  </body>
+</html>
+

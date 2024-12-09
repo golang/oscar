@@ -1,0 +1,64 @@
+{
+  "Categories": [
+    {
+      "Name": "bug",
+      "Label": "BUGLABEL",
+      "Description": "This issue describes a bug in the Go implementation."
+    },
+    {
+      "Name": "language proposal",
+      "Label": "LANGPROPLABEL",
+      "Description": "This issue describes a requested change to the Go language specification."
+    },
+    {
+      "Name": "library proposal",
+      "Label": "LIBPROPLABEL",
+      "Description": "This issue describes a requested change to the Go standard library or x/ libraries."
+    },
+    {
+      "Name": "implementation",
+      "Label": "IMPLABEL",
+      "Description": "This issue describes a semantics-preserving change to the Go implementation."
+    },
+    {
+      "Name": "access request",
+      "Label": "access requestLABEL",
+      "Description": "This issue is a request for builder or gomote access."
+    },
+    {
+      "Name": "pkgsite removal request",
+      "Label": "pkgsite removal requestLABEL",
+      "Description": "This issue is a pkgsite removal request."
+    },
+    {
+      "Name": "automation",
+      "Label": "automationLABEL",
+      "Description": "This issue is created by gopherbot or watchflakes automation."
+    },
+    {
+      "Name": "backport",
+      "Label": "backportLABEL",
+      "Description": "This issue is created for requesting a backport of a change to a previous Go version."
+    },
+    {
+      "Name": "builders",
+      "Label": "buildersLABEL",
+      "Description": "This issue is about the running of the Go builders."
+    },
+    {
+      "Name": "question",
+      "Label": "questionLABEL",
+      "Description": "This issue is a question about using Go."
+    },
+    {
+      "Name": "invalid",
+      "Label": "invalidLABEL",
+      "Description": "This issue is empty, incomplete, or spam."
+    },
+    {
+      "Name": "other",
+      "Label": "otherLABEL",
+      "Description": "None of the above."
+    }
+  ]
+}

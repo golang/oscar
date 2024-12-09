@@ -58,6 +58,20 @@ func LookupIssue(db storage.DB, project string, issue int64) (*Issue, error) {
 	return nil, fmt.Errorf("github.LookupIssue: issue %s#%d not in database", project, issue)
 }
 
+// LookupIssues returns an iterator over issues between issueMin and issueMax,
+// only consulting the database (not actual GitHub).
+func LookupIssues(db storage.DB, project string, issueMin, issueMax int64) iter.Seq[*Issue] {
+	return func(yield func(*Issue) bool) {
+		for e := range events(db, project, issueMin, issueMax) {
+			if e.API == "/issues" {
+				if !yield(e.Typed.(*Issue)) {
+					break
+				}
+			}
+		}
+	}
+}
+
 // An Event is a single GitHub issue event stored in the database.
 type Event struct {
 	DBTime  timed.DBTime // when event was last written
@@ -101,14 +115,18 @@ func CleanBody(body string) string {
 // Within a specific API, the events are ordered by increasing ID,
 // which corresponds to increasing event time on GitHub.
 func (c *Client) Events(project string, issueMin, issueMax int64) iter.Seq[*Event] {
+	return events(c.db, project, issueMin, issueMax)
+}
+
+func events(db storage.DB, project string, issueMin, issueMax int64) iter.Seq[*Event] {
 	return func(yield func(*Event) bool) {
 		start := o(project, issueMin)
 		if issueMax < 0 {
 			issueMax = math.MaxInt64
 		}
 		end := o(project, issueMax, ordered.Inf)
-		for t := range timed.Scan(c.db, eventKind, start, end) {
-			if !yield(decodeEvent(c.db, t)) {
+		for t := range timed.Scan(db, eventKind, start, end) {
+			if !yield(decodeEvent(db, t)) {
 				return
 			}
 		}

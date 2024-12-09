@@ -569,6 +569,10 @@ func (g *Gaby) newServer(report func(error, *http.Request)) *http.ServeMux {
 	// /rules?q=...: generate a list of violated rules for issue q.
 	mux.HandleFunc(get(rulesID), g.handleRules)
 
+	// /labels: display label classifications for issues.
+	// /labels?q=...: report on the classification for issue q.
+	mux.HandleFunc(get(labelsID), g.handleLabels)
+
 	// /api/search: perform a vector similarity search.
 	// POST because the arguments to the request are in the body.
 	mux.HandleFunc("POST /api/search", g.handleSearchAPI)

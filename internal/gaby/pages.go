@@ -21,6 +21,7 @@ const (
 	searchID    pageID = "search"
 	dbviewID    pageID = "dbview"
 	rulesID     pageID = "rules"
+	labelsID    pageID = "labels"
 	reviewsID   pageID = "reviews"
 )
 
@@ -32,4 +33,5 @@ var titles = map[pageID]string{
 	dbviewID:    "Database Viewer",
 	rulesID:     "Rule Checker",
 	reviewsID:   "Reviews",
+	labelsID:    "Issue Labels",
 }

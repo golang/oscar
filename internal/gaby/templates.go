@@ -27,6 +27,7 @@ const (
 	searchPageTmplFile   = "searchpage.tmpl"
 	overviewPageTmplFile = "overviewpage.tmpl"
 	rulesPageTmplFile    = "rulespage.tmpl"
+	labelsPageTmplFile   = "labelspage.tmpl"
 	dbviewPageTmplFile   = "dbviewpage.tmpl"
 
 	// Common template file
