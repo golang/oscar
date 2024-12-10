@@ -33,6 +33,7 @@ set -x
 
 # Convert the commented config files to valid json.
 sed '/^[ \t]*#/d' internal/bisect/bisect_config.json.commented > internal/bisect/bisect_config.json
+sed '/^[ \t]*#/d' internal/sandbox/config.json.commented > internal/sandbox/config.json
 
 docker build -f internal/gaby/Dockerfile \
 	-t $image \

@@ -57,6 +57,7 @@ steps:
 
         # Convert the commented runsc config files to valid json.
         sed '/^[ \t]*#/d' internal/bisect/bisect_config.json.commented > internal/bisect/bisect_config.json
+        sed '/^[ \t]*#/d' internal/sandbox/config.json.commented > internal/sandbox/config.json
 
         echo "building image $image with firestore_db $firestore_db (enable_sync=$enable_sync, enable_changes=$enable_changes)"
 

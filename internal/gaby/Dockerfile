@@ -35,9 +35,10 @@ RUN go mod download
 # directory, so that we can use it to build the binary.
 COPY . /src
 
-# Build the gaby binary and the bisection gvisor runner.
+# Build the gaby binary, bisection gvisor runner, and a general gvisor runner.
 RUN go build -mod=readonly ./internal/gaby
 RUN go build -mod=readonly -o bisect_runner ./internal/bisect/runner.go
+RUN go build -mod=readonly ./internal/sandbox/runner.go
 
 ################################################################
 # Use a a fresh instance but with less things.
@@ -54,6 +55,8 @@ WORKDIR app
 COPY --from=builder src/gaby gaby
 COPY --from=builder src/bisect_runner bisect_runner
 COPY --from=builder src/internal/bisect/bisect_config.json bisect_config.json
+COPY --from=builder src/runner runner
+COPY --from=builder src/internal/sandbox/config.json config.json
 
 # Install runsc.
 ADD https://storage.googleapis.com/gvisor/releases/release/20241118.0/x86_64/runsc /usr/local/bin/
