@@ -31,6 +31,7 @@ type labelsPage struct {
 
 type labelsResult struct {
 	*github.Issue // the issue we're reporting on
+	Problem       string
 	Category      labels.Category
 	Explanation   string
 	BodyHTML      safehtml.HTML
@@ -93,17 +94,22 @@ func (g *Gaby) populateLabelsPage(r *http.Request) *labelsPage {
 
 	// Find issues in database.
 	for i := range github.LookupIssues(g.db, project, issueMin, issueMax) {
-		cat, exp, err := labels.IssueCategory(r.Context(), g.llm, i)
-		if err != nil {
-			p.Error = err
-			return p
+		lr := &labelsResult{Issue: i}
+		if i.PullRequest != nil {
+			lr.Problem = "skipping: pull request"
+		} else if isBot(i.User.Login) {
+			lr.Problem = "skipping: author is a bot"
+		} else {
+			cat, exp, err := labels.IssueCategory(r.Context(), g.llm, i)
+			if err != nil {
+				p.Error = err
+				return p
+			}
+			lr.Category = cat
+			lr.Explanation = exp
+			lr.BodyHTML = htmlutil.MarkdownToSafeHTML(i.Body)
 		}
-		p.Results = append(p.Results, &labelsResult{
-			Issue:       i,
-			Category:    cat,
-			Explanation: exp,
-			BodyHTML:    htmlutil.MarkdownToSafeHTML(i.Body),
-		})
+		p.Results = append(p.Results, lr)
 	}
 	return p
 }
@@ -134,4 +140,9 @@ func (pm *labelsParams) inputs() []FormInput {
 			},
 		},
 	}
+}
+
+func isBot(author string) bool {
+	// TODO: generalize.
+	return author == "gopherbot" || author == "gabyhelp"
 }
