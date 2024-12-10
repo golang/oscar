@@ -14,7 +14,7 @@ func (i *Issue) ToLLMDoc() *llmapp.Doc {
 	return &llmapp.Doc{
 		Type:   "issue",
 		URL:    i.HTMLURL,
-		Author: i.User.Login,
+		Author: i.User.ForDisplay(),
 		Title:  i.Title,
 		Text:   i.Body,
 	}
@@ -26,8 +26,16 @@ func (ic *IssueComment) ToLLMDoc() *llmapp.Doc {
 	return &llmapp.Doc{
 		Type:   "issue comment",
 		URL:    ic.HTMLURL,
-		Author: ic.User.Login,
+		Author: ic.User.ForDisplay(),
 		// no title
 		Text: ic.Body,
 	}
+}
+
+// ForDisplay returns the user's login username, prefixed with @.
+func (u *User) ForDisplay() string {
+	if u.Login == "" {
+		return ""
+	}
+	return "@" + u.Login
 }

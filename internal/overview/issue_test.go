@@ -38,7 +38,7 @@ func TestIssue(t *testing.T) {
 	check(gh.Sync(ctx))
 
 	lc := llmapp.New(lg, llm.EchoContentGenerator(), db)
-	c := New(lc, gh)
+	c := New(lg, db, gh, lc, "test-name", "test-bot")
 
 	issue := &github.Issue{
 		URL:     "https://api.github.com/repos/robpike/ivy/issues/19",
@@ -70,7 +70,7 @@ could you get me a hand！
 		&llmapp.Doc{
 			Type:   "issue",
 			URL:    "https://github.com/robpike/ivy/issues/19",
-			Author: "xunshicheng",
+			Author: "@xunshicheng",
 			Title:  issue.Title,
 			Text:   issue.Body,
 		},
@@ -78,7 +78,7 @@ could you get me a hand！
 			{
 				Type:   "issue comment",
 				URL:    "https://github.com/robpike/ivy/issues/19#issuecomment-169157303",
-				Author: "robpike",
+				Author: "@robpike",
 				Text: `See the import comment, or listen to the error message. Ivy uses a custom import.
 
 go get robpike.io/ivy
@@ -93,6 +93,7 @@ It is a fair point though that this should be explained in the README. I will fi
 
 	want := &IssueResult{
 		Overview:      wantOverview,
+		LastComment:   169157303,
 		TotalComments: 1,
 	}
 
@@ -108,16 +109,20 @@ func TestIssueUpdate(t *testing.T) {
 	sdb := secret.Empty()
 	gh := github.New(lg, db, sdb, nil)
 	lc := llmapp.New(lg, llm.EchoContentGenerator(), db)
-	c := New(lc, gh)
+	c := New(lg, db, gh, lc, "test-name", "test-bot")
 	proj := "hello/world"
 
 	iss := &github.Issue{Number: 1}
 	comment := &github.IssueComment{}
 	comment2 := &github.IssueComment{}
+	comment3 := &github.IssueComment{
+		User: github.User{Login: "test-bot"},
+	}
 
 	gh.Testing().AddIssue(proj, iss)
 	gh.Testing().AddIssueComment(proj, iss.Number, comment)
 	gh.Testing().AddIssueComment(proj, iss.Number, comment2)
+	gh.Testing().AddIssueComment(proj, iss.Number, comment3)
 
 	got, err := c.ForIssueUpdate(ctx, iss, comment.CommentID())
 	if err != nil {
@@ -149,9 +154,11 @@ func TestIssueUpdate(t *testing.T) {
 	}
 
 	want := &IssueUpdateResult{
-		NewComments:   1,
-		TotalComments: 2,
-		Overview:      wantOverview,
+		NewComments:     1,
+		TotalComments:   3,
+		SkippedComments: 1,
+		LastComment:     comment3.CommentID(),
+		Overview:        wantOverview,
 	}
 
 	if diff := cmp.Diff(want, got, cmpopts.IgnoreFields(llmapp.Result{}, "Cached")); diff != "" {

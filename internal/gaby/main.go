@@ -174,7 +174,7 @@ func main() {
 	g.embed = ai
 	g.llm = ai
 	g.llmapp = llmapp.NewWithChecker(g.slog, ai, g.policy, g.db)
-	g.overview = overview.New(g.llmapp, g.github)
+	g.overview = overview.New(g.slog, g.db, g.github, g.llmapp, "overview", "gabyhelp")
 
 	cr := crawl.New(g.slog, g.db, g.http)
 	cr.Add("https://go.dev/")

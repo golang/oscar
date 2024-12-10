@@ -37,7 +37,7 @@ func TestPopulateOverviewPage(t *testing.T) {
 		vector:   storage.MemVectorDB(db, lg, "vector"),
 		github:   github.New(lg, db, secret.Empty(), nil),
 		llmapp:   lc,
-		overview: overview.New(lc, gh),
+		overview: overview.New(lg, db, gh, lc, "test", "test-bot"),
 		docs:     docs.New(lg, db),
 		embed:    llm.QuoteEmbedder(),
 	}
@@ -118,6 +118,7 @@ func TestPopulateOverviewPage(t *testing.T) {
 					Raw: wantIssueResult.Overview,
 					Typed: &overview.IssueResult{
 						TotalComments: 2,
+						LastComment:   comment2.CommentID(),
 						Overview:      wantIssueResult.Overview,
 					},
 					Issue: iss1,
@@ -143,6 +144,7 @@ func TestPopulateOverviewPage(t *testing.T) {
 					Raw: wantIssueResult.Overview,
 					Typed: &overview.IssueResult{
 						TotalComments: 2,
+						LastComment:   comment2.CommentID(),
 						Overview:      wantIssueResult.Overview,
 					},
 					Issue: iss1,
@@ -195,6 +197,7 @@ func TestPopulateOverviewPage(t *testing.T) {
 					Typed: &overview.IssueUpdateResult{
 						NewComments:   1,
 						TotalComments: 2,
+						LastComment:   comment2.CommentID(),
 						Overview:      wantUpdateResult.Overview,
 					},
 					Issue: iss1,
