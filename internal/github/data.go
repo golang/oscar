@@ -223,7 +223,9 @@ type User struct {
 
 // A Label represents a project issue tracker label in GitHub JSON.
 type Label struct {
-	Name string `json:"name"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Color       string `json:"color"` // hex code without '#'
 }
 
 // A Milestone represents a project issue milestone in GitHub JSON.
