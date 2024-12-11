@@ -118,7 +118,7 @@ func (p *labelsPage) setCommonPage() {
 	p.CommonPage = CommonPage{
 		ID:          labelsID,
 		Description: "Categorize issues.",
-		Styles:      []safeURL{searchID.CSS()},
+		Styles:      []safeURL{labelsID.CSS()},
 		Form: Form{
 			Inputs:     p.Params.inputs(),
 			SubmitText: "categorize",
