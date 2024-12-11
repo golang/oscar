@@ -15,6 +15,7 @@ import (
 	"text/template"
 
 	"golang.org/x/oscar/internal/github"
+	"golang.org/x/oscar/internal/labels"
 	"golang.org/x/oscar/internal/llm"
 )
 
@@ -38,9 +39,17 @@ func Issue(ctx context.Context, cgen llm.ContentGenerator, i *github.Issue) (*Is
 		return &result, nil
 	}
 
+	kind, reasoning, err := Classify(ctx, cgen, i)
+	if err != nil {
+		return nil, err
+	}
+
+	// For now, report the classification. We won't do this in the final version.
+	result.Response += fmt.Sprintf("## Classification\n**%s**\n\n> %s\n\n", kind.Name, reasoning)
+
 	// Extract issue text into a string.
 	var issueText bytes.Buffer
-	err := template.Must(template.New("prompt").Parse(body)).Execute(&issueText, bodyArgs{
+	err = template.Must(template.New("prompt").Parse(body)).Execute(&issueText, bodyArgs{
 		Title: i.Title,
 		Body:  i.Body,
 	})
@@ -48,42 +57,8 @@ func Issue(ctx context.Context, cgen llm.ContentGenerator, i *github.Issue) (*Is
 		return nil, err
 	}
 
-	// Build system prompt to ask about the issue kind.
-	var systemPrompt bytes.Buffer
-	systemPrompt.WriteString(kindPrompt)
-	for _, kind := range rulesConfig.IssueKinds {
-		fmt.Fprintf(&systemPrompt, "%s: %s", kind.Name, kind.Text)
-		if kind.Details != "" {
-			fmt.Fprintf(&systemPrompt, " (%s)", kind.Details)
-		}
-		systemPrompt.WriteString("\n")
-	}
-
-	// Ask about the kind of issue.
-	res, err := cgen.GenerateContent(ctx, nil, []llm.Part{llm.Text(systemPrompt.String()), llm.Text(issueText.String())})
-	if err != nil {
-		return nil, fmt.Errorf("llm request failed: %w\n", err)
-	}
-	firstLine, remainingLines, _ := strings.Cut(res, "\n")
-
-	// Parse the result.
-	var kind IssueKind
-	for _, k := range rulesConfig.IssueKinds {
-		if firstLine == k.Name {
-			kind = k
-			break
-		}
-	}
-	if kind.Name == "" {
-		log.Printf("kind %q response not valid", firstLine)
-		return nil, fmt.Errorf("llm returned invalid kind: %s", firstLine)
-		// TODO: just return Response=="" if LLM isn't obeying the prompt?
-	}
-
-	// For now, report the classification. We won't do this in the final version.
-	result.Response += fmt.Sprintf("## Classification\n**%s**\n\n> %s\n\n", kind.Name, remainingLines)
-
 	// Now that we know the kind, ask about each of the rules for the kind.
+	var systemPrompt bytes.Buffer
 	var failed []Rule
 	var failedReason []string
 	for _, rule := range kind.Rules {
@@ -127,19 +102,36 @@ func Issue(ctx context.Context, cgen llm.ContentGenerator, i *github.Issue) (*Is
 	return &result, nil
 }
 
+// Classify returns the kind of issue we're dealing with.
+// Returns a description of the classification and a string describing
+// the llm's reasoning.
+func Classify(ctx context.Context, cgen llm.ContentGenerator, i *github.Issue) (IssueKind, string, error) {
+	// TODO: use the default github label categories, and adjust
+	// the rule file to match.
+	var cats []labels.Category
+	for _, kind := range rulesConfig.IssueKinds {
+		cats = append(cats, labels.Category{
+			Name:        kind.Name,
+			Description: kind.Text,
+			Extra:       kind.Details,
+		})
+	}
+	cat, explanation, err := labels.IssueCategoryFromList(ctx, cgen, i, cats)
+	if err != nil {
+		return IssueKind{}, "", err
+	}
+	for _, kind := range rulesConfig.IssueKinds {
+		if kind.Name == cat.Name {
+			return kind, explanation, nil
+		}
+	}
+	return IssueKind{}, "", fmt.Errorf("unexpected category %s", cat.Name)
+}
+
 //go:embed static/*
 var staticFS embed.FS
 
 // TODO: put some of these in the staticFS
-const kindPrompt = `
-Your job is to categorize Go issues.
-The issue is described by a title and a body.
-The issue body is encoded in markdown.
-Report the category of the issue on a line by itself, followed by an explanation of your decision.
-Each category and its description are listed below.
-
-`
-
 const rulePrompt = `
 Your job is to decide whether a Go issue follows this rule: %s (%s)
 The issue is described by a title and a body.

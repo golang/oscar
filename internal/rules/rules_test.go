@@ -6,7 +6,6 @@ package rules
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"testing"
 
@@ -40,13 +39,34 @@ func TestIssue(t *testing.T) {
 	}
 }
 
+func TestClassify(t *testing.T) {
+	ctx := context.Background()
+	llm := ruleTestGenerator()
+
+	// Construct a test issue.
+	i := new(github.Issue)
+	i.Number = 999
+	i.User = github.User{Login: "user"}
+	i.Title = "title"
+	i.Body = "body"
+
+	// Run classifier.
+	r, _, err := Classify(ctx, llm, i)
+	if err != nil {
+		t.Fatalf("Classify failed with %v", err)
+	}
+
+	// Check result.
+	want := "bug"
+	if r.Name != want {
+		t.Errorf("Classify got %q, want %q", r.Name, want)
+	}
+}
+
 func ruleTestGenerator() llm.ContentGenerator {
 	return llm.TestContentGenerator(
 		"ruleTestGenerator",
 		func(_ context.Context, schema *llm.Schema, promptParts []llm.Part) (string, error) {
-			if schema != nil {
-				return "", fmt.Errorf("not implemented")
-			}
 			var strs []string
 			for _, p := range promptParts {
 				strs = append(strs, string(p.(llm.Text)))
@@ -54,7 +74,7 @@ func ruleTestGenerator() llm.ContentGenerator {
 			req := strings.Join(strs, " ")
 			if strings.Contains(req, "Your job is to categorize") {
 				// categorize request. Always report it as a "bug".
-				return "bug\nI think this is a bug.", nil
+				return `{"CategoryName":"bug","Explanation":"I think this is a bug."}`, nil
 			}
 			if strings.Contains(req, "Your job is to decide") {
 				// rule request. Report that the title rule failed and the others succeeded.
