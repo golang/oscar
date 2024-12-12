@@ -1,0 +1,42 @@
+69000 bug
+69001 bug              # but maybe a user misunderstanding?
+# 02 bot
+69003 accessRequest
+# 04 bot
+69005 libraryProposal
+# 06 bot
+# 07 bot
+69008 languageProposal
+# 09 bot
+# 10 bot
+69011 question
+69012 bug # workingAsIntended, but you can't tell from the first post
+# 13 bot
+69014 bug # workingAsIntended
+69015 bug
+# 69016 PR
+69017 bug
+69018 toolProposal
+# 69019 PR
+# 69020 PR
+# 69021 PR
+# 69022 PR
+69023 libraryProposal
+69024 documentation
+69025 implementation
+69026 bug # workingAsIntended
+69027 libraryProposal
+# 28 bot
+# 29 bot
+69030 proposal # adding a GODEBUG option
+# 31 bot
+69032 bug # or maybe WAI
+69033 libraryProposal
+# 34 bot
+# 35 bot
+# 36 bot
+69037 bug # WAI
+69038 bug
+69039 implementation
+69040 invalid
+

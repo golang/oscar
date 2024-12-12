@@ -27,8 +27,13 @@ type Category struct {
 }
 
 // IssueCategory returns the category chosen by the LLM for the issue, along with an explanation
-// of why it was chosen.
+// of why it was chosen. It uses the built-in list of categories.
 func IssueCategory(ctx context.Context, cgen llm.ContentGenerator, iss *github.Issue) (_ Category, explanation string, err error) {
+	return IssueCategoryFromList(ctx, cgen, iss, config.Categories)
+}
+
+// IssueCategoryFromList is like [IssueCategory], but uses the given list of Categories.
+func IssueCategoryFromList(ctx context.Context, cgen llm.ContentGenerator, iss *github.Issue, cats []Category) (_ Category, explanation string, err error) {
 	if iss.PullRequest != nil {
 		return Category{}, "", errors.New("issue is a pull request")
 	}
@@ -46,7 +51,7 @@ func IssueCategory(ctx context.Context, cgen llm.ContentGenerator, iss *github.I
 	// Build system prompt to ask about the issue category.
 	var systemPrompt bytes.Buffer
 	systemPrompt.WriteString(categoryPrompt)
-	for _, cat := range config.Categories {
+	for _, cat := range cats {
 		fmt.Fprintf(&systemPrompt, "%s: %s\n", cat.Name, cat.Description)
 	}
 
@@ -60,7 +65,7 @@ func IssueCategory(ctx context.Context, cgen llm.ContentGenerator, iss *github.I
 	if err := json.Unmarshal([]byte(jsonRes), &res); err != nil {
 		return Category{}, "", fmt.Errorf("unmarshaling %s: %w", jsonRes, err)
 	}
-	for _, cat := range config.Categories {
+	for _, cat := range cats {
 		if res.CategoryName == cat.Name {
 			return cat, res.Explanation, nil
 		}

@@ -6,14 +6,19 @@
       "Description": "This issue describes a bug in the Go implementation."
     },
     {
-      "Name": "language proposal",
+      "Name": "languageProposal",
       "Label": "LANGPROPLABEL",
       "Description": "This issue describes a requested change to the Go language specification."
     },
     {
-      "Name": "library proposal",
+      "Name": "libraryProposal",
       "Label": "LIBPROPLABEL",
-      "Description": "This issue describes a requested change to the Go standard library or x/ libraries."
+      "Description": "This issue describes a requested change to the Go standard library or x/ libraries. Adding build tags or "
+    },
+    {
+      "Name": "toolProposal",
+      "Label": "TOOLPROPLABEL",
+      "Description": "This issue describes a requested change to a Go tool or command-line program."
     },
     {
       "Name": "implementation",
@@ -21,12 +26,12 @@
       "Description": "This issue describes a semantics-preserving change to the Go implementation."
     },
     {
-      "Name": "access request",
+      "Name": "accessRequest",
       "Label": "access requestLABEL",
       "Description": "This issue is a request for builder or gomote access."
     },
     {
-      "Name": "pkgsite removal request",
+      "Name": "pkgsiteRemovalRequest",
       "Label": "pkgsite removal requestLABEL",
       "Description": "This issue is a pkgsite removal request."
     },
@@ -49,6 +54,17 @@
       "Name": "question",
       "Label": "questionLABEL",
       "Description": "This issue is a question about using Go."
+    },
+    {
+      "Name": "workingAsIntended",
+      "Label": "WAILABEL",
+      "Description": "This issue describes something that is working as it is supposed to."
+    },
+
+    {
+      "Name": "documentation",
+      "Label": "DocLabel",
+      "Description": "This issue describes a change to documentation."
     },
     {
       "Name": "invalid",
