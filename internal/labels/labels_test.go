@@ -39,3 +39,30 @@ func kindTestGenerator() llm.ContentGenerator {
 			return `{"CategoryName":"other","Explanation":"whatever"}`, nil
 		})
 }
+
+func TestCleanIssueBody(t *testing.T) {
+	for _, tc := range []struct {
+		in   string
+		want string
+	}{
+		{"", ""},
+		{"# H\nword\nword2\n", "# H\n\nword\nword2\n"},
+		{
+			"<!-- comment -->\n### H3\n<!-- another --> done",
+			"\n\n### H3\n\n done\n",
+		},
+		{
+			"<!--\ncomment\n-->\n### H3\n<!-- another -->\ndone",
+			"\n\n### H3\n\n\n\ndone\n",
+		},
+		{
+			"<!-- a --> b -->",
+			" b -->\n",
+		},
+	} {
+		got := cleanIssueBody(tc.in)
+		if got != tc.want {
+			t.Errorf("%q:\ngot  %q\nwant %q", tc.in, got, tc.want)
+		}
+	}
+}
