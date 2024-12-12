@@ -1,5 +1,5 @@
 69000 bug
-69001 bug              # but maybe a user misunderstanding?
+69001 documentation # iant: "I think that is a genuine bug in the docs that we should fix."
 # 02 bot
 69003 accessRequest
 # 04 bot
@@ -28,15 +28,15 @@
 69027 libraryProposal
 # 28 bot
 # 29 bot
-69030 proposal # adding a GODEBUG option
+69030 libraryProposal # adding a GODEBUG option
 # 31 bot
 69032 bug # or maybe WAI
 69033 libraryProposal
 # 34 bot
 # 35 bot
 # 36 bot
-69037 bug # WAI
-69038 bug
-69039 implementation
+69037 workingAsIntended
+69038 builders
+# 69039 PR
 69040 invalid
 

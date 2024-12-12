@@ -13,7 +13,7 @@
     {
       "Name": "libraryProposal",
       "Label": "LIBPROPLABEL",
-      "Description": "This issue describes a requested change to the Go standard library or x/ libraries. Adding build tags or "
+      "Description": "This issue describes a requested change to the Go standard library or x/ libraries, but not to a tool"
     },
     {
       "Name": "toolProposal",
