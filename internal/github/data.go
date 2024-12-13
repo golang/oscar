@@ -62,7 +62,7 @@ func LookupIssue(db storage.DB, project string, issue int64) (*Issue, error) {
 // only consulting the database (not actual GitHub).
 func LookupIssues(db storage.DB, project string, issueMin, issueMax int64) iter.Seq[*Issue] {
 	return func(yield func(*Issue) bool) {
-		for e := range events(db, project, issueMin, issueMax) {
+		for e := range Events(db, project, issueMin, issueMax) {
 			if e.API == "/issues" {
 				if !yield(e.Typed.(*Issue)) {
 					break
@@ -107,6 +107,11 @@ func CleanBody(body string) string {
 	return body
 }
 
+// Events calls [Events] with the client's db.
+func (c *Client) Events(project string, issueMin, issueMax int64) iter.Seq[*Event] {
+	return Events(c.db, project, issueMin, issueMax)
+}
+
 // Events returns an iterator over issue events for the given project,
 // limited to issues in the range issueMin ≤ issue ≤ issueMax.
 // If issueMax < 0, there is no upper limit.
@@ -114,11 +119,7 @@ func CleanBody(body string) string {
 // so "/issues" events come first, then "/issues/comments", then "/issues/events".
 // Within a specific API, the events are ordered by increasing ID,
 // which corresponds to increasing event time on GitHub.
-func (c *Client) Events(project string, issueMin, issueMax int64) iter.Seq[*Event] {
-	return events(c.db, project, issueMin, issueMax)
-}
-
-func events(db storage.DB, project string, issueMin, issueMax int64) iter.Seq[*Event] {
+func Events(db storage.DB, project string, issueMin, issueMax int64) iter.Seq[*Event] {
 	return func(yield func(*Event) bool) {
 		start := o(project, issueMin)
 		if issueMax < 0 {
@@ -206,6 +207,7 @@ type IssueEvent struct {
 	URL        string    `json:"url"`
 	Actor      User      `json:"actor"`
 	Event      string    `json:"event"`
+	Label      Label     `json:"label"` // for "labeled" and "unlabeled" events
 	Labels     []Label   `json:"labels"`
 	LockReason string    `json:"lock_reason"`
 	CreatedAt  string    `json:"created_at"`
