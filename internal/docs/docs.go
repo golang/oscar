@@ -77,7 +77,7 @@ func (c *Corpus) Get(id string) (doc *Doc, ok bool) {
 
 // Add adds a document with the given id, title, and text.
 // If the document already exists in the corpus with the same title and text,
-// Add is an no-op.
+// Add is a no-op.
 // Otherwise, if the document already exists in the corpus, it is replaced.
 func (c *Corpus) Add(id, title, text string) {
 	old, ok := c.Get(id)
@@ -86,6 +86,18 @@ func (c *Corpus) Add(id, title, text string) {
 	}
 	b := c.db.Batch()
 	timed.Set(c.db, b, docsKind, ordered.Encode(id), ordered.Encode(title, text))
+	b.Apply()
+}
+
+// Delete deletes a document with the given id.
+// If the document does not exist inthe corpus, Delete is a no-op.
+func (c *Corpus) Delete(id string) {
+	doc, ok := c.Get(id)
+	if !ok {
+		return
+	}
+	b := c.db.Batch()
+	timed.Delete(c.db, b, docsKind, ordered.Encode(doc.ID))
 	b.Apply()
 }
 

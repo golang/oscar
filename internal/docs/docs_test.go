@@ -117,4 +117,16 @@ func TestCorpus(t *testing.T) {
 	if !slices.Equal(ids, want) {
 		t.Errorf("DocsAfter(0, id1) = %v, want %v", ids, want)
 	}
+
+	// After Delete id1.
+	corpus.Delete("id1")
+	corpus.Delete("id1111") // doesn't exist
+	ids = nil
+	for d := range corpus.Docs("id1") {
+		do(d)
+	}
+	want = []string{"id11"}
+	if !slices.Equal(ids, want) {
+		t.Errorf("DocsAfter(0, id1) = %v, want %v", ids, want)
+	}
 }
