@@ -41,12 +41,15 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
 	"log/slog"
+	"maps"
 	"net/http"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -56,10 +59,14 @@ import (
 	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/labels"
 	"golang.org/x/oscar/internal/secret"
+	"golang.org/x/oscar/internal/storage"
 	"golang.org/x/sync/errgroup"
 )
 
-var runIssueNumbers = flag.String("run", "", "comma-separated issue numbers to run")
+var (
+	runIssueNumbers = flag.String("run", "", "comma-separated issue numbers to run")
+	count           = flag.Int("count", 1, "repeats of the evaluation")
+)
 
 func usage() {
 	fmt.Fprintf(os.Stderr, "usage: labeleval categoryconfig issueconfig\n")
@@ -84,6 +91,7 @@ func main() {
 type issueConfig struct {
 	Number       int
 	WantCategory string
+	issue        *github.Issue
 }
 
 // A reponse holds the return values from [labels.IssueCategoryFromList].
@@ -94,6 +102,10 @@ type response struct {
 }
 
 func run(ctx context.Context, categoryconfigFile, issueConfigFile string) error {
+	if *count <= 0 {
+		return fmt.Errorf("bad count: %d", *count)
+	}
+
 	var categoryConfig struct {
 		Categories []labels.Category
 	}
@@ -110,7 +122,7 @@ func run(ctx context.Context, categoryconfigFile, issueConfigFile string) error 
 	if err != nil {
 		return err
 	}
-	var issueConfigs []issueConfig
+	var issueConfigs []*issueConfig
 	if len(*runIssueNumbers) == 0 {
 		issueConfigs = allIssueConfigs
 	} else {
@@ -130,6 +142,9 @@ func run(ctx context.Context, categoryconfigFile, issueConfigFile string) error 
 			}
 		}
 	}
+	if len(issueConfigs) == 0 {
+		return errors.New("no issues to evaluate")
+	}
 
 	lg := slog.New(slog.NewTextHandler(os.Stderr, nil))
 	db, err := firestore.NewDB(ctx, lg, "oscar-go-1", "prod")
@@ -141,43 +156,107 @@ func run(ctx context.Context, categoryconfigFile, issueConfigFile string) error 
 		return err
 	}
 
-	responses := make([]response, len(issueConfigs))
+	start := time.Now()
+	if err := lookupIssues(db, issueConfigs); err != nil {
+		return err
+	}
+	log.Printf("looked up %d issues in %.1fs", len(issueConfigs), time.Since(start).Seconds())
+
+	responseLists := make([][]response, len(issueConfigs))
+	for i := range responseLists {
+		responseLists[i] = make([]response, *count)
+	}
+
 	g, gctx := errgroup.WithContext(ctx)
 	g.SetLimit(10)
-	log.Printf("evaluating %d issues", len(issueConfigs))
-	start := time.Now()
-	for i, ic := range issueConfigs {
-		g.Go(func() error {
-			issue, err := github.LookupIssue(db, "golang/go", int64(ic.Number))
-			if err != nil {
-				return err
-			}
-			got, exp, err := labels.IssueCategoryFromList(gctx, cgen, issue, categoryConfig.Categories)
-			responses[i] = response{got, exp, err}
-			return nil
-		})
+	start = time.Now()
+	for c := range *count {
+		for i, ic := range issueConfigs {
+			g.Go(func() error {
+				got, exp, err := labels.IssueCategoryFromList(gctx, cgen, ic.issue, categoryConfig.Categories)
+				responseLists[i][c] = response{got, exp, err}
+				return nil
+			})
+		}
 	}
 	if err := g.Wait(); err != nil {
 		return err
 	}
-	log.Printf("finished in %.1f seconds", time.Since(start).Seconds())
+	log.Printf("evaluated %d times with %s in %.1f seconds",
+		*count, cgen.Model(), time.Since(start).Seconds())
 
-	for i, ic := range issueConfigs {
-		res := responses[i]
-		fmt.Printf("%-6d ", ic.Number)
-		if res.err != nil {
-			fmt.Printf("ERROR %v\n", res.err)
-		} else if !knownCategories[ic.WantCategory] {
-			fmt.Printf("NEW got %s; want %s is not in list of known categories\n",
-				res.cat.Name, ic.WantCategory)
-		} else if res.cat.Name != ic.WantCategory {
-			fmt.Printf("FAIL got %s want %s\n", res.cat.Name, ic.WantCategory)
-			fmt.Printf("%11s %s\n", "exp", res.explanation)
-		} else {
-			fmt.Printf("PASS\n")
+	printResults(issueConfigs, responseLists, knownCategories)
+	return nil
+}
+
+func lookupIssues(db storage.DB, ics []*issueConfig) error {
+	for _, ic := range ics {
+		issue, err := github.LookupIssue(db, "golang/go", int64(ic.Number))
+		if err != nil {
+			return err
 		}
+		ic.issue = issue
 	}
 	return nil
+}
+func printResults(issueConfigs []*issueConfig, responseLists [][]response, knownCategories map[string]bool) {
+Issues:
+	for i, ic := range issueConfigs {
+		responseList := responseLists[i]
+		fmt.Printf("%-6d ", ic.Number)
+		if len(responseList) == 1 {
+			res := responseList[0]
+			if res.err != nil {
+				fmt.Printf("ERROR %v\n", res.err)
+			} else if !knownCategories[ic.WantCategory] {
+				fmt.Printf("NEW got %s; want %s is not in list of known categories\n",
+					res.cat.Name, ic.WantCategory)
+			} else if res.cat.Name != ic.WantCategory {
+				fmt.Printf("FAIL got %s want %s\n", res.cat.Name, ic.WantCategory)
+				fmt.Printf("%11s\n", res.explanation)
+			} else {
+				fmt.Printf("PASS\n")
+			}
+		} else {
+			// If any response is an error or NEW, stop there.
+			for _, res := range responseList {
+				if res.err != nil {
+					fmt.Printf("ERROR %v\n", res.err)
+					continue Issues
+				}
+				if !knownCategories[ic.WantCategory] {
+					fmt.Printf("NEW got %s; want %s is not in list of known categories\n",
+						res.cat.Name, ic.WantCategory)
+					continue Issues
+				}
+			}
+			// Group by category.
+			counts := map[string]int{}
+			for _, res := range responseList {
+				counts[res.cat.Name]++
+			}
+			p := counts[ic.WantCategory]
+			fmt.Printf("PASS:%d FAIL:%d ", p, len(responseList)-p)
+			// Sort passes first, then alphabetically.
+			cats := slices.Collect(maps.Keys(counts))
+			slices.SortFunc(cats, func(c1, c2 string) int {
+				if c1 == c2 {
+					return 0
+				}
+				if c1 == ic.WantCategory {
+					return -1
+				}
+				if c2 == ic.WantCategory {
+					return 1
+				}
+				return strings.Compare(c1, c2)
+			})
+			for _, c := range cats {
+				fmt.Printf("  %s:%d", c, counts[c])
+			}
+			fmt.Println()
+		}
+	}
 }
 
 func newGeminiClient(ctx context.Context, lg *slog.Logger) (*gemini.Client, error) {
@@ -197,12 +276,12 @@ func readJSONFile(filename string, p any) error {
 	return dec.Decode(p)
 }
 
-func readIssueFile(filename string) ([]issueConfig, error) {
+func readIssueFile(filename string) ([]*issueConfig, error) {
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
-	var issues []issueConfig
+	var issues []*issueConfig
 	for i, line := range strings.Split(string(data), "\n") {
 		line = strings.TrimSpace(line)
 		if len(line) == 0 || line[0] == '#' {
@@ -220,7 +299,7 @@ func readIssueFile(filename string) ([]issueConfig, error) {
 		if err != nil {
 			return nil, fmt.Errorf("%s:%d: %v", filename, i+1, err)
 		}
-		issues = append(issues, issueConfig{Number: n, WantCategory: strings.TrimSpace(rest)})
+		issues = append(issues, &issueConfig{Number: n, WantCategory: strings.TrimSpace(rest)})
 	}
 	return issues, nil
 }
