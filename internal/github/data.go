@@ -17,6 +17,7 @@ import (
 	"golang.org/x/oscar/internal/model"
 	"golang.org/x/oscar/internal/storage"
 	"golang.org/x/oscar/internal/storage/timed"
+	"rsc.io/markdown"
 	"rsc.io/ordered"
 )
 
@@ -383,4 +384,15 @@ func mustParseTime(s string) time.Time {
 		storage.Panic("bad time: %v", err)
 	}
 	return t
+}
+
+// ParseMarkdown parses text that is in GitHub-flavored markdown format.
+func ParseMarkdown(text string) *markdown.Document {
+	p := &markdown.Parser{
+		AutoLinkText:  true,
+		Strikethrough: true,
+		HeadingIDs:    true,
+		Emoji:         true,
+	}
+	return p.Parse(text)
 }

@@ -84,14 +84,7 @@ var htmlCommentRegexp = regexp.MustCompile(`<!--(\n|.)*?-->`)
 // cleanIssueBody adjusts the issue body to improve the odds that it will be properly
 // labeled.
 func cleanIssueBody(text string) string {
-	// TODO(jba): These settings are also used in fix.go to parse bodies. Factor out.
-	p := &markdown.Parser{
-		AutoLinkText:  true,
-		Strikethrough: true,
-		HeadingIDs:    true,
-		Emoji:         true,
-	}
-	doc := p.Parse(text)
+	doc := github.ParseMarkdown(text)
 
 	var cleanBlock func(markdown.Block)
 	cleanBlock = func(x markdown.Block) {

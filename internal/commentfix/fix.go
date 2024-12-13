@@ -560,13 +560,7 @@ func (ic *issueOrComment) editBody(ctx context.Context, gh *github.Client, body 
 // If no fixes apply, it returns "", false.
 // If any fixes apply, it returns the updated text and true.
 func (f *Fixer) Fix(text string) (newText string, fixed bool) {
-	p := &markdown.Parser{
-		AutoLinkText:  true,
-		Strikethrough: true,
-		HeadingIDs:    true,
-		Emoji:         true,
-	}
-	doc := p.Parse(text)
+	doc := github.ParseMarkdown(text)
 	for _, fixer := range f.fixes {
 		if f.fixOne(fixer, doc) {
 			fixed = true

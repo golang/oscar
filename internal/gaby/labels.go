@@ -107,6 +107,7 @@ func (g *Gaby) populateLabelsPage(r *http.Request) *labelsPage {
 			}
 			lr.Category = cat
 			lr.Explanation = exp
+			// Should probably use GH-flavored markdown here, but it's only for display.
 			lr.BodyHTML = htmlutil.MarkdownToSafeHTML(i.Body)
 		}
 		p.Results = append(p.Results, lr)
