@@ -1,0 +1,56 @@
+# File of categories used to classify GitHub issues.
+# The category name is distinct from the name of the label used on the issue tracker.
+# The description of a label should match the description on the issue tracker.
+categories:
+  - name: bug
+    label: BUGLABEL
+    description: "Issues describing a bug in the Go implementation."
+  - name: languageProposal
+    label: LANGPROPLABEL
+    description: Issues describing a requested change to the Go language specification.
+  - name: libraryProposal
+    label: LIBPROPLABEL
+    description: Issues describing a requested change to the Go standard library or x/ libraries, but not to a tool
+  - name: toolProposal
+    label: TOOLPROPLABEL
+    description: Issues describing a requested change to a Go tool or command-line program.
+  - name: implementation
+    label: IMPLABEL
+    description: Issues describing a semantics-preserving change to the Go implementation.
+  - name: accessRequest
+    label: accessRequestLABEL
+    description: Issues requesting builder or gomote access.
+  - name: pkgsiteRemovalRequest
+    label: pkgsite/package-removal
+    description: Issues for package removal. See https://pkg.go.dev/about#removing-a-package
+    # We don't label issues posted by gopherbot, so this label is probably unnecessary.
+  - name: automation
+    label: automationLABEL
+    description: Issues created by gopherbot or watchflakes automation.
+  - name: backport
+    label: backportLABEL
+    description: Issues created for requesting a backport of a change to a previous Go version.
+  - name: builders
+    label: Builders
+    description: x/build issues (builders, bots, dashboards)
+  - name: question
+    label: questionLABEL
+    description: Issues that are questions about using Go.
+    # It may be too challenging for the LLM to decide is something is WAI. Consider removing this.
+  - name: workingAsIntended
+    label: WorkingAsIntended
+    description: Issues describing something that is working as it is supposed to.
+  - name: featureRequest
+    label: FeatureRequestLABEL
+    description: Issues asking for a new feature that does not need a proposal.
+  - name: documentation
+    label: Documentation
+    description: Issues describing a change to documentation.
+    # The LLM never seems to pick invalid.
+  - name: invalid
+    label: invalidLABEL
+    description: Issues that are empty, incomplete, or spam.
+    # The LLM never seems to pick other.
+  - name: other
+    label: otherLABEL
+    description: None of the above.

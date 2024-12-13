@@ -12,7 +12,7 @@ Usage:
 	labeleval categoryconfig issueconfig
 
 Categoryconfig defines the list of categories to use.
-It is a JSON file that matches the type
+It is a YAML file that matches the type
 
 	struct {
 	  Categories []labels.Category
@@ -34,13 +34,12 @@ There are four results of evaluating an issue:
 A typical run will use the category config from the internal/labels package and the list
 of issues in this package. From repo root:
 
-	go run ./internal/devtools/cmd/labeleval internal/labels/static/categories.json internal/devtools/cmd/labeleval/issues.txt
+	go run ./internal/devtools/cmd/labeleval internal/labels/static/categories.yaml internal/devtools/cmd/labeleval/issues.txt
 */
 package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -61,6 +60,7 @@ import (
 	"golang.org/x/oscar/internal/secret"
 	"golang.org/x/oscar/internal/storage"
 	"golang.org/x/sync/errgroup"
+	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -110,7 +110,7 @@ func run(ctx context.Context, categoryconfigFile, issueConfigFile string) error 
 		Categories []labels.Category
 	}
 
-	if err := readJSONFile(categoryconfigFile, &categoryConfig); err != nil {
+	if err := readYAMLFile(categoryconfigFile, &categoryConfig); err != nil {
 		return err
 	}
 	knownCategories := map[string]bool{}
@@ -270,14 +270,14 @@ func newGeminiClient(ctx context.Context, lg *slog.Logger) (*gemini.Client, erro
 	return c, nil
 }
 
-func readJSONFile(filename string, p any) error {
+func readYAMLFile(filename string, p any) error {
 	f, err := os.Open(filename)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
-	dec := json.NewDecoder(f)
-	dec.DisallowUnknownFields()
+	dec := yaml.NewDecoder(f)
+	dec.KnownFields(true)
 	return dec.Decode(p)
 }
 

@@ -19,6 +19,7 @@ import (
 
 	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/llm"
+	"gopkg.in/yaml.v3"
 	"rsc.io/markdown"
 )
 
@@ -168,13 +169,14 @@ var config struct {
 var staticFS embed.FS
 
 func init() {
-	f, err := staticFS.Open("static/categories.json")
+	f, err := staticFS.Open("static/categories.yaml")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer f.Close()
-	dec := json.NewDecoder(f)
-	dec.DisallowUnknownFields()
+
+	dec := yaml.NewDecoder(f)
+	dec.KnownFields(true)
 	if err := dec.Decode(&config); err != nil {
 		log.Fatal(err)
 	}
