@@ -53,6 +53,7 @@ type Client struct {
 	slog                            *slog.Logger
 	genai                           *genai.Client
 	embeddingModel, generativeModel string
+	temperature                     float32 // negative means use default
 }
 
 const (
@@ -89,7 +90,13 @@ func NewClient(ctx context.Context, lg *slog.Logger, sdb secret.DB, hc *http.Cli
 		return nil, err
 	}
 
-	return &Client{slog: lg, genai: ai, embeddingModel: embeddingModel, generativeModel: generativeModel}, nil
+	return &Client{
+		slog:            lg,
+		genai:           ai,
+		embeddingModel:  embeddingModel,
+		generativeModel: generativeModel,
+		temperature:     -1,
+	}, nil
 }
 
 // withKey returns a new http.Client that is the same as hc
@@ -150,6 +157,11 @@ func (c *Client) Model() string {
 	return c.generativeModel
 }
 
+// SetTemperature sets the temperature of the client's generative model.
+func (c *Client) SetTemperature(t float32) {
+	c.temperature = t
+}
+
 // GenerateContent returns the model's response for the prompt parts,
 // implementing [llm.ContentGenerator.GenerateContent].
 func (c *Client) GenerateContent(ctx context.Context, schema *llm.Schema, promptParts []llm.Part) (string, error) {
@@ -198,6 +210,9 @@ func (c *Client) model(mimeType string, schema *genai.Schema) *genai.GenerativeM
 	model.SetCandidateCount(1)
 	model.ResponseMIMEType = mimeType
 	model.ResponseSchema = schema
+	if c.temperature >= 0 {
+		model.SetTemperature(c.temperature)
+	}
 	return model
 }
 

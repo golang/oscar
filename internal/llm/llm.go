@@ -105,4 +105,6 @@ type ContentGenerator interface {
 	// and one or more prompt parts.
 	// If the JSON schema is nil, GenerateContent outputs a plain text response.
 	GenerateContent(ctx context.Context, schema *Schema, parts []Part) (string, error)
+	// SetTemperature changes the temperature of the model.
+	SetTemperature(float32)
 }

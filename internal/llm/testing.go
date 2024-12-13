@@ -96,6 +96,9 @@ type echo struct{}
 // Implements [ContentGenerator.Model].
 func (echo) Model() string { return "echo" }
 
+// Implements [ContentGenerator.SetTemperature] as a no-op.
+func (echo) SetTemperature(float32) {}
+
 // GenerateContent echoes the prompts.
 // If the schema is non-nil, the output is wrapped as a JSON object with a
 // single value "prompt", ignoring the actual schema contents (for testing).
@@ -158,6 +161,9 @@ func (g *generator) Model() string {
 	}
 	return g.model
 }
+
+// SetTemperature implements [ContentGenerator.SetTemperature] as a no-op.
+func (g *generator) SetTemperature(float32) {}
 
 // GenerateContent implements [ContentGenerator.GenerateContent].
 func (g *generator) GenerateContent(ctx context.Context, schema *Schema, promptParts []Part) (string, error) {

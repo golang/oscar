@@ -261,8 +261,13 @@ Issues:
 
 func newGeminiClient(ctx context.Context, lg *slog.Logger) (*gemini.Client, error) {
 	sdb := secret.Netrc()
-	return gemini.NewClient(ctx, lg, sdb, http.DefaultClient,
+	c, err := gemini.NewClient(ctx, lg, sdb, http.DefaultClient,
 		gemini.DefaultEmbeddingModel, gemini.DefaultGenerativeModel)
+	if err != nil {
+		return nil, err
+	}
+	c.SetTemperature(0)
+	return c, nil
 }
 
 func readJSONFile(filename string, p any) error {
