@@ -39,4 +39,24 @@
 69038 builders
 # 69039 PR
 69040 invalid
+# 41 bot
+69042 bug
+# 43 PR
+69044 bug
+69045 languageProposal
+69046 bug
+69047 accessRequest
+# 48 bot
+# 49 bot
+69050 bug
+69051 bug
+# 52 PR
+69053 bug
+69054 bug
+69055 other
+# 56 PR
+69057 bug
+69058 featureRequest
+# 69059 does not exist
+69060 bug
 

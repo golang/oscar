@@ -60,7 +60,11 @@
       "Label": "WAILABEL",
       "Description": "This issue describes something that is working as it is supposed to."
     },
-
+    {
+      "Name": "featureRequest",
+      "Label": "FeatureRequestLABEL",
+       "Description": "Issues asking for a new feature that does not need a proposal."
+    },
     {
       "Name": "documentation",
       "Label": "DocLabel",
