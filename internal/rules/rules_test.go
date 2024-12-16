@@ -6,11 +6,17 @@ package rules
 
 import (
 	"context"
+	"encoding/json"
+	"slices"
 	"strings"
 	"testing"
+	"time"
 
+	"golang.org/x/oscar/internal/actions"
 	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/llm"
+	"golang.org/x/oscar/internal/storage"
+	"golang.org/x/oscar/internal/testutil"
 )
 
 func TestIssue(t *testing.T) {
@@ -25,7 +31,7 @@ func TestIssue(t *testing.T) {
 	i.Body = "body"
 
 	// Ask about rule violations.
-	r, err := Issue(ctx, llm, i)
+	r, err := Issue(ctx, llm, i, false)
 	if err != nil {
 		t.Fatalf("IssueRules failed with %v", err)
 	}
@@ -86,4 +92,151 @@ func ruleTestGenerator() llm.ContentGenerator {
 			}
 			return "UNK", nil
 		})
+}
+
+func TestRun(t *testing.T) {
+	ctx := context.Background()
+	check := testutil.Checker(t)
+	lg := testutil.Slogger(t)
+	db := storage.MemDB()
+	gh := github.New(lg, db, nil, nil)
+	llm := ruleTestGenerator()
+
+	tc := gh.Testing()
+	testIssue := &github.Issue{
+		Number:    888,
+		Title:     "title",
+		Body:      "body",
+		CreatedAt: time.Now().Add(-1 * time.Hour).UTC().Format(time.RFC3339),
+	}
+	tc.AddIssue("test/project", testIssue)
+
+	p := New(lg, db, gh, llm, "postname")
+	p.EnableProject("test/project")
+	p.EnablePosts()
+
+	check(p.Run(ctx))
+	check(actions.Run(ctx, lg, db))
+
+	entries := slices.Collect(actions.ScanAfter(lg, db, time.Time{}, nil))
+	if len(entries) != 1 {
+		t.Fatalf("too many action entries. Want 1, got %d", len(entries))
+	}
+	e := entries[0]
+
+	var a action
+	if err := json.Unmarshal(e.Action, &a); err != nil {
+		t.Fatal(err)
+	}
+	if got, want := a.Issue.Project(), "test/project"; got != want {
+		t.Fatalf("posted to unexpected project: got %s, want %s", got, want)
+		return
+	}
+	if got, want := a.Issue.Number, int64(888); got != want {
+		t.Fatalf("posted to unexpected issue: got %d, want %d", got, want)
+	}
+	wantBody := strings.TrimSpace(`
+We've identified some possible problems with your issue report. Please review
+these findings and fix any that you think are appropriate to fix.
+
+- The issue title must start with a package name followed by a colon.
+
+
+I'm just a bot; you probably know better than I do whether these findings really need fixing.
+<sub>(Emoji vote if this was helpful or unhelpful; more detailed feedback welcome in [this discussion](https://github.com/golang/go/discussions/67901).)</sub>
+`)
+	if got := strings.TrimSpace(a.Changes.Body); got != wantBody {
+		t.Fatalf("body wrong: got %s, want %s", got, wantBody)
+	}
+}
+
+func TestOld(t *testing.T) {
+	ctx := context.Background()
+	check := testutil.Checker(t)
+	lg := testutil.Slogger(t)
+	db := storage.MemDB()
+	gh := github.New(lg, db, nil, nil)
+	llm := ruleTestGenerator()
+
+	tc := gh.Testing()
+	testIssue := &github.Issue{
+		Number:    888,
+		Title:     "title",
+		Body:      "body",
+		CreatedAt: time.Now().Add(-100 * time.Hour).UTC().Format(time.RFC3339),
+	}
+	tc.AddIssue("test/project", testIssue)
+
+	p := New(lg, db, gh, llm, "postname")
+	p.EnableProject("test/project")
+	p.EnablePosts()
+
+	check(p.Run(ctx))
+	check(actions.Run(ctx, lg, db))
+
+	entries := slices.Collect(actions.ScanAfter(lg, db, time.Time{}, nil))
+	if len(entries) != 0 {
+		t.Fatalf("too many action entries. Want 0, got %d", len(entries))
+	}
+}
+
+func TestClosed(t *testing.T) {
+	ctx := context.Background()
+	check := testutil.Checker(t)
+	lg := testutil.Slogger(t)
+	db := storage.MemDB()
+	gh := github.New(lg, db, nil, nil)
+	llm := ruleTestGenerator()
+
+	tc := gh.Testing()
+	testIssue := &github.Issue{
+		Number:    888,
+		Title:     "title",
+		Body:      "body",
+		CreatedAt: time.Now().Add(-1 * time.Hour).UTC().Format(time.RFC3339),
+		State:     "closed",
+	}
+	tc.AddIssue("test/project", testIssue)
+
+	p := New(lg, db, gh, llm, "postname")
+	p.EnableProject("test/project")
+	p.EnablePosts()
+
+	check(p.Run(ctx))
+	check(actions.Run(ctx, lg, db))
+
+	entries := slices.Collect(actions.ScanAfter(lg, db, time.Time{}, nil))
+	if len(entries) != 0 {
+		t.Fatalf("too many action entries. Want 0, got %d", len(entries))
+	}
+}
+
+func TestProjectFilter(t *testing.T) {
+	ctx := context.Background()
+	check := testutil.Checker(t)
+	lg := testutil.Slogger(t)
+	db := storage.MemDB()
+	gh := github.New(lg, db, nil, nil)
+	llm := ruleTestGenerator()
+
+	tc := gh.Testing()
+	testIssue := &github.Issue{
+		Number:    888,
+		Title:     "title",
+		Body:      "body",
+		CreatedAt: time.Now().Add(-1 * time.Hour).UTC().Format(time.RFC3339),
+	}
+	tc.AddIssue("test/project1", testIssue)
+
+	p := New(lg, db, gh, llm, "postname")
+	p.EnableProject("test/project2")
+	p.EnablePosts()
+
+	check(p.Run(ctx))
+	check(actions.Run(ctx, lg, db))
+
+	entries := slices.Collect(actions.ScanAfter(lg, db, time.Time{}, nil))
+	if len(entries) != 0 {
+		t.Fatalf("too many action entries. Want 0, got %d", len(entries))
+	}
 }

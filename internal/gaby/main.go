@@ -44,10 +44,12 @@ import (
 	"golang.org/x/oscar/internal/overview"
 	"golang.org/x/oscar/internal/pebble"
 	"golang.org/x/oscar/internal/related"
+	"golang.org/x/oscar/internal/rules"
 	"golang.org/x/oscar/internal/search"
 	"golang.org/x/oscar/internal/secret"
 	"golang.org/x/oscar/internal/storage"
 	"golang.org/x/oscar/internal/storage/timed"
+	"rsc.io/ordered"
 )
 
 type gabyFlags struct {
@@ -106,6 +108,7 @@ type Gaby struct {
 	report    *errorreporting.Client // used to report important gaby errors to Cloud Error Reporting service
 
 	relatedPoster *related.Poster   // used to post related issues
+	rulesPoster   *rules.Poster     // used to post rule violations
 	commentFixer  *commentfix.Fixer // used to fix GitHub comments
 	overview      *overview.Client  // used to generate and post overviews
 }
@@ -214,6 +217,33 @@ func main() {
 	}
 	g.relatedPoster = rp
 
+	rulep := rules.New(g.slog, g.db, g.github, g.llm, "rules")
+	for _, proj := range g.githubProjects {
+		rulep.EnableProject(proj)
+	}
+	rulep.EnablePosts()
+	if !slices.Contains(autoApprovePkgs, "rules") {
+		rulep.RequireApproval()
+	}
+	if true { // TODO: remove once launched
+		if _, ok := g.db.Get(ordered.Encode("github.EventWatcher", "rules.Poster:rules")); !ok {
+			// For testing (and startup). Set a timestamp 1 hour before
+			// the related issue poster.
+			qq, ok := g.db.Get(ordered.Encode("github.EventWatcher", "related.Poster:related"))
+			if !ok {
+				panic("can't find key")
+			}
+			var t int64
+			err := ordered.Decode(qq, &t)
+			if err != nil {
+				panic(err)
+			}
+			t -= 5 * 60 * 60 * 1e9 // back up 1 hour
+			g.db.Set(ordered.Encode("github.EventWatcher", "rules.Poster:rules"), ordered.Encode(t))
+		}
+	}
+	g.rulesPoster = rulep
+
 	// Named functions to retrieve latest Watcher times.
 	watcherLatests := map[string]func() timed.DBTime{
 		github.DocWatcherID:       docs.LatestFunc(g.github),
@@ -226,6 +256,7 @@ func main() {
 
 		"gerritlinks fix": cf.Latest,
 		"related":         rp.Latest,
+		"rules":           rulep.Latest,
 	}
 
 	// Install a metric that observes the latest values of the watchers each time metrics are sampled.
@@ -684,6 +715,7 @@ func (g *Gaby) syncAndRunAll(ctx context.Context) (errs []error) {
 		// Write all changes to the action log.
 		check(g.fixAllComments(ctx))
 		check(g.postAllRelated(ctx))
+		check(g.postAllRules(ctx))
 		// Apply all actions.
 		actions.Run(ctx, g.slog, g.db)
 	}
@@ -701,6 +733,7 @@ const (
 
 	gabyFixCommentLock  = "gabyfixcommentaction"
 	gabyPostRelatedLock = "gabyrelatedaction"
+	gabyPostRulesLock   = "gabyrulesaction"
 )
 
 func (g *Gaby) syncGitHubIssues(ctx context.Context) error {
@@ -779,6 +812,13 @@ func (g *Gaby) postAllRelated(ctx context.Context) error {
 	defer g.db.Unlock(gabyPostRelatedLock)
 
 	return g.relatedPoster.Run(ctx)
+}
+
+func (g *Gaby) postAllRules(ctx context.Context) error {
+	g.db.Lock(gabyPostRulesLock)
+	defer g.db.Unlock(gabyPostRulesLock)
+
+	return g.rulesPoster.Run(ctx)
 }
 
 // localCron simulates Cloud Scheduler by fetching our server's /cron endpoint once per minute.
