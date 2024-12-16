@@ -27,7 +27,8 @@ import (
 type Category struct {
 	Name        string // internal unique name
 	Label       string // issue tracker label
-	Description string
+	Description string // should match issue tracker
+	Extra       string // additional description, not in issue tracker
 }
 
 // IssueCategory returns the category chosen by the LLM for the issue, along with an explanation
@@ -57,7 +58,7 @@ func IssueCategoryFromList(ctx context.Context, cgen llm.ContentGenerator, iss *
 	var systemPrompt bytes.Buffer
 	systemPrompt.WriteString(categoryPrompt)
 	for _, cat := range cats {
-		fmt.Fprintf(&systemPrompt, "%s: %s\n", cat.Name, cat.Description)
+		fmt.Fprintf(&systemPrompt, "%s: %s\n%s\n\n", cat.Name, cat.Description, cat.Extra)
 	}
 
 	// Ask about the category of the issue.
