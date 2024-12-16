@@ -13,7 +13,10 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
+	"iter"
 	"log"
+	"os"
+	"reflect"
 	"regexp"
 	"strings"
 
@@ -42,8 +45,13 @@ func IssueCategoryFromList(ctx context.Context, cgen llm.ContentGenerator, iss *
 	if iss.PullRequest != nil {
 		return Category{}, "", errors.New("issue is a pull request")
 	}
+	bodyDoc := github.ParseMarkdown(iss.Body)
+	// First, perform checks that do not rely on an LLM.
+	if inv, ok := lookupCategory("invalid", cats); ok && !hasText(bodyDoc) {
+		return inv, "body has no text", nil
+	}
 
-	body := cleanIssueBody(iss.Body)
+	body := cleanIssueBody(bodyDoc)
 	// Extract issue text into a string.
 	var issueText bytes.Buffer
 	err = template.Must(template.New("body").Parse(bodyTemplate)).Execute(&issueText, bodyArgs{
@@ -61,7 +69,7 @@ func IssueCategoryFromList(ctx context.Context, cgen llm.ContentGenerator, iss *
 		fmt.Fprintf(&systemPrompt, "%s: %s\n%s\n\n", cat.Name, cat.Description, cat.Extra)
 	}
 
-	// Ask about the category of the issue.
+	// Ask the LLM about the category of the issue.
 	jsonRes, err := cgen.GenerateContent(ctx, responseSchema,
 		[]llm.Part{llm.Text(systemPrompt.String()), llm.Text(issueText.String())})
 	if err != nil {
@@ -71,12 +79,43 @@ func IssueCategoryFromList(ctx context.Context, cgen llm.ContentGenerator, iss *
 	if err := json.Unmarshal([]byte(jsonRes), &res); err != nil {
 		return Category{}, "", fmt.Errorf("unmarshaling %s: %w", jsonRes, err)
 	}
-	for _, cat := range cats {
-		if res.CategoryName == cat.Name {
-			return cat, res.Explanation, nil
-		}
+	cat, ok := lookupCategory(res.CategoryName, cats)
+	if ok {
+		return cat, res.Explanation, nil
 	}
 	return Category{}, "", fmt.Errorf("no category matches LLM response %q", jsonRes)
+}
+
+// hasText reports whether doc has any text blocks.
+func hasText(doc *markdown.Document) bool {
+	inHeading := 0
+	for b, entry := range blocks(doc) {
+		switch b.(type) {
+		case *markdown.Text:
+			// Ignore text in headings.
+			if inHeading == 0 {
+				return true
+			}
+		case *markdown.Heading:
+			if entry {
+				inHeading++
+			} else {
+				inHeading--
+			}
+		}
+	}
+	return false
+}
+
+// lookupCategory returns the Category in cats with the given
+// name, and true. If there is none, the second return value is false.
+func lookupCategory(name string, cats []Category) (Category, bool) {
+	for _, cat := range cats {
+		if cat.Name == name {
+			return cat, true
+		}
+	}
+	return Category{}, false
 }
 
 // TODO(jba): this is approximate.
@@ -85,42 +124,66 @@ var htmlCommentRegexp = regexp.MustCompile(`<!--(\n|.)*?-->`)
 
 // cleanIssueBody adjusts the issue body to improve the odds that it will be properly
 // labeled.
-func cleanIssueBody(text string) string {
-	doc := github.ParseMarkdown(text)
-
-	var cleanBlock func(markdown.Block)
-	cleanBlock = func(x markdown.Block) {
-		switch x := x.(type) {
-		case *markdown.Document:
-			for _, sub := range x.Blocks {
-				cleanBlock(sub)
-			}
-		case *markdown.HTMLBlock:
+func cleanIssueBody(doc *markdown.Document) string {
+	for b, entry := range blocks(doc) {
+		if h, ok := b.(*markdown.HTMLBlock); ok && entry {
 			// Delete comments.
 			// Each Text is a line.
-			t := strings.Join(x.Text, "\n")
+			t := strings.Join(h.Text, "\n")
 			t = htmlCommentRegexp.ReplaceAllString(t, "")
-			x.Text = strings.Split(t, "\n")
-		case *markdown.Quote:
-			for _, sub := range x.Blocks {
-				cleanBlock(sub)
-			}
-		case *markdown.List:
-			for _, sub := range x.Items {
-				cleanBlock(sub)
-			}
-		case *markdown.Item:
-			for _, sub := range x.Blocks {
-				cleanBlock(sub)
-			}
-		case *markdown.Heading:
-			cleanBlock(x.Text)
-		case *markdown.Paragraph:
-			cleanBlock(x.Text)
+			h.Text = strings.Split(t, "\n")
 		}
 	}
-	cleanBlock(doc)
 	return markdown.Format(doc)
+}
+
+var blockType = reflect.TypeFor[markdown.Block]()
+
+// blocks returns an iterator over the blocks of b, including
+// b itself. The traversal is top-down, preorder.
+// Each block is yielded twice: first on entry, with the second
+// value true; then on exit, with the second value false.
+func blocks(b markdown.Block) iter.Seq2[markdown.Block, bool] {
+	return func(yield func(markdown.Block, bool) bool) {
+		if !yield(b, true) {
+			return
+		}
+
+		// Using reflection makes this code resilient to additions
+		// to the markdown package.
+
+		// All implementations of Block are struct pointers.
+		v := reflect.ValueOf(b).Elem()
+		if v.Kind() != reflect.Struct {
+			fmt.Fprintf(os.Stderr, "internal/labels.blocks: expected struct, got %s", v.Type())
+			return
+		}
+		// Each Block holds its sub-Blocks directly, or in a slice.
+		for _, sf := range reflect.VisibleFields(v.Type()) {
+			if sf.Type.Implements(blockType) {
+				sv := v.FieldByIndex(sf.Index)
+				mb := sv.Interface().(markdown.Block)
+				for b, e := range blocks(mb) {
+					if !yield(b, e) {
+						return
+					}
+				}
+			} else if sf.Type.Kind() == reflect.Slice && sf.Type.Elem().Implements(blockType) {
+				sv := v.FieldByIndex(sf.Index)
+				for i := range sv.Len() {
+					mb := sv.Index(i).Interface().(markdown.Block)
+					for b, e := range blocks(mb) {
+						if !yield(b, e) {
+							return
+						}
+					}
+				}
+			}
+		}
+		if !yield(b, false) {
+			return
+		}
+	}
 }
 
 // response is the response that should generated by the LLM.

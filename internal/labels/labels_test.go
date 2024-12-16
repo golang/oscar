@@ -60,9 +60,26 @@ func TestCleanIssueBody(t *testing.T) {
 			" b -->\n",
 		},
 	} {
-		got := cleanIssueBody(tc.in)
+		got := cleanIssueBody(github.ParseMarkdown(tc.in))
 		if got != tc.want {
 			t.Errorf("%q:\ngot  %q\nwant %q", tc.in, got, tc.want)
+		}
+	}
+}
+
+func TestHasText(t *testing.T) {
+	for _, tc := range []struct {
+		in   string
+		want bool
+	}{
+		{"", false},
+		{"something", true},
+		{"# just a heading", false},
+		{"## head\nx", true},
+	} {
+		got := hasText(github.ParseMarkdown(tc.in))
+		if got != tc.want {
+			t.Errorf("%q: got %t, want %t", tc.in, got, tc.want)
 		}
 	}
 }
