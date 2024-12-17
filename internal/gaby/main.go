@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"slices"
 	"strings"
 	"time"
 
@@ -55,7 +56,7 @@ type gabyFlags struct {
 	enablechanges   bool
 	level           string
 	overlay         string
-	requireApproval bool
+	requireApproval string
 }
 
 var flags gabyFlags
@@ -68,7 +69,7 @@ func init() {
 	flag.BoolVar(&flags.enablechanges, "enablechanges", false, "allow changes to GitHub")
 	flag.StringVar(&flags.level, "level", "info", "initial log level")
 	flag.StringVar(&flags.overlay, "overlay", "", "spec for overlay to DB; see internal/dbspec for syntax")
-	flag.BoolVar(&flags.requireApproval, "requireapproval", false, "logged actions require approval")
+	flag.StringVar(&flags.requireApproval, "requireapproval", "", "comma-separated list of packages whose actions require approval")
 }
 
 // Gaby holds the state for gaby's execution.
@@ -121,6 +122,11 @@ func main() {
 		githubProjects: []string{"golang/go"},
 		gerritProjects: []string{"go"},
 		googleGroups:   []string{"golang-nuts"},
+	}
+
+	requireApprovalPkgs, err := parseRequireApproval(flags.requireApproval)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	shutdown := g.initGCP() // sets up g.db, g.vector, g.secret, ...
@@ -182,7 +188,7 @@ func main() {
 	cf.AutoLink(`\bCL ([0-9]+)\b`, "https://go.dev/cl/$1")
 	cf.ReplaceURL(`\Qhttps://go-review.git.corp.google.com/\E`, "https://go-review.googlesource.com/")
 	cf.EnableEdits()
-	if flags.requireApproval {
+	if slices.Contains(requireApprovalPkgs, "commentfix") {
 		cf.RequireApproval()
 	}
 	g.commentFixer = cf
@@ -196,7 +202,7 @@ func main() {
 	rp.SkipTitlePrefix("x/tools/gopls: release version v")
 	rp.SkipTitleSuffix(" backport]")
 	rp.EnablePosts()
-	if flags.requireApproval {
+	if slices.Contains(validApprovalPkgs, "related") {
 		rp.RequireApproval()
 	}
 	g.relatedPoster = rp
@@ -226,6 +232,21 @@ func main() {
 		go g.localCron()
 	}
 	select {}
+}
+
+var validApprovalPkgs = []string{"commentfix", "related", "rules"}
+
+// parseRequireApproval parses a comma-separated list of package names,
+// checking that the packages are valid.
+func parseRequireApproval(s string) ([]string, error) {
+	pkgs := strings.Split(s, ",")
+	for _, p := range pkgs {
+		if !slices.Contains(validApprovalPkgs, p) {
+			return nil, fmt.Errorf("invalid arg %q to -requireapproval: valid values are: %s",
+				p, strings.Join(validApprovalPkgs, ", "))
+		}
+	}
+	return pkgs, nil
 }
 
 // initLocal initializes a local Gaby instance.
