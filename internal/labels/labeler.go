@@ -7,6 +7,7 @@ package labels
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -18,15 +19,15 @@ import (
 
 // A Labeler labels GitHub issues.
 type Labeler struct {
-	slog      *slog.Logger
-	db        storage.DB
-	github    *github.Client
-	projects  map[string]bool
-	watcher   *timed.Watcher[*github.Event]
-	name      string
-	timeLimit time.Time
-	ignores   []func(*github.Issue) bool
-	label     bool
+	slog        *slog.Logger
+	db          storage.DB
+	github      *github.Client
+	projects    map[string]bool
+	watcher     *timed.Watcher[*github.Event]
+	name        string
+	timeLimit   time.Time
+	skipAuthors map[string]bool
+	label       bool
 	// For the action log.
 	requireApproval bool
 	actionKind      string
@@ -88,10 +89,28 @@ func (l *Labeler) RequireApproval() {
 	l.requireApproval = true
 }
 
+func (l *Labeler) SkipAuthor(author string) {
+	if l.skipAuthors == nil {
+		l.skipAuthors = map[string]bool{}
+	}
+	l.skipAuthors[author] = true
+}
+
+// An action has all the information needed to label a GitHub issue.
+type action struct {
+	Issue     *github.Issue
+	NewLabels []string // labels to add
+}
+
+// result is the result of apply an action.
+type result struct {
+	URL string // URL of new comment
+}
+
 // Run runs a single round of labeling to GitHub.
 // It scans all open issues that have been created since the last call to [Labeler.Run]
 // using a Labeler with the same name (see [New]).
-// TODO(jba): more doc
+// Run skips closed issues, and it also skips pull requests.
 func (l *Labeler) Run(ctx context.Context) error {
 	l.slog.Info("labels.Labeler start", "name", l.name, "label", l.label, "latest", l.watcher.Latest())
 	defer func() {
@@ -104,8 +123,63 @@ func (l *Labeler) Run(ctx context.Context) error {
 			return err
 		}
 	}
-	// TODO(jba): finish implementation.
+
+	defer l.watcher.Flush()
+	for e := range l.watcher.Recent() {
+		advance, err := l.logLabelIssue(ctx, e)
+		if err != nil {
+			l.slog.Error("labels.Labeler", "issue", e.Issue, "event", e, "error", err)
+			continue
+		}
+		if advance {
+			l.watcher.MarkOld(e.DBTime)
+			// Flush immediately to make sure we don't re-post if interrupted later in the loop.
+			l.watcher.Flush()
+			l.slog.Info("labels.Labeler advanced watcher", "latest", l.watcher.Latest(), "event", e)
+		} else {
+			l.slog.Info("labels.Labeler watcher not advanced", "latest", l.watcher.Latest(), "event", e)
+		}
+	}
 	return nil
+}
+
+// logLabelIssue logs an action to post an issue for the event.
+// advance is true if the event should be considered to have been
+// handled by this or a previous run function, indicating
+// that the Labelers's watcher can be advanced.
+// An issue is handled if
+//   - labeling is enabled, AND
+//   - an issue labeling was successfully logged, or no labeling
+//     was needed because no label matched.
+//
+// Skipped issues are not considered handled.
+func (l *Labeler) logLabelIssue(ctx context.Context, e *github.Event) (advance bool, _ error) {
+	if skip, reason := l.skip(e); skip {
+		l.slog.Info("labels.Labeler skip", "name", l.name, "project",
+			e.Project, "issue", e.Issue, "reason", reason, "event", e)
+		return false, nil
+	}
+	return false, errors.New("unimplemented")
+}
+
+func (l *Labeler) skip(e *github.Event) (bool, string) {
+	if !l.projects[e.Project] {
+		return true, fmt.Sprintf("project %s not enabled for this Labeler", e.Project)
+	}
+	if want := "/issues"; e.API != want {
+		return true, fmt.Sprintf("wrong API %s (expected %s)", e.API, want)
+	}
+	issue := e.Typed.(*github.Issue)
+	if issue.State == "closed" {
+		return true, "issue is closed"
+	}
+	if issue.PullRequest != nil {
+		return true, "pull request"
+	}
+	if author := issue.User.Login; l.skipAuthors[author] {
+		return true, fmt.Sprintf("skipping author %q", author)
+	}
+	return false, ""
 }
 
 func (l *Labeler) syncLabels(ctx context.Context, project string) error {
