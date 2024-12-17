@@ -88,6 +88,102 @@ func (l *Labeler) RequireApproval() {
 	l.requireApproval = true
 }
 
+// Run runs a single round of labeling to GitHub.
+// It scans all open issues that have been created since the last call to [Labeler.Run]
+// using a Labeler with the same name (see [New]).
+// TODO(jba): more doc
+func (l *Labeler) Run(ctx context.Context) error {
+	l.slog.Info("labels.Labeler start", "name", l.name, "label", l.label, "latest", l.watcher.Latest())
+	defer func() {
+		l.slog.Info("labels.Labeler end", "name", l.name, "latest", l.watcher.Latest())
+	}()
+
+	// Ensure that labels in GH match our config.
+	for p := range l.projects {
+		if err := l.syncLabels(ctx, p); err != nil {
+			return err
+		}
+	}
+	// TODO(jba): finish implementation.
+	return nil
+}
+
+func (l *Labeler) syncLabels(ctx context.Context, project string) error {
+	// TODO(jba): generalize to other projects.
+	if project != "golang/go" {
+		return errors.New("labeling only supported for golang/go")
+	}
+	l.slog.Info("syncing labels", "name", l.name, "project", project)
+	return syncLabels(ctx, l.slog, config.Categories, ghLabels{l.github, project})
+}
+
+// trackerLabels manipulates the set of labels on an issue tracker.
+// TODO: remove dependence on GitHub.
+type trackerLabels interface {
+	CreateLabel(ctx context.Context, lab github.Label) error
+	EditLabel(ctx context.Context, name string, changes github.LabelChanges) error
+	ListLabels(ctx context.Context) ([]github.Label, error)
+}
+
+type ghLabels struct {
+	gh      *github.Client
+	project string
+}
+
+func (g ghLabels) CreateLabel(ctx context.Context, lab github.Label) error {
+	return g.gh.CreateLabel(ctx, g.project, lab)
+}
+
+func (g ghLabels) EditLabel(ctx context.Context, name string, changes github.LabelChanges) error {
+	return g.gh.EditLabel(ctx, g.project, name, changes)
+}
+
+func (g ghLabels) ListLabels(ctx context.Context) ([]github.Label, error) {
+	return g.gh.ListLabels(ctx, g.project)
+}
+
+// labelColor is the color of labels created by syncLabels.
+const labelColor = "4d0070"
+
+// syncLabels attempts to reconcile the labels in cats with the labels on the issue tracker,
+// modifying the issue tracker's labels to match.
+// If a label in cats is not on the issue tracker, it is created.
+// Otherwise, if the label description on the issue tracker is empty, it is set to the description in the Category.
+// Otherwise, if the descriptions don't agree, a warning is logged and nothing is done on the issue tracker.
+// This function makes no other changes. In particular, it never deletes labels.
+func syncLabels(ctx context.Context, lg *slog.Logger, cats []Category, tl trackerLabels) error {
+	tlabList, err := tl.ListLabels(ctx)
+	if err != nil {
+		return err
+	}
+	tlabs := map[string]github.Label{}
+	for _, lab := range tlabList {
+		tlabs[lab.Name] = lab
+	}
+
+	for _, cat := range cats {
+		lab, ok := tlabs[cat.Label]
+		if !ok {
+			lg.Info("creating label", "label", lab.Name)
+			if err := tl.CreateLabel(ctx, github.Label{
+				Name:        cat.Label,
+				Description: cat.Description,
+				Color:       labelColor,
+			}); err != nil {
+				return err
+			}
+		} else if lab.Description == "" {
+			lg.Info("setting empty label description", "label", lab.Name)
+			if err := tl.EditLabel(ctx, lab.Name, github.LabelChanges{Description: cat.Description}); err != nil {
+				return err
+			}
+		} else if lab.Description != cat.Description {
+			lg.Warn("descriptions disagree", "label", lab.Name)
+		}
+	}
+	return nil
+}
+
 type actioner struct {
 	l *Labeler
 }

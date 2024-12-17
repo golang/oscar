@@ -7,11 +7,11 @@
 #         with the description
 categories:
   - name: bug
-    label: BUGLABEL
+    label: Bug
     description: "Issues describing a bug in the Go implementation."
 
   - name: languageProposal
-    label: LANGPROPLABEL
+    label: LanguageProposal
     description: Issues describing a requested change to the Go language specification.
     extra: |
       This should be used for any notable change or addition to the language.
@@ -20,7 +20,7 @@ categories:
       changes in existing functionality.
 
   - name: libraryProposal
-    label: LIBPROPLABEL
+    label: LibraryProposal
     description: Issues describing a requested change to the Go standard library or x/ libraries, but not to a tool
     extra: |
       This should be used for any notable change or addition to the libraries.
@@ -33,7 +33,7 @@ categories:
       and probably a GODEBUG setting.
 
   - name: toolProposal
-    label: TOOLPROPLABEL
+    label: ToolProposal
     description: Issues describing a requested change to a Go tool or command-line program.
     extra: |
       This should be used for any notable change or addition to the tools.
@@ -47,11 +47,11 @@ categories:
       This does NOT includ changes to tools in x repos, like gopls, or third-party tools.
 
   - name: implementation
-    label: IMPLABEL
+    label: Implementation
     description: Issues describing a semantics-preserving change to the Go implementation.
 
   - name: accessRequest
-    label: accessRequestLABEL
+    label: AccessRequest
     description: Issues requesting builder or gomote access.
 
   - name: pkgsiteRemovalRequest
@@ -60,11 +60,11 @@ categories:
     # We don't label issues posted by gopherbot, so this label is probably unnecessary.
 
   - name: automation
-    label: automationLABEL
+    label: Automation
     description: Issues created by gopherbot or watchflakes automation.
 
   - name: backport
-    label: backportLABEL
+    label: Backport
     description: Issues created for requesting a backport of a change to a previous Go version.
 
   - name: builders
@@ -72,7 +72,7 @@ categories:
     description: x/build issues (builders, bots, dashboards)
 
   - name: question
-    label: questionLABEL
+    label: Question
     description: Issues that are questions about using Go.
     # It may be too challenging for the LLM to decide is something is WAI. Consider removing this.
 
@@ -81,7 +81,7 @@ categories:
     description: Issues describing something that is working as it is supposed to.
 
   - name: featureRequest
-    label: FeatureRequestLABEL
+    label: FeatureRequest
     description: Issues asking for a new feature that does not need a proposal.
 
   - name: documentation
@@ -90,10 +90,10 @@ categories:
     # The LLM never seems to pick invalid.
 
   - name: invalid
-    label: invalidLABEL
+    label: Invalid
     description: Issues that are empty, incomplete, or spam.
     # The LLM never seems to pick other.
 
   - name: other
-    label: otherLABEL
+    label: Other
     description: None of the above.
