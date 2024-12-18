@@ -6,22 +6,33 @@ package labels
 
 import (
 	"context"
-	"errors"
 	"maps"
-	"slices"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"golang.org/x/oscar/internal/github"
+	"golang.org/x/oscar/internal/storage"
 	"golang.org/x/oscar/internal/testutil"
 )
 
 func TestSyncLabels(t *testing.T) {
+	const project = "golang/go"
+	lg := testutil.Slogger(t)
+	db := storage.MemDB()
+	gh := github.New(lg, db, nil, nil)
+	labeler := New(lg, nil, gh, "")
 	m := map[string]github.Label{
 		"A": {Name: "A", Description: "a", Color: "a"},
 		"B": {Name: "B", Description: "", Color: "b"},
 		"C": {Name: "C", Description: "c", Color: "c"},
 		"D": {Name: "D", Description: "d", Color: "d"},
 	}
+	// Add the labels to the testing client in sorted order,
+	// so ListLabels returns them in that order.
+	for k := range maps.Keys(m) {
+		gh.Testing().AddLabel(project, m[k])
+	}
+
 	cats := []Category{
 		{Label: "A", Description: "a"},     // same as tracker
 		{Label: "B", Description: "b"},     // set empty tracker description
@@ -29,49 +40,23 @@ func TestSyncLabels(t *testing.T) {
 		// D in tracker but not in cats
 		{Label: "E", Description: "e"}, // create
 	}
-	tl := &testTrackerLabels{m}
 
-	if err := syncLabels(context.Background(), testutil.Slogger(t), cats, tl); err != nil {
+	if err := labeler.syncLabels(context.Background(), project, cats); err != nil {
 		t.Fatal(err)
 	}
 
-	want := map[string]github.Label{
-		"A": {Name: "A", Description: "a", Color: "a"},
-		"B": {Name: "B", Description: "b", Color: "b"}, // added B description
-		"C": {Name: "C", Description: "c", Color: "c"},
-		"D": {Name: "D", Description: "d", Color: "d"},
-		"E": {Name: "E", Description: "e", Color: labelColor}, // added E
+	want := []*github.TestingEdit{
+		{
+			// add B description
+			Project:      project,
+			Label:        github.Label{Name: "B"},
+			LabelChanges: &github.LabelChanges{Description: "b"},
+		},
+		// create label E
+		{Project: project, Label: github.Label{Name: "E", Description: "e", Color: labelColor}},
 	}
 
-	if got := tl.m; !maps.Equal(got, want) {
-		t.Errorf("\ngot  %v\nwant %v", got, want)
+	if diff := cmp.Diff(want, gh.Testing().Edits()); diff != "" {
+		t.Errorf("mismatch (-want, got):\n%s", diff)
 	}
-}
-
-type testTrackerLabels struct {
-	m map[string]github.Label
-}
-
-func (t *testTrackerLabels) CreateLabel(ctx context.Context, lab github.Label) error {
-	if _, ok := t.m[lab.Name]; ok {
-		return errors.New("label exists")
-	}
-	t.m[lab.Name] = lab
-	return nil
-}
-
-func (t *testTrackerLabels) ListLabels(ctx context.Context) ([]github.Label, error) {
-	return slices.Collect(maps.Values(t.m)), nil
-}
-
-func (t *testTrackerLabels) EditLabel(ctx context.Context, name string, changes github.LabelChanges) error {
-	if changes.NewName != "" || changes.Color != "" {
-		return errors.New("unsupported edit")
-	}
-	if lab, ok := t.m[name]; ok {
-		lab.Description = changes.Description
-		t.m[name] = lab
-		return nil
-	}
-	return errors.New("not found")
 }
