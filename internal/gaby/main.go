@@ -239,6 +239,9 @@ var validApprovalPkgs = []string{"commentfix", "related", "rules"}
 // parseRequireApproval parses a comma-separated list of package names,
 // checking that the packages are valid.
 func parseRequireApproval(s string) ([]string, error) {
+	if s == "" {
+		return nil, nil
+	}
 	pkgs := strings.Split(s, ",")
 	for _, p := range pkgs {
 		if !slices.Contains(validApprovalPkgs, p) {
