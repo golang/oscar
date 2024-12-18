@@ -54,6 +54,8 @@ type TestingEdit struct {
 	Comment             int64
 	IssueChanges        *IssueChanges
 	IssueCommentChanges *IssueCommentChanges
+	Label               Label
+	LabelChanges        *LabelChanges
 }
 
 // String returns a basic string representation of the edit.
@@ -86,7 +88,6 @@ type TestingClient struct {
 // addEvent adds an event to the Client's underlying database.
 func (tc *TestingClient) addEvent(url string, e *Event) {
 	js := json.RawMessage(storage.JSON(e.Typed))
-
 	tc.c.testMu.Lock()
 	if tc.c.testEvents == nil {
 		tc.c.testEvents = make(map[string]json.RawMessage)
@@ -170,6 +171,34 @@ func (tc *TestingClient) AddIssueEvent(project string, issue int64, event *Issue
 		ID:      id,
 		Typed:   event,
 	})
+}
+
+// AddLabel adds the given label to the client, so that calls
+// to DownloadLabel and ListLabels will return it.
+// It does not affect the database, since labels aren't stored there.
+func (tc *TestingClient) AddLabel(project string, lab Label) {
+	js := json.RawMessage(storage.JSON(lab))
+	tc.c.testMu.Lock()
+	if tc.c.testEvents == nil {
+		tc.c.testEvents = make(map[string]json.RawMessage)
+	}
+
+	// Add test event for DownloadLabel.
+	tc.c.testEvents[labelURL(project, lab.Name)] = js
+
+	// Add test event for ListLabels.
+	// The list API returns a JSON array of Labels.
+	url := labelURL(project, "") + "?" + labelPageQueryParams.Encode()
+	a, ok := tc.c.testEvents[url]
+	if !ok {
+		s := fmt.Sprintf("[%s]", js)
+		tc.c.testEvents[url] = []byte(s)
+	} else {
+		// change "[STUFF]" to "[STUFF,js]"
+		s := fmt.Sprintf("%s,%s]", a[:len(a)-1], js)
+		tc.c.testEvents[url] = []byte(s)
+	}
+	tc.c.testMu.Unlock()
 }
 
 // Edits returns a list of all the edits that have been applied using [Client] methods

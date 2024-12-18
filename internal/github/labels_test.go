@@ -7,6 +7,8 @@ package github
 import (
 	"maps"
 	"net/http"
+	"reflect"
+	"slices"
 	"testing"
 
 	"golang.org/x/oscar/internal/httprr"
@@ -14,7 +16,7 @@ import (
 	"golang.org/x/oscar/internal/testutil"
 )
 
-func TestLabels(t *testing.T) {
+func TestLabelsRecord(t *testing.T) {
 	const project = "jba/gabytest"
 	check := testutil.Checker(t)
 	lg := testutil.Slogger(t)
@@ -28,6 +30,8 @@ func TestLabels(t *testing.T) {
 		sdb = secret.Netrc()
 	}
 	c := New(lg, nil, sdb, rr.Client())
+	c.testing = false // edit github directly (except for the httprr in the way)
+
 	labels, err := c.ListLabels(ctx, project)
 	check(err)
 	want := map[string]bool{"bug": true, "enhancement": true, "question": true}
@@ -65,5 +69,48 @@ func TestLabels(t *testing.T) {
 	check(err)
 	if gotlab != (Label{newName, lab.Description, newColor}) {
 		t.Fatalf("got %+v, want %+v", gotlab, lab)
+	}
+}
+
+func TestLabelsTesting(t *testing.T) {
+	// This is more a test of the TestingClient machinery than
+	// of the label code, which is adequately tested in TestLabelsRecord.
+	check := testutil.Checker(t)
+	lg := testutil.Slogger(t)
+	c := New(lg, nil, nil, nil)
+
+	labels := []Label{{"A", "a", "ca"}, {"B", "b", "cb"}}
+	for _, l := range labels {
+		c.Testing().AddLabel("p", l)
+	}
+
+	var got []Label
+	for _, l := range labels {
+		gl, err := c.DownloadLabel(ctx, "p", l.Name)
+		check(err)
+		got = append(got, gl)
+	}
+	if !slices.Equal(got, labels) {
+		t.Fatalf("got %v, want %v", got, labels)
+	}
+
+	var err error
+	got, err = c.ListLabels(ctx, "p")
+	check(err)
+	if !slices.Equal(got, labels) {
+		t.Fatalf("got %v, want %v", got, labels)
+	}
+
+	labelN := Label{Name: "N", Description: "n", Color: "cn"}
+	check(c.CreateLabel(ctx, "p", labelN))
+	changes := LabelChanges{NewName: "C", Description: "c"}
+	check(c.EditLabel(ctx, "p", "A", changes))
+	egot := c.Testing().Edits()
+	want := []*TestingEdit{
+		{Project: "p", Label: labelN},
+		{Project: "p", Label: Label{Name: "A"}, LabelChanges: &changes},
+	}
+	if !reflect.DeepEqual(egot, want) {
+		t.Errorf("\ngot  %v\nwant %v", egot, want)
 	}
 }

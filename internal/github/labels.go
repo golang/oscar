@@ -22,6 +22,16 @@ func (c *Client) DownloadLabel(ctx context.Context, project, name string) (Label
 
 // CreateLabel creates a new label.
 func (c *Client) CreateLabel(ctx context.Context, project string, lab Label) error {
+	if c.divertEdits() {
+		c.testMu.Lock()
+		defer c.testMu.Unlock()
+
+		c.testEdits = append(c.testEdits, &TestingEdit{
+			Project: project,
+			Label:   lab,
+		})
+		return nil
+	}
 	_, err := c.post(ctx, labelURL(project, ""), lab)
 	return err
 }
@@ -36,18 +46,30 @@ type LabelChanges struct {
 
 // EditLabel changes a label.
 func (c *Client) EditLabel(ctx context.Context, project, name string, changes LabelChanges) error {
+	if c.divertEdits() {
+		c.testMu.Lock()
+		defer c.testMu.Unlock()
+
+		c.testEdits = append(c.testEdits, &TestingEdit{
+			Project:      project,
+			Label:        Label{Name: name},
+			LabelChanges: &changes,
+		})
+		return nil
+	}
 	_, err := c.patch(ctx, labelURL(project, name), changes)
 	return err
 }
 
+var labelPageQueryParams = url.Values{
+	"page":     {"1"},
+	"per_page": {"100"},
+}
+
 // ListLabels lists all the labels in a project.
 func (c *Client) ListLabels(ctx context.Context, project string) ([]Label, error) {
-	values := url.Values{
-		"page":     {"1"},
-		"per_page": {"100"},
-	}
 	var labels []Label
-	for p, err := range c.pages(ctx, labelURL(project, "")+"?"+values.Encode(), "") {
+	for p, err := range c.pages(ctx, labelURL(project, "")+"?"+labelPageQueryParams.Encode(), "") {
 		if err != nil {
 			return nil, err
 		}
@@ -65,6 +87,10 @@ func (c *Client) ListLabels(ctx context.Context, project string) ([]Label, error
 // deleteLabel deletes a label.
 // For testing only.
 func (c *Client) deleteLabel(ctx context.Context, project, name string) error {
+	if c.divertEdits() {
+		panic("deleteLabel not supported in testing mode")
+	}
+
 	var x any
 	_, err := c.json(ctx, "DELETE", labelURL(project, name), &x)
 	return err
