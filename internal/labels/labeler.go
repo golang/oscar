@@ -13,8 +13,10 @@ import (
 
 	"golang.org/x/oscar/internal/actions"
 	"golang.org/x/oscar/internal/github"
+	"golang.org/x/oscar/internal/llm"
 	"golang.org/x/oscar/internal/storage"
 	"golang.org/x/oscar/internal/storage/timed"
+	"rsc.io/ordered"
 )
 
 // A Labeler labels GitHub issues.
@@ -22,6 +24,7 @@ type Labeler struct {
 	slog        *slog.Logger
 	db          storage.DB
 	github      *github.Client
+	cgen        llm.ContentGenerator
 	projects    map[string]bool
 	watcher     *timed.Watcher[*github.Event]
 	name        string
@@ -35,8 +38,7 @@ type Labeler struct {
 }
 
 // New creates and returns a new Labeler. It logs to lg, stores state in db,
-//
-//	and watches for new GitHub issues using gh.
+// manipulates GitHub issues using gh, and classifies issues using cgen.
 //
 // For the purposes of storing its own state, it uses the given name.
 // Future calls to New with the same name will use the same state.
@@ -44,11 +46,12 @@ type Labeler struct {
 // Use the [Labeler] methods to configure the posting parameters
 // (especially [Labeler.EnableProject] and [Labeler.EnableLabels])
 // before calling [Labeler.Run].
-func New(lg *slog.Logger, db storage.DB, gh *github.Client, name string) *Labeler {
+func New(lg *slog.Logger, db storage.DB, gh *github.Client, cgen llm.ContentGenerator, name string) *Labeler {
 	l := &Labeler{
 		slog:      lg,
 		db:        db,
 		github:    gh,
+		cgen:      cgen,
 		projects:  make(map[string]bool),
 		watcher:   gh.EventWatcher("labels.Labeler:" + name),
 		name:      name,
@@ -159,7 +162,36 @@ func (l *Labeler) logLabelIssue(ctx context.Context, e *github.Event) (advance b
 			e.Project, "issue", e.Issue, "reason", reason, "event", e)
 		return false, nil
 	}
-	return false, errors.New("unimplemented")
+	// If an action has already been logged for this event, do nothing.
+	// we don't need a lock. [actions.before] will lock to avoid multiple log entries.
+	if _, ok := actions.Get(l.db, l.actionKind, logKey(e)); ok {
+		l.slog.Info("labels.Labeler already logged", "name", l.name, "project", e.Project, "issue", e.Issue, "event", e)
+		// If labeling is enabled, we can advance the watcher because
+		// a comment has already been logged for this issue.
+		return l.label, nil
+	}
+	// If we didn't skip, it's definitely an issue.
+	issue := e.Typed.(*github.Issue)
+	l.slog.Debug("labels.Labeler consider", "url", issue.HTMLURL)
+
+	cat, explanation, err := IssueCategory(ctx, l.cgen, issue)
+	if err != nil {
+		return false, fmt.Errorf("IssueCategory(%s): %w", issue.HTMLURL, err)
+	}
+	l.slog.Info("labels.Labeler chose label", "name", l.name, "project", e.Project, "issue", e.Issue,
+		"label", cat.Label, "explanation", explanation)
+
+	if !l.label {
+		// Labeling is disabled so we did not handle this issue.
+		return false, nil
+	}
+
+	act := &action{
+		Issue:     issue,
+		NewLabels: []string{cat.Label},
+	}
+	l.logAction(l.db, logKey(e), storage.JSON(act), l.requireApproval)
+	return true, nil
 }
 
 func (l *Labeler) skip(e *github.Event) (bool, string) {
@@ -206,7 +238,7 @@ func (l *Labeler) syncLabels(ctx context.Context, project string, cats []Categor
 	for _, cat := range cats {
 		lab, ok := tlabs[cat.Label]
 		if !ok {
-			l.slog.Info("creating label", "label", lab.Name)
+			l.slog.Info("creating label", "label", cat.Label)
 			if err := l.github.CreateLabel(ctx, project, github.Label{
 				Name:        cat.Label,
 				Description: cat.Description,
@@ -241,4 +273,10 @@ func (ar *actioner) Run(ctx context.Context, data []byte) ([]byte, error) {
 func (ar *actioner) ForDisplay(data []byte) string {
 	// TODO: implement
 	return ""
+}
+
+// logKey returns the key for the event in the action log. This is only a portion
+// of the database key; it is prefixed by the Labelers's action kind.
+func logKey(e *github.Event) []byte {
+	return ordered.Encode(e.Project, e.Issue)
 }
