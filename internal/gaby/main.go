@@ -202,7 +202,7 @@ func main() {
 	rp.SkipTitlePrefix("x/tools/gopls: release version v")
 	rp.SkipTitleSuffix(" backport]")
 	rp.EnablePosts()
-	if slices.Contains(validApprovalPkgs, "related") {
+	if slices.Contains(requireApprovalPkgs, "related") {
 		rp.RequireApproval()
 	}
 	g.relatedPoster = rp
