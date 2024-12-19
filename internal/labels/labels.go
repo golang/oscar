@@ -3,6 +3,9 @@
 // license that can be found in the LICENSE file.
 
 // Package labels classifies issues.
+//
+// The categories it uses are stored in static/*-categories.yaml
+// files, one file per project.
 package labels
 
 import (
@@ -13,6 +16,7 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
+	"io/fs"
 	"iter"
 	"log"
 	"os"
@@ -36,8 +40,12 @@ type Category struct {
 
 // IssueCategory returns the category chosen by the LLM for the issue, along with an explanation
 // of why it was chosen. It uses the built-in list of categories.
-func IssueCategory(ctx context.Context, cgen llm.ContentGenerator, iss *github.Issue) (_ Category, explanation string, err error) {
-	return IssueCategoryFromList(ctx, cgen, iss, config.Categories)
+func IssueCategory(ctx context.Context, cgen llm.ContentGenerator, project string, iss *github.Issue) (_ Category, explanation string, err error) {
+	cats, ok := config.Categories[project]
+	if !ok {
+		return Category{}, "", fmt.Errorf("IssueCategory: unknown project %q", project)
+	}
+	return IssueCategoryFromList(ctx, cgen, iss, cats)
 }
 
 // IssueCategoryFromList is like [IssueCategory], but uses the given list of Categories.
@@ -226,22 +234,43 @@ type bodyArgs struct {
 }
 
 var config struct {
-	Categories []Category
+	// Key is project, e.g. "golang/go".
+	Categories map[string][]Category
 }
 
 //go:embed static/*
 var staticFS embed.FS
 
+// Read all category files into config.
 func init() {
-	f, err := staticFS.Open("static/categories.yaml")
+	catFiles, err := fs.Glob(staticFS, "static/*-categories.yaml")
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer f.Close()
+	config.Categories = map[string][]Category{}
+	for _, file := range catFiles {
+		f, err := staticFS.Open(file)
+		if err != nil {
+			log.Fatalf("%s: %v", file, err)
+		}
 
-	dec := yaml.NewDecoder(f)
-	dec.KnownFields(true)
-	if err := dec.Decode(&config); err != nil {
-		log.Fatal(err)
+		var contents struct {
+			Project    string
+			Categories []Category
+		}
+
+		dec := yaml.NewDecoder(f)
+		dec.KnownFields(true)
+		if err := dec.Decode(&contents); err != nil {
+			log.Fatalf("%s: %v", file, err)
+		}
+		if contents.Project == "" {
+			log.Fatalf("%s: empty or missing project", file)
+		}
+		if _, ok := config.Categories[contents.Project]; ok {
+			log.Fatalf("%s: duplicate project %s", file, contents.Project)
+		}
+		config.Categories[contents.Project] = contents.Categories
+		f.Close()
 	}
 }

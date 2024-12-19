@@ -7,7 +7,6 @@ package labels
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log/slog"
 	"maps"
@@ -126,7 +125,11 @@ func (l *Labeler) Run(ctx context.Context) error {
 
 	// Ensure that labels in GH match our config.
 	for p := range l.projects {
-		if err := l.syncLabels(ctx, p, config.Categories); err != nil {
+		cats, ok := config.Categories[p]
+		if !ok {
+			return fmt.Errorf("Labeler.Run: unknown project %q", p)
+		}
+		if err := l.syncLabels(ctx, p, cats); err != nil {
 			return err
 		}
 	}
@@ -183,7 +186,7 @@ func (l *Labeler) logLabelIssue(ctx context.Context, e *github.Event) (advance b
 	issue := e.Typed.(*github.Issue)
 	l.slog.Debug("labels.Labeler consider", "url", issue.HTMLURL)
 
-	cat, explanation, err := IssueCategory(ctx, l.cgen, issue)
+	cat, explanation, err := IssueCategory(ctx, l.cgen, e.Project, issue)
 	if err != nil {
 		return false, fmt.Errorf("IssueCategory(%s): %w", issue.HTMLURL, err)
 	}
@@ -230,10 +233,6 @@ func (l *Labeler) skip(e *github.Event) (bool, string) {
 // Otherwise, if the descriptions don't agree, a warning is logged and nothing is done on the issue tracker.
 // This function makes no other changes. In particular, it never deletes labels.
 func (l *Labeler) syncLabels(ctx context.Context, project string, cats []Category) error {
-	// TODO(jba): generalize to other projects.
-	if project != "golang/go" {
-		return errors.New("labeling only supported for golang/go")
-	}
 	l.slog.Info("syncing labels", "name", l.name, "project", project)
 	tlabList, err := l.github.ListLabels(ctx, project)
 	if err != nil {

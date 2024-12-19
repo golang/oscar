@@ -21,7 +21,7 @@ func TestIssueLabels(t *testing.T) {
 		Body:  "body",
 	}
 
-	cat, exp, err := IssueCategory(ctx, llm, iss)
+	cat, exp, err := IssueCategory(ctx, llm, "golang/go", iss)
 	if err != nil {
 		t.Fatal(err)
 	}

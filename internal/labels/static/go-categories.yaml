@@ -5,6 +5,7 @@
 #  description: the label description on the issue tracker
 #  extra: additional information about the label, fed to the LLM along
 #         with the description
+project: golang/go
 categories:
   - name: bug
     label: Bug

@@ -100,7 +100,7 @@ func (g *Gaby) populateLabelsPage(r *http.Request) *labelsPage {
 		} else if isBot(i.User.Login) {
 			lr.Problem = "skipping: author is a bot"
 		} else {
-			cat, exp, err := labels.IssueCategory(r.Context(), g.llm, i)
+			cat, exp, err := labels.IssueCategory(r.Context(), g.llm, project, i)
 			if err != nil {
 				p.Error = err
 				return p

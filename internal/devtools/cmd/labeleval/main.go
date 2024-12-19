@@ -107,6 +107,7 @@ func run(ctx context.Context, categoryconfigFile, issueConfigFile string) error 
 	}
 
 	var categoryConfig struct {
+		Project    string
 		Categories []labels.Category
 	}
 
