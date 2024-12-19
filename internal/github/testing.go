@@ -34,7 +34,12 @@ func (c *Client) Testing() *TestingClient {
 	c.testMu.Lock()
 	defer c.testMu.Unlock()
 	if c.testClient == nil {
-		c.testClient = &TestingClient{c: c}
+		c.testClient = &TestingClient{
+			c:         c,
+			issueID:   1e9,
+			commentID: 1e10,
+			eventID:   1e11,
+		}
 	}
 	return c.testClient
 }
@@ -83,6 +88,10 @@ func (e *TestingEdit) String() string {
 // See [Client.Testing] for a description of testing mode.
 type TestingClient struct {
 	c *Client
+	// atomic counters for new values
+	issueID   int64
+	commentID int64
+	eventID   int64
 }
 
 // addEvent adds an event to the Client's underlying database.
@@ -100,8 +109,6 @@ func (tc *TestingClient) addEvent(url string, e *Event) {
 	b.Apply()
 }
 
-var issueID int64 = 1e9
-
 // AddIssue adds the given issue to the identified project,
 // assigning it a new issue number starting at 10⁹.
 // AddIssue creates a new entry in the associated [Client]'s
@@ -112,7 +119,7 @@ var issueID int64 = 1e9
 // since they do not coordinate in the database about ID assignment.
 // Perhaps they should, but normally there is just one Client.
 func (tc *TestingClient) AddIssue(project string, issue *Issue) {
-	id := atomic.AddInt64(&issueID, +1)
+	id := atomic.AddInt64(&tc.issueID, +1)
 	issue.URL = fmt.Sprintf("https://api.github.com/repos/%s/issues/%d", project, issue.Number)
 	issue.HTMLURL = fmt.Sprintf("https://github.com/%s/issues/%d", project, issue.Number)
 	tc.addEvent(issue.URL, &Event{
@@ -124,8 +131,6 @@ func (tc *TestingClient) AddIssue(project string, issue *Issue) {
 	})
 }
 
-var commentID int64 = 1e10
-
 // AddIssueComment adds the given issue comment to the identified project issue,
 // assigning it a new comment ID starting at 10¹⁰.
 // AddIssueComment creates a new entry in the associated [Client]'s
@@ -133,10 +138,10 @@ var commentID int64 = 1e10
 // will see the issue comment too.
 //
 // NOTE: Only one TestingClient should be adding issues,
-// since they do not coordinate in the database about ID assignment.
+// since they do not coordinate in the database about ID assignment,
 // Perhaps they should, but normally there is just one Client.
 func (tc *TestingClient) AddIssueComment(project string, issue int64, comment *IssueComment) int64 {
-	id := atomic.AddInt64(&commentID, +1)
+	id := atomic.AddInt64(&tc.commentID, +1)
 	comment.URL = fmt.Sprintf("https://api.github.com/repos/%s/issues/comments/%d", project, id)
 	comment.HTMLURL = fmt.Sprintf("https://github.com/%s/issues/%d#issuecomment-%d", project, issue, id)
 	tc.addEvent(comment.URL, &Event{
@@ -149,8 +154,6 @@ func (tc *TestingClient) AddIssueComment(project string, issue int64, comment *I
 	return id
 }
 
-var eventID int64 = 1e11
-
 // AddIssueEvent adds the given issue event to the identified project issue,
 // assigning it a new comment ID starting at 10¹¹.
 // AddIssueEvent creates a new entry in the associated [Client]'s
@@ -161,7 +164,7 @@ var eventID int64 = 1e11
 // since they do not coordinate in the database about ID assignment.
 // Perhaps they should, but normally there is just one Client.
 func (tc *TestingClient) AddIssueEvent(project string, issue int64, event *IssueEvent) {
-	id := atomic.AddInt64(&eventID, +1)
+	id := atomic.AddInt64(&tc.eventID, +1)
 	event.ID = id
 	event.URL = fmt.Sprintf("https://api.github.com/repos/%s/issues/events/%d", project, id)
 	tc.addEvent(event.URL, &Event{
