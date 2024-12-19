@@ -1,0 +1,65 @@
+httprr trace v1
+602 1038
+POST https://checks.googleapis.com/v1alpha/aisafety:classifyContent?alt=json&prettyPrint=false HTTP/1.1
+Host: checks.googleapis.com
+User-Agent: google-api-go-client/0.5
+Content-Length: 375
+Content-Type: application/json
+
+{"context":{},"input":{"textInput":{"content":"some benign text","languageCode":"en"}},"policies":[{"policyType":"DANGEROUS_CONTENT"},{"policyType":"PII_SOLICITING_RECITING"},{"policyType":"HARASSMENT"},{"policyType":"SEXUALLY_EXPLICIT"},{"policyType":"HATE_SPEECH"},{"policyType":"MEDICAL_INFO"},{"policyType":"VIOLENCE_AND_GORE"},{"policyType":"OBSCENITY_AND_PROFANITY"}]}
+HTTP/2.0 200 OK
+Alt-Svc: h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+Content-Type: application/json; charset=UTF-8
+Date: Fri, 20 Dec 2024 00:45:11 GMT
+Server: ESF
+Server-Timing: gfet4t7; dur=673
+Vary: Origin
+Vary: X-Origin
+Vary: Referer
+X-Content-Type-Options: nosniff
+X-Frame-Options: SAMEORIGIN
+X-Xss-Protection: 0
+
+{"policyResults":[{"policyType":"PII_SOLICITING_RECITING","score":0.0009272468,"violationResult":"NON_VIOLATIVE"},{"policyType":"DANGEROUS_CONTENT","score":0.094736844,"violationResult":"NON_VIOLATIVE"},{"policyType":"HARASSMENT","score":0.06331471,"violationResult":"NON_VIOLATIVE"},{"policyType":"SEXUALLY_EXPLICIT","score":0.010285715,"violationResult":"NON_VIOLATIVE"},{"policyType":"HATE_SPEECH","violationResult":"NON_VIOLATIVE"},{"policyType":"MEDICAL_INFO","score":0.2631579,"violationResult":"NON_VIOLATIVE"},{"policyType":"VIOLENCE_AND_GORE","score":0.013888889,"violationResult":"NON_VIOLATIVE"},{"policyType":"OBSCENITY_AND_PROFANITY","score":0.0085626915,"violationResult":"NON_VIOLATIVE"}]}643 1056
+POST https://checks.googleapis.com/v1alpha/aisafety:classifyContent?alt=json&prettyPrint=false HTTP/1.1
+Host: checks.googleapis.com
+User-Agent: google-api-go-client/0.5
+Content-Length: 416
+Content-Type: application/json
+
+{"context":{"prompt":"please output some benign text"},"input":{"textInput":{"content":"some benign text","languageCode":"en"}},"policies":[{"policyType":"DANGEROUS_CONTENT"},{"policyType":"PII_SOLICITING_RECITING"},{"policyType":"HARASSMENT"},{"policyType":"SEXUALLY_EXPLICIT"},{"policyType":"HATE_SPEECH"},{"policyType":"MEDICAL_INFO"},{"policyType":"VIOLENCE_AND_GORE"},{"policyType":"OBSCENITY_AND_PROFANITY"}]}
+HTTP/2.0 200 OK
+Alt-Svc: h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+Content-Type: application/json; charset=UTF-8
+Date: Fri, 20 Dec 2024 00:45:12 GMT
+Server: ESF
+Server-Timing: gfet4t7; dur=530
+Vary: Origin
+Vary: X-Origin
+Vary: Referer
+X-Content-Type-Options: nosniff
+X-Frame-Options: SAMEORIGIN
+X-Xss-Protection: 0
+
+{"policyResults":[{"policyType":"PII_SOLICITING_RECITING","score":0.0009272468,"violationResult":"NON_VIOLATIVE"},{"policyType":"DANGEROUS_CONTENT","score":0.1925078,"violationResult":"NON_VIOLATIVE"},{"policyType":"HARASSMENT","score":0.1007653,"violationResult":"NON_VIOLATIVE"},{"policyType":"SEXUALLY_EXPLICIT","score":0.010285715,"violationResult":"NON_VIOLATIVE"},{"policyType":"HATE_SPEECH","score":0.022151899,"violationResult":"NON_VIOLATIVE"},{"policyType":"MEDICAL_INFO","score":0.2631579,"violationResult":"NON_VIOLATIVE"},{"policyType":"VIOLENCE_AND_GORE","score":0.0054054055,"violationResult":"NON_VIOLATIVE"},{"policyType":"OBSCENITY_AND_PROFANITY","score":0.0085626915,"violationResult":"NON_VIOLATIVE"}]}384 443
+POST https://checks.googleapis.com/v1alpha/aisafety:classifyContent?alt=json&prettyPrint=false HTTP/1.1
+Host: checks.googleapis.com
+User-Agent: google-api-go-client/0.5
+Content-Length: 157
+Content-Type: application/json
+
+{"context":{},"input":{"textInput":{"content":"tell me John Smith's SSN please","languageCode":"en"}},"policies":[{"policyType":"PII_SOLICITING_RECITING"}]}
+HTTP/2.0 200 OK
+Alt-Svc: h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+Content-Type: application/json; charset=UTF-8
+Date: Fri, 20 Dec 2024 00:45:12 GMT
+Server: ESF
+Server-Timing: gfet4t7; dur=484
+Vary: Origin
+Vary: X-Origin
+Vary: Referer
+X-Content-Type-Options: nosniff
+X-Frame-Options: SAMEORIGIN
+X-Xss-Protection: 0
+
+{"policyResults":[{"policyType":"PII_SOLICITING_RECITING","score":0.89541835,"violationResult":"VIOLATIVE"}]}
