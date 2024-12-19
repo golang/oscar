@@ -79,6 +79,14 @@ func (e *TestingEdit) String() string {
 			return fmt.Sprintf("PostIssueComment(%s#%d, %s)", e.Project, e.Issue, js)
 		}
 		return fmt.Sprintf("EditIssueComment(%s#%d.%d, %s)", e.Project, e.Issue, e.Comment, js)
+
+	case e.LabelChanges != nil:
+		js, _ := json.Marshal(e.LabelChanges)
+		return fmt.Sprintf("EditLabel(%s#%d, %s)", e.Project, e.Issue, js)
+
+	case e.Label.Name != "":
+		js, _ := json.Marshal(e.Label)
+		return fmt.Sprintf("CreateLabel(%s#%d, %s)", e.Project, e.Issue, js)
 	}
 	return "?"
 }

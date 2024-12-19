@@ -6,9 +6,13 @@ package labels
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
+	"maps"
+	"slices"
+	"strings"
 	"time"
 
 	"golang.org/x/oscar/internal/actions"
@@ -134,13 +138,18 @@ func (l *Labeler) Run(ctx context.Context) error {
 			l.slog.Error("labels.Labeler", "issue", e.Issue, "event", e, "error", err)
 			continue
 		}
+		eg := slog.Group("event",
+			"dbtime", e.DBTime,
+			"project", e.Project,
+			"issue", e.Issue,
+			"json", string(e.JSON))
 		if advance {
 			l.watcher.MarkOld(e.DBTime)
 			// Flush immediately to make sure we don't re-post if interrupted later in the loop.
 			l.watcher.Flush()
-			l.slog.Info("labels.Labeler advanced watcher", "latest", l.watcher.Latest(), "event", e)
+			l.slog.Info("labels.Labeler advanced watcher", "latest", l.watcher.Latest(), eg)
 		} else {
-			l.slog.Info("labels.Labeler watcher not advanced", "latest", l.watcher.Latest(), "event", e)
+			l.slog.Info("labels.Labeler watcher not advanced", "latest", l.watcher.Latest(), eg)
 		}
 	}
 	return nil
@@ -266,13 +275,69 @@ type actioner struct {
 }
 
 func (ar *actioner) Run(ctx context.Context, data []byte) ([]byte, error) {
-	// TODO: implement
-	return nil, errors.New("unimplemented")
+	return ar.l.runFromActionLog(ctx, data)
 }
 
 func (ar *actioner) ForDisplay(data []byte) string {
-	// TODO: implement
-	return ""
+	var a action
+	if err := json.Unmarshal(data, &a); err != nil {
+		return fmt.Sprintf("ERROR: %v", err)
+	}
+	return a.Issue.HTMLURL + "\n" + strings.Join(a.NewLabels, ", ")
+}
+
+// runFromActionLog is called by actions.Run to execute an action.
+// It decodes the action, calls [Labeler.runAction], then encodes the result.
+func (l *Labeler) runFromActionLog(ctx context.Context, data []byte) ([]byte, error) {
+	var a action
+	if err := json.Unmarshal(data, &a); err != nil {
+		return nil, err
+	}
+	res, err := l.runAction(ctx, &a)
+	if err != nil {
+		return nil, err
+	}
+	return storage.JSON(res), nil
+}
+
+// runAction runs the given action.
+func (l *Labeler) runAction(ctx context.Context, a *action) (*result, error) {
+	// When updating an issue in GitHub, we must provide all the labels, both the
+	// existing and the new.
+	//
+	// There is an HTTP mechanism for atomic test-and-set, using the If-Match header
+	// with an ETag. Unfortunately, GitHub does not support it: it returns a 412
+	// Precondition Failed if it sees that header, then makes the change regardless
+	// of whether the ETags match. So the best we can do is read the existing labels
+	// and immediately write the new ones.
+	issue, err := l.github.DownloadIssue(ctx, a.Issue.URL)
+	if err != nil {
+		return nil, fmt.Errorf("Labeler, download %s: %w", a.Issue.URL, err)
+	}
+
+	// Compute the union of the old and new label names.
+	oldLabels := map[string]bool{}
+	for _, lab := range issue.Labels {
+		oldLabels[lab.Name] = true
+	}
+	newLabels := maps.Clone(oldLabels)
+	for _, name := range a.NewLabels {
+		newLabels[name] = true
+	}
+	if maps.Equal(oldLabels, newLabels) {
+		// Nothing to do.
+		return &result{issue.URL}, nil
+	}
+	labelNames := slices.Collect(maps.Keys(newLabels))
+	// Sort for determinism in tests.
+	slices.Sort(labelNames)
+
+	err = l.github.EditIssue(ctx, a.Issue, &github.IssueChanges{Labels: &labelNames})
+	// If GitHub returns an error, add it to the action log for this action.
+	if err != nil {
+		return nil, fmt.Errorf("Labeler: edit %s: %w", a.Issue.URL, err)
+	}
+	return &result{URL: issue.URL}, nil
 }
 
 // logKey returns the key for the event in the action log. This is only a portion

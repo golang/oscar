@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"maps"
+	"reflect"
 	"slices"
 	"testing"
 
@@ -72,11 +73,13 @@ func TestRun(t *testing.T) {
 	lg := testutil.Slogger(t)
 	db := storage.MemDB()
 	gh := github.New(lg, db, nil, nil)
-	gh.Testing().AddLabel(project, github.Label{Name: "bug"})
+	gh.Testing().AddLabel(project, github.Label{Name: "Bug"})
+	gh.Testing().AddLabel(project, github.Label{Name: "Other"})
 	gh.Testing().AddIssue(project, &github.Issue{
 		Number: 1,
 		Title:  "title",
 		Body:   "body",
+		Labels: []github.Label{{Name: "Other"}},
 	})
 	gh.Testing().AddIssue("other/project", &github.Issue{
 		Number: 2,
@@ -98,7 +101,7 @@ func TestRun(t *testing.T) {
 	var got action
 	check(json.Unmarshal(entries[0].Action, &got))
 	if got.Issue.Number != 1 || !slices.Equal(got.NewLabels, []string{"Bug"}) {
-		t.Errorf("got (%d, %v), want (1, [Bug])", got.Issue.Number, got.NewLabels)
+		t.Errorf("got (%d, %v), want (1, [bug])", got.Issue.Number, got.NewLabels)
 	}
 
 	// Second time, nothing should happen.
@@ -106,5 +109,34 @@ func TestRun(t *testing.T) {
 	entries = slices.Collect(actions.ScanAfterDBTime(lg, db, entries[0].ModTime, nil))
 	if g := len(entries); g != 0 {
 		t.Fatalf("got %d actions, want 0", g)
+	}
+
+	// Run the action, look for changes.
+	check(actions.Run(ctx, lg, db))
+	gotEdits := gh.Testing().Edits()
+	wantEdits := []*github.TestingEdit{
+		{
+			Project:      "golang/go",
+			Issue:        1,
+			IssueChanges: &github.IssueChanges{Labels: &[]string{"Bug", "Other"}},
+		},
+	}
+	wi := 0
+	for _, ge := range gotEdits {
+		// Ignore the changes from syncLabels.
+		if ge.LabelChanges != nil || ge.Label.Name != "" {
+			continue
+		}
+		if wi >= len(wantEdits) {
+			t.Errorf("unexpected edit %s", ge)
+			continue
+		}
+		if we := wantEdits[wi]; !reflect.DeepEqual(ge, we) {
+			t.Errorf("\ngot  %s\nwant %s", ge, we)
+		}
+		wi++
+	}
+	if wi != len(wantEdits) {
+		t.Fatal("not enough edits")
 	}
 }
