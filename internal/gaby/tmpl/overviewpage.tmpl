@@ -45,6 +45,21 @@ function togglePrompt() {
 </script>
 {{end}}
 
+{{define "show-policy"}}
+{{with .Raw.PolicyEvaluation}}
+	<div class="toggle" onclick="togglePolicy()">[show policy evaluation]</div>
+	<div id="policy" class="start-hidden">
+		<pre>{{.Display}}</pre>
+	</div>
+{{end}}
+<script>
+function togglePolicy() {
+	var x = document.getElementById("policy");
+	toggle(x)
+}
+</script>
+{{end}}
+
 {{define "overview-result"}}
 <div class="section" id="result">
 {{- with .Error -}}
@@ -60,6 +75,7 @@ function togglePrompt() {
 	</div>
 	{{template "show-rawoutput" .}}
 	{{template "show-prompt" .}}
+	{{template "show-policy" .}}
 {{- else }}
 	{{if .Params.Query}}<p>No result.</p>{{end}}
 {{- end}}

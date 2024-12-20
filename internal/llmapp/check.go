@@ -6,6 +6,7 @@ package llmapp
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 
 	"golang.org/x/oscar/internal/llm"
@@ -24,46 +25,49 @@ func NewWithChecker(lg *slog.Logger, g llm.ContentGenerator, checker llm.PolicyC
 	return &Client{slog: lg, g: g, checker: checker, db: db}
 }
 
-// hasPolicyViolation invokes the policy checker on the given prompts and LLM output and
-// logs its results. It reports whether any policy violations were found.
+// evaluatePolicy invokes the policy checker on the given prompts and LLM output and
+// wraps its results as a [*PolicyEvaluation].
 // TODO(tatianabradley): Cache calls to policy checker.
-func (c *Client) hasPolicyViolation(ctx context.Context, prompts []llm.Part, output string) bool {
+func (c *Client) evaluatePolicy(ctx context.Context, prompts []llm.Part, output string) *PolicyEvaluation {
 	if c.checker == nil {
-		return false
+		return nil
 	}
-	foundViolation := false
+	pe := &PolicyEvaluation{}
 	for _, p := range prompts {
 		switch v := p.(type) {
 		case llm.Text:
-			if c.logCheck(ctx, string(v), nil) {
-				foundViolation = true
+			r := c.check(ctx, string(v), nil)
+			if len(r.Violations) > 0 {
+				pe.Violative = true
 			}
+			pe.PromptResults = append(pe.PromptResults, r)
 		default:
 			// Other types are not supported for checks yet.
-			c.slog.Info("llmapp: can't check policy for prompt part (unsupported type)", "prompt part", v)
+			err := fmt.Errorf("llmapp: can't check policy for prompt part (unsupported type %T", v)
+			pe.PromptResults = append(pe.PromptResults, &PolicyResult{Text: "unknown", Error: err})
 		}
 	}
-	if c.logCheck(ctx, output, prompts) {
-		return true
+	r := c.check(ctx, output, prompts)
+	if len(r.Violations) > 0 {
+		pe.Violative = true
 	}
-	return foundViolation
+	pe.OutputResults = r
+	return pe
 }
 
-// logCheck invokes the policy checker on the give text (with optional prompts)
-// and logs its results.
-// It reports whether any policy violations were found.
-func (c *Client) logCheck(ctx context.Context, text string, prompts []llm.Part) bool {
+// check invokes the policy checker on the given text (with optional prompts)
+// and returns its results.
+func (c *Client) check(ctx context.Context, text string, prompts []llm.Part) *PolicyResult {
 	prs, err := c.checker.CheckText(ctx, text, prompts...)
 	if err != nil {
-		c.slog.Error("llmapp: error checking for policy violations", "err", err)
-		return false
+		return &PolicyResult{Text: text, Error: fmt.Errorf("llmapp: error while checking for policy violations: %w", err)}
 	}
 	c.slog.Info("llmapp: found policy results", "text", text, "prompts", prompts, "results", toStrings(prs))
 	if vs := violations(prs); len(vs) > 0 {
 		c.slog.Warn("llmapp: found policy violations for LLM output", "text", text, "prompts", prompts, "violations", toStrings(vs))
-		return true
+		return &PolicyResult{Text: text, Results: prs, Violations: vs}
 	}
-	return false
+	return &PolicyResult{Text: text, Results: prs}
 }
 
 func toStrings(prs []*llm.PolicyResult) []string {

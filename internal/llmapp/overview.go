@@ -102,11 +102,11 @@ func (c *Client) overview(ctx context.Context, kind docsKind, groups ...*docGrou
 		return nil, err
 	}
 	return &Result{
-		Response:           overview,
-		Cached:             cached,
-		Schema:             schema,
-		Prompt:             prompt,
-		HasPolicyViolation: c.hasPolicyViolation(ctx, prompt, overview),
+		Response:         overview,
+		Cached:           cached,
+		Schema:           schema,
+		Prompt:           prompt,
+		PolicyEvaluation: c.evaluatePolicy(ctx, prompt, overview),
 	}, nil
 }
 

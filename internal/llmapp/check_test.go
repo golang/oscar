@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"golang.org/x/oscar/internal/llm"
 	"golang.org/x/oscar/internal/storage"
 	"golang.org/x/oscar/internal/testutil"
@@ -28,8 +30,29 @@ func TestWithChecker(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !r.HasPolicyViolation {
+	if !r.HasPolicyViolation() {
 		t.Errorf("c.Overview.HasPolicyViolation = false, want true")
+	}
+	want := &PolicyEvaluation{
+		Violative: true,
+		PromptResults: []*PolicyResult{
+			// doc1
+			{
+				Results:    []*llm.PolicyResult{violationResult},
+				Violations: []*llm.PolicyResult{violationResult},
+			},
+			// doc2
+			{Results: []*llm.PolicyResult{okResult}},
+			// instructions
+			{Results: []*llm.PolicyResult{okResult}},
+		},
+		OutputResults: &PolicyResult{
+			Results:    []*llm.PolicyResult{violationResult},
+			Violations: []*llm.PolicyResult{violationResult},
+		},
+	}
+	if diff := cmp.Diff(want, r.PolicyEvaluation, cmpopts.IgnoreFields(PolicyResult{}, "Text")); diff != "" {
+		t.Errorf("c.Overview.PolicyEvaluation mismatch (-want,+got):\n%v", diff)
 	}
 
 	// Without violation.
@@ -37,8 +60,24 @@ func TestWithChecker(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if r.HasPolicyViolation {
+	if r.HasPolicyViolation() {
 		t.Errorf("c.Overview.HasPolicyViolation = true, want false")
+	}
+
+	want = &PolicyEvaluation{
+		Violative: false,
+		PromptResults: []*PolicyResult{
+			// doc2
+			{Results: []*llm.PolicyResult{okResult}},
+			// instructions
+			{Results: []*llm.PolicyResult{okResult}},
+		},
+		OutputResults: &PolicyResult{
+			Results: []*llm.PolicyResult{okResult},
+		},
+	}
+	if diff := cmp.Diff(want, r.PolicyEvaluation, cmpopts.IgnoreFields(PolicyResult{}, "Text")); diff != "" {
+		t.Errorf("c.Overview.PolicyEvaluation mismatch (-want,+got):\n%v", diff)
 	}
 }
 
@@ -50,20 +89,27 @@ type badChecker struct{}
 // no-op
 func (badChecker) SetPolicies(_ []*llm.PolicyConfig) {}
 
+var (
+	violationResult = &llm.PolicyResult{
+		PolicyType:      llm.PolicyTypeDangerousContent,
+		ViolationResult: llm.ViolationResultViolative,
+		Score:           1,
+	}
+	okResult = &llm.PolicyResult{
+		PolicyType:      llm.PolicyTypeDangerousContent,
+		ViolationResult: llm.ViolationResultNonViolative,
+		Score:           0,
+	}
+)
+
 // return violation for text containing "bad" and no violation for any other text.
 func (badChecker) CheckText(_ context.Context, text string, prompts ...llm.Part) ([]*llm.PolicyResult, error) {
 	if strings.Contains(text, "bad") {
 		return []*llm.PolicyResult{
-			{
-				PolicyType:      llm.PolicyTypeDangerousContent,
-				ViolationResult: llm.ViolationResultViolative,
-			},
+			violationResult,
 		}, nil
 	}
 	return []*llm.PolicyResult{
-		{
-			PolicyType:      llm.PolicyTypeDangerousContent,
-			ViolationResult: llm.ViolationResultNonViolative,
-		},
+		okResult,
 	}, nil
 }
