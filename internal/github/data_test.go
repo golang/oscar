@@ -24,3 +24,14 @@ func TestMustParseTime(t *testing.T) {
 		}
 	}
 }
+
+func TestParseIssueCommentURL(t *testing.T) {
+	u := "https://github.com/golang/go/issues/12345#issuecomment-135132324"
+	project, issue, comment, err := ParseIssueCommentURL(u)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if project != "golang/go" || issue != 12345 || comment != 135132324 {
+		t.Errorf("ParseIssueCommentURL(%s) = (%s, %d, %d) want (%s, %d, %d)", u, project, issue, comment, "golang/go", 12345, 135132324)
+	}
+}

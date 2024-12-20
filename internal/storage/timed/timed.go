@@ -358,6 +358,12 @@ func (w *Watcher[T]) cutoffUnlocked() DBTime {
 // (If a different process holds the lock, the iterator will wait for that process.
 // The in-process lock check aims to diagnose simple deadlocks.)
 func (w *Watcher[T]) Recent() iter.Seq[T] {
+	return w.RecentFiltered(nil)
+}
+
+// RecentFiltered is like [Watcher.Recent], except it applies the given
+// filter to the keys. The filter uses the same semantics as in [ScanAfter].
+func (w *Watcher[T]) RecentFiltered(filter func(key []byte) bool) iter.Seq[T] {
 	return func(yield func(T) bool) {
 		w.lock()
 		defer func() {
@@ -365,7 +371,7 @@ func (w *Watcher[T]) Recent() iter.Seq[T] {
 			w.unlock()
 		}()
 
-		for t := range ScanAfter(w.slog, w.db, w.kind, w.cutoff(), nil) {
+		for t := range ScanAfter(w.slog, w.db, w.kind, w.cutoff(), filter) {
 			if !yield(w.decode(t)) {
 				return
 			}

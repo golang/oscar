@@ -185,7 +185,14 @@ func main() {
 	g.embed = ai
 	g.llm = ai
 	g.llmapp = llmapp.NewWithChecker(g.slog, ai, g.policy, g.db)
-	g.overview = overview.New(g.slog, g.db, g.github, g.llmapp, "overview", "gabyhelp")
+	ov := overview.New(g.slog, g.db, g.github, g.llmapp, "overview", "gabyhelp")
+	for _, proj := range g.githubProjects {
+		ov.EnableProject(proj)
+	}
+	if !slices.Contains(autoApprovePkgs, "overview") {
+		ov.RequireApproval()
+	}
+	g.overview = ov
 
 	cr := crawl.New(g.slog, g.db, g.http)
 	cr.Add("https://go.dev/")
@@ -290,7 +297,7 @@ func main() {
 	select {}
 }
 
-var validApprovalPkgs = []string{"commentfix", "related", "rules", "labels"}
+var validApprovalPkgs = []string{"commentfix", "related", "rules", "labels", "overview"}
 
 // parseApprovalPkgs parses a comma-separated list of package names,
 // checking that the packages are valid.
@@ -666,7 +673,7 @@ func (g *Gaby) newServer(report func(error, *http.Request)) *http.ServeMux {
 			report := actions.RunWithReport(g.ctx, g.slog, g.db)
 			_, _ = w.Write(storage.JSON(report))
 		} else {
-			http.Error(w, fmt.Sprintf("runactions: flag -enablechanges or -testactions not set"), http.StatusInternalServerError)
+			http.Error(w, "runactions: flag -enablechanges or -testactions not set", http.StatusInternalServerError)
 		}
 	})
 
@@ -813,6 +820,9 @@ func (g *Gaby) syncAndRunAll(ctx context.Context) (errs []error) {
 		check(g.labelAll(ctx))
 		check(g.postAllRules(ctx))
 		check(g.postAllBisections(ctx))
+		// TODO(tatianabradley): Uncomment once ready to enable.
+		// check(g.postAllOverviews(ctx))
+
 		// Apply all actions.
 		check(g.runActions())
 	}
@@ -927,6 +937,15 @@ func (g *Gaby) postAllRules(ctx context.Context) error {
 	defer g.db.Unlock(gabyPostRulesLock)
 
 	return g.rulesPoster.Run(ctx)
+}
+
+func (g *Gaby) postAllOverviews(ctx context.Context) error {
+	// Hold the lock for GitHub sync because [overview.Client.Run] can't run
+	// in parallel with a GitHub sync.
+	g.db.Lock(gabyGitHubSyncLock)
+	defer g.db.Unlock(gabyGitHubSyncLock)
+
+	return g.overview.Run(ctx)
 }
 
 func (g *Gaby) labelAll(ctx context.Context) error {

@@ -4,7 +4,18 @@
 
 // Package overview generates and posts overviews of discussions.
 // For now, it only works with GitHub issues and their comments.
-// TODO(tatianabradley): Add comment explaining design.
+//
+// Create a client to generate and post overviews via [New]. Use
+// [Client.Issue] and [Client.IssueUpdate] to generate overviews.
+// Call [Run] to log post/update actions for issues that need overviews,
+// or updates to their overviews.
+//
+// Database entries are as follows:
+//
+//   - (overview.Run, $name, $bot) -> [runState]: holds state about calls to [Client.Run]
+//   - (overview.IssueState, $name, $bot, $project, $issue) -> [issueState]: holds state about individual GitHub issues
+//   - Watchers with name "overview.PostOrUpdate"+$name+$bot.
+//   - Action log entries of kind "overview.Post" and "overview.Update".
 package overview
 
 import (
@@ -22,9 +33,8 @@ import (
 // A Client is used to generate, post, and update AI-generated overviews
 // of GitHub issues and their comments.
 type Client struct {
-	slog                  *slog.Logger
-	db                    storage.DB    // the database to use to store state
-	minTimeBetweenUpdates time.Duration // the minimum time between calls to [poster.run]
+	slog *slog.Logger
+	db   storage.DB // the database to use to store state
 
 	g *generator // for generating overviews
 	p *poster    // for modifying GitHub
@@ -36,44 +46,57 @@ type Client struct {
 // Clients with the same name and bot use the same state.
 func New(lg *slog.Logger, db storage.DB, gh *github.Client, lc *llmapp.Client, name, bot string) *Client {
 	c := &Client{
-		slog:                  lg,
-		db:                    db,
-		minTimeBetweenUpdates: defaultMinTimeBetweenUpdates,
-		g:                     newGenerator(gh, lc),
-		p:                     newPoster(name, bot),
+		slog: lg,
+		db:   db,
+		g:    newGenerator(gh, lc),
+		p:    newPoster(lg, db, gh, name, bot),
 	}
 	c.g.skipCommentsBy(bot)
 	return c
 }
 
-var defaultMinTimeBetweenUpdates = 24 * time.Hour
+// the minimum time between calls to [poster.run]
+var minTimeBetweenUpdates = 24 * time.Hour
 
-// Run posts and updates AI-generated overviews of GitHub issues.
+// Run computes AI-generated overviews of GitHub issues, and adds
+// appropriate actions (post or update) to the action log.
 //
-// TODO(tatianabradley): Detailed comment.
+// Run is configured to only do work once every 24 hours, to avoid
+// making too many LLM calls. If not enough time has passed since the
+// last successful run, Run logs a message and returns.
+//
+// Run assumes that the underlying database of GitHub issues, comments and events is not
+// being modified. (So, it must not be run in parallel with a GitHub sync.)
+//
+// See [poster.run] for additional implementation details.
 func (c *Client) Run(ctx context.Context) error {
+	return c.run(ctx, time.Now())
+}
+
+func (c *Client) run(ctx context.Context, now time.Time) error {
 	c.slog.Info("overview.Run start")
 	defer func() {
 		c.slog.Info("overview.Run end")
 	}()
 
-	// Check if we should run or not.
-	c.db.Lock(string(c.runKey()))
-	defer c.db.Unlock(string(c.runKey()))
+	k := string(c.runKey())
+	c.db.Lock(k)
+	defer c.db.Unlock(k)
 
+	// Check if we should run or not.
 	lr, err := c.lastRun()
 	if err != nil {
 		return err
 	}
-	if time.Since(lr) < c.minTimeBetweenUpdates {
-		c.slog.Info("overview.Run: skipped (last successful run happened too recently)", "last run", lr, "min time", c.minTimeBetweenUpdates)
+	if now.Sub(lr) < minTimeBetweenUpdates {
+		c.slog.Info("overview.Run: skipped (last successful run happened too recently)", "last run", lr, "min time", minTimeBetweenUpdates)
 		return nil
 	}
-	if err := c.p.run(); err != nil {
+	if err := c.p.run(ctx, c.ForIssue, now); err != nil {
 		return err
 	}
 
-	c.setLastRun(time.Now())
+	c.setLastRun(now)
 	return nil
 }
 
@@ -98,27 +121,44 @@ func (c *Client) ForIssueUpdate(ctx context.Context, iss *github.Issue, lastRead
 // EnableProject enables the Client to post on and update issues in the given
 // GitHub project (for example "golang/go").
 func (c *Client) EnableProject(project string) {
-	c.p.projects[project] = true
+	c.p.EnableProject(project)
 }
 
-// RequireApproval configures the poster to require approval for all actions.
+// RequireApproval configures the Client to require approval for all actions.
 func (c *Client) RequireApproval() {
-	c.p.requireApproval = true
+	c.p.RequireApproval()
 }
 
 // AutoApprove configures the Client to auto-approve all its actions.
 func (c *Client) AutoApprove() {
-	c.p.requireApproval = false
+	c.p.AutoApprove()
 }
 
-// SetMinComments sets the minimum number of comments a post needs to get an
+// SetMinComments sets the minimum number of comments an issue needs to get an
 // overview comment.
 func (c *Client) SetMinComments(n int) {
-	c.p.minComments = n
+	c.p.SetMinComments(n)
 }
 
-type state struct {
-	LastRun string // the time of the last sucessful (non-skipped) call to [Client.Run]
+// SetMaxIssueAge sets the maximum age of an issue to get an overview comment.
+func (c *Client) SetMaxIssueAge(age time.Duration) {
+	c.p.SetMaxIssueAge(age)
+}
+
+// SkipIssueAuthor configures the Client to not post overview comments
+// for issues by the given author.
+func (c *Client) SkipIssueAuthor(author string) {
+	c.p.SkipIssueAuthor(author)
+}
+
+// SkipCommentsBy configures the Client to always skip comments authored
+// by the given GitHub user when generating overviews.
+func (c *Client) SkipCommentsBy(user string) {
+	c.g.skipCommentsBy(user)
+}
+
+type runState struct {
+	LastRun string // the time the last sucessful (non-skipped) call to [Client.Run] began
 }
 
 // lastRun returns the time of the last successful (non-skipped)
@@ -128,7 +168,7 @@ func (c *Client) lastRun() (time.Time, error) {
 	if !ok {
 		return time.Time{}, nil
 	}
-	var s state
+	var s runState
 	if err := json.Unmarshal(b, &s); err != nil {
 		return time.Time{}, err
 	}
@@ -138,7 +178,7 @@ func (c *Client) lastRun() (time.Time, error) {
 // setLastRun sets the time of the last successful (non-skipped)
 // call to [Client.Run].
 func (c *Client) setLastRun(t time.Time) {
-	c.db.Set(c.runKey(), storage.JSON(&state{
+	c.db.Set(c.runKey(), storage.JSON(&runState{
 		LastRun: t.Format(time.RFC3339),
 	}))
 }

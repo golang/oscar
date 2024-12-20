@@ -25,8 +25,16 @@ import (
 // (for example "https://github.com/golang/go/issues/12345"),
 // only consulting the database (not actual GitHub).
 func (c *Client) LookupIssueURL(url string) (*Issue, error) {
-	bad := func() (*Issue, error) {
-		return nil, fmt.Errorf("not a github URL: %q", url)
+	proj, n, err := parseIssueURL(url)
+	if err != nil {
+		return nil, err
+	}
+	return LookupIssue(c.db, proj, n)
+}
+
+func parseIssueURL(url string) (string, int64, error) {
+	bad := func() (string, int64, error) {
+		return "", 0, fmt.Errorf("not a github URL: %q", url)
 	}
 	proj, ok := strings.CutPrefix(url, "https://github.com/")
 	if !ok {
@@ -45,8 +53,39 @@ func (c *Client) LookupIssueURL(url string) (*Issue, error) {
 	if err != nil || n <= 0 {
 		return bad()
 	}
+	return proj, n, nil
+}
 
-	return LookupIssue(c.db, proj, n)
+// LookupIssueCommentURL looks up an issue comment by HTML URL
+// (for example https://github.com/golang/go/issues/12345#issuecomment-135132324),
+// only consulting the database (not actual GitHub).
+func (c *Client) LookupIssueCommentURL(url string) (*IssueComment, error) {
+	project, issue, comment, err := ParseIssueCommentURL(url)
+	if err != nil {
+		return nil, err
+	}
+	e, err := c.LookupIssueCommentEvent(project, issue, comment)
+	if err != nil {
+		return nil, err
+	}
+	return e.Typed.(*IssueComment), nil
+}
+
+// ParseIssueCommentURL returns the project, issue number and comment
+// number for a URL
+// (for example https://github.com/golang/go/issues/12345#issuecomment-135132324).
+// Note: this is the URL format stored in the [IssueComment.HTMLURL] field.
+func ParseIssueCommentURL(u string) (project string, issue, comment int64, err error) {
+	before, after, _ := strings.Cut(u, "#issuecomment-")
+	proj, i, err := parseIssueURL(before)
+	if err != nil {
+		return "", 0, 0, err
+	}
+	c, err := strconv.ParseInt(after, 10, 64)
+	if err != nil || i <= 0 {
+		return "", 0, 0, err
+	}
+	return proj, i, c, nil
 }
 
 // LookupIssue looks up an issue by project and issue number
@@ -73,6 +112,17 @@ func LookupIssues(db storage.DB, project string, issueMin, issueMax int64) iter.
 	}
 }
 
+// LookupIssueCommentEvent looks up an issue comment event by project, issue, and comment number,
+// (for example "golang/go", 12345, 135132324) only consulting the database
+// (not actual GitHub).
+func (c *Client) LookupIssueCommentEvent(project string, issue, comment int64) (*Event, error) {
+	t, ok := timed.Get(c.db, eventKind, o(project, issue, "/issues/comments", comment))
+	if !ok {
+		return nil, fmt.Errorf("github.LookupIssueCommentEvent: issue %s#%d comment %d not in database", project, issue, comment)
+	}
+	return decodeEvent(c.db, t), nil
+}
+
 // Comments returns an iterator over the comments for the issue in the db.
 func (c *Client) Comments(iss *Issue) iter.Seq[*IssueComment] {
 	return func(yield func(*IssueComment) bool) {
@@ -84,6 +134,12 @@ func (c *Client) Comments(iss *Issue) iter.Seq[*IssueComment] {
 			}
 		}
 	}
+}
+
+// EventsByAPI returns an iterator over the events for the issue in the
+// Client's db with the given API.
+func (c *Client) EventsByAPI(project string, issue int64, api string) iter.Seq[*Event] {
+	return eventsByAPI(c.db, project, issue, api)
 }
 
 // eventsByAPI returns an iterator over the events for the issue in the db

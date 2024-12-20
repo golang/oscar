@@ -36,7 +36,7 @@ func (c *Client) PostIssueComment(ctx context.Context, issue *Issue, changes *Is
 			Issue:               issue.Number,
 			IssueCommentChanges: changes.clone(),
 		})
-		return "", "", nil
+		return "test-api-url", "test-url", nil
 	}
 
 	body, err := c.post(ctx, issue.URL+"/comments", changes)
