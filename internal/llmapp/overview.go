@@ -33,16 +33,17 @@ import (
 
 // Client is a client for accessing the LLM application functionality.
 type Client struct {
-	slog *slog.Logger
-	g    llm.ContentGenerator
-	db   storage.DB // cache for LLM responses
+	slog    *slog.Logger
+	g       llm.ContentGenerator
+	checker llm.PolicyChecker
+	db      storage.DB // cache for LLM responses
 }
 
 // New returns a new client.
 // g is the underlying LLM content generator to use, and db is the database
 // to use as a cache.
 func New(lg *slog.Logger, g llm.ContentGenerator, db storage.DB) *Client {
-	return &Client{slog: lg, g: g, db: db}
+	return NewWithChecker(lg, g, nil, db)
 }
 
 // Overview returns an LLM-generated overview of the given documents,
@@ -101,10 +102,11 @@ func (c *Client) overview(ctx context.Context, kind docsKind, groups ...*docGrou
 		return nil, err
 	}
 	return &Result{
-		Response: overview,
-		Cached:   cached,
-		Schema:   schema,
-		Prompt:   prompt,
+		Response:           overview,
+		Cached:             cached,
+		Schema:             schema,
+		Prompt:             prompt,
+		HasPolicyViolation: c.hasPolicyViolation(ctx, prompt, overview),
 	}, nil
 }
 

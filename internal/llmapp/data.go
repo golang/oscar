@@ -27,4 +27,6 @@ type Result struct {
 	Cached   bool        // whether the response was cached
 	Schema   *llm.Schema // the JSON schema used to generate the result (nil if none)
 	Prompt   []llm.Part  // the prompt(s) used to generate the result
+	// TODO(tatianabradley): Store the specific policy results instead of just a boolean.
+	HasPolicyViolation bool // whether any policy violations were found for the inputs or outputs of the LLM
 }
