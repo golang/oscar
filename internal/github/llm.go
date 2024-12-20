@@ -5,6 +5,7 @@
 package github
 
 import (
+	"golang.org/x/oscar/internal/github/wrap"
 	"golang.org/x/oscar/internal/llmapp"
 )
 
@@ -16,7 +17,7 @@ func (i *Issue) ToLLMDoc() *llmapp.Doc {
 		URL:    i.HTMLURL,
 		Author: i.User.ForDisplay(),
 		Title:  i.Title,
-		Text:   i.Body,
+		Text:   wrap.Strip(i.Body), // remove content added by bots
 	}
 }
 

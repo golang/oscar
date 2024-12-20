@@ -134,6 +134,14 @@ func (c *Client) AutoApprove() {
 	c.p.AutoApprove()
 }
 
+// FindUnloggedActions configures the Client to look for actions it may have
+// already taken that are not in the action log, based on hidden tags
+// posted to GitHub.
+// This can be used for testing, or to recover from a lost/corrupted action log.
+func (c *Client) FindUnloggedActions() {
+	c.p.findUnloggedActions = true
+}
+
 // SetMinComments sets the minimum number of comments an issue needs to get an
 // overview comment.
 func (c *Client) SetMinComments(n int) {

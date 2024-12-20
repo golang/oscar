@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"golang.org/x/oscar/internal/github"
+	"golang.org/x/oscar/internal/github/wrap"
 	"golang.org/x/oscar/internal/storage"
 )
 
@@ -50,8 +51,12 @@ func (p *poster) getAction(ctx context.Context, iss *github.Issue, getOverview o
 	if err != nil {
 		return nil, err
 	}
+	comment, err := comment(r.Overview.Response, p.w)
+	if err != nil {
+		return nil, err
+	}
 	changes := &github.IssueCommentChanges{
-		Body: comment(r.Overview.Response),
+		Body: comment,
 	}
 	return &action{
 		Issue:        iss,
@@ -118,6 +123,7 @@ var (
 	errPostIssueCommentFailed = errors.New("post issue comment failed")
 	errDownloadIssueFailed    = errors.New("download issue failed")
 	errEditIssueFailed        = errors.New("edit issue failed")
+	errWrapFailed             = errors.New("wrap failed")
 )
 
 // runAction runs the given action.
@@ -171,8 +177,11 @@ func (p *poster) addLinkToComment(ctx context.Context, iss *github.Issue, url st
 	// Unfortunately, if the issue body is edited between the call to
 	// DownloadIssue and EditIssue, we will overwrite the edits.
 	// There's no clear way to prevent this.
-	err = p.gh.EditIssue(ctx, liveIss, &github.IssueChanges{Body: appendCommentURL(liveIss, p.bot, url)})
+	body, err := appendCommentURL(iss, p.bot, url, p.w)
 	if err != nil {
+		return fmt.Errorf("%w issue=%d: %v", errWrapFailed, liveIss.Number, err)
+	}
+	if err := p.gh.EditIssue(ctx, liveIss, &github.IssueChanges{Body: body}); err != nil {
 		return fmt.Errorf("%w issue=%d: %v", errEditIssueFailed, liveIss.Number, err)
 	}
 	p.slog.Info("overview: added link to overview comment to issue body", "issue", iss.Number, "url", url)
@@ -219,18 +228,29 @@ func (p *poster) runUpdateAction(ctx context.Context, a *action) (*result, error
 	return &result{URL: a.IssueComment.HTMLURL}, nil
 }
 
-// containsCommentURL reports whether the body of the issue contains the given url.
+// containsCommentURL reports whether this issue contains an edit made by
+// this [poster] which contains the given url.
 func (p *poster) containsCommentURL(iss *github.Issue, url string) bool {
-	return strings.Contains(iss.Body, url)
+	for _, uw := range wrap.ParseAll(iss.Body) {
+		if uw.Bot == p.bot && uw.Kind == p.name && strings.Contains(uw.Body, url) {
+			return true
+		}
+	}
+	return false
 }
 
-// appendCommentURL appends a message linking to the given url to the issue body and
-// returns the result.
-func appendCommentURL(iss *github.Issue, bot string, url string) string {
+// appendCommentURL returns the issue changes which, when passed to [github.EditIssueComment]
+// will add a message linking to the given url.
+func appendCommentURL(iss *github.Issue, bot, url string, w *wrap.Wrapper) (string, error) {
 	// OK to modify editText (though it must contain url).
 	editText := fmt.Sprintf("@%s's overview of this issue: %s", bot, url)
+	// DO NOT REMOVE this wrapping call.
+	wrapped, err := w.Wrap(editText, nil)
+	if err != nil {
+		return "", err
+	}
 	return strings.Join([]string{
 		iss.Body,
-		editText,
-	}, "\n")
+		wrapped,
+	}, "\n"), nil
 }

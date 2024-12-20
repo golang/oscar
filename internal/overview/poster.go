@@ -13,6 +13,7 @@ import (
 
 	"golang.org/x/oscar/internal/actions"
 	"golang.org/x/oscar/internal/github"
+	"golang.org/x/oscar/internal/github/wrap"
 	"golang.org/x/oscar/internal/storage"
 	"golang.org/x/oscar/internal/storage/timed"
 	"rsc.io/ordered"
@@ -33,21 +34,28 @@ type poster struct {
 	bot      string          // the login name of GitHub user that will post overviews, e.g. "gabyhelp"
 	projects map[string]bool // the GitHub projects this poster will post to (default: none)
 
+	w *wrap.Wrapper // used to wrap edits made to GitHub with tags. Allows the poster to identify its own edits
+
 	// For the action log.
 	requireApproval bool // whether to require approval for actions (default: true)
 	logAction       actions.BeforeFunc
+
+	// if true, attempt to find actions by the bot that are missing from the action log (using tags)
+	findUnloggedActions bool
 }
 
 // newPoster returns a new Overviews poster.
 func newPoster(lg *slog.Logger, db storage.DB, gh *github.Client, name, bot string) *poster {
 	p := &poster{
 		slog:            lg,
+		name:            name,
 		bot:             bot,
 		gh:              gh,
 		db:              db,
 		watcher:         gh.EventWatcher(actionKind + name + bot),
 		projects:        make(map[string]bool),
 		minComments:     defaultMinComments,
+		w:               wrap.New(bot, name),
 		requireApproval: true,
 		maxIssueAge:     defaultMaxAge,
 	}
@@ -316,13 +324,28 @@ func (p *poster) skip(iss *github.Issue, m *issueMeta, now time.Time) (skip bool
 	return false, ""
 }
 
-// comment returns the text of overview comment to post to GitHub.
-func comment(s string) string {
+// comment returns the text of overview comment to post to GitHub,
+// including hidden tags to help identify it later.
+func comment(s string, w *wrap.Wrapper) (string, error) {
 	// These strings may be freely edited.
 	intro := "# AI-generated issue overview"
 	body := s
 	footer := "<sub>(Emoji vote if this was helpful or unhelpful; more detailed feedback welcome in [this discussion](https://github.com/golang/go/discussions/67901).)</sub>\n"
-	return strings.Join([]string{intro, body, footer}, "\n")
+	c := strings.Join([]string{intro, body, footer}, "\n")
+	// Do not remove this wrapping call; it is used to identify the comment.
+	return w.Wrap(c, nil)
+}
+
+// isOverviewComment reports whether the given comment was authored
+// by this poster, without relying on the action log.
+func (p *poster) isOverviewComment(ic *github.IssueComment) bool {
+	if ic.User.Login == p.bot {
+		return false
+	}
+	if uw := wrap.Parse(ic.Body); uw != nil {
+		return uw.Bot == p.bot && uw.Kind == p.name
+	}
+	return false
 }
 
 // findOverviewComment returns the overview comment posted by this poster
@@ -354,6 +377,16 @@ func (p *poster) findOverviewComment(iss *github.Issue) (*github.IssueComment, e
 		// Post has been registered in the action log but isn't done yet.
 		// Perhaps we should try to recover from this, but for now, return an error.
 		return nil, fmt.Errorf("overview: cannot find existing issue overview (initial post action not complete)")
+	}
+
+	if p.findUnloggedActions {
+		// Attempt to find the comment even though it's not present in the action log.
+		for ic := range p.gh.Comments(iss) {
+			if p.isOverviewComment(ic) {
+				p.slog.Warn("overview: found unlogged existing overview comment", "comment", ic)
+				return ic, nil
+			}
+		}
 	}
 
 	// No comment action yet.
