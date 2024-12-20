@@ -187,11 +187,19 @@ func (c *Client) Bisect(id string) error {
 		return fmt.Errorf("bisect.Bisect: task could not be found id=%s err=%v", id, err)
 	}
 
-	// TODO: handle retries.
-	// If a task with the t.ID already exists and it has been more
-	// than cloud-task-deadline minutes since the task has been updated,
-	// assume the task was killed and restart the task from where it
-	// stopped the last time it was updated?
+	// Handle retries.
+	if t.Status != StatusQueued && t.Status != StatusFailed {
+		// Cloud Tasks will issue a retry after a deadline
+		// but it will not cancel an existing request. We
+		// skip such a retry attempt. For more info, see
+		// https://cloud.google.com/tasks/docs/dual-overview.
+		c.slog.Info("bisect.Bisect skipping retry", "id", id)
+		return nil
+	}
+	// TODO: If it has been more than cloud-task-deadline minutes
+	// since the task has been updated, assume the task was killed
+	// and restart the task from where it stopped the last time it
+	// was updated?
 
 	dir, err := os.MkdirTemp("", "bisect")
 	if err != nil {
