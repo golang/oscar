@@ -30,6 +30,7 @@ import (
 	"golang.org/x/oscar/internal/discussion"
 	"golang.org/x/oscar/internal/docs"
 	"golang.org/x/oscar/internal/embeddocs"
+	"golang.org/x/oscar/internal/gcp/checks"
 	"golang.org/x/oscar/internal/gcp/firestore"
 	"golang.org/x/oscar/internal/gcp/gcphandler"
 	"golang.org/x/oscar/internal/gcp/gcpmetrics"
@@ -57,6 +58,7 @@ type gabyFlags struct {
 	level           string
 	overlay         string
 	requireApproval string
+	enforcePolicy   bool
 }
 
 var flags gabyFlags
@@ -70,6 +72,7 @@ func init() {
 	flag.StringVar(&flags.level, "level", "info", "initial log level")
 	flag.StringVar(&flags.overlay, "overlay", "", "spec for overlay to DB; see internal/dbspec for syntax")
 	flag.StringVar(&flags.requireApproval, "requireapproval", "", "comma-separated list of packages whose actions require approval")
+	flag.BoolVar(&flags.enforcePolicy, "enforcepolicy", false, "whether to enforce safety policies on LLM inputs and outputs")
 }
 
 // Gaby holds the state for gaby's execution.
@@ -91,6 +94,7 @@ type Gaby struct {
 	docs      *docs.Corpus           // document corpus to use
 	embed     llm.Embedder           // LLM embedder to use
 	llm       llm.ContentGenerator   // LLM content generator to use
+	policy    llm.PolicyChecker      // LLM checker to use
 	llmapp    *llmapp.Client         // LLM client to use
 	github    *github.Client         // github client to use
 	disc      *discussion.Client     // github discussion client to use
@@ -167,7 +171,7 @@ func main() {
 	}
 	g.embed = ai
 	g.llm = ai
-	g.llmapp = llmapp.New(g.slog, ai, g.db)
+	g.llmapp = llmapp.NewWithChecker(g.slog, ai, g.policy, g.db)
 
 	cr := crawl.New(g.slog, g.db, g.http)
 	cr.Add("https://go.dev/")
@@ -338,6 +342,15 @@ func (g *Gaby) initGCP() (shutdown func()) {
 		log.Fatal(err)
 	}
 	g.secret = sdb
+
+	if flags.enforcePolicy {
+		llmchecker, err := checks.New(g.ctx, g.slog, flags.project)
+		if err != nil {
+			log.Fatal(err)
+		}
+		llmchecker.SetPolicies(llm.AllPolicyTypes())
+		g.policy = llmchecker
+	}
 
 	// Initialize error reporting if we are running on Cloud Run.
 	if g.cloud {

@@ -18,6 +18,8 @@ import (
 //
 // When any of the Overview functions are called, the prompts and outputs of the LLM
 // will be checked for safety violations.
+//
+// If the checker is nil, [NewWithChecker] is identical to [New].
 func NewWithChecker(lg *slog.Logger, g llm.ContentGenerator, checker llm.PolicyChecker, db storage.DB) *Client {
 	return &Client{slog: lg, g: g, checker: checker, db: db}
 }
