@@ -51,15 +51,15 @@ import (
 )
 
 type gabyFlags struct {
-	search          bool
-	project         string
-	firestoredb     string
-	enablesync      bool
-	enablechanges   bool
-	level           string
-	overlay         string
-	requireApproval string
-	enforcePolicy   bool
+	search        bool
+	project       string
+	firestoredb   string
+	enablesync    bool
+	enablechanges bool
+	level         string
+	overlay       string
+	autoApprove   string // list of packages that do not require manual approval
+	enforcePolicy bool
 }
 
 var flags gabyFlags
@@ -72,7 +72,7 @@ func init() {
 	flag.BoolVar(&flags.enablechanges, "enablechanges", false, "allow changes to GitHub")
 	flag.StringVar(&flags.level, "level", "info", "initial log level")
 	flag.StringVar(&flags.overlay, "overlay", "", "spec for overlay to DB; see internal/dbspec for syntax")
-	flag.StringVar(&flags.requireApproval, "requireapproval", "", "comma-separated list of packages whose actions require approval")
+	flag.StringVar(&flags.autoApprove, "autoapprove", "", "comma-separated list of packages whose actions do not require approval")
 	flag.BoolVar(&flags.enforcePolicy, "enforcepolicy", false, "whether to enforce safety policies on LLM inputs and outputs")
 }
 
@@ -130,7 +130,7 @@ func main() {
 		googleGroups:   []string{"golang-nuts"},
 	}
 
-	requireApprovalPkgs, err := parseRequireApproval(flags.requireApproval)
+	autoApprovePkgs, err := parseApprovalPkgs(flags.autoApprove)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -195,7 +195,7 @@ func main() {
 	cf.AutoLink(`\bCL ([0-9]+)\b`, "https://go.dev/cl/$1")
 	cf.ReplaceURL(`\Qhttps://go-review.git.corp.google.com/\E`, "https://go-review.googlesource.com/")
 	cf.EnableEdits()
-	if slices.Contains(requireApprovalPkgs, "commentfix") {
+	if !slices.Contains(autoApprovePkgs, "commentfix") {
 		cf.RequireApproval()
 	}
 	g.commentFixer = cf
@@ -209,7 +209,7 @@ func main() {
 	rp.SkipTitlePrefix("x/tools/gopls: release version v")
 	rp.SkipTitleSuffix(" backport]")
 	rp.EnablePosts()
-	if slices.Contains(requireApprovalPkgs, "related") {
+	if !slices.Contains(autoApprovePkgs, "related") {
 		rp.RequireApproval()
 	}
 	g.relatedPoster = rp
@@ -243,16 +243,16 @@ func main() {
 
 var validApprovalPkgs = []string{"commentfix", "related", "rules"}
 
-// parseRequireApproval parses a comma-separated list of package names,
+// parseApprovalPkgs parses a comma-separated list of package names,
 // checking that the packages are valid.
-func parseRequireApproval(s string) ([]string, error) {
+func parseApprovalPkgs(s string) ([]string, error) {
 	if s == "" {
 		return nil, nil
 	}
 	pkgs := strings.Split(s, ",")
 	for _, p := range pkgs {
 		if !slices.Contains(validApprovalPkgs, p) {
-			return nil, fmt.Errorf("invalid arg %q to -requireapproval: valid values are: %s",
+			return nil, fmt.Errorf("invalid arg %q to -autoapprove: valid values are: %s",
 				p, strings.Join(validApprovalPkgs, ", "))
 		}
 	}
