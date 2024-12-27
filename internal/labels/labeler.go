@@ -23,6 +23,9 @@ import (
 )
 
 // A Labeler labels GitHub issues.
+// It uses the following database keys:
+// - ["labels.Labeler"] for the action log.
+// - ["labels.Categories", Project, Issue] to record the categories assigned to an issue.
 type Labeler struct {
 	slog        *slog.Logger
 	db          storage.DB
@@ -104,8 +107,9 @@ func (l *Labeler) SkipAuthor(author string) {
 
 // An action has all the information needed to label a GitHub issue.
 type action struct {
-	Issue     *github.Issue
-	NewLabels []string // labels to add
+	Issue      *github.Issue
+	Categories []string // the names of the categories corresponding to the labels
+	NewLabels  []string // labels to add
 }
 
 // result is the result of apply an action.
@@ -199,8 +203,9 @@ func (l *Labeler) logLabelIssue(ctx context.Context, e *github.Event) (advance b
 	}
 
 	act := &action{
-		Issue:     issue,
-		NewLabels: []string{cat.Label},
+		Issue:      issue,
+		Categories: []string{cat.Name},
+		NewLabels:  []string{cat.Label},
 	}
 	l.logAction(l.db, logKey(e), storage.JSON(act), l.requireApproval)
 	return true, nil
@@ -336,6 +341,7 @@ func (l *Labeler) runAction(ctx context.Context, a *action) (*result, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Labeler: edit %s: %w", a.Issue.URL, err)
 	}
+	l.setCategories(a.Issue, a.Categories)
 	return &result{URL: issue.URL}, nil
 }
 
@@ -343,4 +349,29 @@ func (l *Labeler) runAction(ctx context.Context, a *action) (*result, error) {
 // of the database key; it is prefixed by the Labelers's action kind.
 func logKey(e *github.Event) []byte {
 	return ordered.Encode(e.Project, e.Issue)
+}
+
+// Latest returns the latest known DBTime marked old by the Poster's Watcher.
+func (l *Labeler) Latest() timed.DBTime {
+	return l.watcher.Latest()
+}
+
+func (l *Labeler) setCategories(i *github.Issue, cats []string) {
+	l.db.Set(categoriesKey(i.Project(), i.Number), []byte(strings.Join(cats, ",")))
+}
+
+// Categories returns the list of categories that the Labeler associated with the given issue.
+// If there is no association, it returns nil, false.
+func (l *Labeler) Categories(project string, issueNumber int64) ([]string, bool) {
+	catstr, ok := l.db.Get(categoriesKey(project, issueNumber))
+	if !ok {
+		return nil, false
+	}
+	return strings.Split(string(catstr), ","), true
+}
+
+const categoriesPrefix = "labels.Categories"
+
+func categoriesKey(project string, num int64) []byte {
+	return ordered.Encode(categoriesPrefix, project, num)
 }

@@ -140,3 +140,27 @@ func TestRun(t *testing.T) {
 		t.Fatal("not enough edits")
 	}
 }
+
+func TestCategories(t *testing.T) {
+	const project = "golang/go"
+	lg := testutil.Slogger(t)
+	db := storage.MemDB()
+	gh := github.New(lg, db, nil, nil)
+	lab := New(lg, db, gh, nil, "test")
+	issue := &github.Issue{
+		URL:    "https://api.github.com/repos/my/project/whatever",
+		Number: 123,
+	}
+	cats := []string{"bug", "incomplete"}
+	lab.setCategories(issue, cats)
+	if _, ok := lab.Categories("my/project", 1); ok {
+		t.Error("found, but shouldn't have")
+	}
+	got, ok := lab.Categories("my/project", 123)
+	if !ok {
+		t.Fatal("not found, but should have")
+	}
+	if !slices.Equal(got, cats) {
+		t.Errorf("got %v, want %v", got, cats)
+	}
+}
