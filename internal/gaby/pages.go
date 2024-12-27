@@ -10,7 +10,7 @@ var pages = []pageID{
 	// Dev pages.
 	actionlogID, dbviewID,
 	// User pages.
-	overviewID, searchID, rulesID,
+	overviewID, searchID, rulesID, labelsID,
 	// reviews omitted for now, as it loads very slowly
 }
 
