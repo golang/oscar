@@ -162,6 +162,34 @@ func (l *Labeler) Run(ctx context.Context) error {
 	return nil
 }
 
+// LabelIssue labels a single issue.
+//
+// It follows the same logic as [Labeler.Run] for a single issue, except
+// that it does not rely on or modify the Labeler's watcher.
+// This means that [Labeler.LabelIssue] can be called on any issue without
+// affecting the starting point of future calls to [Labeler.Run].
+//
+// It requires that there be a database entry for the given issue.
+func (l *Labeler) LabelIssue(ctx context.Context, project string, issue int64) error {
+	e := lookupIssueEvent(project, issue, l.github)
+	if e == nil {
+		return fmt.Errorf("labels.Labeler.LabelIssue(project=%s, issue=%d): event not found", project, issue)
+	}
+	_, err := l.logLabelIssue(ctx, e)
+	return err
+}
+
+// lookupIssueEvent returns the first event for the "/issues" API with
+// the given ID in the database, or nil if not found.
+func lookupIssueEvent(project string, issue int64, gh *github.Client) *github.Event {
+	for event := range gh.Events(project, issue, issue) {
+		if event.API == "/issues" {
+			return event
+		}
+	}
+	return nil
+}
+
 // logLabelIssue logs an action to post an issue for the event.
 // advance is true if the event should be considered to have been
 // handled by this or a previous run function, indicating
@@ -179,7 +207,7 @@ func (l *Labeler) logLabelIssue(ctx context.Context, e *github.Event) (advance b
 		return false, nil
 	}
 	// If an action has already been logged for this event, do nothing.
-	// we don't need a lock. [actions.before] will lock to avoid multiple log entries.
+	// We don't need a lock. [actions.before] will lock to avoid multiple log entries.
 	if _, ok := actions.Get(l.db, l.actionKind, logKey(e)); ok {
 		l.slog.Info("labels.Labeler already logged", "name", l.name, "project", e.Project, "issue", e.Issue, "event", e)
 		// If labeling is enabled, we can advance the watcher because

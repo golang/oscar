@@ -17,6 +17,7 @@ import (
 	"golang.org/x/oscar/internal/docs"
 	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/httprr"
+	"golang.org/x/oscar/internal/labels"
 	"golang.org/x/oscar/internal/llm"
 	"golang.org/x/oscar/internal/related"
 	"golang.org/x/oscar/internal/secret"
@@ -140,6 +141,7 @@ func testGaby(t *testing.T, secret secret.DB) *Gaby {
 
 	vdb := storage.MemVectorDB(db, lg, "vecs")
 	emb := llm.QuoteEmbedder()
+	cgen := llm.EchoContentGenerator()
 
 	rp := related.New(lg, db, gh, vdb, dc, "related")
 	rp.EnableProject(testProject)
@@ -152,6 +154,8 @@ func testGaby(t *testing.T, secret secret.DB) *Gaby {
 	// No fixes yet.
 	cf.EnableEdits()
 
+	lab := labels.New(lg, db, gh, cgen, "labels")
+
 	return &Gaby{
 		githubProjects: []string{testProject, testProject2},
 		github:         gh,
@@ -163,6 +167,7 @@ func testGaby(t *testing.T, secret secret.DB) *Gaby {
 		docs:           dc,
 		commentFixer:   cf,
 		relatedPoster:  rp,
+		labeler:        lab,
 	}
 }
 

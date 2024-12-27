@@ -39,6 +39,7 @@ import (
 	"golang.org/x/oscar/internal/gerrit"
 	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/googlegroups"
+	"golang.org/x/oscar/internal/labels"
 	"golang.org/x/oscar/internal/llm"
 	"golang.org/x/oscar/internal/llmapp"
 	"golang.org/x/oscar/internal/overview"
@@ -110,6 +111,7 @@ type Gaby struct {
 	rulesPoster   *rules.Poster     // used to post rule violations
 	commentFixer  *commentfix.Fixer // used to fix GitHub comments
 	overview      *overview.Client  // used to generate and post overviews
+	labeler       *labels.Labeler   // used to assign labels to issues
 }
 
 func main() {
@@ -226,6 +228,20 @@ func main() {
 	}
 	g.rulesPoster = rulep
 
+	labeler := labels.New(g.slog, g.db, g.github, ai, "gabyhelp")
+	for _, proj := range g.githubProjects {
+		// TODO: support other projects.
+		if proj != "golang/go" {
+			continue
+		}
+		labeler.EnableProject(proj)
+	}
+	labeler.EnableLabels()
+	if !slices.Contains(autoApprovePkgs, "labels") {
+		labeler.RequireApproval()
+	}
+	g.labeler = labeler
+
 	// Named functions to retrieve latest Watcher times.
 	watcherLatests := map[string]func() timed.DBTime{
 		github.DocWatcherID:       docs.LatestFunc(g.github),
@@ -239,6 +255,7 @@ func main() {
 		"gerritlinks fix": cf.Latest,
 		"related":         rp.Latest,
 		"rules":           rulep.Latest,
+		"labeler":         labeler.Latest,
 	}
 
 	// Install a metric that observes the latest values of the watchers each time metrics are sampled.
@@ -254,7 +271,7 @@ func main() {
 	select {}
 }
 
-var validApprovalPkgs = []string{"commentfix", "related", "rules"}
+var validApprovalPkgs = []string{"commentfix", "related", "rules", "labels"}
 
 // parseApprovalPkgs parses a comma-separated list of package names,
 // checking that the packages are valid.
@@ -693,10 +710,12 @@ func (g *Gaby) syncAndRunAll(ctx context.Context) (errs []error) {
 	}
 
 	if flags.enablechanges {
-		// Changes can run in any order.
+		// Changes can run in almost any order; the labeler should
+		// run before anything that uses labels.
 		// Write all changes to the action log.
 		check(g.fixAllComments(ctx))
 		check(g.postAllRelated(ctx))
+		check(g.labelAll(ctx))
 		check(g.postAllRules(ctx))
 		// Apply all actions.
 		actions.Run(ctx, g.slog, g.db)
@@ -716,6 +735,7 @@ const (
 	gabyFixCommentLock  = "gabyfixcommentaction"
 	gabyPostRelatedLock = "gabyrelatedaction"
 	gabyPostRulesLock   = "gabyrulesaction"
+	gabyLabelLock       = "gabylabelaction"
 )
 
 func (g *Gaby) syncGitHubIssues(ctx context.Context) error {
@@ -801,6 +821,13 @@ func (g *Gaby) postAllRules(ctx context.Context) error {
 	defer g.db.Unlock(gabyPostRulesLock)
 
 	return g.rulesPoster.Run(ctx)
+}
+
+func (g *Gaby) labelAll(ctx context.Context) error {
+	g.db.Lock(gabyLabelLock)
+	defer g.db.Unlock(gabyLabelLock)
+
+	return g.labeler.Run(ctx)
 }
 
 // localCron simulates Cloud Scheduler by fetching our server's /cron endpoint once per minute.

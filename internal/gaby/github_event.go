@@ -99,6 +99,9 @@ func (g *Gaby) handleGitHubIssueEvent(ctx context.Context, event *github.Webhook
 		if err := g.fixGitHubIssue(ctx, project, event.Issue.Number); err != nil {
 			return false, err
 		}
+		if err := g.labeler.LabelIssue(ctx, project, event.Issue.Number); err != nil {
+			return false, err
+		}
 		return true, nil
 	}
 
