@@ -49,7 +49,6 @@ import (
 	"golang.org/x/oscar/internal/secret"
 	"golang.org/x/oscar/internal/storage"
 	"golang.org/x/oscar/internal/storage/timed"
-	"rsc.io/ordered"
 )
 
 type gabyFlags struct {
@@ -224,23 +223,6 @@ func main() {
 	rulep.EnablePosts()
 	if !slices.Contains(autoApprovePkgs, "rules") {
 		rulep.RequireApproval()
-	}
-	if true { // TODO: remove once launched
-		if _, ok := g.db.Get(ordered.Encode("github.EventWatcher", "rules.Poster:rules")); !ok {
-			// For testing (and startup). Set a timestamp 1 hour before
-			// the related issue poster.
-			qq, ok := g.db.Get(ordered.Encode("github.EventWatcher", "related.Poster:related"))
-			if !ok {
-				panic("can't find key")
-			}
-			var t int64
-			err := ordered.Decode(qq, &t)
-			if err != nil {
-				panic(err)
-			}
-			t -= 5 * 60 * 60 * 1e9 // back up 1 hour
-			g.db.Set(ordered.Encode("github.EventWatcher", "rules.Poster:rules"), ordered.Encode(t))
-		}
 	}
 	g.rulesPoster = rulep
 
