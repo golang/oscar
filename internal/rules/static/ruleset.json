@@ -15,11 +15,11 @@
 	},
 	{
 	  "Text": "The \"What did you see happen?\" section should not be empty.",
-	  "Details": "A section is empty only if there is no text between the described markdown section header and the next markdown header."
+	  "Regexp": "### What did you see happen\\?\\s*###"
 	},
 	{
 	  "Text": "The \"What did you expect to see?\" section should not be empty.",
-	  "Details": "A section is empty only if there is no text between the described markdown section header and the next markdown header."
+	  "Regexp": "### What did you expect to see\\?\\s*###"
 	}
       ]
     },

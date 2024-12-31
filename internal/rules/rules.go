@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
+	"regexp"
 	"strings"
 	"text/template"
 	"time"
@@ -283,6 +284,18 @@ func Issue(ctx context.Context, cgen llm.ContentGenerator, i *github.Issue, debu
 	var failed []Rule
 	var failedReason []string
 	for _, rule := range kind.Rules {
+		if rule.Regexp != "" {
+			// Use a regexp instead of an LLM to detect violations.
+			re, err := regexp.Compile(rule.Regexp)
+			if err != nil {
+				return nil, fmt.Errorf("bad regexp: %w\n", err)
+			}
+			if re.MatchString(i.Body) {
+				failed = append(failed, rule)
+				failedReason = append(failedReason, fmt.Sprintf("regexp %s matched", rule.Regexp))
+			}
+			continue
+		}
 		// Build system prompt to ask about rule violations.
 		systemPrompt.Reset()
 		systemPrompt.WriteString(fmt.Sprintf(rulePrompt, rule.Text, rule.Details))
@@ -401,6 +414,7 @@ type IssueKind struct {
 type Rule struct {
 	Text    string // what we would show to a user
 	Details string // additional text for the LLM
+	Regexp  string // regular expression that matches for rule violations (instead of an LLM)
 }
 
 var rulesConfig RulesConfig

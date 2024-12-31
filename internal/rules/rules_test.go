@@ -120,7 +120,7 @@ func TestRun(t *testing.T) {
 
 	entries := slices.Collect(actions.ScanAfter(lg, db, time.Time{}, nil))
 	if len(entries) != 1 {
-		t.Fatalf("too many action entries. Want 1, got %d", len(entries))
+		t.Fatalf("too many action entries. Got %d, want 1", len(entries))
 	}
 	e := entries[0]
 
@@ -176,7 +176,7 @@ func TestOld(t *testing.T) {
 
 	entries := slices.Collect(actions.ScanAfter(lg, db, time.Time{}, nil))
 	if len(entries) != 0 {
-		t.Fatalf("too many action entries. Want 0, got %d", len(entries))
+		t.Fatalf("too many action entries. Got %d, want 0", len(entries))
 	}
 }
 
@@ -207,7 +207,7 @@ func TestClosed(t *testing.T) {
 
 	entries := slices.Collect(actions.ScanAfter(lg, db, time.Time{}, nil))
 	if len(entries) != 0 {
-		t.Fatalf("too many action entries. Want 0, got %d", len(entries))
+		t.Fatalf("too many action entries. Got %d, want 0", len(entries))
 	}
 }
 
@@ -237,6 +237,122 @@ func TestProjectFilter(t *testing.T) {
 
 	entries := slices.Collect(actions.ScanAfter(lg, db, time.Time{}, nil))
 	if len(entries) != 0 {
-		t.Fatalf("too many action entries. Want 0, got %d", len(entries))
+		t.Fatalf("too many action entries. Got %d, want 0", len(entries))
 	}
+}
+
+func TestRegexpMatch(t *testing.T) {
+	ctx := context.Background()
+	check := testutil.Checker(t)
+	lg := testutil.Slogger(t)
+	db := storage.MemDB()
+	gh := github.New(lg, db, nil, nil)
+	llm := ruleTestGenerator()
+
+	tc := gh.Testing()
+	testIssue := &github.Issue{
+		Number:    888,
+		Title:     "title",
+		Body:      "Hello. ### What did you expect to see?\n\n### Goodbye.",
+		CreatedAt: time.Now().Add(-1 * time.Hour).UTC().Format(time.RFC3339),
+	}
+	tc.AddIssue("test/project", testIssue)
+
+	p := New(lg, db, gh, llm, "postname")
+	p.EnableProject("test/project")
+	p.EnablePosts()
+
+	check(p.Run(ctx))
+	check(actions.Run(ctx, lg, db))
+
+	entries := slices.Collect(actions.ScanAfter(lg, db, time.Time{}, nil))
+	if len(entries) != 1 {
+		t.Fatalf("too many action entries. Got %d, want 1", len(entries))
+	}
+	e := entries[0]
+
+	var a action
+	if err := json.Unmarshal(e.Action, &a); err != nil {
+		t.Fatal(err)
+	}
+	if got, want := a.Issue.Project(), "test/project"; got != want {
+		t.Fatalf("posted to unexpected project: got %s, want %s", got, want)
+		return
+	}
+	if got, want := a.Issue.Number, int64(888); got != want {
+		t.Fatalf("posted to unexpected issue: got %d, want %d", got, want)
+	}
+	wantBody := strings.TrimSpace(`
+We've identified some possible problems with your issue report. Please review
+these findings and fix any that you think are appropriate to fix.
+
+- The issue title must start with a package name followed by a colon.
+
+- The "What did you expect to see?" section should not be empty.
+
+
+I'm just a bot; you probably know better than I do whether these findings really need fixing.
+<sub>(Emoji vote if this was helpful or unhelpful; more detailed feedback welcome in [this discussion](https://github.com/golang/go/discussions/67901).)</sub>
+`)
+	if got := strings.TrimSpace(a.Changes.Body); got != wantBody {
+		t.Fatalf("body wrong: got %s, want %s", got, wantBody)
+	}
+
+}
+
+func TestRegexpNotMatch(t *testing.T) {
+	ctx := context.Background()
+	check := testutil.Checker(t)
+	lg := testutil.Slogger(t)
+	db := storage.MemDB()
+	gh := github.New(lg, db, nil, nil)
+	llm := ruleTestGenerator()
+
+	tc := gh.Testing()
+	testIssue := &github.Issue{
+		Number:    888,
+		Title:     "title",
+		Body:      "Hello. ### What did you expect to see?\n\nSomething\n\n### Goodbye.",
+		CreatedAt: time.Now().Add(-1 * time.Hour).UTC().Format(time.RFC3339),
+	}
+	tc.AddIssue("test/project", testIssue)
+
+	p := New(lg, db, gh, llm, "postname")
+	p.EnableProject("test/project")
+	p.EnablePosts()
+
+	check(p.Run(ctx))
+	check(actions.Run(ctx, lg, db))
+
+	entries := slices.Collect(actions.ScanAfter(lg, db, time.Time{}, nil))
+	if len(entries) != 1 {
+		t.Fatalf("too many action entries. Got %d, want 1", len(entries))
+	}
+	e := entries[0]
+
+	var a action
+	if err := json.Unmarshal(e.Action, &a); err != nil {
+		t.Fatal(err)
+	}
+	if got, want := a.Issue.Project(), "test/project"; got != want {
+		t.Fatalf("posted to unexpected project: got %s, want %s", got, want)
+		return
+	}
+	if got, want := a.Issue.Number, int64(888); got != want {
+		t.Fatalf("posted to unexpected issue: got %d, want %d", got, want)
+	}
+	wantBody := strings.TrimSpace(`
+We've identified some possible problems with your issue report. Please review
+these findings and fix any that you think are appropriate to fix.
+
+- The issue title must start with a package name followed by a colon.
+
+
+I'm just a bot; you probably know better than I do whether these findings really need fixing.
+<sub>(Emoji vote if this was helpful or unhelpful; more detailed feedback welcome in [this discussion](https://github.com/golang/go/discussions/67901).)</sub>
+`)
+	if got := strings.TrimSpace(a.Changes.Body); got != wantBody {
+		t.Fatalf("body wrong: got %s, want %s", got, wantBody)
+	}
+
 }
