@@ -69,7 +69,7 @@
     },
     {
       "Name": "automation",
-      "Text": "This issue is created by gopherbot or watchflakes automation."
+      "Text": "This issue is created by gopherbot, watchflakes, or stacks automation."
     },
     {
       "Name": "backport",
