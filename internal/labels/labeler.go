@@ -266,20 +266,21 @@ func (l *Labeler) skip(e *github.Event) (bool, string) {
 // Otherwise, if the descriptions don't agree, a warning is logged and nothing is done on the issue tracker.
 // This function makes no other changes. In particular, it never deletes labels.
 func (l *Labeler) syncLabels(ctx context.Context, project string, cats []Category) error {
-	l.slog.Info("syncing labels", "name", l.name, "project", project)
+	l.slog.Info("labels.Labeler syncing labels", "name", l.name, "project", project)
 	tlabList, err := l.github.ListLabels(ctx, project)
 	if err != nil {
 		return err
 	}
+	// Labels are case-insensitive, so the keys are lowercase.
 	tlabs := map[string]github.Label{}
 	for _, lab := range tlabList {
-		tlabs[lab.Name] = lab
+		tlabs[strings.ToLower(lab.Name)] = lab
 	}
 
 	for _, cat := range cats {
-		lab, ok := tlabs[cat.Label]
+		lab, ok := tlabs[strings.ToLower(cat.Label)]
 		if !ok {
-			l.slog.Info("creating label", "label", cat.Label)
+			l.slog.Info("labels.Labeler creating label", "label", cat.Label)
 			if err := l.github.CreateLabel(ctx, project, github.Label{
 				Name:        cat.Label,
 				Description: cat.Description,
@@ -288,12 +289,12 @@ func (l *Labeler) syncLabels(ctx context.Context, project string, cats []Categor
 				return err
 			}
 		} else if lab.Description == "" {
-			l.slog.Info("setting empty label description", "label", lab.Name)
+			l.slog.Info("labels.Labeler setting empty label description", "label", lab.Name)
 			if err := l.github.EditLabel(ctx, project, lab.Name, github.LabelChanges{Description: cat.Description}); err != nil {
 				return err
 			}
 		} else if lab.Description != cat.Description {
-			l.slog.Warn("descriptions disagree", "label", lab.Name)
+			l.slog.Warn("labels.Labeler descriptions disagree", "label", lab.Name)
 		}
 	}
 	return nil

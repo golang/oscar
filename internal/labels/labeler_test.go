@@ -27,7 +27,7 @@ func TestSyncLabels(t *testing.T) {
 	gh := github.New(lg, db, nil, nil)
 	labeler := New(lg, nil, gh, nil, "")
 	m := map[string]github.Label{
-		"A": {Name: "A", Description: "a", Color: "a"},
+		"a": {Name: "A", Description: "a", Color: "a"},
 		"B": {Name: "B", Description: "", Color: "b"},
 		"C": {Name: "C", Description: "c", Color: "c"},
 		"D": {Name: "D", Description: "d", Color: "d"},
@@ -39,7 +39,7 @@ func TestSyncLabels(t *testing.T) {
 	}
 
 	cats := []Category{
-		{Label: "A", Description: "a"},     // same as tracker
+		{Label: "A", Description: "a"},     // same as tracker (labels are case-insensitive)
 		{Label: "B", Description: "b"},     // set empty tracker description
 		{Label: "C", Description: "other"}, // different descriptions
 		// D in tracker but not in cats
