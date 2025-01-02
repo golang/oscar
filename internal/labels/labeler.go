@@ -250,6 +250,14 @@ func (l *Labeler) skip(e *github.Event) (bool, string) {
 	if issue.State == "closed" {
 		return true, "issue is closed"
 	}
+	tm, err := time.Parse(time.RFC3339, issue.CreatedAt)
+	if err != nil {
+		l.slog.Error("labels.Labeler parse time", "CreatedAt", issue.CreatedAt, "err", err)
+		return true, "could not parse CreatedAt"
+	}
+	if tm.Before(l.timeLimit) {
+		return true, fmt.Sprintf("created=%s before time limit=%s", tm, l.timeLimit)
+	}
 	if issue.PullRequest != nil {
 		return true, "pull request"
 	}

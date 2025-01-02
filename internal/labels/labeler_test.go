@@ -11,6 +11,7 @@ import (
 	"reflect"
 	"slices"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/oscar/internal/actions"
@@ -68,18 +69,29 @@ func TestSyncLabels(t *testing.T) {
 
 func TestRun(t *testing.T) {
 	const project = "golang/go"
+	now := time.Now()
 	ctx := context.Background()
 	check := testutil.Checker(t)
 	lg := testutil.Slogger(t)
 	db := storage.MemDB()
 	gh := github.New(lg, db, nil, nil)
+
 	gh.Testing().AddLabel(project, github.Label{Name: "Bug"})
 	gh.Testing().AddLabel(project, github.Label{Name: "Other"})
 	gh.Testing().AddIssue(project, &github.Issue{
-		Number: 1,
-		Title:  "title",
-		Body:   "body",
-		Labels: []github.Label{{Name: "Other"}},
+		Number:    1,
+		Title:     "title",
+		Body:      "body",
+		CreatedAt: now.Format(time.RFC3339),
+		Labels:    []github.Label{{Name: "Other"}},
+	})
+	// Too old.
+	gh.Testing().AddIssue(project, &github.Issue{
+		Number:    1,
+		Title:     "title",
+		Body:      "body",
+		CreatedAt: now.Add(-2 * defaultTooOld).Format(time.RFC3339),
+		Labels:    []github.Label{{Name: "Other"}},
 	})
 	gh.Testing().AddIssue("other/project", &github.Issue{
 		Number: 2,
