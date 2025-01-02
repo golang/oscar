@@ -20,7 +20,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/queue"
 	"golang.org/x/oscar/internal/storage"
 	"golang.org/x/oscar/internal/storage/timed"
@@ -81,28 +80,21 @@ func New(lg *slog.Logger, db storage.DB, q queue.Queue) *Client {
 	}
 }
 
-// BisectAsync creates and spawns a bisection task for trigger
-// if the latter encodes a request for bisection. Otherwise, it
-// does nothing and returns nil.
+// BisectAsync creates and spawns a bisection task for a bisection
+// request.
 //
 // BisectAsync creates a [Task] and saves it to the database,
 // and then triggers an asynchronous execution of [Client.Bisect]
 // through [Client] queue.
-//
-// TODO: generalize trigger beyond GitHub issue comment.
-func (c *Client) BisectAsync(ctx context.Context, trigger *github.IssueComment) error {
-	if trigger.Project() != "golang/go" {
-		return fmt.Errorf("bisect.Add: only golang/go repo currently supported, got '%s'", trigger.Project())
-	}
-
+func (c *Client) BisectAsync(ctx context.Context, breq *Request) error {
 	now := time.Now()
 	t := &Task{
-		Trigger:    trigger.URL,
-		Issue:      trigger.IssueURL,
-		Repository: "https://go.googlesource.com/go",
-		Bad:        "master",
-		Good:       "go1.22.0",
-		Regression: regression(trigger.Body),
+		Trigger:    breq.Trigger,
+		Issue:      breq.Issue,
+		Repository: breq.Repo,
+		Bad:        breq.Fail,
+		Good:       breq.Pass,
+		Regression: breq.Body,
 		Created:    now,
 		Updated:    now,
 	}
@@ -125,14 +117,6 @@ func (c *Client) BisectAsync(ctx context.Context, trigger *github.IssueComment) 
 		c.save(t)
 	}
 	return err
-}
-
-// regression extracts a bisection
-// test code from body.
-func regression(body string) string {
-	// For now, assume the body is
-	// the regression code.
-	return body
 }
 
 // newTaskID creates a unique hex ID for t based

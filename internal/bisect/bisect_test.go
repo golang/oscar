@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/queue"
 	"golang.org/x/oscar/internal/storage"
 	"golang.org/x/oscar/internal/testutil"
@@ -64,18 +63,18 @@ func TestBisectAsync(t *testing.T) {
 	c = New(lg, db, q)
 	c.testing = true
 
-	trigger1 := &github.IssueComment{
-		URL:      "https://api.github.com/repos/golang/go/issues/00001#issuecomment-000001",
-		IssueURL: "https://api.github.com/repos/golang/go/issues/00001",
-		Body:     "body1",
+	req1 := &Request{
+		Trigger: "https://api.github.com/repos/golang/go/issues/00001#issuecomment-000001",
+		Issue:   "https://api.github.com/repos/golang/go/issues/00001",
+		Body:    "body1",
 	}
-	trigger2 := &github.IssueComment{
-		URL:      "https://api.github.com/repos/golang/go/issues/00002#issuecomment-000002",
-		IssueURL: "https://api.github.com/repos/golang/go/issues/00002",
-		Body:     "body2",
+	req2 := &Request{
+		Trigger: "https://api.github.com/repos/golang/go/issues/00002#issuecomment-000002",
+		Issue:   "https://api.github.com/repos/golang/go/issues/00002",
+		Body:    "body2",
 	}
-	check(c.BisectAsync(ctx, trigger1))
-	check(c.BisectAsync(ctx, trigger2))
+	check(c.BisectAsync(ctx, req1))
+	check(c.BisectAsync(ctx, req2))
 
 	q.Wait(ctx)
 	check(errors.Join(q.Errors()...))

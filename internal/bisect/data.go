@@ -38,15 +38,16 @@ type Task struct {
 	// ID is the unique identifier for the task.
 	ID string
 	// Trigger identifies what triggered the
-	// bisection task. For instance, it can
-	// be a GitHub comment requesting a bisection.
+	// bisection task. For instance, it can be
+	// the URL of a GitHub comment requesting
+	// a bisection.
 	Trigger string
 	// Issue identifies the problem associated
 	// with the bisection. For instance, Issue
-	// can be a GitHub issue for which the
-	// bisection is ran.
+	// can be the URL of a GitHub issue for which
+	// the bisection is ran.
 	Issue string
-	// Repository is the repo on which the
+	// Repository is the git repo on which the
 	// bisection is performed.
 	Repository string
 	// Bad is the commit hash or tag
@@ -93,6 +94,30 @@ func (t *Task) Path() string {
 // Params encodes task ID.
 func (t *Task) Params() string {
 	return "id=" + t.ID
+}
+
+// A Request for bisection.
+type Request struct {
+	// Trigger identifies what triggered the
+	// request. For instance, it can be the URL
+	// of a GitHub comment requesting a bisection.
+	Trigger string
+	// Issue identifies the problem associated
+	// with the request. For instance, Issue
+	// can be the URL of a GitHub issue for which
+	// the bisection is requested.
+	Issue string
+	// Fail is the commit hash or tag at which
+	// the bisection regression occurs.
+	Fail string
+	// Pass is the commit hash or tag at which
+	// the bisection regression does not occur.
+	Pass string
+	// Body is the regression as a Go program.
+	Body string
+	// Repo is the git repository to which the
+	// regression applies.
+	Repo string
 }
 
 // BisectionTasks returns an iterator over the bisection tasks.
