@@ -161,6 +161,7 @@ type WebhookIssueCommentEvent struct {
 	Action     WebhookIssueCommentAction `json:"action"`
 	Issue      Issue                     `json:"issue"`
 	Repository Repository                `json:"repository"`
+	Comment    Comment                   `json:"comment"`
 	// Additional fields omitted.
 }
 
@@ -176,6 +177,13 @@ const (
 type Repository struct {
 	Project string `json:"full_name"`
 	// Additional fields omitted.
+}
+
+// Comment is the comment that triggered an event.
+// https://docs.github.com/en/rest/issues/comments#get-an-issue-comment
+type Comment struct {
+	URL  string `json:"url"`
+	Body string `json:"body"`
 }
 
 // toWebhookEvent converts data into a WebhookEvent with a Payload of the
