@@ -68,6 +68,10 @@
       "Text": "This issue is a pkgsite removal request."
     },
     {
+      "Name": "go website",
+      "Text": "This issue is about the behavior of the Go website (*.golang.org)."
+    },
+    {
       "Name": "automation",
       "Text": "This issue is created by gopherbot, watchflakes, or stacks automation."
     },
@@ -78,6 +82,10 @@
     {
       "Name": "builders",
       "Text": "This issue is about the running of the Go builders."
+    },
+    {
+      "Name": "gopls",
+      "Text": "This issue is about gopls behavior."
     },
     {
       "Name": "question",
