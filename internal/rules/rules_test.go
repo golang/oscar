@@ -136,7 +136,7 @@ func TestRun(t *testing.T) {
 		t.Fatalf("posted to unexpected issue: got %d, want %d", got, want)
 	}
 	wantBody := strings.TrimSpace(`
-We've identified some possible problems with your issue report. Please review
+We've identified some possible problems with your issue. Please review
 these findings and fix any that you think are appropriate to fix.
 
 - The issue title must start with a package name followed by a colon.
@@ -283,7 +283,7 @@ func TestRegexpMatch(t *testing.T) {
 		t.Fatalf("posted to unexpected issue: got %d, want %d", got, want)
 	}
 	wantBody := strings.TrimSpace(`
-We've identified some possible problems with your issue report. Please review
+We've identified some possible problems with your issue. Please review
 these findings and fix any that you think are appropriate to fix.
 
 - The issue title must start with a package name followed by a colon.
@@ -342,7 +342,7 @@ func TestRegexpNotMatch(t *testing.T) {
 		t.Fatalf("posted to unexpected issue: got %d, want %d", got, want)
 	}
 	wantBody := strings.TrimSpace(`
-We've identified some possible problems with your issue report. Please review
+We've identified some possible problems with your issue. Please review
 these findings and fix any that you think are appropriate to fix.
 
 - The issue title must start with a package name followed by a colon.

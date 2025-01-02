@@ -381,7 +381,7 @@ on a line by itself, followed by an explanation of your decision.
 `
 
 const conversationText1 = `
-We've identified some possible problems with your issue report. Please review
+We've identified some possible problems with your issue. Please review
 these findings and fix any that you think are appropriate to fix.
 
 `
