@@ -38,8 +38,9 @@ license that can be found in the LICENSE file.
     <input id="filter" type="text" size=75 name="filter" value="{{.Filter}}"/>
   </span>
   <div style="font-size: smaller; margin-top: 0.5rem; margin-bottom: 1rem">
-    Examples: <code>Kind:Fixer</code>, <code>RequiresApproval=true</code><br/>
+    Examples: <code>Kind:Fixer</code>, <code>ApprovalRequired=true</code><br/>
     Case matters. Boolean fields must be compared with <code>=true</code> or <code>=false</code>.
+    Whitespace between terms behaves like AND.
     OR, AND and NOT must be in all caps.<br/>
     See <a href="https://google.aip.dev/160">AIP 160</a> for more.
   </div>
