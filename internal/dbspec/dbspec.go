@@ -23,10 +23,16 @@
 package dbspec
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"path/filepath"
 	"strings"
+
+	"golang.org/x/oscar/internal/gcp/firestore"
+	"golang.org/x/oscar/internal/pebble"
+	"golang.org/x/oscar/internal/storage"
 )
 
 // A Spec is the parsed representation of a DB specification string.
@@ -52,6 +58,20 @@ func (s *Spec) String() string {
 		return fmt.Sprintf("firestore:%s,%s%s", s.Location, s.Name, vs)
 	default:
 		return fmt.Sprintf("%#v", s)
+	}
+}
+
+// Open opens the database described by the spec.
+func (s *Spec) Open(ctx context.Context, lg *slog.Logger) (storage.DB, error) {
+	switch s.Kind {
+	case "mem":
+		return storage.MemDB(), nil
+	case "pebble":
+		return pebble.Open(lg, s.Location)
+	case "firestore":
+		return firestore.NewDB(ctx, lg, s.Location, s.Name)
+	default:
+		return nil, fmt.Errorf("unknown DB kind %q", s.Kind)
 	}
 }
 

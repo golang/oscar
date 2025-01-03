@@ -79,6 +79,10 @@ var rules = []*rule{
 		packages: "internal/pebble/...",
 		allow:    anything,
 	},
+	{
+		packages: "internal/dbspec/...",
+		allow:    anything,
+	},
 	// The remaining packages under internal should not depend on GCP.
 	{
 		packages: "internal/...",

@@ -353,7 +353,7 @@ func (g *Gaby) initGCP() (shutdown func()) {
 		Location: flags.project,
 		Name:     flags.firestoredb,
 	}
-	db, err := g.openDB(spec)
+	db, err := spec.Open(g.ctx, g.slog)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -368,7 +368,7 @@ func (g *Gaby) initGCP() (shutdown func()) {
 		if spec.IsVector {
 			log.Fatal("omit vector DB spec for -overlay")
 		}
-		odb, err := g.openDB(spec)
+		odb, err := spec.Open(g.ctx, g.slog)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -470,20 +470,6 @@ func taskQueue(g *Gaby) (queue.Queue, error) {
 	g.slog.Info("queue.Info meta", "data", fmt.Sprintf("%+v", qm))
 
 	return gcpqueue.New(g.ctx, qm)
-}
-
-// openDB opens the database described by spec.
-func (g *Gaby) openDB(spec *dbspec.Spec) (storage.DB, error) {
-	switch spec.Kind {
-	case "mem":
-		return storage.MemDB(), nil
-	case "pebble":
-		return pebble.Open(g.slog, spec.Location)
-	case "firestore":
-		return firestore.NewDB(g.ctx, g.slog, spec.Location, spec.Name)
-	default:
-		return nil, fmt.Errorf("unknown DB kind %q", spec.Kind)
-	}
 }
 
 // searchLoop runs an interactive search loop.

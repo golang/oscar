@@ -19,7 +19,6 @@ import (
 	"golang.org/x/oscar/internal/dbspec"
 	"golang.org/x/oscar/internal/docs"
 	"golang.org/x/oscar/internal/gcp/firestore"
-	"golang.org/x/oscar/internal/pebble"
 	"golang.org/x/oscar/internal/storage"
 )
 
@@ -94,11 +93,12 @@ func initGCP() (storage.DB, storage.VectorDB) {
 		flags.project = projectID
 	}
 
-	db, err := openDB(&dbspec.Spec{
+	spec := &dbspec.Spec{
 		Kind:     "firestore",
 		Location: flags.project,
 		Name:     flags.firestoredb,
-	})
+	}
+	db, err := spec.Open(context.TODO(), logger)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -109,18 +109,4 @@ func initGCP() (storage.DB, storage.VectorDB) {
 		log.Fatal(err)
 	}
 	return db, vdb
-}
-
-// openDB opens the database described by spec.
-func openDB(spec *dbspec.Spec) (storage.DB, error) {
-	switch spec.Kind {
-	case "mem":
-		return storage.MemDB(), nil
-	case "pebble":
-		return pebble.Open(logger, spec.Location)
-	case "firestore":
-		return firestore.NewDB(context.TODO(), logger, spec.Location, spec.Name)
-	default:
-		return nil, fmt.Errorf("unknown DB kind %q", spec.Kind)
-	}
 }
