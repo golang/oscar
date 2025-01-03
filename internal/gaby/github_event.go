@@ -140,6 +140,9 @@ func (g *Gaby) handleGitHubIssueCommentEvent(ctx context.Context, event *github.
 		if err := g.fixGitHubIssue(ctx, project, event.Issue.Number); err != nil {
 			return false, err
 		}
+		if err := g.spawnBisectionTask(ctx, event); err != nil {
+			return false, err
+		}
 		return true, nil
 	}
 
@@ -168,5 +171,27 @@ func (g *Gaby) syncGitHubProject(ctx context.Context, project string) error {
 		return err
 	}
 	docs.Sync(g.docs, g.github)
+	return nil
+}
+
+// spawnBisectionTask checks if event is encoding a bisection task and,
+// if so, it spawns the corresponding task.
+func (g *Gaby) spawnBisectionTask(ctx context.Context, event *github.WebhookIssueCommentEvent) error {
+	// TODO: check the author via secrets?
+	// TODO: access comment through db instead
+	// of directly through the event?
+	breq, err := parseBisectTrigger(event)
+	if err != nil {
+		g.slog.Error("bisect.Request trigger fail", "body", event.Comment.Body, "err", err)
+		return err
+	}
+	if breq == nil {
+		g.slog.Info("bisect.Request no trigger", "body", event.Comment.Body)
+		return nil
+	}
+	if err := g.bisect.BisectAsync(ctx, breq); err != nil {
+		return err
+	}
+	g.slog.Info("bisect.Request trigger success", "req", fmt.Sprintf("%+v", breq))
 	return nil
 }
