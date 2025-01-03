@@ -55,6 +55,9 @@ steps:
         enable_sync=${_ENABLE_SYNC}
         enable_changes=${_ENABLE_CHANGES}
 
+        # Convert the commented runsc config files to valid json.
+        sed '/^[ \t]*#/d' internal/bisect/bisect_config.json.commented > internal/bisect/bisect_config.json
+
         echo "building image $image with firestore_db $firestore_db (enable_sync=$enable_sync, enable_changes=$enable_changes)"
 
         docker build -t $image \
@@ -77,9 +80,6 @@ steps:
         image=$(cat /workspace/image-$env.txt)
         service=gaby-$env
         echo "deploying service $service from image $image"
-
-        # Convert the commented config files to valid json.
-        sed '/^[ \t]*#/d' internal/bisect/bisect_config.json.commented > internal/bisect/bisect_config.json
 
         # Use second generation of the execution environment
         # to run gvisor (runsc).
