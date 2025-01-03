@@ -17,11 +17,12 @@ func TestIssueLabels(t *testing.T) {
 	llm := kindTestGenerator()
 
 	iss := &github.Issue{
+		URL:   "https://api.github.com/repos/golang/go/issues/1",
 		Title: "title",
 		Body:  "body",
 	}
 
-	cat, exp, err := IssueCategory(ctx, llm, "golang/go", iss)
+	cat, exp, err := IssueCategory(ctx, llm, iss)
 	if err != nil {
 		t.Fatal(err)
 	}

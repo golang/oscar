@@ -218,7 +218,7 @@ func (l *Labeler) logLabelIssue(ctx context.Context, e *github.Event) (advance b
 	issue := e.Typed.(*github.Issue)
 	l.slog.Debug("labels.Labeler consider", "url", issue.HTMLURL)
 
-	cat, explanation, err := IssueCategory(ctx, l.cgen, e.Project, issue)
+	cat, explanation, err := IssueCategory(ctx, l.cgen, issue)
 	if err != nil {
 		return false, fmt.Errorf("IssueCategory(%s): %w", issue.HTMLURL, err)
 	}

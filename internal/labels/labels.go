@@ -40,7 +40,8 @@ type Category struct {
 
 // IssueCategory returns the category chosen by the LLM for the issue, along with an explanation
 // of why it was chosen. It uses the built-in list of categories.
-func IssueCategory(ctx context.Context, cgen llm.ContentGenerator, project string, iss *github.Issue) (_ Category, explanation string, err error) {
+func IssueCategory(ctx context.Context, cgen llm.ContentGenerator, iss *github.Issue) (_ Category, explanation string, err error) {
+	project := iss.Project()
 	cats, ok := config.Categories[project]
 	if !ok {
 		return Category{}, "", fmt.Errorf("IssueCategory: unknown project %q", project)
