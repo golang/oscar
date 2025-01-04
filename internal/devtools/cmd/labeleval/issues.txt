@@ -60,3 +60,24 @@
 # 69059 does not exist
 69060 bug
 
+# The following are from the live labeler, circa Jan 2025.
+# Clearly a proposal, but misclassified as a bug.
+71099 toolProposal
+# Technically this is a feature request, not a proposal.
+67663 featureRequest
+# Definitely not a proposal
+67703 featureRequest
+# classified as a library proposal
+67726 featureRequest
+# These are for a gopls feature. Labeler thinks it is a tool proposal.
+71106 featureRequest
+71113 featureRequest
+# not a bug, although it fills out the bug template
+71122 libraryProposal
+# not a bug
+71132 featureRequest
+# tracking bug for a currently unfixable implementation weakness
+71134 other
+# Gemini calls this a language proposal, because it thinks the method is being
+# added to the built-in type "string".
+71145 libraryProposal
