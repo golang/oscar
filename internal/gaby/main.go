@@ -248,6 +248,7 @@ func main() {
 		}
 		labeler.EnableProject(proj)
 	}
+	labeler.SkipAuthor("gopherbot")
 	labeler.EnableLabels()
 	if !slices.Contains(autoApprovePkgs, "labels") {
 		labeler.RequireApproval()
