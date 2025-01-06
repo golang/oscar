@@ -17,6 +17,9 @@ import (
 	"testing"
 	"time"
 
+	gcmp "github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
+
 	"golang.org/x/oscar/internal/storage"
 	"golang.org/x/oscar/internal/storage/timed"
 	"golang.org/x/oscar/internal/testutil"
@@ -347,6 +350,23 @@ func TestRun(t *testing.T) {
 		before(db, key2, nil, RequiresApproval)
 		AddDecision(db, actionKind, key2, Decision{Approved: true})
 		checkRunAndDone(key2, true)
+	})
+
+	t.Run("WithReport", func(t *testing.T) {
+		db := storage.MemDB()
+		before(db, ordered.Encode(0), []byte("a1"), !RequiresApproval)
+		before(db, ordered.Encode(1), []byte("a2"), RequiresApproval)
+		before(db, ordered.Encode(2), []byte("fail"), !RequiresApproval)
+
+		got := RunWithReport(ctx, lg, db)
+		want := &RunReport{
+			Completed: 1,
+			Skipped:   1,
+			Errors:    []error{errAction},
+		}
+		if !gcmp.Equal(got, want, cmpopts.EquateErrors()) {
+			t.Errorf("RunWithReport = %+v, want %+v", got, want)
+		}
 	})
 }
 

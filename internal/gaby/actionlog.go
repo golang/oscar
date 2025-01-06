@@ -118,7 +118,7 @@ func (p *actionLogPage) setCommonPage() {
 func (p *actionLogPage) toCommonPage() *CommonPage {
 	return &CommonPage{
 		ID:          actionlogID,
-		Description: "Browse actions taken by Oscar.",
+		Description: "Browse and approve/deny actions taken by Oscar.",
 		Form: Form{
 			// Unset because the action log page defines its form inputs
 			// directly in an HTML template.

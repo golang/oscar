@@ -15,6 +15,14 @@ license that can be found in the LICENSE file.
         document.getElementById("tz").innerHTML = timezone;
       </script>
       {{template "actionlog-form" .}}
+      <div>
+        <form action="/runactions" method="GET">
+          <p>Actions run on a schedule. To run all pending, approved actions
+          immediately, click here:
+          <input type="submit" name="runactions" value="run all"/>
+          </p>
+        </form>
+      </div>
     </div>
     {{template "actionlog-result" .}}
    </body>

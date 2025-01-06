@@ -62,6 +62,7 @@ type gabyFlags struct {
 	firestoredb   string
 	enablesync    bool
 	enablechanges bool
+	testactions   bool
 	level         string
 	overlay       string
 	autoApprove   string // list of packages that do not require manual approval
@@ -76,6 +77,7 @@ func init() {
 	flag.StringVar(&flags.firestoredb, "firestoredb", "", "name of the Firestore DB to use")
 	flag.BoolVar(&flags.enablesync, "enablesync", false, "sync the DB with GitHub and other external sources")
 	flag.BoolVar(&flags.enablechanges, "enablechanges", false, "allow changes to GitHub")
+	flag.BoolVar(&flags.testactions, "testactions", false, "allow approved actions to run (for testing only)")
 	flag.StringVar(&flags.level, "level", "info", "initial log level")
 	flag.StringVar(&flags.overlay, "overlay", "", "spec for overlay to DB; see internal/dbspec for syntax")
 	flag.StringVar(&flags.autoApprove, "autoapprove", "", "comma-separated list of packages whose actions do not require approval")
@@ -652,6 +654,21 @@ func (g *Gaby) newServer(report func(error, *http.Request)) *http.ServeMux {
 		}
 	})
 
+	// runactions runs all pending, approved actions in the action log.
+	// Useful for immediately running actions that have just been approved by a human,
+	// or for testing a new action in the devel environment.
+	mux.HandleFunc("GET /runactions", func(w http.ResponseWriter, r *http.Request) {
+		g.db.Lock(runActionsLock)
+		defer g.db.Unlock(runActionsLock)
+
+		if flags.enablechanges || flags.testactions {
+			report := actions.RunWithReport(g.ctx, g.slog, g.db)
+			_, _ = w.Write(storage.JSON(report))
+		} else {
+			http.Error(w, fmt.Sprintf("runactions: flag -enablechanges or -testactions not set"), http.StatusInternalServerError)
+		}
+	})
+
 	// syncEndpoint is called manually to invoke a specific sync job.
 	// It performs a sync if enablesync is true.
 	// Usage: /sync?job={github | crawl | gerrit | discussion | groups}
@@ -796,10 +813,18 @@ func (g *Gaby) syncAndRunAll(ctx context.Context) (errs []error) {
 		check(g.postAllRules(ctx))
 		check(g.postAllBisections(ctx))
 		// Apply all actions.
-		actions.Run(ctx, g.slog, g.db)
+		check(g.runActions())
 	}
 
 	return errs
+}
+
+// runActions runs all pending, approved actions in the Action Log.
+func (g *Gaby) runActions() error {
+	g.db.Lock(runActionsLock)
+	defer g.db.Unlock(runActionsLock)
+
+	return actions.Run(g.ctx, g.slog, g.db)
 }
 
 const (
@@ -815,6 +840,7 @@ const (
 	gabyPostRulesLock     = "gabyrulesaction"
 	gabyLabelLock         = "gabylabelaction"
 	gabyPostBisectionLock = "gabybisectionaction"
+	runActionsLock        = "gabyrunactions"
 )
 
 func (g *Gaby) syncGitHubIssues(ctx context.Context) error {

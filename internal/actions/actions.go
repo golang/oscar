@@ -431,7 +431,7 @@ func Run(ctx context.Context, lg *slog.Logger, db storage.DB) error {
 	// Scan all pending actions, from earliest to latest.
 	var errs []error
 	for te := range timed.ScanAfter(lg, db, pendingKind, 0, nil) {
-		if err := maybeRunEntry(ctx, lg, db, te.Key); err != nil {
+		if _, err := maybeRunEntry(ctx, lg, db, te.Key); err != nil {
 			lg.Error("action failed", "key", storage.Fmt(te.Key), "err", err)
 			errs = append(errs, err)
 		}
@@ -439,9 +439,34 @@ func Run(ctx context.Context, lg *slog.Logger, db storage.DB) error {
 	return errors.Join(errs...)
 }
 
+// A RunReport contains information about an action log run.
+type RunReport struct {
+	Completed int     // the number of actions successfully completed
+	Skipped   int     // the number of actions skipped
+	Errors    []error // the errors returned by actions that failed
+}
+
+// RunWithReport is like [Run], except it returns a report with information
+// about the run.
+func RunWithReport(ctx context.Context, lg *slog.Logger, db storage.DB) *RunReport {
+	report := &RunReport{}
+	for te := range timed.ScanAfter(lg, db, pendingKind, 0, nil) {
+		if done, err := maybeRunEntry(ctx, lg, db, te.Key); err != nil {
+			lg.Error("action failed", "key", storage.Fmt(te.Key), "err", err)
+			report.Errors = append(report.Errors, err)
+		} else if done {
+			report.Completed++
+		} else {
+			report.Skipped++
+		}
+	}
+	return report
+}
+
 // maybeRunEntry runs the entry with dkey if it is ready.
 // It locks the entry's DB key so that it can check the entry's status and run it atomically.
-func maybeRunEntry(ctx context.Context, lg *slog.Logger, db storage.DB, dkey []byte) error {
+// done reports whether the action was completed or not.
+func maybeRunEntry(ctx context.Context, lg *slog.Logger, db storage.DB, dkey []byte) (done bool, _ error) {
 	// dkey includes the action kind and user key (third arg to [before]), but not the logKind.
 	// e.Key is only the user key.
 	lockName := logKind + "-" + string(dkey)
@@ -455,12 +480,12 @@ func maybeRunEntry(ctx context.Context, lg *slog.Logger, db storage.DB, dkey []b
 	}
 	if !e.Done.IsZero() {
 		// This action was already run. It should have been removed from the pending list.
-		return fmt.Errorf("done action %s on pending list", storage.Fmt(dkey))
+		return false, fmt.Errorf("done action %s on pending list", storage.Fmt(dkey))
 	}
 	if !e.approved() {
-		return nil
+		return false, nil
 	}
-	return runEntry(ctx, lg, db, e)
+	return true, runEntry(ctx, lg, db, e)
 }
 
 // runEntry runs the action in entry e. It assumes it is ready to run (and so must
