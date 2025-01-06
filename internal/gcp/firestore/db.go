@@ -76,7 +76,7 @@ func (db *DB) Lock(name string) {
 	// memory on each iteration.
 	for !db.waitForLock(name) {
 	}
-	db.slog.Info("firestore locked", "name", storage.Fmt([]byte(name)))
+	db.slog.Debug("firestore locked", "name", storage.Fmt([]byte(name)))
 }
 
 // waitForLock waits for the lock to become available.
@@ -292,7 +292,7 @@ func (a *activeLocks) unlock(name string) error {
 
 // Unlock releases the lock. It panics if the lock isn't locked by this DB.
 func (db *DB) Unlock(name string) {
-	db.slog.Info("firestore unlock", "name", storage.Fmt([]byte(name)))
+	db.slog.Debug("firestore unlock", "name", storage.Fmt([]byte(name)))
 	if err := db.activeLocks.unlock(name); err != nil {
 		db.Panic("could not unlock", "name", name, "uid", db.uid, "err", err)
 	}
