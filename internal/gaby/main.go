@@ -38,7 +38,7 @@ import (
 	"golang.org/x/oscar/internal/gcp/gcpmetrics"
 	"golang.org/x/oscar/internal/gcp/gcpsecret"
 	"golang.org/x/oscar/internal/gcp/gemini"
-	gcpqueue "golang.org/x/oscar/internal/gcp/queue"
+	"golang.org/x/oscar/internal/gcp/tasks"
 	"golang.org/x/oscar/internal/gerrit"
 	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/googlegroups"
@@ -470,7 +470,7 @@ func taskQueue(g *Gaby) (queue.Queue, error) {
 	}
 	g.slog.Info("queue.Info meta", "data", fmt.Sprintf("%+v", qm))
 
-	return gcpqueue.New(g.ctx, qm)
+	return tasks.New(g.ctx, qm)
 }
 
 // searchLoop runs an interactive search loop.

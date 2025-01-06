@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package queue provides a GCP queue implementation that
-// can be used for asynchronous scheduling of fetch actions.
-package queue
+// Package tasks provides a Google Cloud Tasks implementation
+// as a queue used for asynchronous scheduling of fetch actions.
+package tasks
 
 import (
 	"context"
@@ -18,30 +18,30 @@ import (
 
 	cloudtasks "cloud.google.com/go/cloudtasks/apiv2"
 	taskspb "cloud.google.com/go/cloudtasks/apiv2/cloudtaskspb"
-	gqueue "golang.org/x/oscar/internal/queue"
+	"golang.org/x/oscar/internal/queue"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
-// New creates a new Queue based on metadata m.
-func New(ctx context.Context, m *gqueue.Metadata) (gqueue.Queue, error) {
+// New creates a new Cloud Tasks [queue.Queue] based on metadata m.
+func New(ctx context.Context, m *queue.Metadata) (queue.Queue, error) {
 	client, err := cloudtasks.NewClient(ctx)
 	if err != nil {
 		return nil, err
 	}
-	g, err := newGCP(client, m)
+	g, err := newQueue(client, m)
 	if err != nil {
 		return nil, err
 	}
 	return g, nil
 }
 
-// GCP provides a Queue implementation backed by the Google Cloud Tasks API.
-type GCP struct {
-	client    *cloudtasks.Client
-	queueName string // full GCP name of the queue
-	queueURL  string // non-AppEngine URL to post tasks to
+// Queue is a [queue.Queue] backed by the Google Cloud Tasks.
+type Queue struct {
+	client *cloudtasks.Client
+	name   string // full GCP name of the queue
+	url    string // non-AppEngine URL to post tasks to
 	// token holds information that lets the task queue construct an authorized request to the worker.
 	// Since the worker sits behind the IAP, the queue needs an identity token that includes the
 	// identity of a service account that has access, and the client ID for the IAP.
@@ -49,10 +49,10 @@ type GCP struct {
 	token *taskspb.HttpRequest_OidcToken
 }
 
-// newGCP returns a new Queue based on metadata m that can be used to
+// newQueue returns a new Queue based on metadata m that can be used to
 // enqueue tasks using the cloud tasks API. The given m.QueueName
 // should be the name of the queue in the cloud tasks console.
-func newGCP(client *cloudtasks.Client, m *gqueue.Metadata) (*GCP, error) {
+func newQueue(client *cloudtasks.Client, m *queue.Metadata) (*Queue, error) {
 	if m.QueueName == "" {
 		return nil, errors.New("empty queue name")
 	}
@@ -68,10 +68,10 @@ func newGCP(client *cloudtasks.Client, m *gqueue.Metadata) (*GCP, error) {
 	if m.Location == "" {
 		return nil, errors.New("empty location")
 	}
-	return &GCP{
-		client:    client,
-		queueName: fmt.Sprintf("projects/%s/locations/%s/queues/%s", m.Project, m.Location, m.QueueName),
-		queueURL:  m.QueueURL,
+	return &Queue{
+		client: client,
+		name:   fmt.Sprintf("projects/%s/locations/%s/queues/%s", m.Project, m.Location, m.QueueName),
+		url:    m.QueueURL,
 		token: &taskspb.HttpRequest_OidcToken{
 			OidcToken: &taskspb.OidcToken{
 				ServiceAccountEmail: m.ServiceAccount,
@@ -80,13 +80,13 @@ func newGCP(client *cloudtasks.Client, m *gqueue.Metadata) (*GCP, error) {
 	}, nil
 }
 
-// Enqueue enqueues a task on GCP.
+// Enqueue enqueues a task in q.
 // It returns an error if there was an error hashing the task name, or
 // an error pushing the task to GCP.
 // If the task was a duplicate, it returns (false, nil).
-func (q *GCP) Enqueue(ctx context.Context, task gqueue.Task, opts *gqueue.Options) (bool, error) {
+func (q *Queue) Enqueue(ctx context.Context, task queue.Task, opts *queue.Options) (bool, error) {
 	if opts == nil {
-		opts = &gqueue.Options{}
+		opts = &queue.Options{}
 	}
 	// Cloud Tasks enforces an RPC timeout of at most 30s. I couldn't find this
 	// in the documentation, but using a larger value, or no timeout, results in
@@ -114,7 +114,7 @@ func (q *GCP) Enqueue(ctx context.Context, task gqueue.Task, opts *gqueue.Option
 // See https://cloud.google.com/tasks/docs/creating-http-target-tasks.
 const maxCloudTasksTimeout = 30 * time.Minute
 
-func (q *GCP) newTaskRequest(task gqueue.Task, opts *gqueue.Options) (*taskspb.CreateTaskRequest, error) {
+func (q *Queue) newTaskRequest(task queue.Task, opts *queue.Options) (*taskspb.CreateTaskRequest, error) {
 	relativeURI := "/" + task.Path()
 	if params := task.Params(); params != "" {
 		relativeURI += "?" + params
@@ -122,18 +122,18 @@ func (q *GCP) newTaskRequest(task gqueue.Task, opts *gqueue.Options) (*taskspb.C
 
 	taskID := newTaskID(task)
 	taskpb := &taskspb.Task{
-		Name:             fmt.Sprintf("%s/tasks/%s", q.queueName, taskID),
+		Name:             fmt.Sprintf("%s/tasks/%s", q.name, taskID),
 		DispatchDeadline: durationpb.New(maxCloudTasksTimeout),
 		MessageType: &taskspb.Task_HttpRequest{
 			HttpRequest: &taskspb.HttpRequest{
 				HttpMethod:          taskspb.HttpMethod_POST,
-				Url:                 q.queueURL + relativeURI,
+				Url:                 q.url + relativeURI,
 				AuthorizationHeader: q.token,
 			},
 		},
 	}
 	req := &taskspb.CreateTaskRequest{
-		Parent: q.queueName,
+		Parent: q.name,
 		Task:   taskpb,
 	}
 	// If suffix is non-empty, append it to the task name.
@@ -148,7 +148,7 @@ func (q *GCP) newTaskRequest(task gqueue.Task, opts *gqueue.Options) (*taskspb.C
 // Tasks with the same ID that are created within a few hours of each other will be de-duplicated.
 // See https://cloud.google.com/tasks/docs/reference/rpc/google.cloud.tasks.v2#createtaskrequest
 // under "Task De-duplication".
-func newTaskID(task gqueue.Task) string {
+func newTaskID(task queue.Task) string {
 	name := task.Name()
 	// Hash the path, params, and body of the task.
 	hasher := sha256.New()

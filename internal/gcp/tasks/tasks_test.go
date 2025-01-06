@@ -2,14 +2,14 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package queue
+package tasks
 
 import (
 	"testing"
 
 	taskspb "cloud.google.com/go/cloudtasks/apiv2/cloudtaskspb"
 	"github.com/google/go-cmp/cmp"
-	gqueue "golang.org/x/oscar/internal/queue"
+	"golang.org/x/oscar/internal/queue"
 	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
@@ -47,7 +47,7 @@ func TestNewTaskID(t *testing.T) {
 }
 
 func TestNewTaskRequest(t *testing.T) {
-	m := &gqueue.Metadata{
+	m := &queue.Metadata{
 		Project:        "Project",
 		QueueName:      "queueID",
 		QueueURL:       "http://1.2.3.4:8000",
@@ -72,11 +72,11 @@ func TestNewTaskRequest(t *testing.T) {
 			},
 		},
 	}
-	gcp, err := newGCP(nil, m)
+	gcp, err := newQueue(nil, m)
 	if err != nil {
 		t.Fatal(err)
 	}
-	opts := &gqueue.Options{
+	opts := &queue.Options{
 		TaskNameSuffix: "suf",
 	}
 	sreq := &testTask{
