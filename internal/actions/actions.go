@@ -243,6 +243,36 @@ func Get(db storage.DB, actionKind string, key []byte) (*Entry, bool) {
 	return toEntry(e), true
 }
 
+// ReRunAction attempts to re-run a single action denoted by the given kind and key.
+// Only actions that have previously failed can be re-run.
+func ReRunAction(ctx context.Context, lg *slog.Logger, db storage.DB, actionKind string, key []byte) (err error) {
+	dkey := dbKey(actionKind, key)
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("actions.ReRun(%s): %w", storage.Fmt(dkey), err)
+		}
+	}()
+
+	lockName := logKind + "-" + string(dkey)
+	db.Lock(lockName)
+	defer db.Unlock(lockName)
+
+	e, ok := getEntry(db, dkey)
+	if !ok {
+		return errors.New("not found")
+	}
+	if !e.approved() {
+		return errors.New("not approved")
+	}
+	if e.Done.IsZero() {
+		return errors.New("not done")
+	}
+	if e.Error == "" {
+		return errors.New("did not fail")
+	}
+	return runEntry(ctx, lg, db, e)
+}
+
 // AddDecision adds a Decision to the action referred to by actionKind,
 // key and u.
 // It panics if the action does not exist or does not require approval.
@@ -443,7 +473,7 @@ func runEntry(ctx context.Context, lg *slog.Logger, db storage.DB, e *entry) err
 		db.Panic("unregistered action kind", "kind", e.Kind)
 	}
 	lg.Info("action log: running", "kind", e.Kind, "key", storage.Fmt(e.Key))
-	result, err := a.(Actioner).Run(ctx, e.Action)
+	result, err := a.Run(ctx, e.Action)
 	// mark done
 	e.Done = time.Now()
 	e.Result = result

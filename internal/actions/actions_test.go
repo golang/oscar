@@ -12,6 +12,8 @@ import (
 	"fmt"
 	"reflect"
 	"slices"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -346,6 +348,82 @@ func TestRun(t *testing.T) {
 		AddDecision(db, actionKind, key2, Decision{Approved: true})
 		checkRunAndDone(key2, true)
 	})
+}
+
+func TestReRunAction(t *testing.T) {
+	ctx := context.Background()
+	const actionKind = "bkind"
+	db := storage.MemDB()
+	lg := testutil.Slogger(t)
+
+	called := false
+	Register(actionKind, testActioner{
+		run: func(_ context.Context, action []byte) ([]byte, error) {
+			called = true
+			return nil, nil
+		},
+	})
+
+	for i, tc := range []struct {
+		entry     entry
+		wantError string
+	}{
+		{
+			entry: entry{
+				Done:             time.Time{},
+				Error:            "",
+				ApprovalRequired: false,
+			},
+			wantError: "not done",
+		},
+		{
+			entry: entry{
+				Done:             time.Time{},
+				Error:            "",
+				ApprovalRequired: true,
+			},
+			wantError: "not approved",
+		},
+		{
+			entry: entry{
+				Done:             time.Now(),
+				Error:            "",
+				ApprovalRequired: false,
+			},
+			wantError: "did not fail",
+		},
+		{
+			entry: entry{
+				Done:             time.Now(),
+				Error:            "bad stuff",
+				ApprovalRequired: false,
+			},
+			wantError: "",
+		},
+	} {
+		tc.entry.Created = time.Now()
+		tc.entry.Kind = actionKind
+		tc.entry.Key = []byte(strconv.Itoa(i))
+		setEntry(db, dbKey(actionKind, tc.entry.Key), &tc.entry)
+		called = false
+
+		err := ReRunAction(ctx, lg, db, tc.entry.Kind, tc.entry.Key)
+		if err != nil {
+			if tc.wantError == "" {
+				t.Errorf("%+v: unexpected error: %v", tc.entry, err)
+			} else if !strings.Contains(err.Error(), tc.wantError) {
+				t.Errorf("%+v: got error %q, wanted it to contain %q", tc.entry, err, tc.wantError)
+			}
+			continue
+		}
+		if tc.wantError != "" {
+			t.Errorf("%+v: got no error, expected one", tc.entry)
+			continue
+		}
+		if !called {
+			t.Errorf("%+v: runAction not called, but should have been", tc.entry)
+		}
+	}
 }
 
 type testActioner struct {
