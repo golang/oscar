@@ -161,7 +161,7 @@ func TestResponseUnmarshal(t *testing.T) {
 	// Do not remove or edit this test case without a good reason.
 	// It ensures that no backwards incompatible changes are made to the [response] struct.
 	raw := `{"Model":"model","PromptHash":"Qb+qD8ZuYR26qktIqPIbbHTaWm0SaoBaWhwObKH8INg=","Response":"response"}`
-	var r response
+	var r responseGenerateContent
 	if err := json.Unmarshal([]byte(raw), &r); err != nil {
 		t.Fatal(err)
 	}

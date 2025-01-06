@@ -194,7 +194,7 @@ func main() {
 	cr.Clean(godevClean)
 	g.crawler = cr
 
-	// Set up bisection if we are on Cloud Run,
+	// Set up bisection if we are on Cloud Run.
 	if g.cloud {
 		q, err := taskQueue(g)
 		if err != nil {

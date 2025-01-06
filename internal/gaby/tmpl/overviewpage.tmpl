@@ -49,7 +49,7 @@ function togglePrompt() {
 {{with .Raw.PolicyEvaluation}}
 	<div class="toggle" onclick="togglePolicy()">[show policy evaluation]</div>
 	<div id="policy" class="start-hidden">
-		<pre>{{.Display}}</pre>
+		<pre>{{.String}}</pre>
 	</div>
 {{end}}
 <script>

@@ -7,6 +7,7 @@ package llmapp
 import (
 	"context"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -51,7 +52,7 @@ func TestWithChecker(t *testing.T) {
 			Violations: []*llm.PolicyResult{violationResult},
 		},
 	}
-	if diff := cmp.Diff(want, r.PolicyEvaluation, cmpopts.IgnoreFields(PolicyResult{}, "Text")); diff != "" {
+	if diff := cmp.Diff(want, r.PolicyEvaluation, cmpopts.IgnoreFields(PolicyResult{}, "Text", "Cached")); diff != "" {
 		t.Errorf("c.Overview.PolicyEvaluation mismatch (-want,+got):\n%v", diff)
 	}
 
@@ -76,9 +77,108 @@ func TestWithChecker(t *testing.T) {
 			Results: []*llm.PolicyResult{okResult},
 		},
 	}
-	if diff := cmp.Diff(want, r.PolicyEvaluation, cmpopts.IgnoreFields(PolicyResult{}, "Text")); diff != "" {
+	if diff := cmp.Diff(want, r.PolicyEvaluation, cmpopts.IgnoreFields(PolicyResult{}, "Text", "Cached")); diff != "" {
 		t.Errorf("c.Overview.PolicyEvaluation mismatch (-want,+got):\n%v", diff)
 	}
+}
+
+func TestEvaluatePolicy(t *testing.T) {
+	lg := testutil.Slogger(t)
+	g := llm.EchoContentGenerator()
+	ctx := context.Background()
+
+	t.Run("good", func(t *testing.T) {
+		c := NewWithChecker(lg, g, badChecker{}, storage.MemDB())
+
+		want := &PolicyEvaluation{
+			Violative: false,
+			PromptResults: []*PolicyResult{
+				{
+					Text:    "a prompt",
+					Results: []*llm.PolicyResult{okResult},
+				},
+			},
+			OutputResults: &PolicyResult{
+				Text:    "A generated overview",
+				Results: []*llm.PolicyResult{okResult},
+			},
+		}
+		got := c.EvaluatePolicy(ctx, []llm.Part{llm.Text("a prompt")}, "A generated overview")
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("c.EvaluatePolicy mismatch (-want,+got):\n%v", diff)
+		}
+	})
+
+	t.Run("bad output", func(t *testing.T) {
+		c := NewWithChecker(lg, g, badChecker{}, storage.MemDB())
+
+		want := &PolicyEvaluation{
+			Violative: true,
+			PromptResults: []*PolicyResult{
+				{
+					Text:    "a prompt",
+					Results: []*llm.PolicyResult{okResult},
+				},
+			},
+			OutputResults: &PolicyResult{
+				Text:    "A bad generated overview",
+				Results: []*llm.PolicyResult{violationResult},
+				Violations: []*llm.PolicyResult{
+					violationResult,
+				},
+			},
+		}
+		got := c.EvaluatePolicy(ctx, []llm.Part{llm.Text("a prompt")}, "A bad generated overview")
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("c.EvaluatePolicy mismatch (-want,+got):\n%v", diff)
+		}
+	})
+
+	t.Run("bad prompt", func(t *testing.T) {
+		c := NewWithChecker(lg, g, badChecker{}, storage.MemDB())
+
+		want := &PolicyEvaluation{
+			Violative: true,
+			PromptResults: []*PolicyResult{
+				{
+					Text:    "a bad prompt",
+					Results: []*llm.PolicyResult{violationResult},
+					Violations: []*llm.PolicyResult{
+						violationResult,
+					},
+				},
+			},
+			OutputResults: &PolicyResult{
+				Text:    "A generated overview",
+				Results: []*llm.PolicyResult{okResult},
+			},
+		}
+		got := c.EvaluatePolicy(ctx, []llm.Part{llm.Text("a bad prompt")}, "A generated overview")
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("c.EvaluatePolicy mismatch (-want,+got):\n%v", diff)
+		}
+	})
+
+	t.Run("cached", func(t *testing.T) {
+		c := NewWithChecker(lg, g, &cacheChecker{}, storage.MemDB())
+
+		want := c.EvaluatePolicy(ctx, []llm.Part{llm.Text("a prompt")}, "A generated overview")
+		got := c.EvaluatePolicy(ctx, []llm.Part{llm.Text("a prompt")}, "A generated overview")
+
+		for _, r := range got.PromptResults {
+			if !r.Cached {
+				t.Error("r.Cached = false, want true")
+			}
+		}
+
+		if !got.OutputResults.Cached {
+			t.Errorf("got.OutputResults.Cached = false, want true")
+		}
+
+		if diff := cmp.Diff(want, got, cmpopts.IgnoreFields(PolicyResult{}, "Cached")); diff != "" {
+			t.Errorf("c.EvaluatePolicy mismatch (-want,+got):\n%v", diff)
+		}
+	})
 }
 
 // badChecker is a test implementation of [llm.PolicyChecker] that
@@ -121,4 +221,37 @@ func (badChecker) CheckText(_ context.Context, text string, prompts ...llm.Part)
 	return []*llm.PolicyResult{
 		okResult,
 	}, nil
+}
+
+// cacheChecker is a test implementation of [llm.PolicyChecker] that
+// alternately returns an [okResult] and a [violationResult] from CheckText.
+// This is used to test that the cache works.
+type cacheChecker struct {
+	mu sync.Mutex // protects ok
+	ok bool
+}
+
+var _ llm.PolicyChecker = (*cacheChecker)(nil)
+
+func (*cacheChecker) Name() string {
+	return "cachechecker"
+}
+
+func (*cacheChecker) Policies() []*llm.PolicyConfig {
+	return []*llm.PolicyConfig{
+		{PolicyType: llm.PolicyTypeDangerousContent},
+	}
+}
+
+func (c *cacheChecker) CheckText(context.Context, string, ...llm.Part) ([]*llm.PolicyResult, error) {
+	c.mu.Lock()
+	defer func() {
+		c.ok = !c.ok
+		c.mu.Unlock()
+	}()
+
+	if c.ok {
+		return []*llm.PolicyResult{okResult}, nil
+	}
+	return []*llm.PolicyResult{violationResult}, nil
 }

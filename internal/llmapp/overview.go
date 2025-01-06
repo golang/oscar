@@ -106,7 +106,7 @@ func (c *Client) overview(ctx context.Context, kind docsKind, groups ...*docGrou
 		Cached:           cached,
 		Schema:           schema,
 		Prompt:           prompt,
-		PolicyEvaluation: c.evaluatePolicy(ctx, prompt, overview),
+		PolicyEvaluation: c.EvaluatePolicy(ctx, prompt, overview),
 	}, nil
 }
 

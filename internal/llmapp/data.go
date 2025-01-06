@@ -66,6 +66,7 @@ type PolicyResult struct {
 	Results    []*llm.PolicyResult
 	Violations []*llm.PolicyResult
 	Error      error
+	Cached     bool // whether the result was cached
 }
 
 // String returns a human readable representation of a policy result.
@@ -82,6 +83,7 @@ func (pr *PolicyResult) String() string {
 	if pr.Error != nil {
 		b.WriteString(fmt.Sprintf("Error: %v\n", pr.Error))
 	}
+	b.WriteString(fmt.Sprintf("Cached: %t\n", pr.Cached))
 	return b.String()
 }
 

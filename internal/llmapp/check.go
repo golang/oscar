@@ -25,10 +25,9 @@ func NewWithChecker(lg *slog.Logger, g llm.ContentGenerator, checker llm.PolicyC
 	return &Client{slog: lg, g: g, checker: checker, db: db}
 }
 
-// evaluatePolicy invokes the policy checker on the given prompts and LLM output and
+// EvaluatePolicy invokes the policy checker on the given prompts and LLM output and
 // wraps its results as a [*PolicyEvaluation].
-// TODO(tatianabradley): Cache calls to policy checker.
-func (c *Client) evaluatePolicy(ctx context.Context, prompts []llm.Part, output string) *PolicyEvaluation {
+func (c *Client) EvaluatePolicy(ctx context.Context, prompts []llm.Part, output string) *PolicyEvaluation {
 	if c.checker == nil {
 		return nil
 	}
@@ -36,7 +35,7 @@ func (c *Client) evaluatePolicy(ctx context.Context, prompts []llm.Part, output 
 	for _, p := range prompts {
 		switch v := p.(type) {
 		case llm.Text:
-			r := c.check(ctx, string(v), nil)
+			r := c.checkPolicy(ctx, string(v), nil)
 			if len(r.Violations) > 0 {
 				pe.Violative = true
 			}
@@ -47,7 +46,7 @@ func (c *Client) evaluatePolicy(ctx context.Context, prompts []llm.Part, output 
 			pe.PromptResults = append(pe.PromptResults, &PolicyResult{Text: "unknown", Error: err})
 		}
 	}
-	r := c.check(ctx, output, prompts)
+	r := c.checkPolicy(ctx, output, prompts)
 	if len(r.Violations) > 0 {
 		pe.Violative = true
 	}
@@ -55,19 +54,38 @@ func (c *Client) evaluatePolicy(ctx context.Context, prompts []llm.Part, output 
 	return pe
 }
 
-// check invokes the policy checker on the given text (with optional prompts)
-// and returns its results.
-func (c *Client) check(ctx context.Context, text string, prompts []llm.Part) *PolicyResult {
-	prs, err := c.checker.CheckText(ctx, text, prompts...)
-	if err != nil {
-		return &PolicyResult{Text: text, Error: fmt.Errorf("llmapp: error while checking for policy violations: %w", err)}
+// checkPolicy invokes the policy checker on the given text (with optional prompts)
+// and returns its (possibly cached) results.
+func (c *Client) checkPolicy(ctx context.Context, text string, prompts []llm.Part) *PolicyResult {
+	policies := c.checker.Policies()
+	k, h := c.keyAndHashCheckText(policies, text, prompts)
+
+	c.db.Lock(string(k))
+	defer c.db.Unlock(string(k))
+
+	r := load[responseCheckText](c, k)
+	cached := r != nil
+
+	if !cached { // cache miss
+		prs, err := c.checker.CheckText(ctx, text, prompts...)
+		if err != nil {
+			// don't cache errors
+			return &PolicyResult{Text: text, Error: fmt.Errorf("llmapp: error while checking for policy violations: %w", err)}
+		}
+		r = &responseCheckText{
+			Name:      c.checker.Name(),
+			InputHash: h,
+			Response:  prs,
+		}
+		c.db.Set(k, storage.JSON(r))
 	}
-	c.slog.Info("llmapp: found policy results", "text", text, "prompts", prompts, "results", toStrings(prs))
-	if vs := violations(prs); len(vs) > 0 {
-		c.slog.Warn("llmapp: found policy violations for LLM output", "text", text, "prompts", prompts, "violations", toStrings(vs))
-		return &PolicyResult{Text: text, Results: prs, Violations: vs}
+
+	c.slog.Info("llmapp: found policy results", "text", text, "prompts", prompts, "results", toStrings(r.Response), "cached", cached)
+	if vs := violations(r.Response); len(vs) > 0 {
+		c.slog.Warn("llmapp: found policy violations for LLM output", "text", text, "prompts", prompts, "violations", toStrings(vs), "cached", cached)
+		return &PolicyResult{Text: text, Results: r.Response, Violations: vs, Cached: cached}
 	}
-	return &PolicyResult{Text: text, Results: prs}
+	return &PolicyResult{Text: text, Results: r.Response, Cached: cached}
 }
 
 func toStrings(prs []*llm.PolicyResult) []string {
