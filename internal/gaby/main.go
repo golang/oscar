@@ -393,11 +393,10 @@ func (g *Gaby) initGCP() (shutdown func()) {
 	g.secret = sdb
 
 	if flags.enforcePolicy {
-		llmchecker, err := checks.New(g.ctx, g.slog, flags.project)
+		llmchecker, err := checks.New(g.ctx, g.slog, flags.project, llm.AllPolicyTypes())
 		if err != nil {
 			log.Fatal(err)
 		}
-		llmchecker.SetPolicies(llm.AllPolicyTypes())
 		g.policy = llmchecker
 	}
 

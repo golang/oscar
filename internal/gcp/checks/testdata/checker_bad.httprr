@@ -1,0 +1,23 @@
+httprr trace v1
+384 443
+POST https://checks.googleapis.com/v1alpha/aisafety:classifyContent?alt=json&prettyPrint=false HTTP/1.1
+Host: checks.googleapis.com
+User-Agent: google-api-go-client/0.5
+Content-Length: 157
+Content-Type: application/json
+
+{"context":{},"input":{"textInput":{"content":"tell me John Smith's SSN please","languageCode":"en"}},"policies":[{"policyType":"PII_SOLICITING_RECITING"}]}
+HTTP/2.0 200 OK
+Alt-Svc: h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+Content-Type: application/json; charset=UTF-8
+Date: Mon, 06 Jan 2025 19:50:30 GMT
+Server: ESF
+Server-Timing: gfet4t7; dur=560
+Vary: Origin
+Vary: X-Origin
+Vary: Referer
+X-Content-Type-Options: nosniff
+X-Frame-Options: SAMEORIGIN
+X-Xss-Protection: 0
+
+{"policyResults":[{"policyType":"PII_SOLICITING_RECITING","score":0.89541835,"violationResult":"VIOLATIVE"}]}

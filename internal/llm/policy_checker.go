@@ -10,11 +10,16 @@ import (
 )
 
 // A PolicyChecker checks inputs and outputs to LLMs against
-// safety policies.
+// a fixed set of safety policies.
 type PolicyChecker interface {
-	// SetPolicies sets the policies to evaluate in subsequent
-	// calls to [Check]. If unset, use the implementation's default.
-	SetPolicies([]*PolicyConfig)
+	// Name returns the name of the policy checker.
+	// This function should always return the same result for a given
+	// instance of a [PolicyChecker].
+	Name() string
+	// Policies returns the list of policies configured on the checker.
+	// This function should always return the same result for a given
+	// instance of a [PolicyChecker].
+	Policies() []*PolicyConfig
 	// CheckText evaluates the policies configured on this [PolicyChecker]
 	// against the given text and returns a result for each [PolicyConfig].
 	// If the text represents a model output, the prompt parts used to generate it
@@ -79,9 +84,8 @@ const (
 	PolicyTypeObscenityAndProfanity = PolicyType("OBSCENITY_AND_PROFANITY")
 )
 
-// AllPolicyTypes returns a policy that, when passed to
-// to [PolicyChecker.SetPolicies], configures the PolicyChecker
-// to check for all available dangerous content types at the default threshold.
+// AllPolicyTypes returns a list of policies that checks for all available dangerous
+// content types at the default threshold.
 func AllPolicyTypes() []*PolicyConfig {
 	return []*PolicyConfig{
 		{PolicyType: PolicyTypeDangerousContent},

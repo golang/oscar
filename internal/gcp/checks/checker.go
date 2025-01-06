@@ -10,7 +10,6 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
-	"sync"
 
 	"golang.org/x/oauth2"
 	oauth2google "golang.org/x/oauth2/google"
@@ -26,24 +25,24 @@ type Checker struct {
 	svc     *gcpchecks.Service // connection to the checks API
 	project string
 
-	mu       sync.Mutex      // protects policies
-	policies []*PolicyConfig // the policies to apply
+	llmPolicies []*llm.PolicyConfig // policies to apply, formatted as [llm.PolicyConfig], to make calls to [Checker.Policies] faster
+	policies    []*PolicyConfig     // the policies to apply in calls to [Checker.CheckText]
 }
 
 var _ llm.PolicyChecker = (*Checker)(nil)
 
 // New returns a new Checker.
 // gcpproject is the GCP project to use when connecting to the GCP Checks API.
-// By default, the Checker has no policies. Use [Checker.SetPolicies] to set a policy.
-func New(ctx context.Context, lg *slog.Logger, gcpproject string) (*Checker, error) {
+// policies are the policies to apply in calls to [Checker.CheckText].
+func New(ctx context.Context, lg *slog.Logger, gcpproject string, policies []*llm.PolicyConfig) (*Checker, error) {
 	hc, err := authClient(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return newChecker(ctx, lg, gcpproject, hc)
+	return newChecker(ctx, lg, gcpproject, policies, hc)
 }
 
-func newChecker(ctx context.Context, lg *slog.Logger, gcpproject string, hc *http.Client) (*Checker, error) {
+func newChecker(ctx context.Context, lg *slog.Logger, gcpproject string, policies []*llm.PolicyConfig, hc *http.Client) (*Checker, error) {
 	svc, err := gcpchecks.NewService(
 		ctx,
 		option.WithEndpoint(api),
@@ -54,10 +53,11 @@ func newChecker(ctx context.Context, lg *slog.Logger, gcpproject string, hc *htt
 		return nil, err
 	}
 	return &Checker{
-		lg:       lg,
-		svc:      svc,
-		project:  gcpproject,
-		policies: nil,
+		lg:          lg,
+		svc:         svc,
+		project:     gcpproject,
+		llmPolicies: policies,
+		policies:    convertPolicies(policies),
 	}, nil
 }
 
@@ -66,12 +66,14 @@ const (
 	scope = "https://www.googleapis.com/auth/checks"
 )
 
-// Implements [llm.PolicyChecker.SetPolicies].
-func (c *Checker) SetPolicies(policies []*llm.PolicyConfig) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+// Implements [llm.PolicyChecker.Name].
+func (c *Checker) Name() string {
+	return api + "/v1alpha"
+}
 
-	c.policies = convertPolicies(policies)
+// Implements [llm.PolicyChecker.Policies].
+func (c *Checker) Policies() []*llm.PolicyConfig {
+	return c.llmPolicies
 }
 
 // Implements [llm.PolicyChecker.CheckText].
@@ -107,12 +109,12 @@ type (
 // convertPolicies trivially converts a slice of [*llm.PolicyConfig]
 // to a slice of [*PolicyConfig].
 func convertPolicies(policies []*llm.PolicyConfig) []*PolicyConfig {
-	var pc []*PolicyConfig
-	for _, p := range policies {
-		pc = append(pc, &PolicyConfig{
+	pc := make([]*PolicyConfig, len(policies))
+	for i, p := range policies {
+		pc[i] = &PolicyConfig{
 			PolicyType: string(p.PolicyType),
 			Threshold:  p.Threshold,
-		})
+		}
 	}
 	return pc
 }

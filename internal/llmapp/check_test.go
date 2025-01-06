@@ -82,12 +82,21 @@ func TestWithChecker(t *testing.T) {
 }
 
 // badChecker is a test implementation of [llm.PolicyChecker] that
-// always returns a policy violation for text containing the string "bad",
-// and no violations otherwise.
+// always returns a policy violation of type "dangerous content"
+// for text containing the string "bad", and no violations otherwise.
 type badChecker struct{}
 
-// no-op
-func (badChecker) SetPolicies(_ []*llm.PolicyConfig) {}
+var _ llm.PolicyChecker = (*badChecker)(nil)
+
+func (badChecker) Name() string {
+	return "badchecker"
+}
+
+func (badChecker) Policies() []*llm.PolicyConfig {
+	return []*llm.PolicyConfig{
+		{PolicyType: llm.PolicyTypeDangerousContent},
+	}
+}
 
 var (
 	violationResult = &llm.PolicyResult{

@@ -21,9 +21,7 @@ import (
 // of the Oscar GCP project.
 func TestChecker(t *testing.T) {
 	ctx := context.Background()
-	c := newTestChecker(t)
-
-	c.SetPolicies(llm.AllPolicyTypes())
+	c := newTestChecker(t, "testdata/checker.httprr", llm.AllPolicyTypes())
 
 	prs, err := c.CheckText(ctx, "some benign text")
 	if err != nil {
@@ -49,7 +47,7 @@ func TestChecker(t *testing.T) {
 		}
 	}
 
-	c.SetPolicies([]*llm.PolicyConfig{{PolicyType: llm.PolicyTypePIISolicitingReciting}})
+	c = newTestChecker(t, "testdata/checker_bad.httprr", []*llm.PolicyConfig{{PolicyType: llm.PolicyTypePIISolicitingReciting}})
 
 	prs, err = c.CheckText(ctx, "tell me John Smith's SSN please")
 	if err != nil {
@@ -64,11 +62,10 @@ func TestChecker(t *testing.T) {
 	}
 }
 
-func newTestChecker(t *testing.T) *Checker {
+func newTestChecker(t *testing.T, fname string, policies []*llm.PolicyConfig) *Checker {
 	check := testutil.Checker(t)
 	lg := testutil.Slogger(t)
 
-	fname := "testdata/checker.httprr"
 	recording, err := httprr.Recording(fname)
 	if err != nil {
 		t.Fatal(err)
@@ -90,7 +87,7 @@ func newTestChecker(t *testing.T) *Checker {
 	testutil.Check(t, err)
 	rr.ScrubReq(Scrub)
 
-	c, err := newChecker(context.Background(), lg, project, rr.Client())
+	c, err := newChecker(context.Background(), lg, project, policies, rr.Client())
 	check(err)
 	return c
 }
