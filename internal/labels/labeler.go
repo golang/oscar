@@ -107,9 +107,10 @@ func (l *Labeler) SkipAuthor(author string) {
 
 // An action has all the information needed to label a GitHub issue.
 type action struct {
-	Issue      *github.Issue
-	Categories []string // the names of the categories corresponding to the labels
-	NewLabels  []string // labels to add
+	Issue        *github.Issue
+	Categories   []string // the names of the categories corresponding to the labels
+	NewLabels    []string // labels to add
+	Explanations []string // an explanation for each category
 }
 
 // result is the result of apply an action.
@@ -231,9 +232,10 @@ func (l *Labeler) logLabelIssue(ctx context.Context, e *github.Event) (advance b
 	}
 
 	act := &action{
-		Issue:      issue,
-		Categories: []string{cat.Name},
-		NewLabels:  []string{cat.Label},
+		Issue:        issue,
+		Categories:   []string{cat.Name},
+		NewLabels:    []string{cat.Label},
+		Explanations: []string{explanation},
 	}
 	l.logAction(l.db, logKey(e), storage.JSON(act), l.requireApproval)
 	return true, nil
@@ -324,7 +326,7 @@ func (ar *actioner) ForDisplay(data []byte) string {
 	if err := json.Unmarshal(data, &a); err != nil {
 		return fmt.Sprintf("ERROR: %v", err)
 	}
-	return a.Issue.HTMLURL + "\n" + strings.Join(a.NewLabels, ", ")
+	return a.Issue.HTMLURL + "\n" + strings.Join(a.NewLabels, ", ") + "\n" + strings.Join(a.Explanations, ", ")
 }
 
 // runFromActionLog is called by actions.Run to execute an action.

@@ -176,3 +176,26 @@ func TestCategories(t *testing.T) {
 		t.Errorf("got %v, want %v", got, cats)
 	}
 }
+
+func TestForDisplay(t *testing.T) {
+	// Check that an action both unmarshals and displays properly with or without
+	// an explanation.
+	a := action{
+		Issue:      &github.Issue{HTMLURL: "url"},
+		Categories: []string{"cat"},
+		NewLabels:  []string{"Lab"},
+	}
+	ar := &actioner{}
+	got := ar.ForDisplay(storage.JSON(a))
+	want := "url\nLab\n"
+	if got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+
+	a.Explanations = []string{"exp"}
+	got = ar.ForDisplay(storage.JSON(a))
+	want += "exp"
+	if got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
