@@ -8,8 +8,8 @@
 project: golang/go
 categories:
   - name: bug
-    label: Bug
-    description: "Issues describing a bug in the Go implementation."
+    label: BugReport
+    description: "Issues describing a possible bug in the Go implementation."
 
   - name: languageProposal
     label: LanguageProposal

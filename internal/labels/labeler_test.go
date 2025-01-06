@@ -112,7 +112,7 @@ func TestRun(t *testing.T) {
 	}
 	var got action
 	check(json.Unmarshal(entries[0].Action, &got))
-	if got.Issue.Number != 1 || !slices.Equal(got.NewLabels, []string{"Bug"}) {
+	if got.Issue.Number != 1 || !slices.Equal(got.NewLabels, []string{"BugReport"}) {
 		t.Errorf("got (%d, %v), want (1, [bug])", got.Issue.Number, got.NewLabels)
 	}
 
@@ -130,7 +130,7 @@ func TestRun(t *testing.T) {
 		{
 			Project:      "golang/go",
 			Issue:        1,
-			IssueChanges: &github.IssueChanges{Labels: &[]string{"Bug", "Other"}},
+			IssueChanges: &github.IssueChanges{Labels: &[]string{"BugReport", "Other"}},
 		},
 	}
 	wi := 0
