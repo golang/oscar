@@ -251,15 +251,11 @@ func (g *Gaby) doActionDecision(r *http.Request) (data []byte, status int, err e
 	if decision != "Approve" && decision != "Deny" {
 		return nil, http.StatusBadRequest, errors.New("invalid decision value: need 'Approve' or 'Deny'")
 	}
-	kind := r.FormValue("kind")
-	if kind == "" {
-		return nil, http.StatusBadRequest, errors.New("empty kind")
+	kind, key, err := kindAndKeyParams(r)
+	if err != nil {
+		return nil, http.StatusBadRequest, err
 	}
 	keyParam := r.FormValue("key")
-	key, err := hex.DecodeString(keyParam)
-	if err != nil {
-		return nil, http.StatusBadRequest, fmt.Errorf("decoding key: %v", err)
-	}
 	entry, ok := actions.Get(g.db, kind, key)
 	if !ok {
 		return nil, http.StatusBadRequest, fmt.Errorf("cannot find action with kind %q and key %s", kind, keyParam)
@@ -276,6 +272,45 @@ func (g *Gaby) doActionDecision(r *http.Request) (data []byte, status int, err e
 	}
 	actions.AddDecision(g.db, kind, key, d)
 	return []byte(fmt.Sprintf("decision: %+v", d)), http.StatusOK, nil
+}
+
+func (g *Gaby) handleActionRerun(w http.ResponseWriter, r *http.Request) {
+	data, status, err := g.doActionRerun(r)
+	if err != nil {
+		http.Error(w, err.Error(), status)
+	} else {
+		_, _ = w.Write(data)
+	}
+}
+
+// doActionRerun reruns a failed action.
+// It expects these query parameters:
+//
+//	kind: the action kind
+//	key: hex-encoded value of the action key
+func (g *Gaby) doActionRerun(r *http.Request) (data []byte, status int, err error) {
+	kind, key, err := kindAndKeyParams(r)
+	if err != nil {
+		return nil, http.StatusBadRequest, err
+	}
+	if err := actions.ReRunAction(r.Context(), g.slog, g.db, kind, key); err != nil {
+		// TODO: distinguish bad input from true failure
+		return nil, http.StatusInternalServerError, err
+	}
+	return []byte("rerun successful"), http.StatusOK, nil
+}
+
+func kindAndKeyParams(r *http.Request) (kind string, key []byte, err error) {
+	kind = r.FormValue("kind")
+	if kind == "" {
+		return "", nil, errors.New("empty kind")
+	}
+	keyParam := r.FormValue("key")
+	key, err = hex.DecodeString(keyParam)
+	if err != nil {
+		return "", nil, fmt.Errorf("decoding key: %v", err)
+	}
+	return kind, key, nil
 }
 
 func newFilter(s string) (func(*actions.Entry) bool, error) {

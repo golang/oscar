@@ -479,6 +479,8 @@ func runEntry(ctx context.Context, lg *slog.Logger, db storage.DB, e *entry) err
 	e.Result = result
 	if err != nil {
 		e.Error = err.Error()
+	} else {
+		e.Error = ""
 	}
 	setEntry(db, dbKey(e.Kind, e.Key), e)
 	return err

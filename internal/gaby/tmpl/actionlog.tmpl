@@ -169,7 +169,16 @@ license that can be found in the LICENSE file.
         </td>
         <td>{{$e.Done | fmttime}}</td>
         <td><pre class="wrap">{{$e.Result | fmtval}}</pre></td>
-        <td>{{$e.Error}}</td>
+        <td>
+          {{if $e.Error}}
+            <form action="/action-rerun" method="GET">
+              <input type="hidden" name="kind" value="{{$e.Kind}}">
+              <input type="hidden" name="key" value="{{$e.Key | hex}}">
+              <input type="submit" name="rerun" value="Rerun"/>
+            </form>
+          {{end}}
+          {{$e.Error}}
+        </td>
       </tr>
       <tr id="{{(print "action-" $i) | safeid}}" hidden="true">
         <td colspan="7">
