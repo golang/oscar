@@ -192,12 +192,15 @@ func main() {
 	cr.Clean(godevClean)
 	g.crawler = cr
 
-	q, err := taskQueue(g)
-	if err != nil {
-		log.Fatalf("task Queue creation failed: %v", err)
+	// Set up bisection if we are on Cloud Run,
+	if g.cloud {
+		q, err := taskQueue(g)
+		if err != nil {
+			log.Fatalf("task Queue creation failed: %v", err)
+		}
+		bs := bisect.New(g.slog, g.db, q)
+		g.bisect = bs
 	}
-	bs := bisect.New(g.slog, g.db, q)
-	g.bisect = bs
 
 	if flags.search {
 		g.searchLoop()
