@@ -161,6 +161,8 @@ func (k docsKind) instructions() string {
 
 // schema returns the JSON schema for the given document kind,
 // or nil if there is no corresponding JSON schema.
+// TODO(tatianabradley): Use schemas instead of unstructured
+// prompts for all [docsKind]s.
 func (k docsKind) schema() *llm.Schema {
 	if k == docAndRelated {
 		return relatedSchema
