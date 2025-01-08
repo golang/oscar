@@ -47,6 +47,10 @@ categories:
       GODEBUG setting.
       This does NOT includ changes to tools in x repos, like gopls, or third-party tools.
 
+  - name: telemetryProposal
+    label: TelemetryProposal
+    description: Issues proposing new telemetry counters.
+
   - name: implementation
     label: Implementation
     description: Issues describing a semantics-preserving change to the Go implementation.
@@ -75,11 +79,11 @@ categories:
   - name: question
     label: Question
     description: Issues that are questions about using Go.
-    # It may be too challenging for the LLM to decide is something is WAI. Consider removing this.
 
   - name: workingAsIntended
     label: WorkingAsIntended
     description: Issues describing something that is working as it is supposed to.
+    # It may be too challenging for the LLM to decide is something is WAI. Consider removing this.
 
   - name: featureRequest
     label: FeatureRequest
@@ -88,13 +92,17 @@ categories:
   - name: documentation
     label: Documentation
     description: Issues describing a change to documentation.
-    # The LLM never seems to pick invalid.
+
+  - name: vuln
+    label: vulncheck or vulndb
+    description: Issues for the x/vuln or x/vulndb repo
 
   - name: invalid
     label: Invalid
     description: Issues that are empty, incomplete, or spam.
-    # The LLM never seems to pick other.
+    # The LLM rarely picks invalid.
 
   - name: other
     label: Other
     description: None of the above.
+    # The LLM never seems to pick other.
