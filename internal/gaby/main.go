@@ -647,7 +647,7 @@ func (g *Gaby) newServer(report func(error, *http.Request)) *http.ServeMux {
 		// bisection task, so there is no need to do
 		// locking here.
 
-		if err := g.bisect.Bisect(tid); err != nil {
+		if err := g.bisect.Bisect(g.ctx, tid); err != nil {
 			w.WriteHeader(errorCode)
 			report(err, r)
 			g.slog.Info(bisectEndpoint+" failure", "err", err)

@@ -57,7 +57,7 @@ func TestBisectAsync(t *testing.T) {
 		if err != nil {
 			return err
 		}
-		return c.Bisect(url.Query().Get("id"))
+		return c.Bisect(ctx, url.Query().Get("id"))
 	}
 	q := queue.NewInMemory(ctx, 1, process)
 	c = New(lg, db, q)

@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"golang.org/x/oscar/internal/queue"
+	"golang.org/x/oscar/internal/repo"
 	"golang.org/x/oscar/internal/storage"
 	"golang.org/x/oscar/internal/storage/timed"
 	"rsc.io/ordered"
@@ -159,7 +160,7 @@ func (c *Client) save(t *Task) {
 }
 
 // Bisect performs bisection on task with task id.
-func (c *Client) Bisect(id string) error {
+func (c *Client) Bisect(ctx context.Context, id string) error {
 	skey := string(o(taskKind, id))
 	// Lock the task just in case, so that
 	// no one else is bisecting it concurrently.
@@ -194,7 +195,7 @@ func (c *Client) Bisect(id string) error {
 	c.slog.Info("bisect.Bisect started", "id", id)
 	t.Status = StatusStarted
 	c.save(t)
-	err = c.bisect(dir, t)
+	err = c.bisect(ctx, dir, t)
 	if err != nil {
 		t.Status = StatusFailed
 		t.Error = err.Error()
@@ -232,7 +233,7 @@ cd ../../../
 // It assumes that gvisor's bisect_config.json and
 // its entry point bisect_runner are in the current
 // working directory.
-func (c *Client) bisect(dir string, t *Task) error {
+func (c *Client) bisect(ctx context.Context, dir string, t *Task) error {
 	if c.testing {
 		t.Output = "000000000001 is the first bad commit"
 		c.save(t)
@@ -284,14 +285,24 @@ func (c *Client) bisect(dir string, t *Task) error {
 	if err := os.Mkdir(gobisect, 0o777); err != nil {
 		return err
 	}
-	gitclone := exec.Command("git", "clone", "https://go.googlesource.com/go", gobisect)
-	if err := run(gitclone, t, c); err != nil {
+
+	goRepo, err := repo.Clone(ctx, c.slog, t.Repository)
+	if err != nil {
+		return err
+	}
+
+	gitclone := exec.CommandContext(ctx, "git", "clone", "--reference="+goRepo.Dir(), "--dissociate", t.Repository, gobisect)
+	err = run(gitclone, t, c)
+
+	goRepo.Release()
+
+	if err != nil {
 		return err
 	}
 	c.slog.Info("bisect.Bisect: cloned the go repo", "id", t.ID, "dir", gobisect)
 
 	// Initialize git bisect.
-	bisectstart := exec.Command("git", "bisect", "start", t.Bad, t.Good)
+	bisectstart := exec.CommandContext(ctx, "git", "bisect", "start", t.Bad, t.Good)
 	bisectstart.Dir = gobisect
 	if err := run(bisectstart, t, c); err != nil {
 		return err
@@ -299,7 +310,7 @@ func (c *Client) bisect(dir string, t *Task) error {
 	c.slog.Info("bisect.Bisect: initialized git bisect", "id", t.ID)
 
 	// Run git bisect.
-	bisectrun := exec.Command("git", "bisect", "run", "../bisect.sh")
+	bisectrun := exec.CommandContext(ctx, "git", "bisect", "run", "../bisect.sh")
 	bisectrun.Dir = gobisect
 	if err := run(bisectrun, t, c); err != nil {
 		return err
