@@ -7,11 +7,15 @@ package sandbox
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"time"
 )
 
 // A Sandbox is a restricted execution environment.
@@ -87,7 +91,8 @@ func (c *Cmd) Output() ([]byte, error) {
 	}
 	// -ignore-cgroups is needed to avoid this error from runsc:
 	// cannot set up cgroup for root: configuring cgroup: write /sys/fs/cgroup/cgroup.subtree_control: device or resource busy
-	cmd := exec.Command(c.sb.Runsc, "-ignore-cgroups", "-network=none", "-platform=systrap", "run", "sandbox")
+	sid := newSandboxID(time.Now().String(), c) // create a unique sandbox id
+	cmd := exec.Command(c.sb.Runsc, "-ignore-cgroups", "-network=none", "-platform=systrap", "run", "sandbox"+sid)
 	cmd.Dir = c.sb.bundleDir
 
 	// Invoking runsc will result in the invocation
@@ -120,6 +125,22 @@ func (c *Cmd) Output() ([]byte, error) {
 		return nil, fmt.Errorf("writing stdin: %w", err)
 	}
 	return bytes.TrimSpace(out), nil
+}
+
+// newSandboxID creates a unique hex ID for c
+// based on the command data and a seed.
+func newSandboxID(seed string, c *Cmd) string {
+	hasher := sha256.New()
+	io.WriteString(hasher, seed)
+	io.WriteString(hasher, c.Path)
+	io.WriteString(hasher, c.Dir)
+	for _, a := range c.Args {
+		io.WriteString(hasher, a)
+	}
+	for _, e := range c.Env {
+		io.WriteString(hasher, e)
+	}
+	return hex.EncodeToString(hasher.Sum(nil))
 }
 
 // ociConfig is a subset of the OCI container configuration.
