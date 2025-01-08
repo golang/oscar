@@ -201,6 +201,7 @@ func lookupIssues(db storage.DB, ics []*issueConfig) error {
 	return nil
 }
 func printResults(issueConfigs []*issueConfig, responseLists [][]response, knownCategories map[string]bool) {
+	passes := 0
 Issues:
 	for i, ic := range issueConfigs {
 		responseList := responseLists[i]
@@ -217,6 +218,7 @@ Issues:
 				fmt.Printf("%11s\n", res.explanation)
 			} else {
 				fmt.Printf("PASS\n")
+				passes++
 			}
 		} else {
 			// If any response is an error or NEW, stop there.
@@ -237,7 +239,11 @@ Issues:
 				counts[res.cat.Name]++
 			}
 			p := counts[ic.WantCategory]
-			fmt.Printf("PASS:%d FAIL:%d ", p, len(responseList)-p)
+			f := len(responseList) - p
+			fmt.Printf("PASS:%d FAIL:%d ", p, f)
+			if p > f {
+				passes++
+			}
 			// Sort passes first, then alphabetically.
 			cats := slices.Collect(maps.Keys(counts))
 			slices.SortFunc(cats, func(c1, c2 string) int {
@@ -258,6 +264,8 @@ Issues:
 			fmt.Println()
 		}
 	}
+	total := len(issueConfigs)
+	fmt.Printf("%d passed/%d total = %.1f%%\n", passes, total, float64(passes*100)/float64(total))
 }
 
 func newGeminiClient(ctx context.Context, lg *slog.Logger) (*gemini.Client, error) {
