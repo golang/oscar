@@ -21,6 +21,7 @@ import (
 	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/labels"
 	"golang.org/x/oscar/internal/llm"
+	"golang.org/x/oscar/internal/storage"
 	"rsc.io/markdown"
 )
 
@@ -61,7 +62,7 @@ type CaseTester interface {
 //
 // On success this returns an empty string if there is nothing to do,
 // or the result of a call to [CaseTester.Bisect].
-func CheckReproduction(ctx context.Context, lg *slog.Logger, cgen llm.ContentGenerator, tester CaseTester, i *github.Issue) (string, error) {
+func CheckReproduction(ctx context.Context, lg *slog.Logger, db storage.DB, cgen llm.ContentGenerator, tester CaseTester, i *github.Issue) (string, error) {
 	// See if this is a bug report.
 	if i.PullRequest != nil {
 		lg.Debug("no reproduction case", "issue", i.Number, "reason", "pull request")
@@ -70,7 +71,7 @@ func CheckReproduction(ctx context.Context, lg *slog.Logger, cgen llm.ContentGen
 
 	// TODO(iant): We shouldn't look up the label again,
 	// it should be written down somewhere.
-	cat, _, err := labels.IssueCategory(ctx, cgen, i)
+	cat, _, err := labels.IssueCategory(ctx, db, cgen, i)
 	if err != nil {
 		return "", err
 	}

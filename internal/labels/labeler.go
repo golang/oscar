@@ -130,7 +130,7 @@ func (l *Labeler) Run(ctx context.Context) error {
 
 	// Ensure that labels in GH match our config.
 	for p := range l.projects {
-		cats, ok := config.Categories[p]
+		cats, ok := config.categories[p]
 		if !ok {
 			return fmt.Errorf("Labeler.Run: unknown project %q", p)
 		}
@@ -219,7 +219,7 @@ func (l *Labeler) logLabelIssue(ctx context.Context, e *github.Event) (advance b
 	issue := e.Typed.(*github.Issue)
 	l.slog.Debug("labels.Labeler consider", "url", issue.HTMLURL)
 
-	cat, explanation, err := IssueCategory(ctx, l.cgen, issue)
+	cat, explanation, err := IssueCategory(ctx, l.db, l.cgen, issue)
 	if err != nil {
 		return false, fmt.Errorf("IssueCategory(%s): %w", issue.HTMLURL, err)
 	}

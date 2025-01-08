@@ -1,0 +1,44 @@
+project: golang/go
+examples:
+  - issue: 69011
+    category: question
+
+  - issue: 71099
+    category: toolProposal
+    # Clearly a proposal, but misclassified as a bug.
+
+  - issue: 67663
+    category: featureRequest
+    # Technically this is a feature request, not a proposal.
+
+  - issue: 67703
+    category: featureRequest
+    # Definitely not a proposal
+
+  - issue: 67726
+    category: featureRequest
+    # classified as a library proposal
+
+  - issue: 71106
+    category: featureRequest
+
+  - issue: 71113
+    category: featureRequest
+    # These are for a gopls feature. Labeler thinks it is a tool proposal.
+
+  - issue: 71122
+    category: libraryProposal
+    # not a bug, although it fills out the bug template
+
+  - issue: 71132
+    category: featureRequest
+    # not a bug
+
+  - issue: 71134
+    category: other
+    # tracking bug for a currently unfixable implementation weakness
+
+  - issue: 71145
+    category: libraryProposal
+    # Gemini calls this a language proposal, because it thinks the method is being
+    # added to the built-in type "string".

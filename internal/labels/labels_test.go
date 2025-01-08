@@ -6,15 +6,18 @@ package labels
 
 import (
 	"context"
+	"regexp"
 	"testing"
 
 	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/llm"
+	"golang.org/x/oscar/internal/storage"
 )
 
 func TestIssueLabels(t *testing.T) {
 	ctx := context.Background()
 	llm := kindTestGenerator()
+	db := storage.MemDB()
 
 	iss := &github.Issue{
 		URL:   "https://api.github.com/repos/golang/go/issues/1",
@@ -22,7 +25,7 @@ func TestIssueLabels(t *testing.T) {
 		Body:  "body",
 	}
 
-	cat, exp, err := IssueCategory(ctx, llm, iss)
+	cat, exp, err := IssueCategory(ctx, db, llm, iss)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -82,5 +85,31 @@ func TestHasText(t *testing.T) {
 		if got != tc.want {
 			t.Errorf("%q: got %t, want %t", tc.in, got, tc.want)
 		}
+	}
+}
+
+func TestBuildPrompt(t *testing.T) {
+	cat := Category{
+		Name:        "cat",
+		Description: "desc",
+		Label:       "lab",
+		Extra:       "extra",
+	}
+	ex := Example{
+		Title:    "extitle",
+		Body:     "exbody",
+		Category: "excat",
+	}
+	got, err := buildPrompt([]Category{cat}, []Example{ex})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, word := range []string{"categorize", "cat", "desc", "extra", "extitle", "exbody", "excat"} {
+		if !regexp.MustCompile(`\b` + word + `\b`).MatchString(got) {
+			t.Errorf("missing %q", word)
+		}
+	}
+	if t.Failed() {
+		t.Logf("got: %s", got)
 	}
 }

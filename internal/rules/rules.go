@@ -357,7 +357,7 @@ func Classify(ctx context.Context, cgen llm.ContentGenerator, i *github.Issue) (
 			Extra:       kind.Details,
 		})
 	}
-	cat, explanation, err := labels.IssueCategoryFromList(ctx, cgen, i, cats)
+	cat, explanation, err := labels.IssueCategoryFromLists(ctx, cgen, i, cats, nil)
 	if err != nil {
 		return IssueKind{}, "", err
 	}

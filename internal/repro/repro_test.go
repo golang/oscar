@@ -14,6 +14,7 @@ import (
 
 	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/llm"
+	"golang.org/x/oscar/internal/storage"
 	"golang.org/x/oscar/internal/testutil"
 )
 
@@ -29,7 +30,7 @@ func TestCheckReproduction(t *testing.T) {
 	)
 	caseTester := testCaseTester{t}
 
-	if id, err := CheckReproduction(ctx, lg, cgen, caseTester, testIssue); err != nil {
+	if id, err := CheckReproduction(ctx, lg, storage.MemDB(), cgen, caseTester, testIssue); err != nil {
 		t.Error(err)
 	} else if id == "" {
 		t.Error("no bisection attempted")

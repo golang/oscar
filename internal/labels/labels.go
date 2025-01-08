@@ -23,9 +23,12 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+	"sync"
+	"testing"
 
 	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/llm"
+	"golang.org/x/oscar/internal/storage"
 	"gopkg.in/yaml.v3"
 	"rsc.io/markdown"
 )
@@ -38,19 +41,34 @@ type Category struct {
 	Extra       string // additional description, not in issue tracker
 }
 
-// IssueCategory returns the category chosen by the LLM for the issue, along with an explanation
-// of why it was chosen. It uses the built-in list of categories.
-func IssueCategory(ctx context.Context, cgen llm.ContentGenerator, iss *github.Issue) (_ Category, explanation string, err error) {
-	project := iss.Project()
-	cats, ok := config.Categories[project]
-	if !ok {
-		return Category{}, "", fmt.Errorf("IssueCategory: unknown project %q", project)
-	}
-	return IssueCategoryFromList(ctx, cgen, iss, cats)
+// An Example is a GitHub issue along with its correct category.
+type Example struct {
+	Title    string
+	Body     string
+	Category string
 }
 
-// IssueCategoryFromList is like [IssueCategory], but uses the given list of Categories.
-func IssueCategoryFromList(ctx context.Context, cgen llm.ContentGenerator, iss *github.Issue, cats []Category) (_ Category, explanation string, err error) {
+type exampleSpec struct {
+	Issue    int64
+	Category string
+}
+
+// IssueCategory returns the category chosen by the LLM for the issue, along with an explanation
+// of why it was chosen. It uses the built-in list of categories for the issue's project.
+//
+// If there are examples associated with the issue's project, they are added to the prompt.
+// The first time this happens for each project, the issues are fetched from the db.
+func IssueCategory(ctx context.Context, db storage.DB, cgen llm.ContentGenerator, iss *github.Issue) (_ Category, explanation string, err error) {
+	project := iss.Project()
+	cats, exs, err := configForProject(db, project)
+	if err != nil {
+		return Category{}, "", err
+	}
+	return IssueCategoryFromLists(ctx, cgen, iss, cats, exs)
+}
+
+// IssueCategoryFromLists is like [IssueCategory], but uses the given lists of Categories and examples.
+func IssueCategoryFromLists(ctx context.Context, cgen llm.ContentGenerator, iss *github.Issue, cats []Category, exs []Example) (_ Category, explanation string, err error) {
 	if iss.PullRequest != nil {
 		return Category{}, "", errors.New("issue is a pull request")
 	}
@@ -60,27 +78,20 @@ func IssueCategoryFromList(ctx context.Context, cgen llm.ContentGenerator, iss *
 		return inv, "body has no text", nil
 	}
 
-	body := cleanIssueBody(bodyDoc)
-	// Extract issue text into a string.
-	var issueText bytes.Buffer
-	err = template.Must(template.New("body").Parse(bodyTemplate)).Execute(&issueText, bodyArgs{
-		Title: iss.Title,
-		Body:  body,
-	})
+	iprompt, err := issuePrompt(iss.Title, cleanIssueBody(bodyDoc))
 	if err != nil {
 		return Category{}, "", err
 	}
 
 	// Build system prompt to ask about the issue category.
-	var systemPrompt bytes.Buffer
-	systemPrompt.WriteString(categoryPrompt)
-	for _, cat := range cats {
-		fmt.Fprintf(&systemPrompt, "%s: %s\n%s\n\n", cat.Name, cat.Description, cat.Extra)
+	sprompt, err := buildPrompt(cats, exs)
+	if err != nil {
+		return Category{}, "", err
 	}
 
 	// Ask the LLM about the category of the issue.
 	jsonRes, err := cgen.GenerateContent(ctx, responseSchema,
-		[]llm.Part{llm.Text(systemPrompt.String()), llm.Text(issueText.String())})
+		[]llm.Part{llm.Text(sprompt), llm.Text(iprompt)})
 	if err != nil {
 		return Category{}, "", fmt.Errorf("llm request failed: %w\n", err)
 	}
@@ -93,6 +104,42 @@ func IssueCategoryFromList(ctx context.Context, cgen llm.ContentGenerator, iss *
 		return cat, res.Explanation, nil
 	}
 	return Category{}, "", fmt.Errorf("no category matches LLM response %q", jsonRes)
+}
+
+// configForProject returns the categories and examples for the given project.
+func configForProject(db storage.DB, project string) ([]Category, []Example, error) {
+	cats, ok := config.categories[project]
+	if !ok {
+		return nil, nil, fmt.Errorf("labels.ConfigForProject: unknown project %q", project)
+	}
+	config.mu.Lock()
+	exs, ok := config.examples[project]
+	config.mu.Unlock()
+	if !ok {
+		var err error
+		exs, err = expandExampleSpecs(db, project, config.exampleSpecs[project])
+		if err != nil {
+			return nil, nil, err
+		}
+		config.mu.Lock()
+		config.examples[project] = exs
+		config.mu.Unlock()
+	}
+	return cats, exs, nil
+}
+
+// issuePrompt renders an issue title and body (after the markdown is parsed) in a
+// form suitable for an LLM prompt.
+func issuePrompt(title, body string) (string, error) {
+	var text bytes.Buffer
+	err := template.Must(template.New("body").Parse(bodyTemplate)).Execute(&text, bodyArgs{
+		Title: title,
+		Body:  body,
+	})
+	if err != nil {
+		return "", err
+	}
+	return text.String(), nil
 }
 
 // hasText reports whether doc has any text blocks.
@@ -216,6 +263,29 @@ var responseSchema = &llm.Schema{
 	},
 }
 
+// buildPrompt constructs a prompt to ask about the issue category.
+func buildPrompt(cats []Category, exs []Example) (string, error) {
+	var buf bytes.Buffer
+	buf.WriteString(categoryPrompt)
+	for _, cat := range cats {
+		fmt.Fprintf(&buf, "%s: %s\n%s\n\n", cat.Name, cat.Description, cat.Extra)
+	}
+	if len(exs) > 0 {
+		fmt.Fprintln(&buf, "Here are some examples:")
+		for _, ex := range exs {
+			ip, err := issuePrompt(ex.Title, ex.Body)
+			if err != nil {
+				return "", err
+			}
+			fmt.Fprintf(&buf, "The following issue should be categorized as %s:\n", ex.Category)
+			fmt.Fprintln(&buf, ip)
+			fmt.Fprintln(&buf)
+		}
+	}
+	fmt.Fprintf(&buf, "Here is the issue you should categorize:\n")
+	return buf.String(), nil
+}
+
 const categoryPrompt = `
 Your job is to categorize Go issues.
 The issue is described by a title and a body.
@@ -236,42 +306,105 @@ type bodyArgs struct {
 
 var config struct {
 	// Key is project, e.g. "golang/go".
-	Categories map[string][]Category
+	categories   map[string][]Category
+	exampleSpecs map[string][]exampleSpec
+	mu           sync.Mutex           // protects examples
+	examples     map[string][]Example // from exampleSpecs, with data retrieved from the DB
+}
+
+// CategoriesForProject returns the categories used for the given project, or nil if there are none.
+func CategoriesForProject(project string) []Category {
+	return config.categories[project]
+}
+
+func expandExampleSpecs(db storage.DB, project string, specs []exampleSpec) ([]Example, error) {
+	// Skip examples during testing.
+	if testing.Testing() {
+		return nil, nil
+	}
+	var exs []Example
+	for _, spec := range specs {
+		iss, err := github.LookupIssue(db, project, spec.Issue)
+		if err != nil {
+			return nil, err
+		}
+		ex := Example{
+			Title:    iss.Title,
+			Body:     cleanIssueBody(github.ParseMarkdown(iss.Body)),
+			Category: spec.Category,
+		}
+		exs = append(exs, ex)
+	}
+	return exs, nil
 }
 
 //go:embed static/*
 var staticFS embed.FS
 
-// Read all category files into config.
+// Read all category and example files into config.
 func init() {
-	catFiles, err := fs.Glob(staticFS, "static/*-categories.yaml")
+	type catContents struct {
+		Project    string
+		Categories []Category
+	}
+	ccontents, err := readAllYAMLFiles[catContents]("static/*-categories.yaml")
 	if err != nil {
 		log.Fatal(err)
 	}
-	config.Categories = map[string][]Category{}
-	for _, file := range catFiles {
+	config.categories = map[string][]Category{}
+	for _, cc := range ccontents {
+		if cc.Project == "" {
+			log.Fatalf("empty or missing project")
+		}
+		if _, ok := config.categories[cc.Project]; ok {
+			log.Fatalf("duplicate project %s", cc.Project)
+		}
+		config.categories[cc.Project] = cc.Categories
+	}
+
+	type exampleContents struct {
+		Project  string
+		Examples []exampleSpec
+	}
+	econtents, err := readAllYAMLFiles[exampleContents]("static/*-examples.yaml")
+	if err != nil {
+		log.Fatal(err)
+	}
+	config.exampleSpecs = map[string][]exampleSpec{}
+	for _, ec := range econtents {
+		if ec.Project == "" {
+			log.Fatalf("empty or missing project")
+		}
+		if _, ok := config.exampleSpecs[ec.Project]; ok {
+			log.Fatalf("duplicate project %s", ec.Project)
+		}
+		config.exampleSpecs[ec.Project] = ec.Examples
+	}
+
+	config.examples = map[string][]Example{}
+	// Populated by expandExampleSpecs.
+}
+
+func readAllYAMLFiles[T any](glob string) ([]T, error) {
+	files, err := fs.Glob(staticFS, glob)
+	if err != nil {
+		return nil, err
+	}
+	var ts []T
+	for _, file := range files {
 		f, err := staticFS.Open(file)
 		if err != nil {
-			log.Fatalf("%s: %v", file, err)
+			return nil, err
 		}
 
-		var contents struct {
-			Project    string
-			Categories []Category
-		}
-
+		var t T
 		dec := yaml.NewDecoder(f)
 		dec.KnownFields(true)
-		if err := dec.Decode(&contents); err != nil {
-			log.Fatalf("%s: %v", file, err)
+		if err := dec.Decode(&t); err != nil {
+			return nil, fmt.Errorf("%s: %v", file, err)
 		}
-		if contents.Project == "" {
-			log.Fatalf("%s: empty or missing project", file)
-		}
-		if _, ok := config.Categories[contents.Project]; ok {
-			log.Fatalf("%s: duplicate project %s", file, contents.Project)
-		}
-		config.Categories[contents.Project] = contents.Categories
+		ts = append(ts, t)
 		f.Close()
 	}
+	return ts, nil
 }

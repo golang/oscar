@@ -9,14 +9,9 @@ and compares the results with expected values.
 
 Usage:
 
-	labeleval categoryconfig issueconfig
+	labeleval project issueconfig
 
-Categoryconfig defines the list of categories to use.
-It is a YAML file that matches the type
-
-	struct {
-	  Categories []labels.Category
-	}
+Project is used to obtain the lists of categories and examples used by internal/labels.
 
 Issueconfig is a list of issue numbers to evaluate, along with their expected category.
 The issues must all be in the production DB under the golang/go project.
@@ -28,13 +23,13 @@ There are four results of evaluating an issue:
 
 	PASS:  the LLM chose a category that matches the desired one
 	FAIL:  the LLM chose a different category
-	NEW:   the expected category is not in the category config
+	NEW:   the expected category is not in the project's list.
 	ERROR: there was a failure trying to run the LLM
 
-A typical run will use the category config from the internal/labels package and the list
-of issues in this package. From repo root:
+A typical run will use the golang/go project and the list of issues in this package.
+From this directory:
 
-	go run ./internal/devtools/cmd/labeleval internal/labels/static/categories.yaml internal/devtools/cmd/labeleval/issues.txt
+	go run . golang/go issues.txt
 */
 package main
 
@@ -69,7 +64,7 @@ var (
 )
 
 func usage() {
-	fmt.Fprintf(os.Stderr, "usage: labeleval categoryconfig issueconfig\n")
+	fmt.Fprintf(os.Stderr, "usage: labeleval project issueconfig\n")
 	flag.PrintDefaults()
 	os.Exit(2)
 }
@@ -94,28 +89,24 @@ type issueConfig struct {
 	issue        *github.Issue
 }
 
-// A reponse holds the return values from [labels.IssueCategoryFromList].
+// A reponse holds the return values from [labels.IssueCategory].
 type response struct {
 	cat         labels.Category
 	explanation string
 	err         error
 }
 
-func run(ctx context.Context, categoryconfigFile, issueConfigFile string) error {
+func run(ctx context.Context, project, issueConfigFile string) error {
 	if *count <= 0 {
 		return fmt.Errorf("bad count: %d", *count)
 	}
 
-	var categoryConfig struct {
-		Project    string
-		Categories []labels.Category
-	}
-
-	if err := readYAMLFile(categoryconfigFile, &categoryConfig); err != nil {
-		return err
+	cats := labels.CategoriesForProject(project)
+	if cats == nil {
+		return fmt.Errorf("unknown project: %s", project)
 	}
 	knownCategories := map[string]bool{}
-	for _, c := range categoryConfig.Categories {
+	for _, c := range cats {
 		knownCategories[c.Name] = true
 	}
 
@@ -174,7 +165,7 @@ func run(ctx context.Context, categoryconfigFile, issueConfigFile string) error 
 	for c := range *count {
 		for i, ic := range issueConfigs {
 			g.Go(func() error {
-				got, exp, err := labels.IssueCategoryFromList(gctx, cgen, ic.issue, categoryConfig.Categories)
+				got, exp, err := labels.IssueCategory(gctx, db, cgen, ic.issue)
 				responseLists[i][c] = response{got, exp, err}
 				return nil
 			})
