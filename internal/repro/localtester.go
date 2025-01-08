@@ -6,6 +6,7 @@ package repro
 
 import (
 	"bytes"
+	"context"
 	_ "embed"
 	"errors"
 	"fmt"
@@ -23,6 +24,7 @@ import (
 	"unicode/utf8"
 
 	"golang.org/x/oscar/internal/github"
+	"golang.org/x/oscar/internal/repo"
 )
 
 //go:embed runtester.go
@@ -34,28 +36,28 @@ var runtester []byte
 // It is exported so that it can be used by tests of other packages.
 type LocalTester struct {
 	lg      *slog.Logger
-	dir     string
+	tmpDir  string
 	version int // current Go version
+	goRepo  *repo.Repo
 }
 
 // Verify that [*LocalTester] implements [CaseTester].
 var _ CaseTester = &LocalTester{}
 
 // NewLocalTester returns a new [LocalTester].
-func NewLocalTester(lg *slog.Logger) (*LocalTester, error) {
-	dir, err := os.MkdirTemp("", "gaby-local-tester")
+func NewLocalTester(ctx context.Context, lg *slog.Logger) (*LocalTester, error) {
+	tmpDir, err := os.MkdirTemp("", "gaby-local-tester")
 	if err != nil {
 		return nil, err
 	}
 
-	lg.Debug("cloning Go git repo")
-	cmd := exec.Command("git", "clone", "https://go.googlesource.com/go")
-	cmd.Dir = dir
-	if err := run(lg, cmd); err != nil {
+	goRepo, err := repo.Clone(ctx, lg, "https://go.googlesource.com/go")
+	if err != nil {
 		return nil, err
 	}
+	goDir := goRepo.Dir()
 
-	versionSource, err := os.ReadFile(filepath.Join(dir, "go/src/internal/goversion/goversion.go"))
+	versionSource, err := os.ReadFile(filepath.Join(goDir, "src/internal/goversion/goversion.go"))
 	if err != nil {
 		return nil, err
 	}
@@ -69,21 +71,21 @@ func NewLocalTester(lg *slog.Logger) (*LocalTester, error) {
 		return nil, fmt.Errorf("failed to parse Go version: %v", err)
 	}
 
-	if err := os.WriteFile(filepath.Join(dir, "runtester.go"), runtester, 0o444); err != nil {
+	if err := os.WriteFile(filepath.Join(tmpDir, "runtester.go"), runtester, 0o444); err != nil {
 		return nil, err
 	}
-	cmd = exec.Command("go", "build", "runtester.go")
-	cmd.Dir = dir
+	cmd := exec.CommandContext(ctx, "go", "build", "runtester.go")
+	cmd.Dir = tmpDir
 	if err := run(lg, cmd); err != nil {
 		return nil, err
 	}
 
-	testdir := filepath.Join(dir, "testdir")
+	testdir := filepath.Join(tmpDir, "testdir")
 	if err := os.Mkdir(testdir, 0o755); err != nil {
 		return nil, err
 	}
 
-	cmd = exec.Command("go", "mod", "init", "localtester")
+	cmd = exec.CommandContext(ctx, "go", "mod", "init", "localtester")
 	cmd.Dir = testdir
 	if err := run(lg, cmd); err != nil {
 		return nil, err
@@ -92,7 +94,7 @@ func NewLocalTester(lg *slog.Logger) (*LocalTester, error) {
 	// Default to go1.20 for now. The reproduction case may
 	// require a sufficiently new Go version, but we don't have
 	// a way to detect that yet.
-	cmd = exec.Command("go", "mod", "edit", "-go=1.20")
+	cmd = exec.CommandContext(ctx, "go", "mod", "edit", "-go=1.20")
 	cmd.Dir = testdir
 	if err := run(lg, cmd); err != nil {
 		return nil, err
@@ -100,28 +102,30 @@ func NewLocalTester(lg *slog.Logger) (*LocalTester, error) {
 
 	lt := &LocalTester{
 		lg:      lg,
-		dir:     dir,
+		tmpDir:  tmpDir,
 		version: version,
+		goRepo:  goRepo,
 	}
 	return lt, nil
 }
 
 // Destroy destroys a [LocalTester], removing the temporary directory.
 func (lt *LocalTester) Destroy() {
-	if err := os.RemoveAll(lt.dir); err != nil {
-		lt.lg.Error("failed to remove temporary directory", "dir", lt.dir, "err", err)
+	lt.goRepo.Release()
+	if err := os.RemoveAll(lt.tmpDir); err != nil {
+		lt.lg.Error("failed to remove temporary directory", "dir", lt.tmpDir, "err", err)
 	}
 }
 
 // Clean adds a package declaration and imports to try to
 // make a test case runnable. This implements [CaseTester.Clean].
-func (lt *LocalTester) Clean(bodyStr string) (string, error) {
+func (lt *LocalTester) Clean(ctx context.Context, bodyStr string) (string, error) {
 	body := []byte(bodyStr)
 	body, err := lt.addPackage(body)
 	if err != nil {
 		return "", err
 	}
-	body, err = lt.addImports(body)
+	body, err = lt.addImports(ctx, body)
 	if err != nil {
 		return "", err
 	}
@@ -212,13 +216,13 @@ func (lt *LocalTester) addPrefix(body []byte, packageName string) []byte {
 
 // addImports invokes goimports, if available, to add import statements.
 // If goimports is not available, addImports just formats body.
-func (lt *LocalTester) addImports(body []byte) ([]byte, error) {
+func (lt *LocalTester) addImports(ctx context.Context, body []byte) ([]byte, error) {
 	goimports, err := exec.LookPath("goimports")
 	if err != nil {
 		return lt.format(body)
 	}
 
-	cmd := exec.Command(goimports)
+	cmd := exec.CommandContext(ctx, goimports)
 	cmd.Stdin = bytes.NewReader(body)
 	out, err := cmd.Output()
 	if err != nil {
@@ -240,7 +244,7 @@ func (lt *LocalTester) format(body []byte) ([]byte, error) {
 
 // CleanVersions tries to make the versions guessed by the LLM valid.
 // It implements [CaseTester.CleanVersions].
-func (lt *LocalTester) CleanVersions(pass, fail string) (string, string) {
+func (lt *LocalTester) CleanVersions(ctx context.Context, pass, fail string) (string, string) {
 	passOrig, failOrig := pass, fail
 
 	fixup := func(v string) string {
@@ -298,18 +302,18 @@ func (lt *LocalTester) CleanVersions(pass, fail string) (string, string) {
 
 // Try runs a test case at the suggested version.
 // It implements [CaseTester.Try].
-func (lt *LocalTester) Try(body, version string) (bool, error) {
-	if err := lt.checkout(version); err != nil {
+func (lt *LocalTester) Try(ctx context.Context, body, version string) (bool, error) {
+	if err := lt.checkout(ctx, version); err != nil {
 		return false, err
 	}
 
-	bodyFile := filepath.Join(lt.dir, "testdir", "body.go")
+	bodyFile := filepath.Join(lt.tmpDir, "testdir", "body.go")
 	if err := os.WriteFile(bodyFile, []byte(body), 0o666); err != nil {
 		return false, err
 	}
 
-	cmd := exec.Command(filepath.Join(lt.dir, "runtester"), bodyFile)
-	cmd.Dir = filepath.Join(lt.dir, "go")
+	cmd := exec.CommandContext(ctx, filepath.Join(lt.tmpDir, "runtester"), bodyFile)
+	cmd.Dir = lt.goRepo.Dir()
 	if err := run(lt.lg, cmd); err != nil {
 		return false, nil
 	}
@@ -317,38 +321,34 @@ func (lt *LocalTester) Try(body, version string) (bool, error) {
 }
 
 // checkout checks out a version of the Go repo.
-func (lt *LocalTester) checkout(version string) error {
-	cmd := exec.Command("git", "checkout", version)
-	cmd.Dir = filepath.Join(lt.dir, "go")
-	return run(lt.lg, cmd)
+func (lt *LocalTester) checkout(ctx context.Context, version string) error {
+	return lt.goRepo.Checkout(ctx, lt.lg, version)
 }
 
 // Bisect runs a bisection of a test case.
 // This implements [CaseTester.Bisect].
-func (lt *LocalTester) Bisect(issue *github.Issue, body, pass, fail string) (string, error) {
-	runtester := filepath.Join(lt.dir, "runtester")
+func (lt *LocalTester) Bisect(ctx context.Context, issue *github.Issue, body, pass, fail string) (string, error) {
+	runtester := filepath.Join(lt.tmpDir, "runtester")
 
-	bodyFile := filepath.Join(lt.dir, "testdir", "body.go")
+	bodyFile := filepath.Join(lt.tmpDir, "testdir", "body.go")
 	if err := os.WriteFile(bodyFile, []byte(body), 0o666); err != nil {
 		return "", err
 	}
 
-	goDir := filepath.Join(lt.dir, "go")
-
-	cmd := exec.Command("git", "bisect", "start", fail, pass)
-	cmd.Dir = goDir
+	cmd := exec.CommandContext(ctx, "git", "bisect", "start", fail, pass)
+	cmd.Dir = lt.goRepo.Dir()
 	if err := run(lt.lg, cmd); err != nil {
 		return "", err
 	}
 
-	cmd = exec.Command("git", "bisect", "run", runtester, bodyFile)
-	cmd.Dir = goDir
+	cmd = exec.CommandContext(ctx, "git", "bisect", "run", runtester, bodyFile)
+	cmd.Dir = lt.goRepo.Dir()
 	if err := run(lt.lg, cmd); err != nil {
 		return "", err
 	}
 
-	cmd = exec.Command("git", "rev-parse", "HEAD")
-	cmd.Dir = goDir
+	cmd = exec.CommandContext(ctx, "git", "rev-parse", "HEAD")
+	cmd.Dir = lt.goRepo.Dir()
 	out, err := cmd.Output()
 	if err != nil {
 		return "", fmt.Errorf("%s failed: %v", cmd, err)

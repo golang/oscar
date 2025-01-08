@@ -275,7 +275,7 @@ type testCaseTester struct {
 }
 
 // Clean cleans up the test case.
-func (tct testCaseTester) Clean(body string) (string, error) {
+func (tct testCaseTester) Clean(ctx context.Context, body string) (string, error) {
 	if body != testIssueRepro {
 		return "", fmt.Errorf("testCaseTester.Clean: unexpected test case %q", body)
 	}
@@ -283,7 +283,7 @@ func (tct testCaseTester) Clean(body string) (string, error) {
 }
 
 // CleanVersions cleans up the suggested versions.
-func (tct testCaseTester) CleanVersions(pass, fail string) (string, string) {
+func (tct testCaseTester) CleanVersions(ctx context.Context, pass, fail string) (string, string) {
 	if pass != "go1.23" && fail != "go1.24" {
 		tct.t.Errorf("got versions %q, %q, want %q, %q", pass, fail, "go1.23", "go1.24")
 		return "unknown", "unknown"
@@ -293,7 +293,7 @@ func (tct testCaseTester) CleanVersions(pass, fail string) (string, string) {
 
 // Try runs a cleaned test at the suggested versions
 // and reports whether it passed or failed.
-func (testCaseTester) Try(body, version string) (bool, error) {
+func (testCaseTester) Try(ctx context.Context, body, version string) (bool, error) {
 	if body != testIssueRepro {
 		return false, fmt.Errorf("testCaseTester.Try: unexpected test case %q", body)
 	}
@@ -308,7 +308,7 @@ func (testCaseTester) Try(body, version string) (bool, error) {
 }
 
 // Bisect bisects the test case.
-func (tct testCaseTester) Bisect(issue *github.Issue, body, pass, fail string) (string, error) {
+func (tct testCaseTester) Bisect(ctx context.Context, issue *github.Issue, body, pass, fail string) (string, error) {
 	if issue.Number != testIssue.Number {
 		return "", fmt.Errorf("testCaseTester.Bisect: unexpected issue %d", issue.Number)
 	}

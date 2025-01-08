@@ -33,16 +33,16 @@ type CaseTester interface {
 	// For Go this might do things like add a missing package declaration.
 	// If the test case is incomprehensible this should return
 	// an error, in which case no bisection will be attempted.
-	Clean(body string) (string, error)
+	Clean(ctx context.Context, body string) (string, error)
 
 	// CleanVersions takes the pass/fail versions guessed by the LLM,
 	// and returns new versions that match the repo for the project
 	// being tested.
-	CleanVersions(passVersion, failVersion string) (string, string)
+	CleanVersions(ctx context.Context, passVersion, failVersion string) (string, string)
 
 	// Try runs a cleaned test case at the suggested version.
 	// It reports whether the test case passed or failed.
-	Try(body, version string) (bool, error)
+	Try(ctx context.Context, body, version string) (bool, error)
 
 	// Bisect starts a bisection of a cleaned test case.
 	// If the Bisect method is able to determine the failing commit,
@@ -52,7 +52,7 @@ type CaseTester interface {
 	// The string result is an arbitrary identifier that
 	// will be returned to the caller of [CheckReproduction],
 	// and may be used to report progress or cancel the operation.
-	Bisect(issue *github.Issue, body, pass, fail string) (string, error)
+	Bisect(ctx context.Context, issue *github.Issue, body, pass, fail string) (string, error)
 }
 
 // CheckReproduction looks at an issue body and tries to extract
@@ -110,21 +110,21 @@ func CheckReproduction(ctx context.Context, lg *slog.Logger, cgen llm.ContentGen
 	// The LLM sometimes introduces Markdown syntax. Remove it.
 	repro := strings.ReplaceAll(res.Repro, "```", "")
 
-	testcase, err := tester.Clean(repro)
+	testcase, err := tester.Clean(ctx, repro)
 	if err != nil {
 		lg.Debug("no reproduction case", "issue", i.Number, "reason", "failed to clean test case", "err", err)
 		return "", nil
 	}
 
-	passRelease, failRelease := tester.CleanVersions(res.PassRelease, res.FailRelease)
+	passRelease, failRelease := tester.CleanVersions(ctx, res.PassRelease, res.FailRelease)
 
-	failOK, err := tester.Try(testcase, failRelease)
+	failOK, err := tester.Try(ctx, testcase, failRelease)
 	if err != nil {
 		lg.Debug("no reproduction case", "issue", i.Number, "reason", "failed to run test", "version", failRelease, "err", err)
 		return "", nil
 	}
 
-	passOK, err := tester.Try(testcase, passRelease)
+	passOK, err := tester.Try(ctx, testcase, passRelease)
 	if err != nil {
 		lg.Debug("no reproduction case", "issue", i.Number, "reason", "failed to run test", "version", passRelease, "err", err)
 		return "", nil
@@ -150,7 +150,7 @@ func CheckReproduction(ctx context.Context, lg *slog.Logger, cgen llm.ContentGen
 	// Start the bisection. The bisection code runs asynchronously,
 	// and is responsible for updating the issue if it finds the
 	// failing commit.
-	return tester.Bisect(i, testcase, passRelease, failRelease)
+	return tester.Bisect(ctx, i, testcase, passRelease, failRelease)
 }
 
 // reproPromptTemplate is the prompt we send to the LLM to ask it to
