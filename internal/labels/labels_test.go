@@ -100,11 +100,12 @@ func TestBuildPrompt(t *testing.T) {
 		Body:     "exbody",
 		Category: "excat",
 	}
-	got, err := buildPrompt([]Category{cat}, []Example{ex})
+	got, err := buildPrompt("title", "body", []Category{cat}, []Example{ex})
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, word := range []string{"categorize", "cat", "desc", "extra", "extitle", "exbody", "excat"} {
+	for _, word := range []string{"title", "body", "categorize", "cat",
+		"desc", "extra", "extitle", "exbody", "excat"} {
 		if !regexp.MustCompile(`\b` + word + `\b`).MatchString(got) {
 			t.Errorf("missing %q", word)
 		}

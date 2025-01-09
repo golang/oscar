@@ -78,20 +78,12 @@ func IssueCategoryFromLists(ctx context.Context, cgen llm.ContentGenerator, iss 
 		return inv, "body has no text", nil
 	}
 
-	iprompt, err := issuePrompt(iss.Title, cleanIssueBody(bodyDoc))
+	prompt, err := buildPrompt(iss.Title, cleanIssueBody(bodyDoc), cats, exs)
 	if err != nil {
 		return Category{}, "", err
 	}
-
-	// Build system prompt to ask about the issue category.
-	sprompt, err := buildPrompt(cats, exs)
-	if err != nil {
-		return Category{}, "", err
-	}
-
 	// Ask the LLM about the category of the issue.
-	jsonRes, err := cgen.GenerateContent(ctx, responseSchema,
-		[]llm.Part{llm.Text(sprompt), llm.Text(iprompt)})
+	jsonRes, err := cgen.GenerateContent(ctx, responseSchema, []llm.Part{llm.Text(prompt)})
 	if err != nil {
 		return Category{}, "", fmt.Errorf("llm request failed: %w\n", err)
 	}
@@ -105,6 +97,58 @@ func IssueCategoryFromLists(ctx context.Context, cgen llm.ContentGenerator, iss 
 	}
 	return Category{}, "", fmt.Errorf("no category matches LLM response %q", jsonRes)
 }
+
+func buildPrompt(title, body string, cats []Category, exs []Example) (string, error) {
+	var promptArgs = struct {
+		Title      string
+		Body       string
+		Categories []Category
+		Examples   []Example
+	}{
+		Title:      title,
+		Body:       body,
+		Categories: cats,
+		Examples:   exs,
+	}
+
+	var buf bytes.Buffer
+	if err := promptTmpl.Execute(&buf, promptArgs); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+type promptArgs struct {
+	Title      string
+	Body       string
+	Categories []Category
+	Examples   []Example
+}
+
+const promptTemplate = `
+Your job is to categorize Go issues.
+The issue is described by a title and a body.
+The issue body is encoded in markdown.
+Report the category of the issue and an explanation of your decision.
+Each category and its description are listed below.
+{{range .Categories}}
+{{.Name}}: {{.Description}}
+{{.Extra}}
+{{end}}
+{{if .Examples}}
+Here are some examples:
+{{range .Examples}}
+The following issue should be categorized as {{.Category}}:
+The title of the issue is: {{.Title}}
+The body of the issue is: {{.Body}}
+{{end}}
+{{end}}
+Here is the issue you should categorize:
+The title of the issue is: {{.Title}}
+The body of the issue is: {{.Body}}
+`
+
+var promptTmpl = template.Must(template.New("prompt").Parse(promptTemplate))
 
 // configForProject returns the categories and examples for the given project.
 func configForProject(db storage.DB, project string) ([]Category, []Example, error) {
@@ -126,20 +170,6 @@ func configForProject(db storage.DB, project string) ([]Category, []Example, err
 		config.mu.Unlock()
 	}
 	return cats, exs, nil
-}
-
-// issuePrompt renders an issue title and body (after the markdown is parsed) in a
-// form suitable for an LLM prompt.
-func issuePrompt(title, body string) (string, error) {
-	var text bytes.Buffer
-	err := template.Must(template.New("body").Parse(bodyTemplate)).Execute(&text, bodyArgs{
-		Title: title,
-		Body:  body,
-	})
-	if err != nil {
-		return "", err
-	}
-	return text.String(), nil
 }
 
 // hasText reports whether doc has any text blocks.
@@ -261,47 +291,6 @@ var responseSchema = &llm.Schema{
 			Description: "an explanation of why the issue belongs to the category",
 		},
 	},
-}
-
-// buildPrompt constructs a prompt to ask about the issue category.
-func buildPrompt(cats []Category, exs []Example) (string, error) {
-	var buf bytes.Buffer
-	buf.WriteString(categoryPrompt)
-	for _, cat := range cats {
-		fmt.Fprintf(&buf, "%s: %s\n%s\n\n", cat.Name, cat.Description, cat.Extra)
-	}
-	if len(exs) > 0 {
-		fmt.Fprintln(&buf, "Here are some examples:")
-		for _, ex := range exs {
-			ip, err := issuePrompt(ex.Title, ex.Body)
-			if err != nil {
-				return "", err
-			}
-			fmt.Fprintf(&buf, "The following issue should be categorized as %s:\n", ex.Category)
-			fmt.Fprintln(&buf, ip)
-			fmt.Fprintln(&buf)
-		}
-	}
-	fmt.Fprintf(&buf, "Here is the issue you should categorize:\n")
-	return buf.String(), nil
-}
-
-const categoryPrompt = `
-Your job is to categorize Go issues.
-The issue is described by a title and a body.
-The issue body is encoded in markdown.
-Report the category of the issue and an explanation of your decision.
-Each category and its description are listed below.
-
-`
-const bodyTemplate = `
-The title of the issue is: {{.Title}}
-The body of the issue is: {{.Body}}
-`
-
-type bodyArgs struct {
-	Title string
-	Body  string
 }
 
 var config struct {
