@@ -184,6 +184,7 @@ type Repository struct {
 type Comment struct {
 	URL  string `json:"url"`
 	Body string `json:"body"`
+	User User   `json:"user"`
 }
 
 // toWebhookEvent converts data into a WebhookEvent with a Payload of the

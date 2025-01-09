@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"slices"
 
+	"cloud.google.com/go/firestore"
 	"golang.org/x/oscar/internal/actions"
 	"golang.org/x/oscar/internal/docs"
 	"golang.org/x/oscar/internal/github"
@@ -177,7 +178,6 @@ func (g *Gaby) syncGitHubProject(ctx context.Context, project string) error {
 // spawnBisectionTask checks if event is encoding a bisection task and,
 // if so, it spawns the corresponding task.
 func (g *Gaby) spawnBisectionTask(ctx context.Context, event *github.WebhookIssueCommentEvent) error {
-	// TODO: check the author via secrets?
 	// TODO: access comment through db instead
 	// of directly through the event?
 	breq, err := parseBisectTrigger(event)
@@ -189,9 +189,42 @@ func (g *Gaby) spawnBisectionTask(ctx context.Context, event *github.WebhookIssu
 		g.slog.Info("bisect.Request no trigger", "body", event.Comment.Body)
 		return nil
 	}
+
+	// Check the user only after we established that
+	// the comment encodes a bisection request, to
+	// save time on pinging firestore.
+	user := event.Comment.User.Login
+	if ok, err := userAllowedBisection(ctx, user); err != nil {
+		g.slog.Error("bisect.Request permission check", "err", err)
+		return err
+	} else if !ok {
+		g.slog.Info("bisect.Request permission denied", "user", user)
+		return nil
+	}
+
 	if err := g.bisect.BisectAsync(ctx, breq); err != nil {
 		return err
 	}
 	g.slog.Info("bisect.Request trigger success", "req", fmt.Sprintf("%+v", breq))
 	return nil
+}
+
+// userAllowedBisection checks if the author of the
+// comment event is allowed to spawn a bisection.
+func userAllowedBisection(ctx context.Context, user string) (bool, error) {
+	fc, err := firestore.NewClient(ctx, flags.project)
+	if err != nil {
+		return false, err
+	}
+	doc := fc.Collection("auth").Doc("bisect-github-users")
+	sn, err := doc.Get(ctx)
+	if err != nil {
+		return false, err
+	}
+	var users map[string]bool
+	if err := sn.DataTo(&users); err != nil {
+		return false, err
+	}
+
+	return users[user], nil
 }
