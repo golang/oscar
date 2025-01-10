@@ -229,6 +229,7 @@ func main() {
 	rp.SkipBodyContains("— [watchflakes](https://go.dev/wiki/Watchflakes)")
 	rp.SkipTitlePrefix("x/tools/gopls: release version v")
 	rp.SkipTitleSuffix(" backport]")
+	rp.SkipTitlePrefix("security: fix CVE-") // CVE issues are boilerplate
 	rp.EnablePosts()
 	if !slices.Contains(autoApprovePkgs, "related") {
 		rp.RequireApproval()
