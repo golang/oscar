@@ -75,4 +75,4 @@ ARG ENABLE_CHANGES=false
 ENV ENABLE_CHANGES=$ENABLE_CHANGES
 
 CMD ./gaby -firestoredb $FIRESTORE_DB -enablesync=$ENABLE_SYNC -enablechanges=$ENABLE_CHANGES \
-  -autoapprove commentfix,related
+  -autoapprove commentfix,related,labels
