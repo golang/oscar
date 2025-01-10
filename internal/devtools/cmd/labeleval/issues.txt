@@ -81,3 +81,9 @@
 # Gemini calls this a language proposal, because it thinks the method is being
 # added to the built-in type "string".
 71145 libraryProposal
+71159 telemetryProposal
+71160 featureRequest
+71173 bug
+71174 bug
+
+

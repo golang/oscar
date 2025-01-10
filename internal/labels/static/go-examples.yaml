@@ -24,7 +24,11 @@ examples:
 
   - issue: 71113
     category: featureRequest
-    # These are for a gopls feature. Labeler thinks it is a tool proposal.
+
+  - issue: 71160
+    category: featureRequest
+    # These previous ones are for a gopls feature.
+    # The labeler thinks they are tool proposals.
 
   - issue: 71122
     category: libraryProposal
@@ -42,3 +46,8 @@ examples:
     category: libraryProposal
     # Gemini calls this a language proposal, because it thinks the method is being
     # added to the built-in type "string".
+
+  - issue: 71159
+    category: telemetryProposal
+    # Labeled as a library proposal; I don't think the labeler knew about
+    # telemetry proposals at this time.
