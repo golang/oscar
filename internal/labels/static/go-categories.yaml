@@ -48,7 +48,7 @@ categories:
       This does NOT includ changes to tools in x repos, like gopls, or third-party tools.
 
   - name: telemetryProposal
-    label: TelemetryProposal
+    label: Telemetry-Proposal
     description: Issues proposing new telemetry counters.
 
   - name: implementation

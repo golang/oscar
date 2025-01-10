@@ -51,3 +51,7 @@ examples:
     category: telemetryProposal
     # Labeled as a library proposal; I don't think the labeler knew about
     # telemetry proposals at this time.
+
+  - issue: 71191
+    category: libraryProposal
+    # Not a languageProposal.
