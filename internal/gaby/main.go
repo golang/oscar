@@ -191,7 +191,10 @@ func main() {
 	}
 	if !slices.Contains(autoApprovePkgs, "overview") {
 		ov.RequireApproval()
+	} else {
+		ov.AutoApprove()
 	}
+
 	ov.SkipIssueAuthor("gopherbot")
 	ov.SkipCommentsBy("gopherbot")
 	g.overview = ov
@@ -284,6 +287,7 @@ func main() {
 		"related":         rp.Latest,
 		"rules":           rulep.Latest,
 		"labeler":         labeler.Latest,
+		"overview":        ov.Latest,
 	}
 
 	// Install a metric that observes the latest values of the watchers each time metrics are sampled.
@@ -719,6 +723,24 @@ func (g *Gaby) newServer(report func(error, *http.Request)) *http.ServeMux {
 		if err != nil {
 			http.Error(w, fmt.Sprintf("sync: error %v for %s", err, job), http.StatusInternalServerError)
 			g.slog.Error("sync", "job", job, "error", err)
+		}
+	})
+
+	// Endpoint to manually invoke an overview run.
+	// This will take a while to run as it needs to iterate over the
+	// whole repo.
+	// TODO(tatianabradley): Delete after first successful run.
+	mux.HandleFunc("GET /run-overview", func(w http.ResponseWriter, r *http.Request) {
+		g.slog.Info("run-overview start")
+		defer g.slog.Info("run-overview end")
+
+		if !flags.enablechanges {
+			fmt.Fprint(w, "exiting: changes are not enabled")
+			return
+		}
+
+		if err := g.postAllOverviews(g.ctx); err != nil {
+			http.Error(w, fmt.Sprintf("run-overview: error %v", err), http.StatusInternalServerError)
 		}
 	})
 

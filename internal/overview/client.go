@@ -27,6 +27,7 @@ import (
 	"golang.org/x/oscar/internal/github"
 	"golang.org/x/oscar/internal/llmapp"
 	"golang.org/x/oscar/internal/storage"
+	"golang.org/x/oscar/internal/storage/timed"
 	"rsc.io/ordered"
 )
 
@@ -98,6 +99,11 @@ func (c *Client) run(ctx context.Context, now time.Time) error {
 
 	c.setLastRun(now)
 	return nil
+}
+
+// Latest returns the latest known DBTime marked old by the Clients's post Watcher.
+func (c *Client) Latest() timed.DBTime {
+	return c.p.watcher.Latest()
 }
 
 // ForIssue returns an LLM-generated overview of the issue and its comments.
