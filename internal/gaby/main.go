@@ -726,24 +726,6 @@ func (g *Gaby) newServer(report func(error, *http.Request)) *http.ServeMux {
 		}
 	})
 
-	// Endpoint to manually invoke an overview run.
-	// This will take a while to run as it needs to iterate over the
-	// whole repo.
-	// TODO(tatianabradley): Delete after first successful run.
-	mux.HandleFunc("GET /run-overview", func(w http.ResponseWriter, r *http.Request) {
-		g.slog.Info("run-overview start")
-		defer g.slog.Info("run-overview end")
-
-		if !flags.enablechanges {
-			fmt.Fprint(w, "exiting: changes are not enabled")
-			return
-		}
-
-		if err := g.postAllOverviews(g.ctx); err != nil {
-			http.Error(w, fmt.Sprintf("run-overview: error %v", err), http.StatusInternalServerError)
-		}
-	})
-
 	// action-decision: approve or deny an action
 	mux.HandleFunc("GET /action-decision", g.handleActionDecision)
 	// action-rerun: rerun a failed action
@@ -846,8 +828,7 @@ func (g *Gaby) syncAndRunAll(ctx context.Context) (errs []error) {
 		check(g.labelAll(ctx))
 		check(g.postAllRules(ctx))
 		check(g.postAllBisections(ctx))
-		// TODO(tatianabradley): Uncomment once ready to enable.
-		// check(g.postAllOverviews(ctx))
+		check(g.postAllOverviews(ctx))
 
 		// Apply all actions.
 		check(g.runActions())
