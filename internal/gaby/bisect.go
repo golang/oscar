@@ -7,12 +7,53 @@ package main
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"regexp"
+	"sort"
 	"strings"
 
 	"golang.org/x/oscar/internal/bisect"
 	"golang.org/x/oscar/internal/github"
 )
+
+// bisectLogPage is the data for the bisect log HTML template.
+type bisectLogPage struct {
+	CommonPage
+
+	Tasks []*bisect.Task // all bisection tasks
+}
+
+var bisectLogPageTmpl = newTemplate(bisectLogTmplFile, nil)
+
+func (g *Gaby) handleBisectLog(w http.ResponseWriter, r *http.Request) {
+	var p bisectLogPage
+	for _, t := range g.bisect.BisectionTasks() {
+		p.Tasks = append(p.Tasks, t)
+	}
+	// Sort the tasks by creation time, from newest to oldest.
+	sort.SliceStable(p.Tasks, func(i, j int) bool {
+		return p.Tasks[i].Created.After(p.Tasks[j].Created)
+	})
+	p.setCommonPage()
+
+	b, err := Exec(bisectLogPageTmpl, &p)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	_, _ = w.Write(b)
+}
+
+func (p *bisectLogPage) setCommonPage() {
+	p.CommonPage = CommonPage{
+		ID:          bisectlogID,
+		Description: "Browse bisection tasks performed by Oscar.",
+		Form: Form{
+			Inputs:     nil,
+			SubmitText: "void",
+		},
+	}
+}
 
 // parseBisectTrigger extracts a bisection Request, if any,
 // from a GitHub issue comment trigger. The expected request

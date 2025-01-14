@@ -8,7 +8,7 @@ package main
 // Pages listed here will appear in navigation.
 var pages = []pageID{
 	// Dev pages.
-	actionlogID, dbviewID,
+	actionlogID, dbviewID, bisectlogID,
 	// User pages.
 	overviewID, searchID, rulesID, labelsID,
 	// reviews omitted for now, as it loads very slowly
@@ -23,6 +23,7 @@ const (
 	rulesID     pageID = "rules"
 	labelsID    pageID = "labels"
 	reviewsID   pageID = "reviews"
+	bisectlogID pageID = "bisectlog"
 )
 
 // Gaby webpage titles.
@@ -34,4 +35,5 @@ var titles = map[pageID]string{
 	rulesID:     "Rule Checker",
 	reviewsID:   "Reviews",
 	labelsID:    "Issue Labels",
+	bisectlogID: "Bisect Log",
 }

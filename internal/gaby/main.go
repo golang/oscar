@@ -782,6 +782,8 @@ func (g *Gaby) newServer(report func(error, *http.Request)) *http.ServeMux {
 	// /dbview: view parts of the database
 	mux.HandleFunc(get(dbviewID), g.handleDBview)
 
+	// /bisectlog: display bisection tasks
+	mux.HandleFunc(get(bisectlogID), g.handleBisectLog)
 	return mux
 }
 

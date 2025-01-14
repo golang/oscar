@@ -1,0 +1,52 @@
+<!--
+Copyright 2025 The Go Authors. All rights reserved.
+Use of this source code is governed by a BSD-style
+license that can be found in the LICENSE file.
+-->
+<!doctype html>
+<html>
+  {{template "head" .}}
+  <body>
+    {{template "header" .}}
+    {{template "bisect-log" .}}
+  </body>
+</html>
+
+{{define "bisect-log"}}
+<div class="section" id="result">
+<h2>Tasks</h2>
+<table style="max-width:100%">
+  <tr>
+    <th bgcolor="gray">ID</th>
+    <th bgcolor="gray">Status</th>
+    <th bgcolor="gray">Trigger</th>
+    <th bgcolor="gray">Issue</th>
+    <th bgcolor="gray">Created</th>
+    <th bgcolor="gray">Updated</th>
+    <th bgcolor="gray">Bad</th>
+    <th bgcolor="gray">Good</th>
+    <th bgcolor="gray">Error</th>
+    <th bgcolor="gray">Output</th>
+    <th bgcolor="gray">Regression</th>
+  </th>
+  </tr>
+  {{- range .Tasks -}}
+  <div class="result">
+    <tr>
+      <td>{{.ID}}</td>
+      <td>{{.Status}}</td>
+      <td>{{.Trigger}}</td>
+      <td>{{.Issue}}</td>
+      <td>{{.Created.String}}</td>
+      <td>{{.Updated.String}}</td>
+      <td>{{.Bad}}</td>
+      <td>{{.Good}}</td>
+      <td>{{.Error}}</td>
+      <td style="width: 300px;">{{.Output}}</td>
+      <td style="width: 300px;"><code>{{.Output}}</code></td>
+    </tr>
+  </div>
+  {{end}}
+</table>
+</div>
+{{end}}

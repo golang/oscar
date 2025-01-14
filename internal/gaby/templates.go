@@ -29,6 +29,7 @@ const (
 	rulesPageTmplFile    = "rulespage.tmpl"
 	labelsPageTmplFile   = "labelspage.tmpl"
 	dbviewPageTmplFile   = "dbviewpage.tmpl"
+	bisectLogTmplFile    = "bisectlogpage.tmpl"
 
 	// Common template file
 	commonTmpl = "common.tmpl"
