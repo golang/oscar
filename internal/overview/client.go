@@ -163,6 +163,7 @@ func (c *Client) SkipIssueAuthor(author string) {
 // by the given GitHub user when generating overviews.
 func (c *Client) SkipCommentsBy(user string) {
 	c.g.skipCommentsBy(user)
+	c.p.SkipCommentsBy(user)
 }
 
 type runState struct {

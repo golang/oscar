@@ -26,9 +26,10 @@ type poster struct {
 	db      storage.DB                    // the database to use to store state
 	watcher *timed.Watcher[*github.Event] // a watcher over GitHub events, used to remember which events we have already processed
 
-	minComments      int             // the minimum number of comments an issue must have to get an overview (default: [defaultMinComments])
-	maxIssueAge      time.Duration   // the maximum age (time since creation) of an issue to get an overview (default: [defaultMaxAge])
-	skipIssueAuthors map[string]bool // skip issues authored by these GitHub users (default: none)
+	minComments        int             // the minimum number of (non-skipped) comments an issue must have to get an overview (default: [defaultMinComments])
+	maxIssueAge        time.Duration   // the maximum age (time since creation) of an issue to get an overview (default: [defaultMaxAge])
+	skipIssueAuthors   map[string]bool // skip issues authored by these GitHub users (default: none)
+	skipCommentAuthors map[string]bool // skip comments authored by these GitHub users when determining whether an issue meets the threshold to get an overview (default: none)
 
 	name     string
 	bot      string          // the login name of GitHub user that will post overviews, e.g. "gabyhelp"
@@ -42,6 +43,13 @@ type poster struct {
 
 	// if true, attempt to find actions by the bot that are missing from the action log (using tags)
 	findUnloggedActions bool
+
+	// in-memory map used to speed up issueState lookups for issues
+	// that have already been processed by a given call to [poster.run].
+	// map keys are [poster.issueStateKey]s.
+	// must only be modified inside [poster.run], while holding a lock
+	// on runKey.
+	runState map[string]*issueState
 }
 
 // newPoster returns a new Overviews poster.
@@ -87,10 +95,19 @@ func newPoster(lg *slog.Logger, db storage.DB, gh *github.Client, name, bot stri
 // issues have already been processed, so it is not clear how to create a dry run mode
 // without introducing added complexity. The function can instead be tested without permanent
 // side effects by using the memory overlay functionality of gaby.
+//
+// run is not intended to be used concurrently.
+// a database lock (see [Client.runKey]) should be held to ensure calls to [poster.run]
+// with the same poster (identified by name and bot) do not run simultaneously.
 func (p *poster) run(ctx context.Context, getOverview overviewFunc, now time.Time) error {
 	p.slog.Info("run start", "kind", actionKind, "bot", p.bot, "latest", p.watcher.Latest())
 	defer func() {
 		p.slog.Info("run end", "kind", actionKind, "bot", p.bot, "latest", p.watcher.Latest())
+	}()
+
+	p.runState = make(map[string]*issueState)
+	defer func() {
+		p.runState = nil
 	}()
 
 	// filter reports whether the event with the given key should
@@ -107,6 +124,9 @@ func (p *poster) run(ctx context.Context, getOverview overviewFunc, now time.Tim
 			return false
 		}
 		if api != "/issues/comments" {
+			return false
+		}
+		if p.alreadyProcessedThisRun(project, issue, id) {
 			return false
 		}
 		return true
@@ -132,10 +152,6 @@ func (p *poster) maybeProcessIssueComment(ctx context.Context, e *github.Event,
 	project, issue, id := e.Project, e.Issue, e.ID
 	p.slog.Info("process", "project", project, "issue", issue, "id", id)
 
-	key := p.issueStateKey(project, issue)
-	p.db.Lock(string(key))
-	defer p.db.Unlock(string(key))
-
 	markOld := func(e *github.Event) {
 		p.watcher.MarkOld(e.DBTime)
 		// Flush immediately to make sure we don't re-process if interrupted later.
@@ -152,21 +168,32 @@ func (p *poster) maybeProcessIssueComment(ctx context.Context, e *github.Event,
 		return
 	}
 	if lastComment > 0 {
-		p.slog.Info("overview: marking issue as processed", "project", project, "issue", issue, "last comment", lastComment)
+		p.slog.Debug("overview: marking issue as processed", "project", project, "issue", issue, "last comment", lastComment)
 		p.markProcessed(e.Project, e.Issue, lastComment)
 		markOld(e)
 	}
 }
 
+// alreadyProcessedThisRun reports whether the issue, as of the given commentID,
+// has already been processed by this call to [poster.run].
+// a lock on runKey should be held.
+func (p *poster) alreadyProcessedThisRun(project string, issue, commentID int64) bool {
+	// We don't need to lock runState because [poster.run] handles each event
+	// sequentially.
+	is := p.runState[string(p.issueStateKey(project, issue))]
+	return is != nil && is.LastComment >= commentID
+}
+
 // alreadyProcessed reports whether the issue, as of the given commentID,
-// has already been processed by this poster.
-// a lock on the issueStateKey should be held.
+// has already been processed by this poster, or any poster with the same name
+// and bot (by consulting the database).
+// a lock on the runKey should be held.
 func (p *poster) alreadyProcessed(project string, issue int64, commentID int64) bool {
 	return p.lastComment(project, issue) >= commentID
 }
 
 // lastComment returns the ID of the last comment processed for this issue.
-// a lock on the issueStateKey should be held.
+// a lock on the runKey should be held.
 func (p *poster) lastComment(project string, issue int64) int64 {
 	return p.getIssueState(project, issue).LastComment
 }
@@ -184,7 +211,7 @@ type issueState struct {
 }
 
 // getIssueState returns the stored issue state for the given issue.
-// a lock on the issueStateKey should be held.
+// a lock on the runKey should be held.
 func (p *poster) getIssueState(project string, issue int64) issueState {
 	key := p.issueStateKey(project, issue)
 	b, ok := p.db.Get(key)
@@ -211,12 +238,13 @@ func (p *poster) issueStateKey(project string, issue int64) []byte {
 // have been processed for this issue.
 // (If the given comment ID is lower than the latest stored in the
 // database, markProcessed is a no-op).
-// a lock on the issueStateKey should be held.
+// a lock on runKey should be held.
 func (p *poster) markProcessed(project string, issue int64, commentID int64) {
 	key := p.issueStateKey(project, issue)
 	st := p.getIssueState(project, issue)
 	if commentID > st.LastComment {
 		st.LastComment = commentID
+		p.runState[string(key)] = &st
 		p.db.Set(key, storage.JSON(st))
 		p.db.Flush()
 	}
@@ -245,7 +273,7 @@ func (p *poster) logPostOrUpdate(ctx context.Context, e *github.Event, getOvervi
 		return 0, err
 	}
 
-	p.slog.Info("overview: handling issue", "project", e.Project, "issue", e.Issue, "metadata", m)
+	p.slog.Debug("overview: handling issue", "project", e.Project, "issue", e.Issue, "metadata", m)
 
 	if skip, reason := p.skip(ghIss, m, now); skip {
 		p.slog.Info("overview: skipping issue", "project", e.Project, "issue", e.Issue, "reason", reason)
@@ -253,7 +281,7 @@ func (p *poster) logPostOrUpdate(ctx context.Context, e *github.Event, getOvervi
 		return m.LastComment, nil
 	}
 
-	p.slog.Info("overview: getting action for event", "id", e.ID, "id", e.ID, "project", e.Project, "issue", e.Issue, "api", e.API)
+	p.slog.Debug("overview: getting action for event", "id", e.ID, "id", e.ID, "project", e.Project, "issue", e.Issue, "api", e.API)
 	act, err := p.getAction(ctx, ghIss, getOverview)
 	if err != nil {
 		return 0, err
@@ -273,9 +301,9 @@ func (p *poster) logPostOrUpdate(ctx context.Context, e *github.Event, getOvervi
 // meta returns metadata about an issue that cannot be determined
 // based on the issue itself. It consults the poster's database.
 func (p *poster) meta(iss *github.Issue) (*issueMeta, error) {
-	m := &issueMeta{}
-	// TODO(tatianabradley): This can be made faster by looping over
-	// comment DB keys instead of decoding each comment.
+	m := &issueMeta{ignore: func(ic *github.IssueComment) bool {
+		return p.skipCommentAuthors[ic.User.Login]
+	}}
 	for ic := range p.gh.Comments(iss) {
 		m.add(ic)
 	}
@@ -318,8 +346,8 @@ func (p *poster) skip(iss *github.Issue, m *issueMeta, now time.Time) (skip bool
 	if p.skipIssueAuthors[iss.User.Login] {
 		return true, fmt.Sprintf("issue author %s skipped", iss.User.Login)
 	}
-	if m.TotalComments < p.minComments {
-		return true, fmt.Sprintf("not enough comments (%d < %d)", m.TotalComments, p.minComments)
+	if m.TotalComments-m.SkippedComments < p.minComments {
+		return true, fmt.Sprintf("not enough comments ((total(%d) - skipped(%d) < %d)", m.TotalComments, m.SkippedComments, p.minComments)
 	}
 	return false, ""
 }
@@ -429,6 +457,16 @@ func (p *poster) SkipIssueAuthor(author string) {
 		p.skipIssueAuthors = map[string]bool{}
 	}
 	p.skipIssueAuthors[author] = true
+}
+
+// SkipCommentsBy configures the poster to ignore comments
+// by the given author when determining whether an issue
+// has enough comments to get an overview.
+func (p *poster) SkipCommentsBy(author string) {
+	if p.skipCommentAuthors == nil {
+		p.skipCommentAuthors = map[string]bool{}
+	}
+	p.skipCommentAuthors[author] = true
 }
 
 const (

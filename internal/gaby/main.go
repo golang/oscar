@@ -192,6 +192,8 @@ func main() {
 	if !slices.Contains(autoApprovePkgs, "overview") {
 		ov.RequireApproval()
 	}
+	ov.SkipIssueAuthor("gopherbot")
+	ov.SkipCommentsBy("gopherbot")
 	g.overview = ov
 
 	cr := crawl.New(g.slog, g.db, g.http)
