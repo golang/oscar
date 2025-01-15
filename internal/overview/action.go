@@ -239,11 +239,13 @@ func (p *poster) containsCommentURL(iss *github.Issue, url string) bool {
 	return false
 }
 
+const sparkle = "✨"
+
 // appendCommentURL returns the issue changes which, when passed to [github.EditIssueComment]
 // will add a message linking to the given url.
 func appendCommentURL(iss *github.Issue, bot, url string, w *wrap.Wrapper) (string, error) {
 	// OK to modify editText (though it must contain url).
-	editText := fmt.Sprintf("@%s's overview of this issue: %s", bot, url)
+	editText := fmt.Sprintf("\n%s @%s's overview of this issue: %s\n", sparkle, bot, url)
 	// DO NOT REMOVE this wrapping call.
 	wrapped, err := w.Wrap(editText, nil)
 	if err != nil {
