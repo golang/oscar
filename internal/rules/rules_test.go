@@ -21,17 +21,19 @@ import (
 
 func TestIssue(t *testing.T) {
 	ctx := context.Background()
+	db := storage.MemDB()
 	llm := ruleTestGenerator()
 
 	// Construct a test issue.
 	i := new(github.Issue)
+	i.URL = "https://api.github.com/repos/golang/go/" // for project name
 	i.Number = 999
 	i.User = github.User{Login: "user"}
 	i.Title = "title"
 	i.Body = "body"
 
 	// Ask about rule violations.
-	r, err := Issue(ctx, llm, i, false)
+	r, err := Issue(ctx, db, llm, i, false)
 	if err != nil {
 		t.Fatalf("IssueRules failed with %v", err)
 	}
@@ -47,17 +49,19 @@ func TestIssue(t *testing.T) {
 
 func TestClassify(t *testing.T) {
 	ctx := context.Background()
+	db := storage.MemDB()
 	llm := ruleTestGenerator()
 
 	// Construct a test issue.
 	i := new(github.Issue)
+	i.URL = "https://api.github.com/repos/golang/go/" // for project name
 	i.Number = 999
 	i.User = github.User{Login: "user"}
 	i.Title = "title"
 	i.Body = "body"
 
 	// Run classifier.
-	r, _, err := Classify(ctx, llm, i)
+	r, _, err := Classify(ctx, db, llm, i)
 	if err != nil {
 		t.Fatalf("Classify failed with %v", err)
 	}
@@ -109,10 +113,10 @@ func TestRun(t *testing.T) {
 		Body:      "body",
 		CreatedAt: time.Now().Add(-1 * time.Hour).UTC().Format(time.RFC3339),
 	}
-	tc.AddIssue("test/project", testIssue)
+	tc.AddIssue("golang/go", testIssue)
 
 	p := New(lg, db, gh, llm, "postname")
-	p.EnableProject("test/project")
+	p.EnableProject("golang/go")
 	p.EnablePosts()
 
 	check(p.Run(ctx))
@@ -128,7 +132,7 @@ func TestRun(t *testing.T) {
 	if err := json.Unmarshal(e.Action, &a); err != nil {
 		t.Fatal(err)
 	}
-	if got, want := a.Issue.Project(), "test/project"; got != want {
+	if got, want := a.Issue.Project(), "golang/go"; got != want {
 		t.Fatalf("posted to unexpected project: got %s, want %s", got, want)
 		return
 	}
@@ -165,10 +169,10 @@ func TestOld(t *testing.T) {
 		Body:      "body",
 		CreatedAt: time.Now().Add(-100 * time.Hour).UTC().Format(time.RFC3339),
 	}
-	tc.AddIssue("test/project", testIssue)
+	tc.AddIssue("golang/go", testIssue)
 
 	p := New(lg, db, gh, llm, "postname")
-	p.EnableProject("test/project")
+	p.EnableProject("golang/go")
 	p.EnablePosts()
 
 	check(p.Run(ctx))
@@ -196,10 +200,10 @@ func TestClosed(t *testing.T) {
 		CreatedAt: time.Now().Add(-1 * time.Hour).UTC().Format(time.RFC3339),
 		State:     "closed",
 	}
-	tc.AddIssue("test/project", testIssue)
+	tc.AddIssue("golang/go", testIssue)
 
 	p := New(lg, db, gh, llm, "postname")
-	p.EnableProject("test/project")
+	p.EnableProject("golang/go")
 	p.EnablePosts()
 
 	check(p.Run(ctx))
@@ -226,10 +230,10 @@ func TestProjectFilter(t *testing.T) {
 		Body:      "body",
 		CreatedAt: time.Now().Add(-1 * time.Hour).UTC().Format(time.RFC3339),
 	}
-	tc.AddIssue("test/project1", testIssue)
+	tc.AddIssue("golang/go1", testIssue)
 
 	p := New(lg, db, gh, llm, "postname")
-	p.EnableProject("test/project2")
+	p.EnableProject("golang/go2")
 	p.EnablePosts()
 
 	check(p.Run(ctx))
@@ -256,10 +260,10 @@ func TestRegexpMatch(t *testing.T) {
 		Body:      "Hello. ### What did you expect to see?\n\n### Goodbye.",
 		CreatedAt: time.Now().Add(-1 * time.Hour).UTC().Format(time.RFC3339),
 	}
-	tc.AddIssue("test/project", testIssue)
+	tc.AddIssue("golang/go", testIssue)
 
 	p := New(lg, db, gh, llm, "postname")
-	p.EnableProject("test/project")
+	p.EnableProject("golang/go")
 	p.EnablePosts()
 
 	check(p.Run(ctx))
@@ -275,7 +279,7 @@ func TestRegexpMatch(t *testing.T) {
 	if err := json.Unmarshal(e.Action, &a); err != nil {
 		t.Fatal(err)
 	}
-	if got, want := a.Issue.Project(), "test/project"; got != want {
+	if got, want := a.Issue.Project(), "golang/go"; got != want {
 		t.Fatalf("posted to unexpected project: got %s, want %s", got, want)
 		return
 	}
@@ -315,10 +319,10 @@ func TestRegexpNotMatch(t *testing.T) {
 		Body:      "Hello. ### What did you expect to see?\n\nSomething\n\n### Goodbye.",
 		CreatedAt: time.Now().Add(-1 * time.Hour).UTC().Format(time.RFC3339),
 	}
-	tc.AddIssue("test/project", testIssue)
+	tc.AddIssue("golang/go", testIssue)
 
 	p := New(lg, db, gh, llm, "postname")
-	p.EnableProject("test/project")
+	p.EnableProject("golang/go")
 	p.EnablePosts()
 
 	check(p.Run(ctx))
@@ -334,7 +338,7 @@ func TestRegexpNotMatch(t *testing.T) {
 	if err := json.Unmarshal(e.Action, &a); err != nil {
 		t.Fatal(err)
 	}
-	if got, want := a.Issue.Project(), "test/project"; got != want {
+	if got, want := a.Issue.Project(), "golang/go"; got != want {
 		t.Fatalf("posted to unexpected project: got %s, want %s", got, want)
 		return
 	}

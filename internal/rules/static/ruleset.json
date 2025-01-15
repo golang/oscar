@@ -2,8 +2,6 @@
   "IssueKinds": [
     {
       "Name": "bug",
-      "Text": "This issue describes a bug in the Go implementation.",
-      "Details": "",
       "Rules": [
 	{
 	  "Text": "The issue title must start with a package name followed by a colon.",
@@ -24,9 +22,7 @@
       ]
     },
     {
-      "Name": "language proposal",
-      "Text": "This issue describes a requested change to the Go language specification.",
-      "Details": "",
+      "Name": "languageProposal",
       "Rules": [
 	{
 	  "Text": "The issue title must start with \"proposal:\"."
@@ -40,9 +36,7 @@
       ]
     },
     {
-      "Name": "library proposal",
-      "Text": "This issue describes a requested change to the Go standard library or x/ libraries.",
-      "Details": "",
+      "Name": "libraryProposal",
       "Rules": [
 	{
 	  "Text": "The issue title must start with \"proposal:\"."
@@ -56,54 +50,13 @@
       ]
     },
     {
-      "Name": "implementation",
-      "Text": "This issue describes a semantics-preserving change to the Go implementation."
-    },
-    {
-      "Name": "access request",
-      "Text": "This issue is a request for builder or gomote access."
-    },
-    {
-      "Name": "pkgsite removal request",
-      "Text": "This issue is a pkgsite removal request."
-    },
-    {
-      "Name": "go website",
-      "Text": "This issue is about the behavior of the Go website (*.golang.org)."
-    },
-    {
-      "Name": "automation",
-      "Text": "This issue is created by gopherbot, watchflakes, or stacks automation."
-    },
-    {
-      "Name": "backport",
-      "Text": "This issue is created for requesting a backport of a change to a previous Go version."
-    },
-    {
-      "Name": "builders",
-      "Text": "This issue is about the running of the Go builders."
-    },
-    {
-      "Name": "gopls",
-      "Text": "This issue is about gopls behavior."
-    },
-    {
       "Name": "question",
-      "Text": "This issue is a question about using Go.",
       "Rules": [
 	{
 	  "Text": "This issue appears to be more of a question than a bug report. Unlike many projects, the Go project does not use GitHub Issues for general discussion or asking questions. GitHub Issues are used for tracking bugs and proposals only. For questions please refer to [our Questions page](https://go.dev/wiki/Questions).",
 	  "Description":"This rule should never be satisfied."
 	}
       ]
-    },
-    {
-      "Name": "invalid",
-      "Text": "This issue is empty, incomplete, or spam."
-    },
-    {
-      "Name": "other",
-      "Text": "None of the above."
     }
   ]
 }

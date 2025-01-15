@@ -134,7 +134,7 @@ func (p *Poster) logPostIssue(ctx context.Context, e *github.Event) (advance boo
 		return p.post, nil
 	}
 	p.slog.Info("rules.Poster considering", "issue", i.Number)
-	r, err := Issue(ctx, p.llm, i, false /*debug*/)
+	r, err := Issue(ctx, p.db, p.llm, i, false /*debug*/)
 	if err != nil {
 		p.slog.Info("rules engine failed", "error", err)
 		return false, nil
@@ -250,7 +250,7 @@ type IssueResult struct {
 
 // Issue returns text describing the set of rules that the issue does not currently satisfy.
 // If debug==true, then response contains additional llm debugging info.
-func Issue(ctx context.Context, cgen llm.ContentGenerator, i *github.Issue, debug bool) (*IssueResult, error) {
+func Issue(ctx context.Context, db storage.DB, cgen llm.ContentGenerator, i *github.Issue, debug bool) (*IssueResult, error) {
 	var result IssueResult
 
 	if i.PullRequest != nil {
@@ -260,7 +260,7 @@ func Issue(ctx context.Context, cgen llm.ContentGenerator, i *github.Issue, debu
 		return &result, nil
 	}
 
-	kind, reasoning, err := Classify(ctx, cgen, i)
+	kind, reasoning, err := Classify(ctx, db, cgen, i)
 	if err != nil {
 		return nil, err
 	}
@@ -346,18 +346,8 @@ func Issue(ctx context.Context, cgen llm.ContentGenerator, i *github.Issue, debu
 // Classify returns the kind of issue we're dealing with.
 // Returns a description of the classification and a string describing
 // the llm's reasoning.
-func Classify(ctx context.Context, cgen llm.ContentGenerator, i *github.Issue) (IssueKind, string, error) {
-	// TODO: use the default github label categories, and adjust
-	// the rule file to match.
-	var cats []labels.Category
-	for _, kind := range rulesConfig.IssueKinds {
-		cats = append(cats, labels.Category{
-			Name:        kind.Name,
-			Description: kind.Text,
-			Extra:       kind.Details,
-		})
-	}
-	cat, explanation, err := labels.IssueCategoryFromLists(ctx, cgen, i, cats, nil)
+func Classify(ctx context.Context, db storage.DB, cgen llm.ContentGenerator, i *github.Issue) (IssueKind, string, error) {
+	cat, explanation, err := labels.IssueCategory(ctx, db, cgen, i)
 	if err != nil {
 		return IssueKind{}, "", err
 	}

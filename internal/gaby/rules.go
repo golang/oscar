@@ -77,7 +77,7 @@ func (g *Gaby) populateRulesPage(r *http.Request) *rulesPage {
 		return p
 	}
 
-	rules, err := rules.Issue(r.Context(), g.llm, i, true)
+	rules, err := rules.Issue(r.Context(), g.db, g.llm, i, true)
 	if err != nil {
 		p.Error = err
 		return p
