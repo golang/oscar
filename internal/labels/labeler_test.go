@@ -165,10 +165,10 @@ func TestCategories(t *testing.T) {
 	}
 	cats := []string{"bug", "incomplete"}
 	lab.setCategories(issue, cats)
-	if _, ok := lab.Categories("my/project", 1); ok {
+	if _, ok := Categories(db, "my/project", 1); ok {
 		t.Error("found, but shouldn't have")
 	}
-	got, ok := lab.Categories("my/project", 123)
+	got, ok := Categories(db, "my/project", 123)
 	if !ok {
 		t.Fatal("not found, but should have")
 	}

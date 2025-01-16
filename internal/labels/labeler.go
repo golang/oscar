@@ -399,16 +399,6 @@ func (l *Labeler) setCategories(i *github.Issue, cats []string) {
 	l.db.Set(categoriesKey(i.Project(), i.Number), []byte(strings.Join(cats, ",")))
 }
 
-// Categories returns the list of categories that the Labeler associated with the given issue.
-// If there is no association, it returns nil, false.
-func (l *Labeler) Categories(project string, issueNumber int64) ([]string, bool) {
-	catstr, ok := l.db.Get(categoriesKey(project, issueNumber))
-	if !ok {
-		return nil, false
-	}
-	return strings.Split(string(catstr), ","), true
-}
-
 const categoriesPrefix = "labels.Categories"
 
 func categoriesKey(project string, num int64) []byte {

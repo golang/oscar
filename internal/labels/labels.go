@@ -327,6 +327,16 @@ func expandExampleSpecs(db storage.DB, project string, specs []exampleSpec) ([]E
 	return exs, nil
 }
 
+// Categories returns the list of categories in the db associated with the given issue.
+// If there is no association, it returns nil, false.
+func Categories(db storage.DB, project string, issueNumber int64) ([]string, bool) {
+	catstr, ok := db.Get(categoriesKey(project, issueNumber))
+	if !ok {
+		return nil, false
+	}
+	return strings.Split(string(catstr), ","), true
+}
+
 //go:embed static/*
 var staticFS embed.FS
 
