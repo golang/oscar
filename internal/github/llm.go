@@ -33,10 +33,10 @@ func (ic *IssueComment) ToLLMDoc() *llmapp.Doc {
 	}
 }
 
-// ForDisplay returns the user's login username, prefixed with @.
+// ForDisplay returns the user's login username.
 func (u *User) ForDisplay() string {
 	if u.Login == "" {
 		return ""
 	}
-	return "@" + u.Login
+	return u.Login
 }

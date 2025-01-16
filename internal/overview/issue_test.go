@@ -70,7 +70,7 @@ could you get me a hand！
 		&llmapp.Doc{
 			Type:   "issue",
 			URL:    "https://github.com/robpike/ivy/issues/19",
-			Author: "@xunshicheng",
+			Author: "xunshicheng",
 			Title:  issue.Title,
 			Text:   issue.Body,
 		},
@@ -78,7 +78,7 @@ could you get me a hand！
 			{
 				Type:   "issue comment",
 				URL:    "https://github.com/robpike/ivy/issues/19#issuecomment-169157303",
-				Author: "@robpike",
+				Author: "robpike",
 				Text: `See the import comment, or listen to the error message. Ivy uses a custom import.
 
 go get robpike.io/ivy
