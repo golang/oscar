@@ -10,7 +10,7 @@ Steps:
 1. (No heading) {{template "original-post"}}
 2. If comments are present, follow these steps:
 	1. (Heading ### Discussion Themes) {{template "find-themes"}}
-	2. (Heading ### Resolution OR Heading ### Next Steps) If a consensus is reached or the original poster indicates a decision, summarize the agreed-upon solution or decision. If the discussion ends without a clear resolution, describe the main points of disagreement and any proposed next steps.
+	2. (Heading ### Resolution OR Heading ### Next Steps) If a consensus is reached or the original poster indicates a decision, summarize the agreed-upon solution or decision. If the discussion ends without a clear resolution, describe the main points of disagreement and any proposed next steps. Cite supporting comments where relevant.
 3. {{template "no-comments"}}
 
 {{template "requirements"}}
@@ -18,7 +18,7 @@ Steps:
 {{- end -}}
 
 {{- define "original-post" -}}
-Summarize the main points of the original post. Cite any direct quotes or paraphrased information using the format below.
+Summarize the main points of the original post. Cite the author AT MOST ONCE.
 {{- end -}}
 
 {{- define "find-themes" -}}
