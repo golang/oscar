@@ -18,6 +18,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
+	"sync"
+	"testing"
 	"time"
 
 	"golang.org/x/oscar/internal/queue"
@@ -69,15 +72,19 @@ type Client struct {
 	// bisection to artificial
 	// results, for testing purposes.
 	testing bool
+
+	testMu     sync.Mutex
+	testClient *TestingClient
 }
 
 // New returns a new client for bisection.
 // The client uses the given logger, database, and queue.
 func New(lg *slog.Logger, db storage.DB, q queue.Queue) *Client {
 	return &Client{
-		slog:  lg,
-		db:    db,
-		queue: q,
+		slog:    lg,
+		db:      db,
+		queue:   q,
+		testing: testing.Testing(),
 	}
 }
 
@@ -201,10 +208,10 @@ func (c *Client) Bisect(ctx context.Context, id string) error {
 		t.Error = err.Error()
 	} else {
 		t.Status = StatusSucceeded
-		t.Result = t.Output
+		t.Commit = commitHash(t.Output)
 	}
 	c.save(t)
-	c.slog.Info("bisect.Bisect finished", "id", id, "err", t.Error, "log", t.Result)
+	c.slog.Info("bisect.Bisect finished", "id", id, "err", t.Error, "commit", t.Commit)
 	return err
 }
 
@@ -234,8 +241,8 @@ cd ../../../
 // its entry point bisect_runner are in the current
 // working directory.
 func (c *Client) bisect(ctx context.Context, dir string, t *Task) error {
-	if c.testing {
-		t.Output = "000000000001 is the first bad commit"
+	if c.divertBisect() {
+		t.Output = c.testClient.Output
 		c.save(t)
 		// TODO: can we test this better?
 		return nil
@@ -365,4 +372,24 @@ func cp(src, dst string) error {
 		return err
 	}
 	return os.WriteFile(dst, s, info.Mode())
+}
+
+var (
+	// badCommitRegexp matches and extracts the hash of
+	// the (first) bad commit identified by git bisect.
+	badCommitRegexp = regexp.MustCompile("(.+) is the first bad commit")
+)
+
+// commitHash extracts the hash of the commit
+// identified by git bisect.
+func commitHash(output string) string {
+	matches := badCommitRegexp.FindAllStringSubmatch(output, -1)
+	if len(matches) != 1 {
+		return ""
+	}
+	rmatches := matches[0]
+	if len(rmatches) != 2 {
+		return ""
+	}
+	return rmatches[1]
 }

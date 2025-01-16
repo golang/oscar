@@ -40,6 +40,34 @@ func TestNewTaskID(t *testing.T) {
 	}
 }
 
+const testGitBisectLog = `ok	command-line-arguments	0.010s
+03f075b56e2c8214268ce4efc9e67da7474af72d is the first bad commit
+commit 03f075b56e2c8214268ce4efc9e67da7474af72d
+Author: Filippo Valsorda <filippo@golang.org>
+Date:   Sat Nov 16 16:38:07 2024 +0100
+
+    crypto/ecdsa: move implementation to crypto/internal/fips/ecdsa
+
+    For #69536
+
+    Change-Id: I8794d75c11cdadd91e420541b26af35e62006af4
+    Reviewed-on: https://go-review.googlesource.com/c/go/+/628677
+    Auto-Submit: Filippo Valsorda <filippo@golang.org>
+    Reviewed-by: Dmitri Shuralyov <dmitshur@google.com>
+    Reviewed-by: Russ Cox <rsc@golang.org>
+    LUCI-TryBot-Result: Go LUCI <golang-scoped@luci-project-accounts.iam.gserviceaccount.com>
+
+ src/crypto/ecdsa/ecdsa.go                    | 351 +++++-----------------
+ src/crypto/ecdsa/ecdsa_test.go               |  95 ------
+ src/crypto/internal/fips/ecdsa/ecdsa.go      | 416 +++++++++++++++++++++++++++
+ src/crypto/internal/fips/ecdsa/ecdsa_test.go |  87 ++++++
+ src/go/build/deps_test.go                    |   1 +
+ 5 files changed, 569 insertions(+), 381 deletions(-)
+ create mode 100644 src/crypto/internal/fips/ecdsa/ecdsa.go
+ create mode 100644 src/crypto/internal/fips/ecdsa/ecdsa_test.go
+bisect found first bad commit
+`
+
 func TestBisectAsync(t *testing.T) {
 	check := testutil.Checker(t)
 	lg := testutil.Slogger(t)
@@ -61,7 +89,8 @@ func TestBisectAsync(t *testing.T) {
 	}
 	q := queue.NewInMemory(ctx, 1, process)
 	c = New(lg, db, q)
-	c.testing = true
+	tc := c.Testing()
+	tc.Output = testGitBisectLog
 
 	req1 := &Request{
 		Trigger: "https://api.github.com/repos/golang/go/issues/00001#issuecomment-000001",
@@ -92,7 +121,7 @@ func TestBisectAsync(t *testing.T) {
 	if len(tasks) != 2 {
 		t.Errorf("want 2 tasks; got %d", len(tasks))
 	}
-	wantResult := "000000000001 is the first bad commit"
+	wantCommit := "03f075b56e2c8214268ce4efc9e67da7474af72d"
 	for _, task := range tasks {
 		if task.Status != StatusSucceeded {
 			t.Errorf("got %d status for %v; want %d", task.Status, task, StatusSucceeded)
@@ -100,8 +129,8 @@ func TestBisectAsync(t *testing.T) {
 		if task.Error != "" {
 			t.Errorf("got error %s for %v; want none", task.Error, task)
 		}
-		if task.Result != wantResult {
-			t.Errorf("got %s status for %v; want %s", task.Result, task, wantResult)
+		if task.Commit != wantCommit {
+			t.Errorf("got %s commit for %v; want %s", task.Commit, task, wantCommit)
 		}
 	}
 }

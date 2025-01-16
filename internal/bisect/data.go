@@ -63,8 +63,9 @@ type Task struct {
 	// Output is the output of bisection. It
 	// can contain progress and debug messages.
 	Output string
-	// Result encodes the bisection finding.
-	Result string
+	// Commit is the hash of the commit found
+	// by git bisect.
+	Commit string
 	// Error is a message describing bisection
 	// failure, if any.
 	Error string
