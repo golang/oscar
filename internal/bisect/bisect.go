@@ -20,7 +20,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"sync"
-	"testing"
 	"time"
 
 	"golang.org/x/oscar/internal/queue"
@@ -68,11 +67,6 @@ type Client struct {
 	db    storage.DB
 	queue queue.Queue
 
-	// testing is used to divert
-	// bisection to artificial
-	// results, for testing purposes.
-	testing bool
-
 	testMu     sync.Mutex
 	testClient *TestingClient
 }
@@ -81,10 +75,9 @@ type Client struct {
 // The client uses the given logger, database, and queue.
 func New(lg *slog.Logger, db storage.DB, q queue.Queue) *Client {
 	return &Client{
-		slog:    lg,
-		db:      db,
-		queue:   q,
-		testing: testing.Testing(),
+		slog:  lg,
+		db:    db,
+		queue: q,
 	}
 }
 

@@ -20,7 +20,6 @@ import (
 	"strconv"
 	"sync"
 	"sync/atomic"
-	"testing"
 	"time"
 
 	"golang.org/x/oscar/internal/docs"
@@ -100,8 +99,6 @@ type Client struct {
 
 	ac accountCache
 
-	testing bool
-
 	testMu     sync.Mutex
 	testClient *TestingClient
 }
@@ -119,7 +116,6 @@ func New(instance string, lg *slog.Logger, db storage.DB, sdb secret.DB, hc *htt
 		db:       db,
 		secret:   sdb,
 		http:     hc,
-		testing:  testing.Testing(),
 	}
 }
 

@@ -21,7 +21,7 @@ import (
 // divertConversations reports whether conversations
 // are being diverted for testing purposes.
 func (c *Client) divertChanges() bool {
-	return c.testing && c.testClient != nil
+	return testing.Testing() && c.testClient != nil
 }
 
 // Testing returns a TestingClient, which provides access to Client functionality
@@ -32,7 +32,7 @@ func (c *Client) divertChanges() bool {
 //
 // Each Client has only one TestingClient associated with it. Every call to Testing returns the same TestingClient.
 func (c *Client) Testing() *TestingClient {
-	if !testing.Testing() && !c.testing {
+	if !testing.Testing() {
 		return nil
 	}
 

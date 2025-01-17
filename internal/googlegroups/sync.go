@@ -26,7 +26,6 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
-	"testing"
 	"time"
 
 	"golang.org/x/net/html"
@@ -80,8 +79,6 @@ type Client struct {
 
 	flushRequested atomic.Bool // flush database to disk when convenient
 
-	testing bool
-
 	testMu     sync.Mutex
 	testClient *TestingClient
 }
@@ -93,11 +90,10 @@ type Client struct {
 // "googlegroups" instance. The value will be user:pass. This is not yet used.
 func New(lg *slog.Logger, db storage.DB, sdb secret.DB, hc *http.Client) *Client {
 	return &Client{
-		slog:    lg,
-		db:      db,
-		secret:  sdb,
-		http:    hc,
-		testing: testing.Testing(),
+		slog:   lg,
+		db:     db,
+		secret: sdb,
+		http:   hc,
 	}
 }
 
