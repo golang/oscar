@@ -16,7 +16,45 @@ import (
 	"golang.org/x/oscar/internal/testutil"
 )
 
+// A git repo for testing.
+const (
+	oscarRepo = "https://go.googlesource.com/oscar"
+	oscarRev  = "1a73f3fd3eff9030bb4f172acca1b901b455906e"
+)
+
 func TestClone(t *testing.T) {
+	ctx := context.Background()
+	lg := testutil.Slogger(t)
+
+	clone := func(dir string) ([]byte, error) {
+		err := os.MkdirAll(filepath.Join(dir, "gitdir"), 0o755)
+		return nil, err
+	}
+
+	var se testutil.StubExecutor
+	se.Add("git", []string{"clone", oscarRepo}, clone)
+
+	r, err := Clone(ctx, lg, oscarRepo, &se)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	checkout := func(dir string) ([]byte, error) {
+		return nil, nil
+	}
+
+	se.Add("git", []string{"checkout", oscarRev}, checkout)
+
+	if err := r.Checkout(ctx, lg, oscarRev, &se); err != nil {
+		t.Error(err)
+	}
+
+	r.Release()
+
+	FreeAll()
+}
+
+func TestCloneNetwork(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test that uses network in short mode")
 	}
@@ -24,8 +62,7 @@ func TestClone(t *testing.T) {
 	ctx := context.Background()
 	lg := testutil.Slogger(t)
 
-	const oscar = "https://go.googlesource.com/oscar"
-	r, err := Clone(ctx, lg, oscar)
+	r, err := Clone(ctx, lg, oscarRepo, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,7 +78,7 @@ func TestClone(t *testing.T) {
 		}
 	}
 
-	if err := r.Checkout(ctx, lg, "1a73f3fd3eff9030bb4f172acca1b901b455906e"); err != nil {
+	if err := r.Checkout(ctx, lg, oscarRev, nil); err != nil {
 		t.Error(err)
 	} else {
 		if _, err := os.Stat(gomodFile); err == nil {
@@ -51,7 +88,7 @@ func TestClone(t *testing.T) {
 		}
 	}
 
-	r2, err := Clone(ctx, lg, oscar)
+	r2, err := Clone(ctx, lg, oscarRepo, nil)
 	if r2.Dir() == r.Dir() {
 		t.Errorf("second Clone call using same directory %q", r.Dir())
 	}
@@ -62,7 +99,7 @@ func TestClone(t *testing.T) {
 	r.Release()
 	r2.Release()
 
-	r, err = Clone(ctx, lg, oscar)
+	r, err = Clone(ctx, lg, oscarRepo, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -286,7 +286,7 @@ func (c *Client) bisect(ctx context.Context, dir string, t *Task) error {
 		return err
 	}
 
-	goRepo, err := repo.Clone(ctx, c.slog, t.Repository)
+	goRepo, err := repo.Clone(ctx, c.slog, t.Repository, nil)
 	if err != nil {
 		return err
 	}

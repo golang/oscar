@@ -60,7 +60,8 @@ func acquire(url string) *Repo {
 }
 
 // Clone returns a new clone of a git repo, or reuses an existing one.
-func Clone(ctx context.Context, lg *slog.Logger, url string) (r *Repo, err error) {
+// If executor is not nil, it is used to run commands.
+func Clone(ctx context.Context, lg *slog.Logger, url string, executor Executor) (r *Repo, err error) {
 	if r := acquire(url); r != nil {
 		return r, nil
 	}
@@ -82,9 +83,12 @@ func Clone(ctx context.Context, lg *slog.Logger, url string) (r *Repo, err error
 
 	lg.Debug("cloning git repo", "repo", url)
 
-	cmd := exec.CommandContext(ctx, "git", "clone", url)
-	cmd.Dir = dir
-	if err := run(lg, cmd); err != nil {
+	if executor == nil {
+		executor = stdExecutor{}
+	}
+
+	_, err = executor.Execute(ctx, lg, dir, "git", "clone", url)
+	if err != nil {
 		return nil, err
 	}
 
@@ -102,10 +106,13 @@ func Clone(ctx context.Context, lg *slog.Logger, url string) (r *Repo, err error
 }
 
 // Checkout checks out a specific version of a git repo.
-func (repo *Repo) Checkout(ctx context.Context, lg *slog.Logger, version string) error {
-	cmd := exec.CommandContext(ctx, "git", "checkout", version)
-	cmd.Dir = filepath.Join(repo.dir, repo.subdir)
-	return run(lg, cmd)
+// If executor is not nil, it is used to run commands.
+func (repo *Repo) Checkout(ctx context.Context, lg *slog.Logger, version string, executor Executor) error {
+	if executor == nil {
+		executor = stdExecutor{}
+	}
+	_, err := executor.Execute(ctx, lg, filepath.Join(repo.dir, repo.subdir), "git", "checkout", version)
+	return err
 }
 
 // FreeAll frees all cached repositories and removes the directories.
@@ -127,8 +134,22 @@ func FreeAll() {
 	}
 }
 
-// run runs an [exec.Command].
-func run(lg *slog.Logger, cmd *exec.Cmd) error {
+// Executor is an optional interface that can be used to control
+// how commands are executed.
+type Executor interface {
+	// Execute runs the cmd, with args, in dir.
+	// It returns the standard output,
+	// and an error that may be [*os/exec.ExitError].
+	Execute(ctx context.Context, lg *slog.Logger, dir, cmd string, args ...string) ([]byte, error)
+}
+
+// stdExecutor implements Executor using os/exec.
+type stdExecutor struct{}
+
+// Execute implements Executor.Execute.
+func (stdExecutor) Execute(ctx context.Context, lg *slog.Logger, dir, command string, args ...string) ([]byte, error) {
+	cmd := exec.CommandContext(ctx, command, args...)
+	cmd.Dir = dir
 	out, err := cmd.Output()
 	if err != nil {
 		if ee, ok := err.(*exec.ExitError); ok {
@@ -136,8 +157,8 @@ func run(lg *slog.Logger, cmd *exec.Cmd) error {
 		} else {
 			lg.Error("command failed", "cmd", cmd.String(), "err", err, "stdout", out)
 		}
-		return fmt.Errorf("%s failed: %v", cmd, err)
+		return out, fmt.Errorf("%s failed: %v", cmd, err)
 	}
 	lg.Debug("command succeeded", "cmd", cmd.String(), "dir", cmd.Dir, "stdout", out)
-	return nil
+	return out, nil
 }

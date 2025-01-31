@@ -55,7 +55,7 @@ func NewGoTester(ctx context.Context, lg *slog.Logger, executor Executor) (*GoTe
 		return nil, err
 	}
 
-	goRepo, err := repo.Clone(ctx, lg, goGitRepo)
+	goRepo, err := repo.Clone(ctx, lg, goGitRepo, executor)
 	if err != nil {
 		return nil, err
 	}
@@ -327,7 +327,7 @@ func (gt *GoTester) CleanVersions(ctx context.Context, pass, fail string) (strin
 // Try runs a test case at the suggested version.
 // It implements [CaseTester.Try].
 func (gt *GoTester) Try(ctx context.Context, body, version string) (bool, error) {
-	if err := gt.goRepo.Checkout(ctx, gt.lg, version); err != nil {
+	if err := gt.goRepo.Checkout(ctx, gt.lg, version, gt.executor); err != nil {
 		return false, err
 	}
 
