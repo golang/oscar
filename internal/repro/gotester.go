@@ -14,7 +14,6 @@ import (
 	"go/token"
 	"log/slog"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -46,6 +45,10 @@ type Executor interface {
 	// It returns the standard output,
 	// and an error that may be [*os/exec.ExitError].
 	Execute(ctx context.Context, lg *slog.Logger, dir string, cmd string, args ...string) ([]byte, error)
+
+	// LookPath looks up a command in PATH.
+	// This is like os/exec.LookPath.
+	LookPath(file string) (string, error)
 }
 
 // NewGoTester returns a new [GoTester].
@@ -168,11 +171,18 @@ func (gt *GoTester) addPackage(body []byte) ([]byte, error) {
 
 	// No package declaration. Look for the function names.
 
+	first := true
 	firstFuncName := ""
 	firstFuncNameExported := false
 	sawMain := false
 	for {
-		pos, tok, _ := s.Scan()
+		var pos token.Pos
+		if first {
+			first = false
+		} else {
+			pos, tok, _ = s.Scan()
+		}
+
 		if tok == token.ILLEGAL {
 			return nil, fmt.Errorf("can't parse: invalid token at %s", fset.Position(pos))
 		}
@@ -233,7 +243,7 @@ func (gt *GoTester) addPrefix(body []byte, packageName string) []byte {
 // addImports invokes goimports, if available, to add import statements.
 // If goimports is not available, addImports just formats body.
 func (gt *GoTester) addImports(ctx context.Context, body []byte) ([]byte, error) {
-	goimports, err := exec.LookPath("goimports")
+	goimports, err := gt.executor.LookPath("goimports")
 	if err != nil {
 		return gt.format(body)
 	}
@@ -285,9 +295,7 @@ func (gt *GoTester) CleanVersions(ctx context.Context, pass, fail string) (strin
 
 		// Turn a version like 1.23.2 into release-branch.go1.23.
 		major := strings.TrimPrefix(v, "go1.")
-		if i := strings.Index(major, "."); i >= 0 {
-			major = major[:i]
-		}
+		major, _, _ = strings.Cut(major, ".")
 		if majorNum, err := strconv.Atoi(major); err == nil {
 			if majorNum < gt.version {
 				v = "release-branch.go1." + major

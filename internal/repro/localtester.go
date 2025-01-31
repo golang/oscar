@@ -103,6 +103,7 @@ func (lt *LocalTester) Bisect(ctx context.Context, issue *github.Issue, body, pa
 // localExecutor implements [Executor] by running programs locally.
 type localExecutor struct{}
 
+// Execute implements [Executor.Execute].
 func (localExecutor) Execute(ctx context.Context, lg *slog.Logger, dir string, command string, args ...string) ([]byte, error) {
 	cmd := exec.CommandContext(ctx, command, args...)
 	cmd.Dir = dir
@@ -117,4 +118,9 @@ func (localExecutor) Execute(ctx context.Context, lg *slog.Logger, dir string, c
 	}
 	lg.Info("command succeeded", "cmd", cmd.String(), "stdout", out)
 	return out, nil
+}
+
+// LookPath implements [Executor.LookPath].
+func (localExecutor) LookPath(file string) (string, error) {
+	return exec.LookPath(file)
 }
