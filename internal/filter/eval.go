@@ -407,6 +407,23 @@ func (ev *eval[T]) topFieldValue(pos position, name string) (func(T) reflect.Val
 // fieldAccessor also returns the type of the field or method result.
 // If there is no field or method, fieldAccessor returns nil, nil.
 func (ev *eval[T]) fieldAccessor(pos position, holderType reflect.Type, name string) (func(reflect.Value) reflect.Value, reflect.Type) {
+	type vvfunc = func(reflect.Value) reflect.Value
+	pointerWrap := func(fn vvfunc) vvfunc {
+		return fn
+	}
+	holderTypeOrig := holderType
+	if holderType.Kind() == reflect.Pointer {
+		holderType = holderType.Elem()
+		pointerWrap = func(fn vvfunc) vvfunc {
+			return func(v reflect.Value) reflect.Value {
+				if !v.IsValid() || v.IsNil() {
+					return reflect.Value{}
+				}
+				return fn(v.Elem())
+			}
+		}
+	}
+
 	var mapErr error
 	switch holderType.Kind() {
 	case reflect.Struct:
@@ -424,7 +441,7 @@ func (ev *eval[T]) fieldAccessor(pos position, holderType reflect.Type, name str
 		}
 		ftype := sf.Type
 		if ftype.Kind() != reflect.Pointer {
-			return fn, ftype
+			return pointerWrap(fn), ftype
 		}
 		pfn := func(v reflect.Value) reflect.Value {
 			v = fn(v)
@@ -433,7 +450,7 @@ func (ev *eval[T]) fieldAccessor(pos position, holderType reflect.Type, name str
 			}
 			return v.Elem()
 		}
-		return pfn, ftype.Elem()
+		return pointerWrap(pfn), ftype.Elem()
 
 	case reflect.Map:
 		var key reflect.Value
@@ -448,7 +465,7 @@ func (ev *eval[T]) fieldAccessor(pos position, holderType reflect.Type, name str
 			}
 			return v.MapIndex(key)
 		}
-		return fn, holderType.Elem()
+		return pointerWrap(fn), holderType.Elem()
 
 	default:
 		// Special case: we can get the "seconds" field of a
@@ -462,11 +479,11 @@ func (ev *eval[T]) fieldAccessor(pos position, holderType reflect.Type, name str
 				secs := time.Duration(v.Int()).Seconds()
 				return reflect.ValueOf(secs)
 			}
-			return fn, reflect.TypeFor[float64]()
+			return pointerWrap(fn), reflect.TypeFor[float64]()
 		}
 	}
 
-	if m, ok := methodName(holderType, name); ok {
+	if m, ok := methodName(holderTypeOrig, name); ok {
 		var fn func(reflect.Value) reflect.Value
 		if m.Type.NumOut() == 1 {
 			fn = func(v reflect.Value) reflect.Value {

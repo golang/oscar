@@ -17,6 +17,8 @@
 // again doing a camel case match.
 // This approach makes it easier to use the same filter expression
 // across languages when filtering protobuf types.
+// If a struct field is a pointer type,
+// it will be dereferenced before being used in any filter comparison.
 //
 // When a filter expression fails to find a field name,
 // it will fall back to looking for an exported method with the name,

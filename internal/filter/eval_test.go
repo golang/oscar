@@ -239,6 +239,53 @@ func (rw resourceWrapper) ExistsArrayMessage() ([]member, error) {
 	return rw.r.ExistsArrayMessage, nil
 }
 
+// resourcePointerInterface is like resourceInterface,
+// but Members returns []*member. This tests a slice of pointers.
+type resourcePointerInterface interface {
+	BoolField() (bool, error)
+	CaseField() string
+	IntField() int64
+	FloatField() float64
+	EnumField() string
+	StringField() string
+	TimestampField() time.Time
+	Compound() compound
+	False() bool
+	True() bool
+	Undefined() *string
+	Text() string
+	URL() string
+	Members() []*member
+	Logical() string
+	None() *string
+	QuoteDouble() string
+	QuoteSingle() string
+	Subject() string
+	Words() string
+	UnicodeField() string
+	ExistsScalarInt() int64
+	ExistsScalarString() string
+	ExistsScalarMessage() member
+	ExistsArrayInt() []int64
+	ExistsArrayString() []string
+	ExistsArrayMessage() ([]member, error)
+}
+
+// resourcePointerWrapper is like resourceWrapper,
+// but Members returns []*member. This tests a slice of pointers.
+type resourcePointerWrapper struct {
+	resourceWrapper
+}
+
+func (rpw resourcePointerWrapper) Members() []*member {
+	members := rpw.resourceWrapper.Members()
+	ret := make([]*member, len(members))
+	for i := range members {
+		ret[i] = &members[i]
+	}
+	return ret
+}
+
 func TestEvalBasic(t *testing.T) {
 	var data filterBasicTestData
 	unmarshalJSON(t, "basic_test.json", &data)
@@ -254,6 +301,14 @@ func TestEvalBasic(t *testing.T) {
 		rws := make([]resourceInterface, len(data.Resources))
 		for i, r := range data.Resources {
 			rws[i] = resourceWrapper{r}
+		}
+		runTests(t, tests.Tests, rws)
+	})
+
+	t.Run("interface-pointer", func(t *testing.T) {
+		rws := make([]resourcePointerInterface, len(data.Resources))
+		for i, r := range data.Resources {
+			rws[i] = resourcePointerWrapper{resourceWrapper{r}}
 		}
 		runTests(t, tests.Tests, rws)
 	})
