@@ -90,6 +90,155 @@ type stringObjects struct {
 	Value      string            `json:"value"`
 }
 
+// resourceInterface is an interface with methods that match
+// the fields of resource.
+//
+// A couple of methods return an error (that will always be nil),
+// most do not.
+type resourceInterface interface {
+	BoolField() (bool, error)
+	CaseField() string
+	IntField() int64
+	FloatField() float64
+	EnumField() string
+	StringField() string
+	TimestampField() time.Time
+	Compound() compound
+	False() bool
+	True() bool
+	Undefined() *string
+	Text() string
+	URL() string
+	Members() []member
+	Logical() string
+	None() *string
+	QuoteDouble() string
+	QuoteSingle() string
+	Subject() string
+	Words() string
+	UnicodeField() string
+	ExistsScalarInt() int64
+	ExistsScalarString() string
+	ExistsScalarMessage() member
+	ExistsArrayInt() []int64
+	ExistsArrayString() []string
+	ExistsArrayMessage() ([]member, error)
+}
+
+// resourceWrapper is a type that implements resourceInterface
+// using a value of type resource.
+type resourceWrapper struct {
+	r resource
+}
+
+func (rw resourceWrapper) BoolField() (bool, error) {
+	return rw.r.BoolField, nil
+}
+
+func (rw resourceWrapper) CaseField() string {
+	return rw.r.CaseField
+}
+
+func (rw resourceWrapper) IntField() int64 {
+	return rw.r.IntField
+}
+
+func (rw resourceWrapper) FloatField() float64 {
+	return rw.r.FloatField
+}
+
+func (rw resourceWrapper) EnumField() string {
+	return rw.r.EnumField
+}
+
+func (rw resourceWrapper) StringField() string {
+	return rw.r.StringField
+}
+
+func (rw resourceWrapper) TimestampField() time.Time {
+	return rw.r.TimestampField
+}
+
+func (rw resourceWrapper) Compound() compound {
+	return rw.r.Compound
+}
+
+func (rw resourceWrapper) False() bool {
+	return rw.r.False
+}
+
+func (rw resourceWrapper) True() bool {
+	return rw.r.True
+}
+
+func (rw resourceWrapper) Undefined() *string {
+	return rw.r.Undefined
+}
+
+func (rw resourceWrapper) Text() string {
+	return rw.r.Text
+}
+
+func (rw resourceWrapper) URL() string {
+	return rw.r.URL
+}
+
+func (rw resourceWrapper) Members() []member {
+	return rw.r.Members
+}
+
+func (rw resourceWrapper) Logical() string {
+	return rw.r.Logical
+}
+
+func (rw resourceWrapper) None() *string {
+	return rw.r.None
+}
+
+func (rw resourceWrapper) QuoteDouble() string {
+	return rw.r.QuoteDouble
+}
+
+func (rw resourceWrapper) QuoteSingle() string {
+	return rw.r.QuoteSingle
+}
+
+func (rw resourceWrapper) Subject() string {
+	return rw.r.Subject
+}
+
+func (rw resourceWrapper) Words() string {
+	return rw.r.Words
+}
+
+func (rw resourceWrapper) UnicodeField() string {
+	return rw.r.UnicodeField
+}
+
+func (rw resourceWrapper) ExistsScalarInt() int64 {
+	return rw.r.ExistsScalarInt
+}
+
+func (rw resourceWrapper) ExistsScalarString() string {
+	return rw.r.ExistsScalarString
+}
+
+func (rw resourceWrapper) ExistsScalarMessage() member {
+	return rw.r.ExistsScalarMessage
+}
+
+func (rw resourceWrapper) ExistsArrayInt() []int64 {
+	return rw.r.ExistsArrayInt
+}
+
+func (rw resourceWrapper) ExistsArrayString() []string {
+	return rw.r.ExistsArrayString
+}
+
+func (rw resourceWrapper) ExistsArrayMessage() ([]member, error) {
+	return rw.r.ExistsArrayMessage, nil
+}
+
 func TestEvalBasic(t *testing.T) {
 	var data filterBasicTestData
 	unmarshalJSON(t, "basic_test.json", &data)
@@ -97,7 +246,17 @@ func TestEvalBasic(t *testing.T) {
 	var tests yamlTests
 	unmarshalYAML(t, "basic_test.yaml", &tests)
 
-	runTests(t, tests.Tests, data.Resources)
+	t.Run("struct", func(t *testing.T) {
+		runTests(t, tests.Tests, data.Resources)
+	})
+
+	t.Run("interface", func(t *testing.T) {
+		rws := make([]resourceInterface, len(data.Resources))
+		for i, r := range data.Resources {
+			rws[i] = resourceWrapper{r}
+		}
+		runTests(t, tests.Tests, rws)
+	})
 }
 
 type filterMiscTestData struct {
@@ -258,7 +417,7 @@ func runTests[T any](t *testing.T, tests []yamlTest, data []T) {
 	}
 }
 
-// runOneTest runs on YAML test.
+// runOneTest runs one YAML test.
 func runOneTest[T any](t *testing.T, test *yamlTest, data []T) {
 	e, err := ParseFilter(test.Expr)
 	if err != nil {

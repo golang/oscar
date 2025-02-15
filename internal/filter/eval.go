@@ -165,31 +165,17 @@ func (ev *eval[T]) comparison(e *comparisonExpr) func(T) bool {
 func (ev *eval[T]) name(e *nameExpr) func(T) bool {
 	// A literal can be matched anywhere.
 	typ := reflect.TypeFor[T]()
-	if typ.NumField() == 0 {
-		// Return a function that matches e against the value.
-		matchFn := ev.match(typ, e)
-		if matchFn == nil {
-			ev.msgs = append(ev.msgs, fmt.Sprintf("%s: value of type %s can't match %q", e.pos, typ, e.name))
-			return ev.alwaysFalse()
-		}
-
-		return func(v T) bool {
-			return matchFn(reflect.ValueOf(v))
-		}
-	} else {
-		cmpFn := ev.compareStructFields(typ,
-			func(ftype reflect.Type) func(reflect.Value) bool {
-				return ev.match(ftype, e)
-			},
-		)
-		if cmpFn == nil {
+	matchFn := ev.match(typ, e)
+	if matchFn == nil {
+		if typ.Kind() == reflect.Struct {
 			ev.msgs = append(ev.msgs, fmt.Sprintf("%s: no fields of value %s match %q", e.pos, typ, e.name))
-			return ev.alwaysFalse()
+		} else {
+			ev.msgs = append(ev.msgs, fmt.Sprintf("%s: value of type %s can't match %q", e.pos, typ, e.name))
 		}
-
-		return func(v T) bool {
-			return cmpFn(reflect.ValueOf(v))
-		}
+		return ev.alwaysFalse()
+	}
+	return func(v T) bool {
+		return matchFn(reflect.ValueOf(v))
 	}
 }
 
@@ -248,6 +234,8 @@ func (ev *eval[T]) isMultiple(e Expr) (bool, reflect.Type) {
 		var typ reflect.Type
 		if sf, ok := fieldName(reflect.TypeFor[T](), e.name); ok {
 			typ = sf.Type
+		} else if m, ok := methodName(reflect.TypeFor[T](), e.name); ok {
+			typ = m.Type.Out(0)
 		} else if cfn, ok := ev.functions[e.name]; ok {
 			typ = reflect.TypeOf(cfn).Out(0)
 		} else if e.isString {
@@ -269,15 +257,22 @@ func (ev *eval[T]) isMultiple(e Expr) (bool, reflect.Type) {
 		if htype == nil {
 			return false, nil
 		}
-		if htype.Kind() == reflect.Struct {
-			sf, ok := fieldName(htype, e.member)
-			if ok {
-				if isMultipleType(sf.Type) {
-					return true, nil
-				}
-				return false, sf.Type
+
+		if sf, ok := fieldName(htype, e.member); ok {
+			if isMultipleType(sf.Type) {
+				return true, nil
 			}
+			return false, sf.Type
 		}
+
+		if m, ok := methodName(htype, e.member); ok {
+			rt := m.Type.Out(0)
+			if isMultipleType(rt) {
+				return true, nil
+			}
+			return false, rt
+		}
+
 		return false, nil
 
 	case *functionExpr:
@@ -300,6 +295,9 @@ func (ev *eval[T]) fieldValue(e Expr) (func(T) reflect.Value, reflect.Type) {
 		// We also permit a function with no extra arguments;
 		// this can be used to resolve arbitrary names.
 		if _, ok := fieldName(reflect.TypeFor[T](), e.name); ok {
+			return ev.topFieldValue(e.pos, e.name)
+		}
+		if _, ok := methodName(reflect.TypeFor[T](), e.name); ok {
 			return ev.topFieldValue(e.pos, e.name)
 		}
 		if cfn, ok := ev.functions[e.name]; ok {
@@ -403,18 +401,18 @@ func (ev *eval[T]) topFieldValue(pos position, name string) (func(T) reflect.Val
 }
 
 // fieldAccessor returns a function that retrieves the value of
-// the field name in the type holderType.
+// the field or method in the name parameter in the type holderType.
 // The function takes a reflect.Value that is of type holderType,
 // and returns a new reflect.Value.
-// fieldAccessor also returns the type of the field.
-// If there is no field, fieldAccessor returns nil, nil.
+// fieldAccessor also returns the type of the field or method result.
+// If there is no field or method, fieldAccessor returns nil, nil.
 func (ev *eval[T]) fieldAccessor(pos position, holderType reflect.Type, name string) (func(reflect.Value) reflect.Value, reflect.Type) {
+	var mapErr error
 	switch holderType.Kind() {
 	case reflect.Struct:
 		sf, ok := fieldName(holderType, name)
 		if !ok {
-			ev.msgs = append(ev.msgs, fmt.Sprintf("%s: %s has no field %s", pos, holderType, name))
-			return nil, nil
+			break
 		}
 
 		fn := func(v reflect.Value) reflect.Value {
@@ -438,9 +436,10 @@ func (ev *eval[T]) fieldAccessor(pos position, holderType reflect.Type, name str
 		return pfn, ftype.Elem()
 
 	case reflect.Map:
-		key, ok := ev.parseLiteral(pos, holderType.Key(), name, plWarnYes)
-		if !ok {
-			return nil, nil
+		var key reflect.Value
+		key, mapErr = ev.parseLiteral(pos, holderType.Key(), name)
+		if mapErr != nil {
+			break
 		}
 
 		fn := func(v reflect.Value) reflect.Value {
@@ -465,10 +464,63 @@ func (ev *eval[T]) fieldAccessor(pos position, holderType reflect.Type, name str
 			}
 			return fn, reflect.TypeFor[float64]()
 		}
-
-		ev.msgs = append(ev.msgs, fmt.Sprintf("%s: type %s has no fields (looking for field %s)", pos, holderType, name))
-		return nil, nil
 	}
+
+	if m, ok := methodName(holderType, name); ok {
+		var fn func(reflect.Value) reflect.Value
+		if m.Type.NumOut() == 1 {
+			fn = func(v reflect.Value) reflect.Value {
+				if !v.IsValid() {
+					return v
+				}
+				return v.Method(m.Index).Call(nil)[0]
+			}
+		} else {
+			fn = func(v reflect.Value) reflect.Value {
+				if !v.IsValid() {
+					return v
+				}
+				retVals := v.Method(m.Index).Call(nil)
+				if !retVals[1].IsNil() {
+					// We got an error; ignore the value.
+					return reflect.Value{}
+				}
+				return retVals[0]
+			}
+		}
+
+		// Dereference pointer results, since there is no
+		// way to filter on pointer values.
+
+		rtype := m.Type.Out(0)
+		if rtype.Kind() != reflect.Pointer {
+			return fn, rtype
+		}
+
+		pfn := func(v reflect.Value) reflect.Value {
+			v = fn(v)
+			if !v.IsValid() || v.IsNil() {
+				return reflect.Value{}
+			}
+			return v.Elem()
+		}
+
+		return pfn, rtype.Elem()
+	}
+
+	switch holderType.Kind() {
+	case reflect.Struct:
+		ev.msgs = append(ev.msgs, fmt.Sprintf("%s: %s has no field or method %s", pos, holderType, name))
+	case reflect.Map:
+		if holderType.NumMethod() > 0 {
+			ev.msgs = append(ev.msgs, fmt.Sprintf("%s: %s has no method %q and parsing as map key failed: %v", pos, holderType, name, mapErr))
+		} else {
+			ev.msgs = append(ev.msgs, mapErr.Error())
+		}
+	default:
+		ev.msgs = append(ev.msgs, fmt.Sprintf("%s: %s has no fields and no method %s", pos, holderType, name))
+	}
+	return nil, nil
 }
 
 // compare returns a function that returns the result of a
@@ -575,8 +627,9 @@ func (ev *eval[T]) compareName(op tokenKind, leftType reflect.Type, right *nameE
 		}
 	}
 
-	rval, ok := ev.parseLiteral(right.pos, leftType, right.name, plWarnYes)
-	if !ok {
+	rval, err := ev.parseLiteral(right.pos, leftType, right.name)
+	if err != nil {
+		ev.msgs = append(ev.msgs, err.Error())
 		return nil
 	}
 
@@ -847,21 +900,45 @@ func (ev *eval[T]) multipleCompare(e *comparisonExpr) func(T) bool {
 	}
 }
 
+// matchMethod is used to track which methods are called by match.
+// Since match looks through all fields and methods of a type,
+// it can wind up in an infinite recursion. matchMethod stops it.
+// This is imperfect because it may be appropriate to call the same
+// method multiple times on different values, but it's close enough,
+// and an actual implementation can sidestep the loop through other methods.
+type matchMethod struct {
+	typ    reflect.Type
+	method string
+}
+
 // match returns a function that takes a value of type typ
 // and reports whether it is equal to, or contains, val.
 // This returns nil if the types can't match.
 func (ev *eval[T]) match(typ reflect.Type, e *nameExpr) func(reflect.Value) bool {
+	return ev.matchSeen(typ, e, make(map[matchMethod]bool))
+}
+
+// matchSeen is like match but takes a map of types/methods
+// we have already seen, to avoid infinite recursion.
+func (ev *eval[T]) matchSeen(typ reflect.Type, e *nameExpr, seen map[matchMethod]bool) func(reflect.Value) bool {
+	subFn := ev.matchValue(typ, e, seen)
+	return ev.matchMethods(typ, e, subFn, seen)
+}
+
+// matchValue is like matches only on the value, ignoring methods.
+func (ev *eval[T]) matchValue(typ reflect.Type, e *nameExpr, seen map[matchMethod]bool) func(reflect.Value) bool {
 	switch typ.Kind() {
 	case reflect.Slice, reflect.Array:
-		return ev.matchSlice(typ, e)
+		return ev.matchSlice(typ, e, seen)
 	case reflect.Map:
-		return ev.matchMap(typ, e)
+		return ev.matchMap(typ, e, seen)
 	case reflect.Struct:
-		return ev.matchStruct(typ, e)
+		return ev.matchStruct(typ, e, seen)
 	}
 
-	eval, ok := ev.parseLiteral(e.pos, typ, e.name, plWarnNo)
-	if !ok {
+	eval, err := ev.parseLiteral(e.pos, typ, e.name)
+	if err != nil {
+		// Ignore the error, just don't match.
 		return nil
 	}
 
@@ -924,8 +1001,8 @@ func (ev *eval[T]) match(typ reflect.Type, e *nameExpr) func(reflect.Value) bool
 // It returns a function that takes a value of type typ
 // and reports whether it contains a value val.
 // This returns nil if the types can't match.
-func (ev *eval[T]) matchSlice(typ reflect.Type, e *nameExpr) func(reflect.Value) bool {
-	elementMatch := ev.match(typ.Elem(), e)
+func (ev *eval[T]) matchSlice(typ reflect.Type, e *nameExpr, seen map[matchMethod]bool) func(reflect.Value) bool {
+	elementMatch := ev.matchSeen(typ.Elem(), e, seen)
 	if elementMatch == nil {
 		return nil
 	}
@@ -944,8 +1021,8 @@ func (ev *eval[T]) matchSlice(typ reflect.Type, e *nameExpr) func(reflect.Value)
 // It returns a function that takes a value of type typ
 // and reports whether it contains a value e.
 // This returns nil if the types can't match.
-func (ev *eval[T]) matchMap(typ reflect.Type, e *nameExpr) func(reflect.Value) bool {
-	elementMatch := ev.match(typ.Elem(), e)
+func (ev *eval[T]) matchMap(typ reflect.Type, e *nameExpr, seen map[matchMethod]bool) func(reflect.Value) bool {
+	elementMatch := ev.matchSeen(typ.Elem(), e, seen)
 	if elementMatch == nil {
 		return nil
 	}
@@ -965,34 +1042,77 @@ func (ev *eval[T]) matchMap(typ reflect.Type, e *nameExpr) func(reflect.Value) b
 // It returns a value that takes a value of type typ
 // and reports whether it contains a value val.
 // This returns nil if the types can't match.
-func (ev *eval[T]) matchStruct(typ reflect.Type, e *nameExpr) func(reflect.Value) bool {
+func (ev *eval[T]) matchStruct(typ reflect.Type, e *nameExpr, seen map[matchMethod]bool) func(reflect.Value) bool {
 	return ev.compareStructFields(typ,
 		func(ftype reflect.Type) func(reflect.Value) bool {
-			return ev.match(ftype, e)
+			return ev.matchSeen(ftype, e, seen)
 		},
 	)
 }
 
-// plWarn is an argument to parseLiteral that tells it whether to
-// report a warning for a literal that doesn't correspond to the type.
-type plWarn bool
+// matchMethods handles methods for match.
+// It returns a function that calls methods on typ to match against e.
+// If subFn is not nil it is called first for a match.
+// This returns nil if subFn is nil and the methods can't match.
+func (ev *eval[T]) matchMethods(typ reflect.Type, e *nameExpr, subFn func(reflect.Value) bool, seen map[matchMethod]bool) func(reflect.Value) bool {
+	if typ.NumMethod() == 0 {
+		return subFn
+	}
 
-const (
-	plWarnNo  plWarn = false
-	plWarnYes plWarn = true
-)
+	var methodIndexes []int
+	var matchFns []func(reflect.Value) bool
+	for i := range typ.NumMethod() {
+		m := typ.Method(i)
+		if !methodTypeOK(typ, m) {
+			continue
+		}
+
+		key := matchMethod{
+			typ:    typ,
+			method: m.Name,
+		}
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+
+		matchFn := ev.matchSeen(m.Type.Out(0), e, seen)
+		if matchFn != nil {
+			methodIndexes = append(methodIndexes, m.Index)
+			matchFns = append(matchFns, matchFn)
+		}
+	}
+	if len(methodIndexes) == 0 {
+		return subFn
+	}
+
+	return func(v reflect.Value) bool {
+		if subFn != nil && subFn(v) {
+			return true
+		}
+		for i := range methodIndexes {
+			retVals := v.Method(methodIndexes[i]).Call(nil)
+			if len(retVals) > 1 && !retVals[1].IsNil() {
+				// Method returned an error: no match.
+				continue
+			}
+			if matchFns[i](retVals[0]) {
+				return true
+			}
+		}
+		return false
+	}
+}
 
 // parseLiteral parses a literal string as a reflect.Type,
 // returning a reflect.Value.
 // The warn parameter tells the function whether to add a message
 // to ev.msgs if the string can't be parsed for the type.
-// The bool result reports whether the parse succeeded.
-func (ev *eval[T]) parseLiteral(pos position, typ reflect.Type, val string, warn plWarn) (reflect.Value, bool) {
-	badParse := func(err error) (reflect.Value, bool) {
-		if warn {
-			ev.msgs = append(ev.msgs, fmt.Sprintf("%s: can't parse %q as type %s: %v", pos, val, typ, err))
-		}
-		return reflect.Value{}, false
+// The err result is nil if the parse succeeded.
+func (ev *eval[T]) parseLiteral(pos position, typ reflect.Type, val string) (reflect.Value, error) {
+	badParse := func(err error) (reflect.Value, error) {
+		err = fmt.Errorf("%s: can't parse %q as type %s: %v", pos, val, typ, err)
+		return reflect.Value{}, err
 	}
 
 	var rval reflect.Value
@@ -1059,20 +1179,16 @@ func (ev *eval[T]) parseLiteral(pos position, typ reflect.Type, val string, warn
 
 		fallthrough
 	default:
-		if warn {
-			ev.msgs = append(ev.msgs, fmt.Sprintf("%s: unsupported literal type %s (val %q)", pos, typ, val))
-		}
-		return reflect.Value{}, false
+		err := fmt.Errorf("%s: unsupported literal type %s (val %q)", pos, typ, val)
+		return reflect.Value{}, err
 	}
 
 	frval := rval.Convert(typ)
 	if !frval.IsValid() {
-		if warn {
-			ev.msgs = append(ev.msgs, fmt.Sprintf("%s: failed to convert literal %q type %s to type %s", pos, val, rval.Type(), typ))
-		}
-		return reflect.Value{}, false
+		err := fmt.Errorf("%s: failed to convert literal %q type %s to type %s", pos, val, rval.Type(), typ)
+		return reflect.Value{}, err
 	}
-	return frval, true
+	return frval, nil
 }
 
 // has returns a function that returns whether a left value contains
@@ -1346,7 +1462,7 @@ func (ev *eval[T]) multipleMemberHolder(e *memberExpr, emptyString holderEmptySt
 		}
 
 	case *nameExpr:
-		// This should be the name of a field in T.
+		// This should be the name of a field or method in T.
 		ffn, ftype := ev.fieldAccessor(holder.pos, reflect.TypeFor[T](), holder.name)
 		if ffn == nil {
 			return nil, nil
@@ -1381,8 +1497,9 @@ func (ev *eval[T]) multipleMemberHolder(e *memberExpr, emptyString holderEmptySt
 			return rhfn, htype.Elem()
 		}
 
-		kval, ok := ev.parseLiteral(e.pos, htype.Key(), e.member, plWarnYes)
-		if !ok {
+		kval, err := ev.parseLiteral(e.pos, htype.Key(), e.member)
+		if err != nil {
+			ev.msgs = append(ev.msgs, err.Error())
 			return nil, nil
 		}
 
@@ -1516,6 +1633,16 @@ func (ev *eval[T]) compareStructFields(typ reflect.Type, buildMatchFn func(refle
 	var matchFns []func(reflect.Value) bool
 	for i := range typ.NumField() {
 		field := typ.Field(i)
+
+		// Ignore unexported fields. We are matching on types
+		// that are defined by a program that expects them
+		// to be matched against, so any field that should
+		// support matching can either be exported,
+		// or can be returned by an exported method.
+		if !field.IsExported() {
+			continue
+		}
+
 		matchFn := buildMatchFn(field.Type)
 		if matchFn != nil {
 			fieldIndexes = append(fieldIndexes, field.Index)
@@ -1540,6 +1667,10 @@ func (ev *eval[T]) compareStructFields(typ reflect.Type, buildMatchFn func(refle
 // fieldName looks for a field by name in a type. We permit matching
 // both on the field name and on the JSON field name if any.
 func fieldName(typ reflect.Type, field string) (reflect.StructField, bool) {
+	if typ.Kind() != reflect.Struct {
+		return reflect.StructField{}, false
+	}
+
 	if sf, ok := typ.FieldByName(field); ok {
 		return sf, ok
 	}
@@ -1561,9 +1692,67 @@ func fieldName(typ reflect.Type, field string) (reflect.StructField, bool) {
 	return reflect.StructField{}, false
 }
 
+// methodName looks for a method by name in a type.
+// The method must take no arguments,
+// and must return either a single value
+// or two values with the second one being type error.
+func methodName(typ reflect.Type, method string) (reflect.Method, bool) {
+	if m, ok := typ.MethodByName(method); ok && methodTypeOK(typ, m) {
+		return m, true
+	}
+
+	for i := range typ.NumMethod() {
+		m := typ.Method(i)
+		if camelCaseMatch(method, m.Name) && methodTypeOK(typ, m) {
+			return m, true
+		}
+	}
+
+	return reflect.Method{}, false
+}
+
+// methodTypeOK reports whether the method m defined on type typ
+// could be called by the evaluator.
+func methodTypeOK(typ reflect.Type, m reflect.Method) bool {
+	// Ignore unexported methods. We are matching on types
+	// that are defined by a program that expects them
+	// to be matched against, so any method that should
+	// support matching can be exported one way or another.
+	if !m.IsExported() {
+		return false
+	}
+
+	// Ignore String and GoString methods. They are misleading
+	// because they will match non-string values against string arguments.
+	if m.Name == "String" || m.Name == "GoString" {
+		return false
+	}
+
+	wantIn := 0
+	if typ.Kind() != reflect.Interface {
+		// The receiver is the first argument,
+		// so numIn == 1 means no regular arguments.
+		wantIn = 1
+	}
+	if m.Type.NumIn() != wantIn {
+		return false
+	}
+	switch m.Type.NumOut() {
+	case 1:
+		return true
+	case 2:
+		return m.Type.Out(1) == reflect.TypeFor[error]()
+	default:
+		return false
+	}
+}
+
 // camelCaseMatch reports whether two strings match using either camel
-// case or snake case. That is, "field_name" matches "fieldName".
+// case or snake case. That is, "field_name" matches "fieldName"
+// or "fieldname". We do a case-insensitive match of the first letter
+// and of each letter following an underscore.
 func camelCaseMatch(a, b string) bool {
+	first := true
 	for a != "" {
 		if b == "" {
 			return false
@@ -1576,6 +1765,13 @@ func camelCaseMatch(a, b string) bool {
 
 		if ac == bc {
 			continue
+		}
+
+		if first {
+			first = false
+			if unicode.ToUpper(ac) == unicode.ToUpper(bc) {
+				continue
+			}
 		}
 
 		if ac == '_' && len(a) > 0 {
