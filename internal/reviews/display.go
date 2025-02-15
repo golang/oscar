@@ -5,32 +5,70 @@
 package reviews
 
 import (
+	"errors"
+	"fmt"
 	"html/template"
 	"io"
 	"log/slog"
 	"net/http"
+	"strings"
+
+	"golang.org/x/oscar/internal/filter"
 )
 
 // Display is an HTTP handler function that displays the
 // changes to review.
-func Display(lg *slog.Logger, doc template.HTML, cps []ChangePreds, w http.ResponseWriter, r *http.Request) {
+func Display(lg *slog.Logger, doc template.HTML, endpoint string, cps []ChangePreds, w http.ResponseWriter, r *http.Request) {
 	if len(cps) == 0 {
 		io.WriteString(w, reportNoData)
 		return
 	}
 
-	sc := make([]CP, len(cps))
-	for i, v := range cps {
-		sc[i] = CP{v}
+	userFilter := r.FormValue("filter")
+	filterFn, err := makeFilter(userFilter)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("invalid filter: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	sc := make([]CP, 0, len(cps))
+	for _, v := range cps {
+		if filterFn != nil && !filterFn(v) {
+			continue
+		}
+
+		sc = append(sc, CP{v})
 	}
 
 	data := &displayType{
-		Doc:     doc,
-		Changes: sc,
+		Endpoint: endpoint,
+		Doc:      doc,
+		Filter:   userFilter,
+		Changes:  sc,
 	}
 	if err := displayTemplate.Execute(w, data); err != nil {
 		lg.Error("template execution failed", "err", err)
 	}
+}
+
+// makeFilter turns the user-specific filter string into a filter function.
+// This returns nil if there is nothing to filter.
+func makeFilter(s string) (func(ChangePreds) bool, error) {
+	if s == "" {
+		return nil, nil
+	}
+	expr, err := filter.ParseFilter(s)
+	if err != nil {
+		return nil, err
+	}
+	ev, problems := filter.Evaluator[ChangePreds](expr, nil)
+	if len(problems) > 0 {
+		return nil, errors.New(strings.Join(problems, "\n"))
+	}
+	fn := func(cp ChangePreds) bool {
+		return ev(cp)
+	}
+	return fn, nil
 }
 
 // reportNoData is the HTML that we report if we have not finished
@@ -56,8 +94,10 @@ var displayTemplate = template.Must(template.New("display").Parse(displayHTML))
 
 // displayType is the type expected by displayHTML
 type displayType struct {
-	Doc     template.HTML
-	Changes []CP
+	Endpoint string        // Relative URL being served.
+	Doc      template.HTML // Documentation string.
+	Filter   string        // Filter value.
+	Changes  []CP          // List of changes with predicates.
 }
 
 // CP is the type we pass to the HTML template displayTemplate.
@@ -202,6 +242,14 @@ header {
         <a href="https://go.googlesource.com/oscar/+/master/internal/goreviews/display.go">Source code</a>
       </div>
     </header>
+  <div class="filter">
+    <form id="form" action="{{.Endpoint}}" method="GET">
+      <span>
+        <label for="filter">Filter</label>
+        <input id="filter" type="text" size=75 name="filter" value="{{.Filter}}"/>
+      </span>
+    </form>
+  </div>
   {{range $change := .Changes}}
     <div class="row">
       <span class="date">{{.FormattedLastUpdate}}</span>
