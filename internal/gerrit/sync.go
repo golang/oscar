@@ -556,7 +556,13 @@ func (c *Client) get(ctx context.Context, addr string, obj any) error {
 					"try", tries,
 					"sleep", backoff,
 					"body", string(data))
-				time.Sleep(backoff)
+
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				case <-time.After(backoff):
+				}
+
 				backoff = min(backoff*2, 1*time.Minute)
 
 				continue
