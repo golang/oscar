@@ -44,6 +44,8 @@ docker build -f internal/gaby/Dockerfile \
 
 docker push $image
 
+# Allocate more CPU and memory to handle bisect work.
+# TODO(hyangah): when enabling bisects in prod, update the values in cloudbuild.yaml to match this command.
 gcloud run deploy gaby-devel --image $image --region $region --cpu 8 --memory 32G --quiet --execution-environment gen2
 gcloud run services update-traffic gaby-devel --to-latest --region $region
 
