@@ -5,6 +5,7 @@
 package reviews
 
 import (
+	"context"
 	"slices"
 	"testing"
 )
@@ -14,7 +15,7 @@ func TestPredicates(t *testing.T) {
 	const file = "testdata/gerritchange.txt"
 	const num = 1
 	change := loadTestChange(t, gc, file, 1)
-	sc, ok, err := ApplyPredicates(change, Predicates(), Rejects())
+	sc, ok, err := ApplyPredicates(context.Background(), change, Predicates(), Rejects())
 	if err != nil {
 		t.Fatalf("%s: %d: ApplyPredicates returned unexpected error %v", file, num, err)
 	} else if !ok {
@@ -35,7 +36,7 @@ func TestReject(t *testing.T) {
 	const file = "testdata/gerritchange.txt"
 	const num = 2
 	change := loadTestChange(t, gc, file, num)
-	_, ok, err := ApplyPredicates(change, Predicates(), Rejects())
+	_, ok, err := ApplyPredicates(context.Background(), change, Predicates(), Rejects())
 	if err != nil {
 		t.Fatalf("%s: %d: ApplyPredicates returned unexpected error %v", file, num, err)
 	} else if ok {

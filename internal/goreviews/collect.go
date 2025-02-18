@@ -69,7 +69,7 @@ func collectChanges(ctx context.Context, lg *slog.Logger, client *gerrit.Client,
 				Client: grc,
 				Change: gchange,
 			}
-			_, ok, err := reviews.ApplyPredicates(goChange{grchange}, nil, rejs)
+			_, ok, err := reviews.ApplyPredicates(ctx, goChange{grchange}, nil, rejs)
 			if err != nil {
 				lg.Error("error applying rejections", "change", grchange.ID(), "err", err)
 				continue

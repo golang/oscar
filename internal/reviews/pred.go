@@ -5,6 +5,7 @@
 package reviews
 
 import (
+	"context"
 	"fmt"
 	"slices"
 )
@@ -24,7 +25,7 @@ type Predicate struct {
 
 	// The Applies function reports whether this Predicate
 	// applies to a change.
-	Applies func(Change) (bool, error)
+	Applies func(context.Context, Change) (bool, error)
 }
 
 // ChangePreds is a [Change] with a list of predicates that apply
@@ -42,9 +43,9 @@ type Reject Predicate
 // The reject predicates are used to determine if the change is
 // reviewable; the bool result will be false if the change should
 // not be reviewed, for example because it has already been committed.
-func ApplyPredicates(change Change, predicates []Predicate, rejects []Reject) (ChangePreds, bool, error) {
+func ApplyPredicates(ctx context.Context, change Change, predicates []Predicate, rejects []Reject) (ChangePreds, bool, error) {
 	for i := range rejects {
-		applies, err := rejects[i].Applies(change)
+		applies, err := rejects[i].Applies(ctx, change)
 		if err != nil {
 			return ChangePreds{}, false, err
 		}
@@ -56,7 +57,7 @@ func ApplyPredicates(change Change, predicates []Predicate, rejects []Reject) (C
 	var preds []*Predicate
 	for i := range predicates {
 		pred := &predicates[i]
-		applies, err := pred.Applies(change)
+		applies, err := pred.Applies(ctx, change)
 		if err != nil {
 			return ChangePreds{}, false, err
 		}
@@ -123,7 +124,7 @@ var predicates = []Predicate{
 
 // authorMaintainer is a [Predicate] function that reports whether the
 // [Change] author is a project maintainer.
-func authorMaintainer(ch Change) (bool, error) {
+func authorMaintainer(ctx context.Context, ch Change) (bool, error) {
 	switch ch.Author().Authority() {
 	case AuthorityMaintainer, AuthorityOwner:
 		return true, nil
@@ -134,7 +135,7 @@ func authorMaintainer(ch Change) (bool, error) {
 
 // authorReviewer is a [Predicate] function that reports whether the
 // [Change] author is a project reviewer.
-func authorReviewer(ch Change) (bool, error) {
+func authorReviewer(ctx context.Context, ch Change) (bool, error) {
 	switch ch.Author().Authority() {
 	case AuthorityReviewer:
 		return true, nil
@@ -145,19 +146,19 @@ func authorReviewer(ch Change) (bool, error) {
 
 // authorContributor is a [Predicate] function that reports whether the
 // [Change] author is a known contributor: more than 10 changes contributed.
-func authorContributor(ch Change) (bool, error) {
+func authorContributor(ctx context.Context, ch Change) (bool, error) {
 	return ch.Author().Commits() > 10, nil
 }
 
 // authorMajorContributor is a [Predicate] function that reports whether the
 // [Change] author is a major contributor: more than 50 changes contributed.
-func authorMajorContributor(ch Change) (bool, error) {
+func authorMajorContributor(ctx context.Context, ch Change) (bool, error) {
 	return ch.Author().Commits() > 50, nil
 }
 
 // noMaintainerReviews is a [Predicate] function that reports whether the
 // [Change] has not been reviewed by a maintainer.
-func noMaintainerReviews(ch Change) (bool, error) {
+func noMaintainerReviews(ctx context.Context, ch Change) (bool, error) {
 	for _, r := range ch.Reviewed() {
 		switch r.Authority() {
 		case AuthorityMaintainer, AuthorityOwner:
@@ -184,7 +185,7 @@ var rejects = []Reject{
 
 // unreviewable is a [Reject] function that reports whether a
 // [Change] is not reviewable.
-func unreviewable(ch Change) (bool, error) {
+func unreviewable(ctx context.Context, ch Change) (bool, error) {
 	switch status := ch.Status(); status {
 	case StatusReady:
 		return false, nil

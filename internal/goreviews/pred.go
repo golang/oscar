@@ -5,6 +5,7 @@
 package goreviews
 
 import (
+	"context"
 	"slices"
 	"strings"
 
@@ -49,13 +50,13 @@ var predicates = []reviews.Predicate{
 
 // hasPlusTwo is a [reviews.Score] function that reports whether
 // the change has a +2 vote.
-func hasPlusTwo(ch reviews.Change) (bool, error) {
+func hasPlusTwo(ctx context.Context, ch reviews.Change) (bool, error) {
 	return hasCodeReviewVal(ch, 2)
 }
 
 // hasPlusOne is a [reviews.Score] function that reports whether
 // the change has a +1 vote.
-func hasPlusOne(ch reviews.Change) (bool, error) {
+func hasPlusOne(ctx context.Context, ch reviews.Change) (bool, error) {
 	return hasCodeReviewVal(ch, 1)
 }
 
@@ -76,7 +77,7 @@ func hasCodeReviewVal(ch reviews.Change, val int) (bool, error) {
 
 // hasUnresolvedComments is a [reviews.Score] function that reports whether
 // the change has unresolved comments.
-func hasUnresolvedComments(ch reviews.Change) (bool, error) {
+func hasUnresolvedComments(ctx context.Context, ch reviews.Change) (bool, error) {
 	gc := ch.(goChange).GerritChange
 	_, unresolved := gc.Client.GClient.ChangeCommentCounts(gc.Change)
 	return unresolved > 0, nil
@@ -84,13 +85,13 @@ func hasUnresolvedComments(ch reviews.Change) (bool, error) {
 
 // trybotsPassed is a [reviews.Score] function that reports whether
 // the trybots passed. We check both the LUCI and non-LUCI trybots for now.
-func trybotsPassed(ch reviews.Change) (bool, error) {
+func trybotsPassed(ctx context.Context, ch reviews.Change) (bool, error) {
 	return trybotsCheck(ch, 1)
 }
 
 // trybotsFailed is a [reviews.Score] function that reports whether
 // the trybots failed. We check both the LUCI and non-LUCI trybots for now.
-func trybotsFailed(ch reviews.Change) (bool, error) {
+func trybotsFailed(ctx context.Context, ch reviews.Change) (bool, error) {
 	return trybotsCheck(ch, -1)
 }
 
@@ -137,7 +138,7 @@ var rejects = []reviews.Reject{
 // unreviewable is a [reviews.Reject] function that reports that
 // a Go change is unreviewable. Putting "DO NOT REVIEW" in the description
 // is a Go project convention for marking a change unreviewable.
-func unreviewable(ch reviews.Change) (bool, error) {
+func unreviewable(ctx context.Context, ch reviews.Change) (bool, error) {
 	desc := ch.Description()
 	if strings.Contains(desc, "DO NOT REVIEW") {
 		return true, nil
@@ -147,7 +148,7 @@ func unreviewable(ch reviews.Change) (bool, error) {
 
 // waitRelease is a [reviews.Reject] function that reports whether
 // the change has the wait-release tag.
-func waitRelease(ch reviews.Change) (bool, error) {
+func waitRelease(ctx context.Context, ch reviews.Change) (bool, error) {
 	gc := ch.(goChange).GerritChange
 	tags := gc.Client.GClient.ChangeHashtags(gc.Change)
 	r := slices.Contains(tags, "wait-release")
@@ -156,7 +157,7 @@ func waitRelease(ch reviews.Change) (bool, error) {
 
 // hold is a [reviews.Reject] function that reports whether
 // the change is on hold.
-func hold(ch reviews.Change) (bool, error) {
+func hold(ctx context.Context, ch reviews.Change) (bool, error) {
 	gc := ch.(goChange).GerritChange
 	label := gc.Client.GClient.ChangeLabel(gc.Change, "Hold")
 	if label == nil {

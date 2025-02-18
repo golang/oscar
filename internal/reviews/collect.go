@@ -48,7 +48,7 @@ func CollectChangePreds(ctx context.Context, lg *slog.Logger, it iter.Seq[Change
 		go func() {
 			defer wg.Done()
 			for change := range chIn {
-				cp, ok, err := ApplyPredicates(change, predicates, rejects)
+				cp, ok, err := ApplyPredicates(ctx, change, predicates, rejects)
 				if err != nil {
 					// Errors are assumed to be
 					// non-critical. Just log them.
