@@ -30,10 +30,11 @@ import (
 )
 
 const (
-	syncProjectKind  = "gerrit.SyncProject"
-	changeKind       = "gerrit.Change"
-	commentKind      = "gerrit.Comment"
-	changeUpdateKind = "gerrit.ChangeUpdate"
+	syncProjectKind     = "gerrit.SyncProject"
+	changeKind          = "gerrit.Change"
+	commentKind         = "gerrit.Comment"
+	changeUpdateKind    = "gerrit.ChangeUpdate"
+	changeMergeableKind = "gerrit.ChangeMergeable"
 )
 
 // For a Gerrit project we store changes indexed by change number.
@@ -53,6 +54,8 @@ const (
 //	["gerrit.Comment", Instance, Project, ChangeNumber] => CommentInfo JSON
 //	["gerrit.ChangeUpdate", Instance, ChangeNumber, MetaID] => DBTime
 //	["gerrit.ChangeUpdateByTime", DBTime, Instance, ChangeNumber, MetaID] => []
+//	["gerrit.ChangeMergeableTime", Instance, Project] => time
+//	["gerrit.ChangeMergeable", Instance, Project, ChangeNumber] => bool
 //
 // A watcher on "gerrit.ChangeUpdate" will see all Gerrit changes,
 // and can read the new data from the database.

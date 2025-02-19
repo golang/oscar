@@ -26,3 +26,4 @@ Messages:
  Message: message 1
 Messages:
  Message: message 2
+Mergeable: false

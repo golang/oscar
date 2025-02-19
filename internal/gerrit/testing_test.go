@@ -30,6 +30,7 @@ func TestLoadTxtar(t *testing.T) {
 		t.Fatal("could not find loaded change")
 	}
 
+	ctx := context.Background()
 	tests := []changeTests{
 		{
 			"ChangeLabels",
@@ -102,6 +103,14 @@ func TestLoadTxtar(t *testing.T) {
 				}
 				return slices.Equal(ge, w)
 			},
+		},
+		{
+			"ChangeMergeable",
+			func(ch *Change) any {
+				return c.ChangeMergeable(ctx, ch)
+			},
+			false,
+			nil,
 		},
 	}
 
