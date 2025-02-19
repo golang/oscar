@@ -41,7 +41,7 @@ func TestCollectChanges(t *testing.T) {
 	var got []changePredNames
 	for _, cp := range cps {
 		cpn := changePredNames{
-			changeID: cp.Change.ID(),
+			changeID: cp.Change.ID(ctx),
 		}
 		for _, pred := range cp.Predicates {
 			cpn.preds = append(cpn.preds, pred.Name)

@@ -52,7 +52,7 @@ func CollectChangePreds(ctx context.Context, lg *slog.Logger, it iter.Seq[Change
 				if err != nil {
 					// Errors are assumed to be
 					// non-critical. Just log them.
-					lg.Error("error applying predicate", "change", change.ID(), "err", err)
+					lg.Error("error applying predicate", "change", change.ID(ctx), "err", err)
 				}
 				if !ok {
 					continue
@@ -89,14 +89,14 @@ func CollectChangePreds(ctx context.Context, lg *slog.Logger, it iter.Seq[Change
 		if r := cmp.Compare(total(a), total(b)); r != 0 {
 			return -r // negate to sort in descending order
 		}
-		if r := a.Change.Updated().Compare(b.Change.Updated()); r != 0 {
+		if r := a.Change.Updated(ctx).Compare(b.Change.Updated(ctx)); r != 0 {
 			return -r // negate to sort newest to oldest
 		}
 
 		// Sort change IDs numerically if we can,
 		// otherwise lexically.
-		aID := a.Change.ID()
-		bID := b.Change.ID()
+		aID := a.Change.ID(ctx)
+		bID := b.Change.ID(ctx)
 		anum, aerr := strconv.Atoi(aID)
 		bnum, berr := strconv.Atoi(bID)
 		if aerr == nil && berr == nil {

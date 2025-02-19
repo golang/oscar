@@ -5,6 +5,7 @@
 package reviews
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"html/template"
@@ -18,7 +19,7 @@ import (
 
 // Display is an HTTP handler function that displays the
 // changes to review.
-func Display(lg *slog.Logger, doc template.HTML, endpoint string, cps []ChangePreds, w http.ResponseWriter, r *http.Request) {
+func Display(ctx context.Context, lg *slog.Logger, doc template.HTML, endpoint string, cps []ChangePreds, w http.ResponseWriter, r *http.Request) {
 	if len(cps) == 0 {
 		io.WriteString(w, reportNoData)
 		return
@@ -94,6 +95,7 @@ var displayTemplate = template.Must(template.New("display").Parse(displayHTML))
 
 // displayType is the type expected by displayHTML
 type displayType struct {
+	Ctx      context.Context
 	Endpoint string        // Relative URL being served.
 	Doc      template.HTML // Documentation string.
 	Filter   string        // Filter value.
@@ -106,8 +108,8 @@ type CP struct {
 }
 
 // FormattedLastUpdate returns the time of the last update as YYYY-MM-DD.
-func (cp *CP) FormattedLastUpdate() string {
-	return cp.Change.Updated().Format("2006-01-02")
+func (cp *CP) FormattedLastUpdate(ctx context.Context) string {
+	return cp.Change.Updated(ctx).Format("2006-01-02")
 }
 
 // displayHTML is the web page we display. This is HTML template source.
@@ -250,12 +252,13 @@ header {
       </span>
     </form>
   </div>
+  {{$ctx := .Ctx}}
   {{range $change := .Changes}}
     <div class="row">
-      <span class="date">{{.FormattedLastUpdate}}</span>
-      <span class="owner">{{.Change.Author.DisplayName}}</span>
-      <a class="number" href="https://go.dev/cl/{{.Change.ID}}" target="_blank">{{.Change.ID}}</a>
-      <span class="subject">{{.Change.Subject}}</span>
+      <span class="date">{{.FormattedLastUpdate $ctx}}</span>
+      <span class="owner">{{with $author := .Change.Author $ctx}}{{$author.DisplayName $ctx}}{{end}}</span>
+      <a class="number" href="https://go.dev/cl/{{.Change.ID $ctx}}" target="_blank">{{.Change.ID $ctx}}</a>
+      <span class="subject">{{.Change.Subject $ctx}}</span>
       <span class="predicates">
         {{range $pred := .Predicates}}
           {{if ge .Score 10}}

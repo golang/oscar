@@ -8,6 +8,7 @@
 package reviews
 
 import (
+	"context"
 	"time"
 )
 
@@ -21,27 +22,27 @@ import (
 type Change interface {
 	// The change ID, which is unique for a given project.
 	// This is something like a Git revision or a Gerrit change number.
-	ID() string
+	ID(context.Context) string
 	// The change status.
-	Status() Status
+	Status(context.Context) Status
 	// The person or agent who wrote the change.
-	Author() Account
+	Author(context.Context) Account
 	// When the change was created.
-	Created() time.Time
+	Created(context.Context) time.Time
 	// When the change was last updated.
-	Updated() time.Time
+	Updated(context.Context) time.Time
 	// When the change was last updated by the change author.
-	UpdatedByAuthor() time.Time
+	UpdatedByAuthor(context.Context) time.Time
 	// The change subject: the first line of the description.
-	Subject() string
+	Subject(context.Context) string
 	// The complete change description.
-	Description() string
+	Description(context.Context) string
 	// The list of people whose review is requested.
-	Reviewers() []Account
+	Reviewers(context.Context) []Account
 	// The list of people who have reviewed the change.
-	Reviewed() []Account
+	Reviewed(context.Context) []Account
 	// What the change needs in order to be submitted.
-	Needs() Needs
+	Needs(context.Context) Needs
 }
 
 // Status is the status of a change.
@@ -90,13 +91,13 @@ const (
 // An Account describes a person or agent.
 type Account interface {
 	// The unique account name, such as an e-mail address.
-	Name() string
+	Name(context.Context) string
 	// The display name of the account, such as a person's full name.
-	DisplayName() string
+	DisplayName(context.Context) string
 	// The authority of this account in the project.
-	Authority() Authority
+	Authority(context.Context) Authority
 	// Number of commits made by this account to the project.
-	Commits() int
+	Commits(context.Context) int
 }
 
 // AccountLookup looks up account information by name.
@@ -105,7 +106,7 @@ type Account interface {
 // differently by different Gerrit instances,
 // so we need an interface.
 type AccountLookup interface {
-	Lookup(string) Account
+	Lookup(context.Context, string) Account
 }
 
 // Authority describes what authority a person has in a project.

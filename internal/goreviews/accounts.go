@@ -5,6 +5,7 @@
 package goreviews
 
 import (
+	"context"
 	"runtime"
 	"sync"
 
@@ -168,7 +169,7 @@ func collectAccountsWorker(client *gerrit.Client, asd *accountsData, ch <-chan *
 
 // Lookup looks up an account.
 // This implements [reviews.AccountLookup].
-func (asd *accountsData) Lookup(name string) reviews.Account {
+func (asd *accountsData) Lookup(ctx context.Context, name string) reviews.Account {
 	ad := asd.data[name]
 	if ad == nil {
 		// We never saw this account, which will be the case for
@@ -181,7 +182,7 @@ func (asd *accountsData) Lookup(name string) reviews.Account {
 }
 
 // Name returns the account name.
-func (ad *accountData) Name() string {
+func (ad *accountData) Name(context.Context) string {
 	if ad == nil {
 		return "unknown"
 	}
@@ -189,7 +190,7 @@ func (ad *accountData) Name() string {
 }
 
 // DisplayName returns the display name.
-func (ad *accountData) DisplayName() string {
+func (ad *accountData) DisplayName(context.Context) string {
 	if ad == nil {
 		return "unknown"
 	}
@@ -197,7 +198,7 @@ func (ad *accountData) DisplayName() string {
 }
 
 // Authority returns the authority of the account in the project.
-func (ad *accountData) Authority() reviews.Authority {
+func (ad *accountData) Authority(context.Context) reviews.Authority {
 	if ad == nil {
 		return reviews.AuthorityUnknown
 	}
@@ -219,7 +220,7 @@ func (ad *accountData) Authority() reviews.Authority {
 }
 
 // Commits returns the number of commits made the account.
-func (ad *accountData) Commits() int {
+func (ad *accountData) Commits(context.Context) int {
 	if ad == nil {
 		return 0
 	}

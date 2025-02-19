@@ -139,7 +139,7 @@ var rejects = []reviews.Reject{
 // a Go change is unreviewable. Putting "DO NOT REVIEW" in the description
 // is a Go project convention for marking a change unreviewable.
 func unreviewable(ctx context.Context, ch reviews.Change) (bool, error) {
-	desc := ch.Description()
+	desc := ch.Description(ctx)
 	if strings.Contains(desc, "DO NOT REVIEW") {
 		return true, nil
 	}

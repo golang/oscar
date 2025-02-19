@@ -71,7 +71,7 @@ func collectChanges(ctx context.Context, lg *slog.Logger, client *gerrit.Client,
 			}
 			_, ok, err := reviews.ApplyPredicates(ctx, goChange{grchange}, nil, rejs)
 			if err != nil {
-				lg.Error("error applying rejections", "change", grchange.ID(), "err", err)
+				lg.Error("error applying rejections", "change", grchange.ID(ctx), "err", err)
 				continue
 			}
 			if ok {
@@ -110,13 +110,13 @@ const gerritbotEmail = "letsusegerrit@gmail.com"
 // Author returns the change author.
 // For changes copied from GitHub we switch from GerritBot
 // to the GitHub author.
-func (gc goChange) Author() reviews.Account {
-	owner := gc.GerritChange.Author().Name()
+func (gc goChange) Author(ctx context.Context) reviews.Account {
+	owner := gc.GerritChange.Author(ctx).Name(ctx)
 	if owner == gerritbotEmail {
 		gpi := githubOwner(gc.Client.GClient, gc.Change)
 		if gpi != nil {
 			owner = gpi.Email
 		}
 	}
-	return gc.Client.Accounts.Lookup(owner)
+	return gc.Client.Accounts.Lookup(ctx, owner)
 }

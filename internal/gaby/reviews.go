@@ -16,5 +16,5 @@ func (g *Gaby) handleReviewDashboard(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	c.Display(reviewsID.Endpoint(), w, r)
+	c.Display(g.ctx, reviewsID.Endpoint(), w, r)
 }

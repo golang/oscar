@@ -5,6 +5,7 @@
 package reviews
 
 import (
+	"context"
 	"reflect"
 	"slices"
 	"sync"
@@ -45,20 +46,21 @@ func TestGerritChange(t *testing.T) {
 	gc := testGerritClient(t)
 	change := loadTestChange(t, gc, "testdata/gerritchange.txt", 1)
 
-	toEmail := func(fn func() []Account) func() []string {
-		return func() []string {
+	toEmail := func(fn func(ctx context.Context) []Account) func(context.Context) []string {
+		return func(ctx context.Context) []string {
 			var ret []string
-			for _, r := range fn() {
-				ret = append(ret, r.Name())
+			for _, r := range fn(ctx) {
+				ret = append(ret, r.Name(ctx))
 			}
 			slices.Sort(ret)
 			return ret
 		}
 	}
 
+	ctx := context.Background()
 	tests := []struct {
 		name   string
-		method func() any
+		method func(context.Context) any
 		want   any
 	}{
 		{
@@ -73,7 +75,7 @@ func TestGerritChange(t *testing.T) {
 		},
 		{
 			"Author",
-			wm(change.Author().Name),
+			wm(change.Author(ctx).Name),
 			"gopher@golang.org",
 		},
 		{
@@ -124,7 +126,7 @@ func TestGerritChange(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		got := test.method()
+		got := test.method(ctx)
 		if !reflect.DeepEqual(got, test.want) {
 			t.Errorf("%s got %v, want %v", test.name, got, test.want)
 		}
@@ -142,7 +144,7 @@ func TestGerritChange(t *testing.T) {
 	got := slices.Collect(it)
 	var gotIDs []string
 	for _, g := range got {
-		gotIDs = append(gotIDs, g.ID())
+		gotIDs = append(gotIDs, g.ID(ctx))
 	}
 	slices.Sort(gotIDs)
 	wantIDs := []string{"1", "2"}
@@ -152,12 +154,12 @@ func TestGerritChange(t *testing.T) {
 }
 
 // changeMethod is one of the methods used to retrieve Change values.
-type changeMethod[T any] func() T
+type changeMethod[T any] func(context.Context) T
 
 // wm wraps a changeMethod in a function that we can put in a table.
-func wm[T any](fn changeMethod[T]) func() any {
-	return func() any {
-		return fn()
+func wm[T any](fn changeMethod[T]) func(ctx context.Context) any {
+	return func(ctx context.Context) any {
+		return fn(ctx)
 	}
 }
 
@@ -170,29 +172,29 @@ type gerritTestAccount struct {
 }
 
 // Name implements Account.Name.
-func (gta *gerritTestAccount) Name() string {
+func (gta *gerritTestAccount) Name(ctx context.Context) string {
 	return gta.name
 }
 
 // DisplayName implements Account.DisplayName.
-func (gta *gerritTestAccount) DisplayName() string {
+func (gta *gerritTestAccount) DisplayName(ctx context.Context) string {
 	return gta.displayName
 }
 
 // Authority implements Account.Authority
-func (gta *gerritTestAccount) Authority() Authority {
+func (gta *gerritTestAccount) Authority(ctx context.Context) Authority {
 	return gta.authority
 }
 
 // Commits implements Account.Commits.
-func (gta *gerritTestAccount) Commits() int {
+func (gta *gerritTestAccount) Commits(ctx context.Context) int {
 	return gta.commits
 }
 
 // gerritTestAccountLookup implements [AccountLookup].
 type gerritTestAccountLookup map[string]Account
 
-func (gtal gerritTestAccountLookup) Lookup(name string) Account {
+func (gtal gerritTestAccountLookup) Lookup(ctx context.Context, name string) Account {
 	return gtal[name]
 }
 

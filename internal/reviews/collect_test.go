@@ -44,7 +44,7 @@ func TestCollectChangePreds(t *testing.T) {
 		return
 	}
 	cp := cps[0]
-	if got := cp.Change.ID(); got != "1" {
+	if got := cp.Change.ID(ctx); got != "1" {
 		t.Errorf("CollectChangePreds returned change %s, want 1", got)
 	}
 	var got []string

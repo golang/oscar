@@ -125,7 +125,7 @@ var predicates = []Predicate{
 // authorMaintainer is a [Predicate] function that reports whether the
 // [Change] author is a project maintainer.
 func authorMaintainer(ctx context.Context, ch Change) (bool, error) {
-	switch ch.Author().Authority() {
+	switch ch.Author(ctx).Authority(ctx) {
 	case AuthorityMaintainer, AuthorityOwner:
 		return true, nil
 	default:
@@ -136,7 +136,7 @@ func authorMaintainer(ctx context.Context, ch Change) (bool, error) {
 // authorReviewer is a [Predicate] function that reports whether the
 // [Change] author is a project reviewer.
 func authorReviewer(ctx context.Context, ch Change) (bool, error) {
-	switch ch.Author().Authority() {
+	switch ch.Author(ctx).Authority(ctx) {
 	case AuthorityReviewer:
 		return true, nil
 	default:
@@ -147,20 +147,20 @@ func authorReviewer(ctx context.Context, ch Change) (bool, error) {
 // authorContributor is a [Predicate] function that reports whether the
 // [Change] author is a known contributor: more than 10 changes contributed.
 func authorContributor(ctx context.Context, ch Change) (bool, error) {
-	return ch.Author().Commits() > 10, nil
+	return ch.Author(ctx).Commits(ctx) > 10, nil
 }
 
 // authorMajorContributor is a [Predicate] function that reports whether the
 // [Change] author is a major contributor: more than 50 changes contributed.
 func authorMajorContributor(ctx context.Context, ch Change) (bool, error) {
-	return ch.Author().Commits() > 50, nil
+	return ch.Author(ctx).Commits(ctx) > 50, nil
 }
 
 // noMaintainerReviews is a [Predicate] function that reports whether the
 // [Change] has not been reviewed by a maintainer.
 func noMaintainerReviews(ctx context.Context, ch Change) (bool, error) {
-	for _, r := range ch.Reviewed() {
-		switch r.Authority() {
+	for _, r := range ch.Reviewed(ctx) {
+		switch r.Authority(ctx) {
 		case AuthorityMaintainer, AuthorityOwner:
 			return false, nil
 		}
@@ -186,12 +186,12 @@ var rejects = []Reject{
 // unreviewable is a [Reject] function that reports whether a
 // [Change] is not reviewable.
 func unreviewable(ctx context.Context, ch Change) (bool, error) {
-	switch status := ch.Status(); status {
+	switch status := ch.Status(ctx); status {
 	case StatusReady:
 		return false, nil
 	case StatusSubmitted, StatusClosed, StatusDoNotReview:
 		return true, nil
 	default:
-		return false, fmt.Errorf("reviewable predicate: change %s: unrecognized status %d", ch.ID(), status)
+		return false, fmt.Errorf("reviewable predicate: change %s: unrecognized status %d", ch.ID(ctx), status)
 	}
 }

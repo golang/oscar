@@ -54,10 +54,10 @@ func (ch *Changes) Sync(ctx context.Context) error {
 const displayDoc template.HTML = `Excluding those marked WIP, having hashtags "wait-author", "wait-release", "wait-issue", or description containing "DO NOT REVIEW".`
 
 // Display is an HTTP handler that displays the dashboard.
-func (ch *Changes) Display(endpoint string, w http.ResponseWriter, r *http.Request) {
+func (ch *Changes) Display(ctx context.Context, endpoint string, w http.ResponseWriter, r *http.Request) {
 	ch.mu.Lock()
 	cps := ch.cps
 	ch.mu.Unlock()
 
-	reviews.Display(ch.slog, displayDoc, endpoint, cps, w, r)
+	reviews.Display(ctx, ch.slog, displayDoc, endpoint, cps, w, r)
 }
