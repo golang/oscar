@@ -39,3 +39,9 @@ Messages:
 Number: 2
 Project: test
 Status: MERGED
+-- change#3 --
+Number: 3
+Project: test
+Status: NEW
+Owner: gopher@golang.org
+Mergeable: false

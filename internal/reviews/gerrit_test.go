@@ -58,11 +58,13 @@ func TestGerritChange(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	tests := []struct {
+
+	type testType struct {
 		name   string
 		method func(context.Context) any
 		want   any
-	}{
+	}
+	tests := []testType{
 		{
 			"ID",
 			wm(change.ID),
@@ -125,12 +127,27 @@ func TestGerritChange(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		got := test.method(ctx)
-		if !reflect.DeepEqual(got, test.want) {
-			t.Errorf("%s got %v, want %v", test.name, got, test.want)
+	runTests := func(tests []testType) {
+		for _, test := range tests {
+			got := test.method(ctx)
+			if !reflect.DeepEqual(got, test.want) {
+				t.Errorf("%s got %v, want %v", test.name, got, test.want)
+			}
 		}
 	}
+
+	runTests(tests)
+
+	// Switch to change 3 in the test data.
+	change.(*GerritChange).Change = gc.Change("test", 3)
+	tests = []testType{
+		{
+			"Needs 3",
+			wm(change.Needs),
+			NeedsReview | NeedsConflictResolve,
+		},
+	}
+	runTests(tests)
 
 	gerritChanges := func(yield func(*gerrit.Change) bool) {
 		for _, changeFn := range gc.ChangeNumbers("test") {
@@ -147,7 +164,7 @@ func TestGerritChange(t *testing.T) {
 		gotIDs = append(gotIDs, g.ID(ctx))
 	}
 	slices.Sort(gotIDs)
-	wantIDs := []string{"1", "2"}
+	wantIDs := []string{"1", "2", "3"}
 	if !slices.Equal(gotIDs, wantIDs) {
 		t.Errorf("GerritChanges returned IDs %v, want %v", gotIDs, wantIDs)
 	}

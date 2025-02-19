@@ -149,14 +149,21 @@ func (gc *GerritChange) Needs(ctx context.Context) Needs {
 			hasMaintainerReview = true
 		}
 	}
+
+	var needs Needs
 	if hasMaintainerReview {
 		// We don't really know if the change can be submitted.
-		return 0
 	} else if hasReview {
-		return NeedsMaintainerReview
+		needs = NeedsMaintainerReview
 	} else {
-		return NeedsReview
+		needs = NeedsReview
 	}
+
+	if !gc.Client.GClient.ChangeMergeable(ctx, gc.Change) {
+		needs |= NeedsConflictResolve
+	}
+
+	return needs
 }
 
 // GerritChanges converts from an iterator over [gerrit.Change]

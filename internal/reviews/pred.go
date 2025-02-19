@@ -120,6 +120,12 @@ var predicates = []Predicate{
 		Score:       ScoreSuggested,
 		Applies:     noMaintainerReviews,
 	},
+	{
+		Name:        "mergeConflict",
+		Description: "has a merge conflict",
+		Score:       ScoreUninteresting,
+		Applies:     mergeConflict,
+	},
 }
 
 // authorMaintainer is a [Predicate] function that reports whether the
@@ -166,6 +172,13 @@ func noMaintainerReviews(ctx context.Context, ch Change) (bool, error) {
 		}
 	}
 	return true, nil
+}
+
+// mergeConflict is a [Predicate] function that reports whether the
+// [Change] has a merge conflict.
+func mergeConflict(ctx context.Context, ch Change) (bool, error) {
+	conflict := ch.Needs(ctx)&NeedsConflictResolve != 0
+	return conflict, nil
 }
 
 // Rejects returns a list of reject predicates
