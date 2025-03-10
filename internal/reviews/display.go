@@ -34,7 +34,7 @@ func Display(ctx context.Context, lg *slog.Logger, doc template.HTML, endpoint s
 
 	sc := make([]CP, 0, len(cps))
 	for _, v := range cps {
-		if filterFn != nil && !filterFn(v) {
+		if filterFn != nil && !filterFn(ctx, v) {
 			continue
 		}
 
@@ -54,7 +54,7 @@ func Display(ctx context.Context, lg *slog.Logger, doc template.HTML, endpoint s
 
 // makeFilter turns the user-specific filter string into a filter function.
 // This returns nil if there is nothing to filter.
-func makeFilter(s string) (func(ChangePreds) bool, error) {
+func makeFilter(s string) (func(context.Context, ChangePreds) bool, error) {
 	if s == "" {
 		return nil, nil
 	}
@@ -66,8 +66,8 @@ func makeFilter(s string) (func(ChangePreds) bool, error) {
 	if len(problems) > 0 {
 		return nil, errors.New(strings.Join(problems, "\n"))
 	}
-	fn := func(cp ChangePreds) bool {
-		return ev(cp)
+	fn := func(ctx context.Context, cp ChangePreds) bool {
+		return ev(ctx, cp)
 	}
 	return fn, nil
 }

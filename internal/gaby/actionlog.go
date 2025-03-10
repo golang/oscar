@@ -5,6 +5,7 @@
 package main
 
 import (
+	"context"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -217,14 +218,14 @@ func (e *endpoint) timeOrDuration(browserLoc *time.Location) (time.Time, time.Du
 }
 
 // actionsBetween returns the action entries between start and end, inclusive.
-func (g *Gaby) actionsBetween(start, end time.Time, filter func(*actions.Entry) bool) []*actions.Entry {
+func (g *Gaby) actionsBetween(start, end time.Time, filter func(context.Context, *actions.Entry) bool) []*actions.Entry {
 	var es []*actions.Entry
 	// Scan entries created in [start, end].
 	for e := range actions.ScanAfter(g.slog, g.db, start.Add(-time.Nanosecond), nil) {
 		if e.Created.After(end) {
 			break
 		}
-		if filter(e) {
+		if filter(g.ctx, e) {
 			es = append(es, e)
 		}
 	}
@@ -313,9 +314,9 @@ func kindAndKeyParams(r *http.Request) (kind string, key []byte, err error) {
 	return kind, key, nil
 }
 
-func newFilter(s string) (func(*actions.Entry) bool, error) {
+func newFilter(s string) (func(context.Context, *actions.Entry) bool, error) {
 	if s == "" {
-		return func(*actions.Entry) bool { return true }, nil
+		return func(context.Context, *actions.Entry) bool { return true }, nil
 	}
 	expr, err := filter.ParseFilter(s)
 	if err != nil {
@@ -325,11 +326,11 @@ func newFilter(s string) (func(*actions.Entry) bool, error) {
 	if len(problems) > 0 {
 		return nil, errors.New(strings.Join(problems, "\n"))
 	}
-	return func(e *actions.Entry) bool {
+	return func(ctx context.Context, e *actions.Entry) bool {
 		if e == nil {
 			return false
 		}
-		return ev(*e)
+		return ev(ctx, *e)
 	}, nil
 }
 

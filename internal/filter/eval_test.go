@@ -5,6 +5,7 @@
 package filter
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -94,11 +95,11 @@ type stringObjects struct {
 // the fields of resource.
 //
 // A couple of methods return an error (that will always be nil),
-// most do not.
+// most do not. A couple of methods take a Context, most do not.
 type resourceInterface interface {
 	BoolField() (bool, error)
-	CaseField() string
-	IntField() int64
+	CaseField(context.Context) string
+	IntField(context.Context) (int64, error)
 	FloatField() float64
 	EnumField() string
 	StringField() string
@@ -120,8 +121,8 @@ type resourceInterface interface {
 	ExistsScalarInt() int64
 	ExistsScalarString() string
 	ExistsScalarMessage() member
-	ExistsArrayInt() []int64
-	ExistsArrayString() []string
+	ExistsArrayInt(context.Context) ([]int64, error)
+	ExistsArrayString(context.Context) []string
 	ExistsArrayMessage() ([]member, error)
 }
 
@@ -135,12 +136,12 @@ func (rw resourceWrapper) BoolField() (bool, error) {
 	return rw.r.BoolField, nil
 }
 
-func (rw resourceWrapper) CaseField() string {
+func (rw resourceWrapper) CaseField(context.Context) string {
 	return rw.r.CaseField
 }
 
-func (rw resourceWrapper) IntField() int64 {
-	return rw.r.IntField
+func (rw resourceWrapper) IntField(context.Context) (int64, error) {
+	return rw.r.IntField, nil
 }
 
 func (rw resourceWrapper) FloatField() float64 {
@@ -227,11 +228,11 @@ func (rw resourceWrapper) ExistsScalarMessage() member {
 	return rw.r.ExistsScalarMessage
 }
 
-func (rw resourceWrapper) ExistsArrayInt() []int64 {
-	return rw.r.ExistsArrayInt
+func (rw resourceWrapper) ExistsArrayInt(context.Context) ([]int64, error) {
+	return rw.r.ExistsArrayInt, nil
 }
 
-func (rw resourceWrapper) ExistsArrayString() []string {
+func (rw resourceWrapper) ExistsArrayString(context.Context) []string {
 	return rw.r.ExistsArrayString
 }
 
@@ -243,8 +244,8 @@ func (rw resourceWrapper) ExistsArrayMessage() ([]member, error) {
 // but Members returns []*member. This tests a slice of pointers.
 type resourcePointerInterface interface {
 	BoolField() (bool, error)
-	CaseField() string
-	IntField() int64
+	CaseField(context.Context) string
+	IntField(context.Context) (int64, error)
 	FloatField() float64
 	EnumField() string
 	StringField() string
@@ -266,8 +267,8 @@ type resourcePointerInterface interface {
 	ExistsScalarInt() int64
 	ExistsScalarString() string
 	ExistsScalarMessage() member
-	ExistsArrayInt() []int64
-	ExistsArrayString() []string
+	ExistsArrayInt(context.Context) ([]int64, error)
+	ExistsArrayString(context.Context) []string
 	ExistsArrayMessage() ([]member, error)
 }
 
@@ -431,6 +432,7 @@ func TestEvalMisc(t *testing.T) {
 
 // runTests runs a set of YAML tests on a set of input data.
 func runTests[T any](t *testing.T, tests []yamlTest, data []T) {
+	ctx := context.Background()
 	var desc string
 	var idx int
 	for _, test := range tests {
@@ -450,7 +452,7 @@ func runTests[T any](t *testing.T, tests []yamlTest, data []T) {
 				if len(msgs) == 0 && test.Error == "" {
 					var matches []int
 					for i, d := range data {
-						if eval(d) {
+						if eval(ctx, d) {
 							matches = append(matches, i+1)
 						}
 					}
@@ -474,6 +476,7 @@ func runTests[T any](t *testing.T, tests []yamlTest, data []T) {
 
 // runOneTest runs one YAML test.
 func runOneTest[T any](t *testing.T, test *yamlTest, data []T) {
+	ctx := context.Background()
 	e, err := ParseFilter(test.Expr)
 	if err != nil {
 		if test.Error != "" {
@@ -503,7 +506,7 @@ func runOneTest[T any](t *testing.T, test *yamlTest, data []T) {
 
 	var matches []int
 	for i, d := range data {
-		if eval(d) {
+		if eval(ctx, d) {
 			matches = append(matches, i+1)
 		}
 	}
@@ -545,6 +548,7 @@ func unmarshalYAML(t *testing.T, filename string, v any) {
 
 // Test that we don't panic on an incomparable literal.
 func TestIncomparable(t *testing.T) {
+	ctx := context.Background()
 	e1, err := ParseFilter("A:0")
 	if err != nil {
 		t.Fatal(err)
@@ -577,7 +581,7 @@ func TestIncomparable(t *testing.T) {
 		}
 	} else {
 		// Running this should not panic.
-		if eval(Incomparable1{A: [][]byte{[]byte{1}}}) {
+		if eval(ctx, Incomparable1{A: [][]byte{[]byte{1}}}) {
 			t.Error("unexpected match")
 		}
 	}
@@ -597,7 +601,7 @@ func TestIncomparable(t *testing.T) {
 		} else {
 			// Running this with an incomparable type in a
 			// should not panic.
-			if eval(Incomparable2{A: []any{[]byte{0}}}) {
+			if eval(ctx, Incomparable2{A: []any{[]byte{0}}}) {
 				t.Errorf("%d: unexpected match", i)
 			}
 		}

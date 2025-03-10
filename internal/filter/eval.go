@@ -6,6 +6,7 @@ package filter
 
 import (
 	"cmp"
+	"context"
 	"errors"
 	"fmt"
 	"iter"
@@ -33,13 +34,13 @@ type Functions map[string]any
 // and reports whether it matches the expression.
 // The functions argument contains functions the filter expression may call.
 // Evaluator also returns a list of warning messages about the expression.
-func Evaluator[T any](e Expr, functions Functions) (func(T) bool, []string) {
+func Evaluator[T any](e Expr, functions Functions) (func(context.Context, T) bool, []string) {
 	ev := eval[T]{
 		functions: functions,
 	}
 
 	if e == nil {
-		fn := func(T) bool {
+		fn := func(context.Context, T) bool {
 			return true
 		}
 		return fn, nil
@@ -56,7 +57,7 @@ type eval[T any] struct {
 }
 
 // expr returns an evaluator function for an [Expr].
-func (ev *eval[T]) expr(e Expr) func(T) bool {
+func (ev *eval[T]) expr(e Expr) func(context.Context, T) bool {
 	switch e := e.(type) {
 	case *binaryExpr:
 		return ev.binary(e)
@@ -76,17 +77,17 @@ func (ev *eval[T]) expr(e Expr) func(T) bool {
 }
 
 // binary returns an evaluator function for a [binaryExpr].
-func (ev *eval[T]) binary(e *binaryExpr) func(T) bool {
+func (ev *eval[T]) binary(e *binaryExpr) func(context.Context, T) bool {
 	left := ev.expr(e.left)
 	right := ev.expr(e.right)
 	switch e.op {
 	case tokenAnd:
-		return func(v T) bool {
-			return left(v) && right(v)
+		return func(ctx context.Context, v T) bool {
+			return left(ctx, v) && right(ctx, v)
 		}
 	case tokenOr:
-		return func(v T) bool {
-			return left(v) || right(v)
+		return func(ctx context.Context, v T) bool {
+			return left(ctx, v) || right(ctx, v)
 		}
 	default:
 		panic("can't happen")
@@ -94,12 +95,12 @@ func (ev *eval[T]) binary(e *binaryExpr) func(T) bool {
 }
 
 // unary returns an evaluator function for a [unaryExpr].
-func (ev *eval[T]) unary(e *unaryExpr) func(T) bool {
+func (ev *eval[T]) unary(e *unaryExpr) func(context.Context, T) bool {
 	sub := ev.expr(e.expr)
 	switch e.op {
 	case tokenMinus, tokenNot:
-		return func(v T) bool {
-			return !sub(v)
+		return func(ctx context.Context, v T) bool {
+			return !sub(ctx, v)
 		}
 	default:
 		panic("can't happen")
@@ -107,7 +108,7 @@ func (ev *eval[T]) unary(e *unaryExpr) func(T) bool {
 }
 
 // comparison returns an evaluator function for a [comparisonExpr].
-func (ev *eval[T]) comparison(e *comparisonExpr) func(T) bool {
+func (ev *eval[T]) comparison(e *comparisonExpr) func(context.Context, T) bool {
 	if e.op == tokenHas {
 		return ev.has(e)
 	}
@@ -134,8 +135,8 @@ func (ev *eval[T]) comparison(e *comparisonExpr) func(T) bool {
 		case reflect.Map, reflect.Slice, reflect.Array, reflect.Struct:
 			fn := ev.has(e)
 			if e.op == tokenNotEquals {
-				return func(v T) bool {
-					return !fn(v)
+				return func(ctx context.Context, v T) bool {
+					return !fn(ctx, v)
 				}
 			}
 			return fn
@@ -162,7 +163,7 @@ func (ev *eval[T]) comparison(e *comparisonExpr) func(T) bool {
 }
 
 // name returns an evaluator function for a [nameExpr].
-func (ev *eval[T]) name(e *nameExpr) func(T) bool {
+func (ev *eval[T]) name(e *nameExpr) func(context.Context, T) bool {
 	// A literal can be matched anywhere.
 	typ := reflect.TypeFor[T]()
 	matchFn := ev.match(typ, e)
@@ -174,8 +175,8 @@ func (ev *eval[T]) name(e *nameExpr) func(T) bool {
 		}
 		return ev.alwaysFalse()
 	}
-	return func(v T) bool {
-		return matchFn(reflect.ValueOf(v))
+	return func(ctx context.Context, v T) bool {
+		return matchFn(ctx, reflect.ValueOf(v))
 	}
 }
 
@@ -183,7 +184,7 @@ func (ev *eval[T]) name(e *nameExpr) func(T) bool {
 // This is something like plain "a.b", not in a comparison.
 // We accept a boolean value.
 // It's not clear that AIP 160 permits this case.
-func (ev *eval[T]) member(e *memberExpr) func(T) bool {
+func (ev *eval[T]) member(e *memberExpr) func(context.Context, T) bool {
 	valFn, vtyp := ev.memberHolder(e)
 	if valFn == nil {
 		return ev.alwaysFalse()
@@ -196,12 +197,12 @@ func (ev *eval[T]) member(e *memberExpr) func(T) bool {
 		ev.msgs = append(ev.msgs, fmt.Sprintf("%s: reference to field %s of non-boolean type %s", e.pos, e.member, ftyp))
 		return ev.alwaysFalse()
 	}
-	return func(v T) bool {
-		hval := valFn(v)
+	return func(ctx context.Context, v T) bool {
+		hval := valFn(ctx, v)
 		if !hval.IsValid() {
 			return false
 		}
-		fval := ffn(hval)
+		fval := ffn(ctx, hval)
 		if !fval.IsValid() {
 			return false
 		}
@@ -210,7 +211,7 @@ func (ev *eval[T]) member(e *memberExpr) func(T) bool {
 }
 
 // function returns an evaluator function for a [functionExpr].
-func (ev *eval[T]) function(*functionExpr) func(T) bool {
+func (ev *eval[T]) function(*functionExpr) func(context.Context, T) bool {
 	ev.msgs = append(ev.msgs, "function not implemented")
 	return ev.alwaysFalse()
 }
@@ -288,7 +289,7 @@ func (ev *eval[T]) isMultiple(e Expr) (bool, reflect.Type) {
 // It returns a function that evaluates to the value of the field,
 // and also returns the type of the field.
 // This returns nil, nil on failure.
-func (ev *eval[T]) fieldValue(e Expr) (func(T) reflect.Value, reflect.Type) {
+func (ev *eval[T]) fieldValue(e Expr) (func(context.Context, T) reflect.Value, reflect.Type) {
 	switch e := e.(type) {
 	case *nameExpr:
 		// This should be the name of a field in T.
@@ -304,7 +305,7 @@ func (ev *eval[T]) fieldValue(e Expr) (func(T) reflect.Value, reflect.Type) {
 			return ev.fieldFunction(cfn)
 		}
 		if e.isString {
-			fn := func(T) reflect.Value {
+			fn := func(context.Context, T) reflect.Value {
 				return reflect.ValueOf(e.name)
 			}
 			return fn, reflect.TypeFor[string]()
@@ -329,9 +330,9 @@ func (ev *eval[T]) fieldValue(e Expr) (func(T) reflect.Value, reflect.Type) {
 // and the type of the value. This is an extension to AIP 160
 // that makes it easy for Go code to handle fields that do not
 // appear explicitly in T. Returns nil, nil on failure.
-func (ev *eval[T]) fieldFunction(fn any) (func(T) reflect.Value, reflect.Type) {
+func (ev *eval[T]) fieldFunction(fn any) (func(context.Context, T) reflect.Value, reflect.Type) {
 	ev.msgs = append(ev.msgs, "fieldFunction not implemented")
-	return func(T) reflect.Value { return reflect.Value{} }, reflect.TypeFor[int]()
+	return func(context.Context, T) reflect.Value { return reflect.Value{} }, reflect.TypeFor[int]()
 }
 
 // functionValue is called when a function expression appears on
@@ -339,16 +340,16 @@ func (ev *eval[T]) fieldFunction(fn any) (func(T) reflect.Value, reflect.Type) {
 // It returns a function that evaluates to the value of the field,
 // and also returns the type of the field.
 // This returns nil, nil on failure.
-func (ev *eval[T]) functionValue(e *functionExpr) (func(T) reflect.Value, reflect.Type) {
+func (ev *eval[T]) functionValue(e *functionExpr) (func(context.Context, T) reflect.Value, reflect.Type) {
 	ev.msgs = append(ev.msgs, "functionValue not implemented")
-	return func(T) reflect.Value { return reflect.Value{} }, reflect.TypeFor[int]()
+	return func(context.Context, T) reflect.Value { return reflect.Value{} }, reflect.TypeFor[int]()
 }
 
 // memberValue returns a funtion that evaluates to a reflect.Value
 // of a member expression.
 // It also returns the reflect.Type of the value returned by the function.
 // It returns nil, nil on failure.
-func (ev *eval[T]) memberValue(e *memberExpr) (func(T) reflect.Value, reflect.Type) {
+func (ev *eval[T]) memberValue(e *memberExpr) (func(context.Context, T) reflect.Value, reflect.Type) {
 	valFn, vtyp := ev.memberHolder(e)
 	if valFn == nil {
 		return nil, nil
@@ -357,12 +358,12 @@ func (ev *eval[T]) memberValue(e *memberExpr) (func(T) reflect.Value, reflect.Ty
 	if ffn == nil {
 		return nil, nil
 	}
-	fn := func(v T) reflect.Value {
-		hval := valFn(v)
+	fn := func(ctx context.Context, v T) reflect.Value {
+		hval := valFn(ctx, v)
 		if !hval.IsValid() {
 			return hval
 		}
-		return ffn(hval)
+		return ffn(ctx, hval)
 	}
 	return fn, ftyp
 }
@@ -373,7 +374,7 @@ func (ev *eval[T]) memberValue(e *memberExpr) (func(T) reflect.Value, reflect.Ty
 // This function also returns the reflect.Type of the value returned
 // by the returned function.
 // It returns nil, nil on failure.
-func (ev *eval[T]) memberHolder(e *memberExpr) (func(T) reflect.Value, reflect.Type) {
+func (ev *eval[T]) memberHolder(e *memberExpr) (func(context.Context, T) reflect.Value, reflect.Type) {
 	switch holder := e.holder.(type) {
 	case *nameExpr:
 		// This should be the name of a field in T.
@@ -389,13 +390,13 @@ func (ev *eval[T]) memberHolder(e *memberExpr) (func(T) reflect.Value, reflect.T
 
 // topFieldValue returns a function that retrieves the value of
 // a field name in the type T.
-func (ev *eval[T]) topFieldValue(pos position, name string) (func(T) reflect.Value, reflect.Type) {
+func (ev *eval[T]) topFieldValue(pos position, name string) (func(context.Context, T) reflect.Value, reflect.Type) {
 	ffn, ftyp := ev.fieldAccessor(pos, reflect.TypeFor[T](), name)
 	if ffn == nil {
 		return nil, nil
 	}
-	fn := func(v T) reflect.Value {
-		return ffn(reflect.ValueOf(v))
+	fn := func(ctx context.Context, v T) reflect.Value {
+		return ffn(ctx, reflect.ValueOf(v))
 	}
 	return fn, ftyp
 }
@@ -406,16 +407,19 @@ func (ev *eval[T]) topFieldValue(pos position, name string) (func(T) reflect.Val
 // and returns a new reflect.Value.
 // fieldAccessor also returns the type of the field or method result.
 // If there is no field or method, fieldAccessor returns nil, nil.
-func (ev *eval[T]) fieldAccessor(pos position, holderType reflect.Type, name string) (func(reflect.Value) reflect.Value, reflect.Type) {
+func (ev *eval[T]) fieldAccessor(pos position, holderType reflect.Type, name string) (func(context.Context, reflect.Value) reflect.Value, reflect.Type) {
 	type vvfunc = func(reflect.Value) reflect.Value
-	pointerWrap := func(fn vvfunc) vvfunc {
-		return fn
+	type cvvfunc = func(context.Context, reflect.Value) reflect.Value
+	wrap := func(fn vvfunc) cvvfunc {
+		return func(ctx context.Context, v reflect.Value) reflect.Value {
+			return fn(v)
+		}
 	}
 	holderTypeOrig := holderType
 	if holderType.Kind() == reflect.Pointer {
 		holderType = holderType.Elem()
-		pointerWrap = func(fn vvfunc) vvfunc {
-			return func(v reflect.Value) reflect.Value {
+		wrap = func(fn vvfunc) cvvfunc {
+			return func(ctx context.Context, v reflect.Value) reflect.Value {
 				if !v.IsValid() || v.IsNil() {
 					return reflect.Value{}
 				}
@@ -441,7 +445,7 @@ func (ev *eval[T]) fieldAccessor(pos position, holderType reflect.Type, name str
 		}
 		ftype := sf.Type
 		if ftype.Kind() != reflect.Pointer {
-			return pointerWrap(fn), ftype
+			return wrap(fn), ftype
 		}
 		pfn := func(v reflect.Value) reflect.Value {
 			v = fn(v)
@@ -450,7 +454,7 @@ func (ev *eval[T]) fieldAccessor(pos position, holderType reflect.Type, name str
 			}
 			return v.Elem()
 		}
-		return pointerWrap(pfn), ftype.Elem()
+		return wrap(pfn), ftype.Elem()
 
 	case reflect.Map:
 		var key reflect.Value
@@ -465,7 +469,7 @@ func (ev *eval[T]) fieldAccessor(pos position, holderType reflect.Type, name str
 			}
 			return v.MapIndex(key)
 		}
-		return pointerWrap(fn), holderType.Elem()
+		return wrap(fn), holderType.Elem()
 
 	default:
 		// Special case: we can get the "seconds" field of a
@@ -479,32 +483,12 @@ func (ev *eval[T]) fieldAccessor(pos position, holderType reflect.Type, name str
 				secs := time.Duration(v.Int()).Seconds()
 				return reflect.ValueOf(secs)
 			}
-			return pointerWrap(fn), reflect.TypeFor[float64]()
+			return wrap(fn), reflect.TypeFor[float64]()
 		}
 	}
 
 	if m, ok := methodName(holderTypeOrig, name); ok {
-		var fn func(reflect.Value) reflect.Value
-		if m.Type.NumOut() == 1 {
-			fn = func(v reflect.Value) reflect.Value {
-				if !v.IsValid() {
-					return v
-				}
-				return v.Method(m.Index).Call(nil)[0]
-			}
-		} else {
-			fn = func(v reflect.Value) reflect.Value {
-				if !v.IsValid() {
-					return v
-				}
-				retVals := v.Method(m.Index).Call(nil)
-				if !retVals[1].IsNil() {
-					// We got an error; ignore the value.
-					return reflect.Value{}
-				}
-				return retVals[0]
-			}
-		}
+		fn := callMethod(holderTypeOrig, m)
 
 		// Dereference pointer results, since there is no
 		// way to filter on pointer values.
@@ -514,8 +498,8 @@ func (ev *eval[T]) fieldAccessor(pos position, holderType reflect.Type, name str
 			return fn, rtype
 		}
 
-		pfn := func(v reflect.Value) reflect.Value {
-			v = fn(v)
+		pfn := func(ctx context.Context, v reflect.Value) reflect.Value {
+			v = fn(ctx, v)
 			if !v.IsValid() || v.IsNil() {
 				return reflect.Value{}
 			}
@@ -545,13 +529,13 @@ func (ev *eval[T]) fieldAccessor(pos position, holderType reflect.Type, name str
 // a reflect.Value returned by left, and has type leftType.
 // The right value is an expression, which may not be a field but may
 // be a logical expression with AND and OR.
-func (ev *eval[T]) compare(op tokenKind, left func(T) reflect.Value, leftType reflect.Type, right Expr) func(T) bool {
+func (ev *eval[T]) compare(op tokenKind, left func(context.Context, T) reflect.Value, leftType reflect.Type, right Expr) func(context.Context, T) bool {
 	cfn := ev.compareVal(op, leftType, right)
 	if cfn == nil {
 		return ev.alwaysFalse()
 	}
-	return func(v T) bool {
-		return cfn(left(v))
+	return func(ctx context.Context, v T) bool {
+		return cfn(ctx, left(ctx, v))
 	}
 }
 
@@ -559,7 +543,7 @@ func (ev *eval[T]) compare(op tokenKind, left func(T) reflect.Value, leftType re
 // and returns the result of a comparison of that value with right.
 // The right value is an expression, which may not be a field but may
 // be a logical expression with AND and OR. This returns nil on error.
-func (ev *eval[T]) compareVal(op tokenKind, leftType reflect.Type, right Expr) func(reflect.Value) bool {
+func (ev *eval[T]) compareVal(op tokenKind, leftType reflect.Type, right Expr) func(context.Context, reflect.Value) bool {
 	switch right := right.(type) {
 	case *binaryExpr:
 		lf := ev.compareVal(op, leftType, right.left)
@@ -569,12 +553,12 @@ func (ev *eval[T]) compareVal(op tokenKind, leftType reflect.Type, right Expr) f
 		}
 		switch right.op {
 		case tokenAnd:
-			return func(v reflect.Value) bool {
-				return lf(v) && rf(v)
+			return func(ctx context.Context, v reflect.Value) bool {
+				return lf(ctx, v) && rf(ctx, v)
 			}
 		case tokenOr:
-			return func(v reflect.Value) bool {
-				return lf(v) || rf(v)
+			return func(ctx context.Context, v reflect.Value) bool {
+				return lf(ctx, v) || rf(ctx, v)
 			}
 		default:
 			panic("can't happen")
@@ -587,15 +571,18 @@ func (ev *eval[T]) compareVal(op tokenKind, leftType reflect.Type, right Expr) f
 		}
 		switch right.op {
 		case tokenMinus, tokenNot:
-			return func(v reflect.Value) bool {
-				return !uf(v)
+			return func(ctx context.Context, v reflect.Value) bool {
+				return !uf(ctx, v)
 			}
 		default:
 			panic("can't happen")
 		}
 
 	case *nameExpr:
-		return ev.compareName(op, leftType, right)
+		fn := ev.compareName(op, leftType, right)
+		return func(ctx context.Context, v reflect.Value) bool {
+			return fn(v)
+		}
 
 	case *functionExpr:
 		return ev.compareFunction(op, leftType, right)
@@ -619,7 +606,10 @@ func (ev *eval[T]) compareVal(op tokenKind, leftType reflect.Type, right Expr) f
 			name: name,
 			pos:  right.pos,
 		}
-		return ev.compareName(op, leftType, ne)
+		fn := ev.compareName(op, leftType, ne)
+		return func(ctx context.Context, v reflect.Value) bool {
+			return fn(v)
+		}
 
 	case *comparisonExpr:
 		ev.msgs = append(ev.msgs, fmt.Sprintf("%s: invalid comparison on right of comparison", right.pos))
@@ -892,15 +882,15 @@ func (ev *eval[T]) compareOp(op tokenKind, cmpFn func(reflect.Value) int) func(r
 // of type leftType and returns the result of a comparison of that
 // value with right, where right is a function call.
 // This returns nil on error.
-func (ev *eval[T]) compareFunction(op tokenKind, leftType reflect.Type, right *functionExpr) func(reflect.Value) bool {
+func (ev *eval[T]) compareFunction(op tokenKind, leftType reflect.Type, right *functionExpr) func(context.Context, reflect.Value) bool {
 	ev.msgs = append(ev.msgs, "compareFunction not implemented")
-	return func(reflect.Value) bool { return false }
+	return func(context.Context, reflect.Value) bool { return false }
 }
 
 // multipleCompare returns a function that returns the result of a
 // comparison, where the left hand side of the comparison contains
 // multiple values.
-func (ev *eval[T]) multipleCompare(e *comparisonExpr) func(T) bool {
+func (ev *eval[T]) multipleCompare(e *comparisonExpr) func(context.Context, T) bool {
 	switch el := e.left.(type) {
 	case *nameExpr:
 		left, leftType := ev.fieldValue(el)
@@ -931,19 +921,19 @@ type matchMethod struct {
 // match returns a function that takes a value of type typ
 // and reports whether it is equal to, or contains, val.
 // This returns nil if the types can't match.
-func (ev *eval[T]) match(typ reflect.Type, e *nameExpr) func(reflect.Value) bool {
+func (ev *eval[T]) match(typ reflect.Type, e *nameExpr) func(context.Context, reflect.Value) bool {
 	return ev.matchSeen(typ, e, make(map[matchMethod]bool))
 }
 
 // matchSeen is like match but takes a map of types/methods
 // we have already seen, to avoid infinite recursion.
-func (ev *eval[T]) matchSeen(typ reflect.Type, e *nameExpr, seen map[matchMethod]bool) func(reflect.Value) bool {
+func (ev *eval[T]) matchSeen(typ reflect.Type, e *nameExpr, seen map[matchMethod]bool) func(context.Context, reflect.Value) bool {
 	subFn := ev.matchValue(typ, e, seen)
 	return ev.matchMethods(typ, e, subFn, seen)
 }
 
 // matchValue is like matches only on the value, ignoring methods.
-func (ev *eval[T]) matchValue(typ reflect.Type, e *nameExpr, seen map[matchMethod]bool) func(reflect.Value) bool {
+func (ev *eval[T]) matchValue(typ reflect.Type, e *nameExpr, seen map[matchMethod]bool) func(context.Context, reflect.Value) bool {
 	switch typ.Kind() {
 	case reflect.Slice, reflect.Array:
 		return ev.matchSlice(typ, e, seen)
@@ -962,32 +952,32 @@ func (ev *eval[T]) matchValue(typ reflect.Type, e *nameExpr, seen map[matchMetho
 	switch typ.Kind() {
 	case reflect.Bool:
 		ebval := eval.Bool()
-		return func(v reflect.Value) bool {
+		return func(ctx context.Context, v reflect.Value) bool {
 			return v.Bool() == ebval
 		}
 
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		eival := eval.Int()
-		return func(v reflect.Value) bool {
+		return func(ctx context.Context, v reflect.Value) bool {
 			return v.Int() == eival
 		}
 
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
 		euval := eval.Uint()
-		return func(v reflect.Value) bool {
+		return func(ctx context.Context, v reflect.Value) bool {
 			return v.Uint() == euval
 		}
 
 	case reflect.Float32, reflect.Float64:
 		efval := eval.Float()
-		return func(v reflect.Value) bool {
+		return func(ctx context.Context, v reflect.Value) bool {
 			return v.Float() == efval
 		}
 
 	case reflect.String:
 		// For strings we look for a case-insentive substring match.
 		esval := strings.ToLower(eval.String())
-		return func(v reflect.Value) bool {
+		return func(ctx context.Context, v reflect.Value) bool {
 			return strings.Contains(strings.ToLower(v.String()), esval)
 		}
 
@@ -998,7 +988,7 @@ func (ev *eval[T]) matchValue(typ reflect.Type, e *nameExpr, seen map[matchMetho
 		// is OK using CanConvert.
 		eival := eval.Convert(typ).Interface()
 		esval := fmt.Sprint(eival)
-		return func(v reflect.Value) bool {
+		return func(ctx context.Context, v reflect.Value) bool {
 			// This comparison can't panic.
 			// rival comes from parseLiteral,
 			// which only returns comparable types.
@@ -1018,15 +1008,15 @@ func (ev *eval[T]) matchValue(typ reflect.Type, e *nameExpr, seen map[matchMetho
 // It returns a function that takes a value of type typ
 // and reports whether it contains a value val.
 // This returns nil if the types can't match.
-func (ev *eval[T]) matchSlice(typ reflect.Type, e *nameExpr, seen map[matchMethod]bool) func(reflect.Value) bool {
+func (ev *eval[T]) matchSlice(typ reflect.Type, e *nameExpr, seen map[matchMethod]bool) func(context.Context, reflect.Value) bool {
 	elementMatch := ev.matchSeen(typ.Elem(), e, seen)
 	if elementMatch == nil {
 		return nil
 	}
 
-	return func(v reflect.Value) bool {
+	return func(ctx context.Context, v reflect.Value) bool {
 		for i := range v.Len() {
-			if elementMatch(v.Index(i)) {
+			if elementMatch(ctx, v.Index(i)) {
 				return true
 			}
 		}
@@ -1038,16 +1028,16 @@ func (ev *eval[T]) matchSlice(typ reflect.Type, e *nameExpr, seen map[matchMetho
 // It returns a function that takes a value of type typ
 // and reports whether it contains a value e.
 // This returns nil if the types can't match.
-func (ev *eval[T]) matchMap(typ reflect.Type, e *nameExpr, seen map[matchMethod]bool) func(reflect.Value) bool {
+func (ev *eval[T]) matchMap(typ reflect.Type, e *nameExpr, seen map[matchMethod]bool) func(context.Context, reflect.Value) bool {
 	elementMatch := ev.matchSeen(typ.Elem(), e, seen)
 	if elementMatch == nil {
 		return nil
 	}
 
-	return func(v reflect.Value) bool {
+	return func(ctx context.Context, v reflect.Value) bool {
 		mi := v.MapRange()
 		for mi.Next() {
-			if elementMatch(mi.Value()) {
+			if elementMatch(ctx, mi.Value()) {
 				return true
 			}
 		}
@@ -1059,9 +1049,9 @@ func (ev *eval[T]) matchMap(typ reflect.Type, e *nameExpr, seen map[matchMethod]
 // It returns a value that takes a value of type typ
 // and reports whether it contains a value val.
 // This returns nil if the types can't match.
-func (ev *eval[T]) matchStruct(typ reflect.Type, e *nameExpr, seen map[matchMethod]bool) func(reflect.Value) bool {
+func (ev *eval[T]) matchStruct(typ reflect.Type, e *nameExpr, seen map[matchMethod]bool) func(context.Context, reflect.Value) bool {
 	return ev.compareStructFields(typ,
-		func(ftype reflect.Type) func(reflect.Value) bool {
+		func(ftype reflect.Type) func(context.Context, reflect.Value) bool {
 			return ev.matchSeen(ftype, e, seen)
 		},
 	)
@@ -1071,13 +1061,13 @@ func (ev *eval[T]) matchStruct(typ reflect.Type, e *nameExpr, seen map[matchMeth
 // It returns a function that calls methods on typ to match against e.
 // If subFn is not nil it is called first for a match.
 // This returns nil if subFn is nil and the methods can't match.
-func (ev *eval[T]) matchMethods(typ reflect.Type, e *nameExpr, subFn func(reflect.Value) bool, seen map[matchMethod]bool) func(reflect.Value) bool {
+func (ev *eval[T]) matchMethods(typ reflect.Type, e *nameExpr, subFn func(context.Context, reflect.Value) bool, seen map[matchMethod]bool) func(context.Context, reflect.Value) bool {
 	if typ.NumMethod() == 0 {
 		return subFn
 	}
 
-	var methodIndexes []int
-	var matchFns []func(reflect.Value) bool
+	var methodCalls []func(context.Context, reflect.Value) reflect.Value
+	var matchFns []func(context.Context, reflect.Value) bool
 	for i := range typ.NumMethod() {
 		m := typ.Method(i)
 		if !methodTypeOK(typ, m) {
@@ -1095,25 +1085,25 @@ func (ev *eval[T]) matchMethods(typ reflect.Type, e *nameExpr, subFn func(reflec
 
 		matchFn := ev.matchSeen(m.Type.Out(0), e, seen)
 		if matchFn != nil {
-			methodIndexes = append(methodIndexes, m.Index)
+			methodCalls = append(methodCalls, callMethod(typ, m))
 			matchFns = append(matchFns, matchFn)
 		}
 	}
-	if len(methodIndexes) == 0 {
+	if len(methodCalls) == 0 {
 		return subFn
 	}
 
-	return func(v reflect.Value) bool {
-		if subFn != nil && subFn(v) {
+	return func(ctx context.Context, v reflect.Value) bool {
+		if subFn != nil && subFn(ctx, v) {
 			return true
 		}
-		for i := range methodIndexes {
-			retVals := v.Method(methodIndexes[i]).Call(nil)
-			if len(retVals) > 1 && !retVals[1].IsNil() {
+		for i := range methodCalls {
+			v := methodCalls[i](ctx, v)
+			if !v.IsValid() {
 				// Method returned an error: no match.
 				continue
 			}
-			if matchFns[i](retVals[0]) {
+			if matchFns[i](ctx, v) {
 				return true
 			}
 		}
@@ -1210,7 +1200,7 @@ func (ev *eval[T]) parseLiteral(pos position, typ reflect.Type, val string) (ref
 
 // has returns a function that returns whether a left value contains
 // a right value.
-func (ev *eval[T]) has(e *comparisonExpr) func(T) bool {
+func (ev *eval[T]) has(e *comparisonExpr) func(context.Context, T) bool {
 	switch el := e.left.(type) {
 	case *nameExpr:
 		return ev.hasName(el, e.right)
@@ -1229,7 +1219,7 @@ func (ev *eval[T]) has(e *comparisonExpr) func(T) bool {
 
 // hasName returns a function that returns whether the name el
 // has the value in er.
-func (ev *eval[T]) hasName(el *nameExpr, er Expr) func(T) bool {
+func (ev *eval[T]) hasName(el *nameExpr, er Expr) func(context.Context, T) bool {
 	left, leftType := ev.fieldValue(el)
 	if left == nil {
 		return ev.alwaysFalse()
@@ -1243,8 +1233,8 @@ func (ev *eval[T]) hasName(el *nameExpr, er Expr) func(T) bool {
 			// This is m:foo where the map keys are strings.
 			// We can just do a lookup.
 			rval := reflect.ValueOf(ern.name).Convert(leftType.Key())
-			return func(v T) bool {
-				mval := left(v)
+			return func(ctx context.Context, v T) bool {
+				mval := left(ctx, v)
 				if !mval.IsValid() {
 					return false
 				}
@@ -1266,8 +1256,8 @@ func (ev *eval[T]) hasName(el *nameExpr, er Expr) func(T) bool {
 			if cmpFn == nil {
 				return ev.alwaysFalse()
 			}
-			return func(v T) bool {
-				return cmpFn(left(v))
+			return func(ctx context.Context, v T) bool {
+				return cmpFn(ctx, left(ctx, v))
 			}
 		}
 
@@ -1275,19 +1265,19 @@ func (ev *eval[T]) hasName(el *nameExpr, er Expr) func(T) bool {
 		// that matches er. We don't need an iter.Seq for this case.
 
 		cmpFn := ev.compareStructFields(leftType,
-			func(ftype reflect.Type) func(reflect.Value) bool {
+			func(ftype reflect.Type) func(context.Context, reflect.Value) bool {
 				return ev.compareVal(tokenHas, ftype, er)
 			},
 		)
 		if cmpFn == nil {
 			return ev.alwaysFalse()
 		}
-		return func(v T) bool {
-			val := left(v)
+		return func(ctx context.Context, v T) bool {
+			val := left(ctx, v)
 			if !val.IsValid() {
 				return false
 			}
-			return cmpFn(val)
+			return cmpFn(ctx, val)
 		}
 
 	default:
@@ -1298,8 +1288,8 @@ func (ev *eval[T]) hasName(el *nameExpr, er Expr) func(T) bool {
 			return ev.alwaysFalse()
 		}
 
-		return func(v T) bool {
-			return cmpFn(left(v))
+		return func(ctx context.Context, v T) bool {
+			return cmpFn(ctx, left(ctx, v))
 		}
 	}
 }
@@ -1307,7 +1297,7 @@ func (ev *eval[T]) hasName(el *nameExpr, er Expr) func(T) bool {
 // multipleVal returns a function that reports whether the value
 // left, of type leftType, matches the value in er.
 // leftType is expected to have multiple values.
-func (ev *eval[T]) multipleName(op tokenKind, left func(T) reflect.Value, leftType reflect.Type, er Expr) func(T) bool {
+func (ev *eval[T]) multipleName(op tokenKind, left func(context.Context, T) reflect.Value, leftType reflect.Type, er Expr) func(context.Context, T) bool {
 	cmpFn := ev.multipleCompareVal(op, leftType.Elem(), er)
 	if cmpFn == nil {
 		return ev.alwaysFalse()
@@ -1315,8 +1305,8 @@ func (ev *eval[T]) multipleName(op tokenKind, left func(T) reflect.Value, leftTy
 
 	switch leftType.Kind() {
 	case reflect.Map:
-		return func(v T) bool {
-			mval := left(v)
+		return func(ctx context.Context, v T) bool {
+			mval := left(ctx, v)
 			if !mval.IsValid() {
 				return false
 			}
@@ -1328,12 +1318,12 @@ func (ev *eval[T]) multipleName(op tokenKind, left func(T) reflect.Value, leftTy
 					}
 				}
 			}
-			return cmpFn(seq)
+			return cmpFn(ctx, seq)
 		}
 
 	case reflect.Slice, reflect.Array:
-		return func(v T) bool {
-			sval := left(v)
+		return func(ctx context.Context, v T) bool {
+			sval := left(ctx, v)
 			if !sval.IsValid() {
 				return false
 			}
@@ -1344,7 +1334,7 @@ func (ev *eval[T]) multipleName(op tokenKind, left func(T) reflect.Value, leftTy
 					}
 				}
 			}
-			return cmpFn(seq)
+			return cmpFn(ctx, seq)
 		}
 
 	default:
@@ -1363,7 +1353,7 @@ const (
 
 // multipleMember returns a function that returns whether the member el
 // matches the value in er.
-func (ev *eval[T]) multipleMember(pos position, op tokenKind, el *memberExpr, er Expr) func(T) bool {
+func (ev *eval[T]) multipleMember(pos position, op tokenKind, el *memberExpr, er Expr) func(context.Context, T) bool {
 	emptyString := holderNonEmptyString
 	if erName, ok := er.(*nameExpr); ok && erName.isString && erName.name == "" {
 		emptyString = holderEmptyString
@@ -1374,7 +1364,7 @@ func (ev *eval[T]) multipleMember(pos position, op tokenKind, el *memberExpr, er
 		return ev.alwaysFalse()
 	}
 
-	var cmpFn func(iter.Seq[reflect.Value]) bool
+	var cmpFn func(context.Context, iter.Seq[reflect.Value]) bool
 	var seqFn func(iter.Seq[reflect.Value]) iter.Seq[reflect.Value]
 
 	switch htype.Kind() {
@@ -1417,7 +1407,7 @@ func (ev *eval[T]) multipleMember(pos position, op tokenKind, el *memberExpr, er
 
 	case reflect.Struct:
 		cmpStructFn := ev.compareStructFields(htype,
-			func(ftype reflect.Type) func(reflect.Value) bool {
+			func(ftype reflect.Type) func(context.Context, reflect.Value) bool {
 				return ev.compareVal(op, ftype, er)
 			},
 		)
@@ -1425,9 +1415,9 @@ func (ev *eval[T]) multipleMember(pos position, op tokenKind, el *memberExpr, er
 			return ev.alwaysFalse()
 		}
 
-		cmpFn = func(seq iter.Seq[reflect.Value]) bool {
+		cmpFn = func(ctx context.Context, seq iter.Seq[reflect.Value]) bool {
 			for v := range seq {
-				if cmpStructFn(v) {
+				if cmpStructFn(ctx, v) {
 					return true
 				}
 			}
@@ -1449,11 +1439,11 @@ func (ev *eval[T]) multipleMember(pos position, op tokenKind, el *memberExpr, er
 		}
 	}
 
-	return func(v T) bool {
+	return func(ctx context.Context, v T) bool {
 		input := func(yield func(reflect.Value) bool) {
 			yield(reflect.ValueOf(v))
 		}
-		return cmpFn(seqFn(hfn(input)))
+		return cmpFn(ctx, seqFn(hfn(ctx, input)))
 	}
 }
 
@@ -1467,8 +1457,8 @@ func (ev *eval[T]) multipleMember(pos position, op tokenKind, el *memberExpr, er
 // takes the value A and returns a sequence of reflect.Value's.
 // We also return the type of those reflect.Value's.
 // This returns nil, nil on failure.
-func (ev *eval[T]) multipleMemberHolder(e *memberExpr, emptyString holderEmptyStringType) (func(iter.Seq[reflect.Value]) iter.Seq[reflect.Value], reflect.Type) {
-	var hfn func(iter.Seq[reflect.Value]) iter.Seq[reflect.Value]
+func (ev *eval[T]) multipleMemberHolder(e *memberExpr, emptyString holderEmptyStringType) (func(context.Context, iter.Seq[reflect.Value]) iter.Seq[reflect.Value], reflect.Type) {
+	var hfn func(context.Context, iter.Seq[reflect.Value]) iter.Seq[reflect.Value]
 	var htype reflect.Type
 
 	switch holder := e.holder.(type) {
@@ -1484,10 +1474,10 @@ func (ev *eval[T]) multipleMemberHolder(e *memberExpr, emptyString holderEmptySt
 		if ffn == nil {
 			return nil, nil
 		}
-		hfn = func(seq iter.Seq[reflect.Value]) iter.Seq[reflect.Value] {
+		hfn = func(ctx context.Context, seq iter.Seq[reflect.Value]) iter.Seq[reflect.Value] {
 			return func(yield func(reflect.Value) bool) {
 				for v := range seq {
-					rv := ffn(v)
+					rv := ffn(ctx, v)
 					if rv.IsValid() {
 						if !yield(rv) {
 							return
@@ -1506,7 +1496,7 @@ func (ev *eval[T]) multipleMemberHolder(e *memberExpr, emptyString holderEmptySt
 		// For some reason when comparing against an empty string
 		// we match even if the key doesn't match.
 		if emptyString == holderEmptyString && htype.Key().Kind() == reflect.String {
-			rhfn := func(seq iter.Seq[reflect.Value]) iter.Seq[reflect.Value] {
+			rhfn := func(ctx context.Context, seq iter.Seq[reflect.Value]) iter.Seq[reflect.Value] {
 				return func(yield func(reflect.Value) bool) {
 					yield(reflect.ValueOf(""))
 				}
@@ -1520,9 +1510,9 @@ func (ev *eval[T]) multipleMemberHolder(e *memberExpr, emptyString holderEmptySt
 			return nil, nil
 		}
 
-		rhfn := func(seq iter.Seq[reflect.Value]) iter.Seq[reflect.Value] {
+		rhfn := func(ctx context.Context, seq iter.Seq[reflect.Value]) iter.Seq[reflect.Value] {
 			return func(yield func(reflect.Value) bool) {
-				for v := range hfn(seq) {
+				for v := range hfn(ctx, seq) {
 					rv := v.MapIndex(kval)
 					if rv.IsValid() {
 						if !yield(rv) {
@@ -1540,11 +1530,11 @@ func (ev *eval[T]) multipleMemberHolder(e *memberExpr, emptyString holderEmptySt
 			return nil, nil
 		}
 
-		rhfn := func(seq iter.Seq[reflect.Value]) iter.Seq[reflect.Value] {
+		rhfn := func(ctx context.Context, seq iter.Seq[reflect.Value]) iter.Seq[reflect.Value] {
 			return func(yield func(reflect.Value) bool) {
-				for v := range hfn(seq) {
+				for v := range hfn(ctx, seq) {
 					for i := range v.Len() {
-						rv := ffn(v.Index(i))
+						rv := ffn(ctx, v.Index(i))
 						if rv.IsValid() {
 							if !yield(rv) {
 								return
@@ -1562,10 +1552,10 @@ func (ev *eval[T]) multipleMemberHolder(e *memberExpr, emptyString holderEmptySt
 			return nil, nil
 		}
 
-		rhfn := func(seq iter.Seq[reflect.Value]) iter.Seq[reflect.Value] {
+		rhfn := func(ctx context.Context, seq iter.Seq[reflect.Value]) iter.Seq[reflect.Value] {
 			return func(yield func(reflect.Value) bool) {
-				for v := range hfn(seq) {
-					rv := ffn(v)
+				for v := range hfn(ctx, seq) {
+					rv := ffn(ctx, v)
 					if rv.IsValid() {
 						if !yield(rv) {
 							return
@@ -1584,7 +1574,7 @@ func (ev *eval[T]) multipleMemberHolder(e *memberExpr, emptyString holderEmptySt
 // The function may evaluate the sequence multiple times.
 // The right value may be a logical expression with AND and OR.
 // This returns nil on error.
-func (ev *eval[T]) multipleCompareVal(op tokenKind, leftType reflect.Type, right Expr) func(iter.Seq[reflect.Value]) bool {
+func (ev *eval[T]) multipleCompareVal(op tokenKind, leftType reflect.Type, right Expr) func(context.Context, iter.Seq[reflect.Value]) bool {
 	switch right := right.(type) {
 	case *binaryExpr:
 		lf := ev.multipleCompareVal(op, leftType, right.left)
@@ -1594,12 +1584,12 @@ func (ev *eval[T]) multipleCompareVal(op tokenKind, leftType reflect.Type, right
 		}
 		switch right.op {
 		case tokenAnd:
-			return func(seq iter.Seq[reflect.Value]) bool {
-				return lf(seq) && rf(seq)
+			return func(ctx context.Context, seq iter.Seq[reflect.Value]) bool {
+				return lf(ctx, seq) && rf(ctx, seq)
 			}
 		case tokenOr:
-			return func(seq iter.Seq[reflect.Value]) bool {
-				return lf(seq) || rf(seq)
+			return func(ctx context.Context, seq iter.Seq[reflect.Value]) bool {
+				return lf(ctx, seq) || rf(ctx, seq)
 			}
 		default:
 			panic("can't happen")
@@ -1612,8 +1602,8 @@ func (ev *eval[T]) multipleCompareVal(op tokenKind, leftType reflect.Type, right
 		}
 		switch right.op {
 		case tokenMinus, tokenNot:
-			return func(seq iter.Seq[reflect.Value]) bool {
-				return !uf(seq)
+			return func(ctx context.Context, seq iter.Seq[reflect.Value]) bool {
+				return !uf(ctx, seq)
 			}
 		default:
 			panic("can't happen")
@@ -1624,9 +1614,9 @@ func (ev *eval[T]) multipleCompareVal(op tokenKind, leftType reflect.Type, right
 		if cmpFn == nil {
 			return nil
 		}
-		return func(seq iter.Seq[reflect.Value]) bool {
+		return func(ctx context.Context, seq iter.Seq[reflect.Value]) bool {
 			for v := range seq {
-				if cmpFn(v) {
+				if cmpFn(ctx, v) {
 					return true
 				}
 			}
@@ -1645,9 +1635,9 @@ func (ev *eval[T]) multipleCompareVal(op tokenKind, leftType reflect.Type, right
 // compareStructFields returns a function that takes a reflect.Value
 // of the structtype and returns whether any of the match functions
 // match that value. It returns nil if none of the fields match.
-func (ev *eval[T]) compareStructFields(typ reflect.Type, buildMatchFn func(reflect.Type) func(reflect.Value) bool) func(reflect.Value) bool {
+func (ev *eval[T]) compareStructFields(typ reflect.Type, buildMatchFn func(reflect.Type) func(context.Context, reflect.Value) bool) func(context.Context, reflect.Value) bool {
 	var fieldIndexes [][]int
-	var matchFns []func(reflect.Value) bool
+	var matchFns []func(context.Context, reflect.Value) bool
 	for i := range typ.NumField() {
 		field := typ.Field(i)
 
@@ -1670,10 +1660,10 @@ func (ev *eval[T]) compareStructFields(typ reflect.Type, buildMatchFn func(refle
 		return nil
 	}
 
-	return func(v reflect.Value) bool {
+	return func(ctx context.Context, v reflect.Value) bool {
 		for i := range fieldIndexes {
 			f, err := v.FieldByIndexErr(fieldIndexes[i])
-			if err == nil && matchFns[i](f) {
+			if err == nil && matchFns[i](ctx, f) {
 				return true
 			}
 		}
@@ -1751,9 +1741,17 @@ func methodTypeOK(typ reflect.Type, m reflect.Method) bool {
 		// so numIn == 1 means no regular arguments.
 		wantIn = 1
 	}
-	if m.Type.NumIn() != wantIn {
+	switch m.Type.NumIn() {
+	case wantIn:
+	case wantIn + 1:
+		// This is OK if the argument is a context.Context.
+		if m.Type.In(wantIn) != reflect.TypeFor[context.Context]() {
+			return false
+		}
+	default:
 		return false
 	}
+
 	switch m.Type.NumOut() {
 	case 1:
 		return true
@@ -1761,6 +1759,64 @@ func methodTypeOK(typ reflect.Type, m reflect.Method) bool {
 		return m.Type.Out(1) == reflect.TypeFor[error]()
 	default:
 		return false
+	}
+}
+
+// callMethod returns a function that calls method m on its argument,
+// which is of type typ, returning a reflect.Value.
+// If the argument is an invalid Value, the function returns it.
+// If the method call fails, the function returns an invalid reflect.Value.
+// callMethod handles passing a Context if one is expected.
+func callMethod(typ reflect.Type, m reflect.Method) func(context.Context, reflect.Value) reflect.Value {
+	// See if we should pass a context.Context.
+	wantIn := 0
+	if typ.Kind() != reflect.Interface {
+		// The receiver is the first argument,
+		// so numIn == 1 means no regular arguments.
+		wantIn = 1
+	}
+
+	index := m.Index
+	var call func(context.Context, reflect.Value) []reflect.Value
+	switch m.Type.NumIn() {
+	case wantIn:
+		call = func(ctx context.Context, v reflect.Value) []reflect.Value {
+			return v.Method(index).Call(nil)
+		}
+	case wantIn + 1:
+		call = func(ctx context.Context, v reflect.Value) []reflect.Value {
+			args := []reflect.Value{
+				reflect.ValueOf(ctx),
+			}
+			return v.Method(index).Call(args)
+		}
+	default:
+		panic("can't happen")
+	}
+
+	// Handle any error result.
+	switch m.Type.NumOut() {
+	case 1:
+		return func(ctx context.Context, v reflect.Value) reflect.Value {
+			if !v.IsValid() {
+				return v
+			}
+			return call(ctx, v)[0]
+		}
+	case 2:
+		return func(ctx context.Context, v reflect.Value) reflect.Value {
+			if !v.IsValid() {
+				return v
+			}
+			retVals := call(ctx, v)
+			if !retVals[1].IsNil() {
+				// We got an error; ignore the value.
+				return reflect.Value{}
+			}
+			return retVals[0]
+		}
+	default:
+		panic("can't happen")
 	}
 }
 
@@ -1874,8 +1930,8 @@ func parseTime(s string) (time.Time, error) {
 }
 
 // alwaysFalse is an evaluator function that always returns false.
-func (ev *eval[T]) alwaysFalse() func(T) bool {
-	return func(T) bool {
+func (ev *eval[T]) alwaysFalse() func(context.Context, T) bool {
+	return func(context.Context, T) bool {
 		return false
 	}
 }
