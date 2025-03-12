@@ -460,3 +460,28 @@ func TestSyncTesting(t *testing.T) {
 		})
 	}
 }
+
+func TestUpdateChange(t *testing.T) {
+	check := testutil.Checker(t)
+	lg := testutil.Slogger(t)
+	db := storage.MemDB()
+	ctx := context.Background()
+
+	rr, err := httprr.Open("testdata/updatechange.httprr", http.DefaultTransport)
+	check(err)
+	sdb := secret.Empty()
+
+	c := New("go-review.googlesource.com", lg, db, sdb, rr.Client())
+
+	// CL 24907 is in the sync project.
+	const testChangeNum = 24907
+
+	check(c.UpdateChange(ctx, testChangeNum))
+
+	for changeNum, chFn := range c.ChangeNumbers("sync") {
+		if changeNum != testChangeNum {
+			t.Errorf("got CL %d, want %d", changeNum, testChangeNum)
+		}
+		checkChange(t, c, changeNum, chFn())
+	}
+}

@@ -584,3 +584,50 @@ func (c *Client) get(ctx context.Context, addr string, obj any) error {
 		return json.NewDecoder(buf).Decode(obj)
 	}
 }
+
+// UpdateChange updates the information for a change in the database
+// to what is currently stored in Gerrit. Ideally this should never
+// be necessary, but it supports fixing the database if it gets corrupted.
+func (c *Client) UpdateChange(ctx context.Context, changeNum int) error {
+	baseURL := "https://" + c.instance + "/changes/" + strconv.Itoa(changeNum)
+	values := url.Values{
+		"o": changeOpts,
+	}
+	addr := baseURL + "?" + values.Encode()
+
+	var body json.RawMessage
+	if err := c.get(ctx, addr, &body); err != nil {
+		return err
+	}
+
+	var project struct {
+		Project string `json:"project"`
+		MetaID  string `json:"meta_rev_id"`
+	}
+	if err := json.Unmarshal(body, &project); err != nil {
+		return err
+	}
+	if project.Project == "" {
+		return fmt.Errorf("could not find project in %q", body)
+	}
+
+	// Don't collide with Sync.
+	skey := string(o(syncProjectKind, c.instance, project.Project))
+	c.db.Lock(skey)
+	defer c.db.Unlock(skey)
+
+	b := c.db.Batch()
+
+	key := o(changeKind, c.instance, project.Project, changeNum)
+	b.Set(key, body)
+	if err := c.syncComments(ctx, b, project.Project, changeNum); err != nil {
+		return err
+	}
+
+	timed.Set(c.db, b, changeUpdateKind, o(c.instance, changeNum, project.MetaID), nil)
+
+	b.Apply()
+	c.db.Flush()
+
+	return nil
+}
