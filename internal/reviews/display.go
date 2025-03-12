@@ -330,7 +330,7 @@ header {
         {{.Doc}}
       </div>
       <div class="header-subtitle">
-        <a href="https://go.googlesource.com/oscar/+/master/internal/goreviews/display.go">Source code</a>
+        <a href="https://go.googlesource.com/oscar/+/master/internal/reviews/display.go">Source code</a>
       </div>
     </header>
     <form id="form" action="{{.Endpoint}}" method="GET">
