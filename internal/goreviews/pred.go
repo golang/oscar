@@ -124,9 +124,9 @@ var rejects = []reviews.Reject{
 		Applies:     unreviewable,
 	},
 	{
-		Name:        "waitRelease",
-		Description: "change is tagged wait-release",
-		Applies:     waitRelease,
+		Name:        "waiting",
+		Description: "change is tagged wait-author, wait-issue, or wait-release",
+		Applies:     waiting,
 	},
 	{
 		Name:        "hold",
@@ -146,12 +146,14 @@ func unreviewable(ctx context.Context, ch reviews.Change) (bool, error) {
 	return false, nil
 }
 
-// waitRelease is a [reviews.Reject] function that reports whether
-// the change has the wait-release tag.
-func waitRelease(ctx context.Context, ch reviews.Change) (bool, error) {
+// waiting is a [reviews.Reject] function that reports whether
+// the change has the wait-author, wait-issue, or wait-release tag.
+func waiting(ctx context.Context, ch reviews.Change) (bool, error) {
 	gc := ch.(goChange).GerritChange
 	tags := gc.Client.GClient.ChangeHashtags(gc.Change)
-	r := slices.Contains(tags, "wait-release")
+	r := slices.Contains(tags, "wait-author") ||
+		slices.Contains(tags, "wait-issue") ||
+		slices.Contains(tags, "wait-release")
 	return r, nil
 }
 

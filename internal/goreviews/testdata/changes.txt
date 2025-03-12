@@ -254,3 +254,27 @@ Revisions: commitid1
  Commit:
   Subject: patch set 1
   Message: goreviews: on hold
+-- change#26 --
+Number: 26
+Project: test
+Status: New
+Owner: gopher@golang.org
+Hashtags: wait-author
+CurrentRevision: commitid1
+Revisions: commitid1
+ Number: 1
+ Commit:
+  Subject: patch set 1
+  Message: goreviews: tagged wait-author
+-- change#27 --
+Number: 27
+Project: test
+Status: New
+Owner: gopher@golang.org
+Hashtags: wait-issue
+CurrentRevision: commitid1
+Revisions: commitid1
+ Number: 1
+ Commit:
+  Subject: patch set 1
+  Message: goreviews: tagged wait-issue
