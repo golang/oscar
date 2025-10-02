@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"math"
 	"net/http"
 	"testing"
 
@@ -62,10 +63,16 @@ func TestEmbedBatch(t *testing.T) {
 	ctx := context.Background()
 	check := testutil.Checker(t)
 	c := newTestClient(t, "testdata/embedbatch.httprr")
+	if model := c.EmbeddingModel(); model != DefaultEmbeddingModel+"/768" {
+		t.Fatalf("EmbeddingModel() = %q, want %q", model, DefaultEmbeddingModel+"/768")
+	}
 	vecs, err := c.EmbedDocs(ctx, docs)
 	check(err)
 	if len(vecs) != len(docs) {
 		t.Fatalf("len(vecs) = %d, but len(docs) = %d", len(vecs), len(docs))
+	}
+	if len(vecs[0]) != forceEmbedDim {
+		t.Fatalf("len(vecs[0]) = %d, want %d", len(vecs[0]), forceEmbedDim)
 	}
 
 	var buf bytes.Buffer
@@ -145,5 +152,10 @@ func TestBigBatch(t *testing.T) {
 	check(err)
 	if len(vecs) != len(docs) {
 		t.Fatalf("len(vecs) = %d, but len(docs) = %d", len(vecs), len(docs))
+	}
+	for i, v := range vecs {
+		if dot := v.Dot(v); math.Abs(dot-1) > 1e-5 {
+			t.Fatalf("vecs[%d].Dot(itself) = %v, want 1", i, dot)
+		}
 	}
 }

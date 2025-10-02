@@ -5,15 +5,15 @@
 package gemini
 
 import (
-	"github.com/google/generative-ai-go/genai"
 	"golang.org/x/oscar/internal/llm"
+	"google.golang.org/genai"
 )
 
-// toGenAISchema trivially converts an [llm.Schema] to a [genai.Schema].
+// genaiSchema trivially converts an [llm.Schema] to a [genai.Schema].
 // The types have the exact same underlying structure, and are copied only
-// to avoid a direct dependency on github.com/google/generative-ai-go/genai
+// to avoid a direct dependency on google.golang.org/genai
 // by other packages.
-func toGenAISchema(s *llm.Schema) *genai.Schema {
+func genaiSchema(s *llm.Schema) *genai.Schema {
 	if s == nil {
 		return nil
 	}
@@ -21,17 +21,37 @@ func toGenAISchema(s *llm.Schema) *genai.Schema {
 	if len(s.Properties) != 0 {
 		props = make(map[string]*genai.Schema, len(s.Properties))
 		for k, v := range s.Properties {
-			props[k] = toGenAISchema(v)
+			props[k] = genaiSchema(v)
 		}
 	}
 	return &genai.Schema{
-		Type:        (genai.Type)(s.Type),
+		Type:        genaiType(s.Type),
 		Format:      s.Format,
 		Description: s.Description,
-		Nullable:    s.Nullable,
+		Nullable:    &s.Nullable,
 		Enum:        s.Enum,
-		Items:       toGenAISchema(s.Items),
+		Items:       genaiSchema(s.Items),
 		Properties:  props,
 		Required:    s.Required,
 	}
+}
+
+func genaiType(t llm.Type) genai.Type {
+	switch t {
+	case llm.TypeUnspecified:
+		return genai.TypeUnspecified
+	case llm.TypeString:
+		return genai.TypeString
+	case llm.TypeNumber:
+		return genai.TypeNumber
+	case llm.TypeInteger:
+		return genai.TypeInteger
+	case llm.TypeBoolean:
+		return genai.TypeBoolean
+	case llm.TypeArray:
+		return genai.TypeArray
+	case llm.TypeObject:
+		return genai.TypeObject
+	}
+	return "???"
 }

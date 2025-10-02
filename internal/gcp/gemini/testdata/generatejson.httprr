@@ -1,18 +1,17 @@
 httprr trace v1
-654 798
-POST https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?%24alt=json%3Benum-encoding%3Dint HTTP/1.1
+606 1060
+POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent HTTP/1.1
 Host: generativelanguage.googleapis.com
-User-Agent: Go-http-client/1.1
-Content-Length: 336
+User-Agent: gemini httprecord
+Content-Length: 377
 Content-Type: application/json
-x-goog-request-params: model=models%2Fgemini-1.5-pro
 
-{"model":"models/gemini-1.5-pro","contents":[{"parts":[{"text":"(confidence is between 0 and 100)"},{"text":"What is the tallest mountain in the world?"}],"role":"user"}],"generationConfig":{"candidateCount":1,"responseMimeType":"application/json","responseSchema":{"type":6,"properties":{"answer":{"type":1},"confidence":{"type":3}}}}}HTTP/2.0 200 OK
+{"contents":[{"parts":[{"text":"(confidence is between 0 and 100)"},{"text":"What is the tallest mountain in the world?"}],"role":"user"}],"generationConfig":{"candidateCount":1,"responseMimeType":"application/json","responseSchema":{"nullable":false,"properties":{"answer":{"nullable":false,"type":"STRING"},"confidence":{"nullable":false,"type":"INTEGER"}},"type":"OBJECT"}}}HTTP/2.0 200 OK
 Alt-Svc: h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
 Content-Type: application/json; charset=UTF-8
-Date: Mon, 02 Dec 2024 16:36:20 GMT
+Date: Fri, 03 Oct 2025 15:35:33 GMT
 Server: scaffolding on HTTPServer2
-Server-Timing: gfet4t7; dur=1028
+Server-Timing: gfet4t7; dur=3919
 Vary: Origin
 Vary: X-Origin
 Vary: Referer
@@ -26,19 +25,27 @@ X-Xss-Protection: 0
       "content": {
         "parts": [
           {
-            "text": "{\"answer\": \"Mount Everest\", \"confidence\": 100}"
+            "text": "{\n  \"answer\": \"Mount Everest is the tallest mountain in the world. Its peak is 8,848.86 meters (29,031.7 feet) above sea level.\",\n  \"confidence\": 100\n}"
           }
         ],
         "role": "model"
       },
-      "finishReason": 1,
-      "avgLogprobs": -0.0023204249640305838
+      "finishReason": "STOP",
+      "index": 0
     }
   ],
   "usageMetadata": {
     "promptTokenCount": 22,
-    "candidatesTokenCount": 15,
-    "totalTokenCount": 37
+    "candidatesTokenCount": 56,
+    "totalTokenCount": 276,
+    "promptTokensDetails": [
+      {
+        "modality": "TEXT",
+        "tokenCount": 22
+      }
+    ],
+    "thoughtsTokenCount": 198
   },
-  "modelVersion": "gemini-1.5-pro-002"
+  "modelVersion": "gemini-2.5-pro",
+  "responseId": "Re3faIyoIfWzjMcPnNaqwQ8"
 }

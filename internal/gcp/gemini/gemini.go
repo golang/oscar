@@ -14,24 +14,21 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"maps"
 	"net/http"
 	"slices"
 	"strings"
 
-	"github.com/google/generative-ai-go/genai"
 	"golang.org/x/oscar/internal/httprr"
 	"golang.org/x/oscar/internal/llm"
 	"golang.org/x/oscar/internal/secret"
-	"google.golang.org/api/option"
+	"google.golang.org/genai"
 )
 
 // Scrub is a request scrubber for use with [rsc.io/httprr].
 func Scrub(req *http.Request) error {
-	delete(req.Header, "x-goog-api-key")    // genai does not canonicalize
-	req.Header.Del("X-Goog-Api-Key")        // in case it starts
-	delete(req.Header, "x-goog-api-client") // contains version numbers
-	req.Header.Del("X-Goog-Api-Client")
+	req.Header.Del("X-Goog-Api-Key")                  // delete API key
+	req.Header.Del("X-Goog-Api-Client")               // contains version numbers
+	req.Header.Set("User-Agent", "gemini httprecord") // contains same version numbers
 
 	if ctype := req.Header.Get("Content-Type"); ctype == "application/json" || strings.HasPrefix(ctype, "application/json;") {
 		// Canonicalize JSON body.
@@ -50,16 +47,28 @@ func Scrub(req *http.Request) error {
 
 // A Client represents a connection to Gemini.
 type Client struct {
-	slog                            *slog.Logger
-	genai                           *genai.Client
-	embeddingModel, generativeModel string
-	temperature                     float32 // negative means use default
+	slog            *slog.Logger
+	genai           *genai.Client
+	generativeModel string
+	embeddingModel  string
+	dim             int32
+	temperature     float32 // negative means use default
 }
 
 const (
 	DefaultEmbeddingModel  = "text-embedding-004"
-	DefaultGenerativeModel = "gemini-1.5-pro"
+	DefaultGenerativeModel = "gemini-2.5-pro"
 )
+
+// forceEmbedDim is the hard-coded forced dimensionality of
+// vectors returned by this package. The original Gemini models
+// used 768, and so our databases are configured for 768.
+// Newer Gemini models produce larger embeddings, up to 3072,
+// but truncating to 768 is still plenty good enough, because the
+// vectors are arranged so that the most important information is
+// in the leading entries. We just need to renormalize after truncation.
+// See https://ai.google.dev/gemini-api/docs/embeddings#control-embedding-size
+const forceEmbedDim = 768
 
 // NewClient returns a connection to Gemini, using the given logger and HTTP client.
 // It expects to find a secret of the form "AIza..." or "user:AIza..." in sdb
@@ -76,16 +85,10 @@ func NewClient(ctx context.Context, lg *slog.Logger, sdb secret.DB, hc *http.Cli
 		key = pass
 	}
 
-	// Ideally this would use use “option.WithAPIKey(key), option.WithHTTPClient(hc),”
-	// but using option.WithHTTPClient bypasses the code that passes along the API key.
-	// Instead we make our own derived http.Client that re-adds the key.
-	// And then we still have to say option.WithAPIKey("ignored") because
-	// otherwise NewClient complains that we haven't passed in a key.
-	// (If we pass in the key, it ignores it, but if we don't pass it in,
-	// it complains that we didn't give it a key.)
-	ai, err := genai.NewClient(ctx,
-		option.WithAPIKey("ignored"),
-		option.WithHTTPClient(withKey(hc, key)))
+	ai, err := genai.NewClient(ctx, &genai.ClientConfig{
+		APIKey:     key,
+		HTTPClient: hc,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -94,57 +97,40 @@ func NewClient(ctx context.Context, lg *slog.Logger, sdb secret.DB, hc *http.Cli
 		slog:            lg,
 		genai:           ai,
 		embeddingModel:  embeddingModel,
+		dim:             forceEmbedDim,
 		generativeModel: generativeModel,
 		temperature:     -1,
 	}, nil
-}
-
-// withKey returns a new http.Client that is the same as hc
-// except that it adds "x-goog-api-key: key" to every request.
-func withKey(hc *http.Client, key string) *http.Client {
-	c := *hc
-	t := c.Transport
-	if t == nil {
-		t = http.DefaultTransport
-	}
-	c.Transport = &transportWithKey{t, key}
-	return &c
-}
-
-// transportWithKey is the same as rt
-// except that it adds "x-goog-api-key: key" to every request.
-type transportWithKey struct {
-	rt  http.RoundTripper
-	key string
-}
-
-func (t *transportWithKey) RoundTrip(req *http.Request) (resp *http.Response, err error) {
-	r := *req
-	r.Header = maps.Clone(req.Header)
-	r.Header["x-goog-api-key"] = []string{t.key}
-	return t.rt.RoundTrip(&r)
 }
 
 const maxBatch = 100 // empirical limit
 
 var _ llm.Embedder = (*Client)(nil)
 
+// EmbeddingModel returns the name of the embedding model.
+// It is of the form name/dim where dim is the dimensionality.
+func (c *Client) EmbeddingModel() string {
+	return fmt.Sprintf("%s/%d", c.embeddingModel, c.dim)
+}
+
 // EmbedDocs returns the vector embeddings for the docs,
 // implementing [llm.Embedder].
 func (c *Client) EmbedDocs(ctx context.Context, docs []llm.EmbedDoc) ([]llm.Vector, error) {
-	model := c.genai.EmbeddingModel(c.embeddingModel)
+	config := &genai.EmbedContentConfig{
+		OutputDimensionality: &c.dim,
+	}
 	var vecs []llm.Vector
 	for docs := range slices.Chunk(docs, maxBatch) {
-		b := model.NewBatch()
+		var contents []*genai.Content
 		for _, d := range docs {
-			b.AddContentWithTitle(d.Title, genai.Text(d.Text))
+			contents = append(contents, genai.Text("Title: "+d.Title+"\n\n"+d.Text)...)
 		}
-		resp, err := model.BatchEmbedContents(ctx, b)
+		resp, err := c.genai.Models.EmbedContent(ctx, c.embeddingModel, contents, config)
 		if err != nil {
-			return vecs, err
+			return nil, err
 		}
 		for _, e := range resp.Embeddings {
-			vecs = append(vecs, e.Values)
+			vecs = append(vecs, llm.Vector(e.Values).Normal())
 		}
 	}
 	return vecs, nil
@@ -167,85 +153,60 @@ func (c *Client) SetTemperature(t float32) {
 func (c *Client) GenerateContent(ctx context.Context, schema *llm.Schema, promptParts []llm.Part) (string, error) {
 	// Generate plain text.
 	if schema == nil {
-		texts, err := c.generate(ctx, "text/plain", nil, promptParts...)
+		text, err := c.generate(ctx, "text/plain", nil, promptParts...)
 		if err != nil {
 			return "", fmt.Errorf("gemini.GenerateContent: %w", err)
 		}
-		return strings.Join(texts, "\n"), nil
+		return text, nil
 	}
 
 	// Generate JSON.
-	texts, err := c.generate(ctx, "application/json", toGenAISchema(schema), promptParts...)
+	text, err := c.generate(ctx, "application/json", genaiSchema(schema), promptParts...)
 	if err != nil {
 		return "", fmt.Errorf("gemini.GenerateContent: %w", err)
 	}
-	// Return just the first response, as it's not clear how to concatenate
-	// multiple JSON responses.
-	return texts[0], nil
+	return text, nil
 }
 
 // generate returns the model's response (of the specified MIME type) for the prompt parts.
 // It returns an error if a response cannot be generated.
-func (c *Client) generate(ctx context.Context, mimeType string, schema *genai.Schema, promptParts ...llm.Part) ([]string, error) {
+func (c *Client) generate(ctx context.Context, mimeType string, schema *genai.Schema, promptParts ...llm.Part) (string, error) {
 	parts, err := c.parts(promptParts)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	resp, err := c.model(mimeType, schema).GenerateContent(ctx, parts...)
-	if err != nil {
-		return nil, err
+	config := &genai.GenerateContentConfig{
+		CandidateCount:   1,
+		ResponseMIMEType: mimeType,
+		ResponseSchema:   schema,
 	}
-	if texts := responses(resp); len(texts) > 0 {
-		return texts, nil
-	}
-	return nil, errors.New("no content generated")
-}
-
-// model returns a new instance of the generative model
-// for this client, with the candidate count set to 1,
-// the MIME type set to mimeType, and the response schema set
-// to schema.
-func (c *Client) model(mimeType string, schema *genai.Schema) *genai.GenerativeModel {
-	model := c.genai.GenerativeModel(c.generativeModel)
-	model.SetCandidateCount(1)
-	model.ResponseMIMEType = mimeType
-	model.ResponseSchema = schema
 	if c.temperature >= 0 {
-		model.SetTemperature(c.temperature)
+		config.Temperature = &c.temperature
 	}
-	return model
+	resp, err := c.genai.Models.GenerateContent(ctx, c.generativeModel, []*genai.Content{{Role: genai.RoleUser, Parts: parts}}, config)
+	if err != nil {
+		return "", err
+	}
+	text := resp.Text()
+	if text == "" {
+		return "", errors.New("no content generated")
+	}
+	return text, nil
 }
 
 // parts converts the given prompt parts to [genai.Part]s of
 // their corresponding type.
-func (c *Client) parts(promptParts []llm.Part) ([]genai.Part, error) {
-	var parts = make([]genai.Part, len(promptParts))
+func (c *Client) parts(promptParts []llm.Part) ([]*genai.Part, error) {
+	var parts = make([]*genai.Part, len(promptParts))
 	for i, p := range promptParts {
 		switch p := p.(type) {
 		case llm.Text:
-			parts[i] = genai.Text(p)
+			parts[i] = genai.NewPartFromText(string(p))
 		case llm.Blob:
-			parts[i] = genai.Blob{
-				MIMEType: p.MIMEType,
-				Data:     p.Data,
-			}
+			parts[i] = genai.NewPartFromBytes(p.Data, p.MIMEType)
 		default:
 			return nil, fmt.Errorf("bad type for part: %T; need string or llm.Blob", p)
 		}
 	}
 	return parts, nil
-}
-
-// responses parses all text responses from the response.
-func responses(resp *genai.GenerateContentResponse) (rs []string) {
-	for _, c := range resp.Candidates {
-		if c.Content != nil {
-			for _, p := range c.Content.Parts {
-				if txt, ok := p.(genai.Text); ok {
-					rs = append(rs, string(txt))
-				}
-			}
-		}
-	}
-	return rs
 }
