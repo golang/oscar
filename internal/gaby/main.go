@@ -540,10 +540,12 @@ func (g *Gaby) newServer(report func(error, *http.Request)) *http.ServeMux {
 		setLevelEndpoint    = "setlevel"
 		githubEventEndpoint = "github-event"
 		crawlEndpoint       = "crawl"
+		embedEndpoint       = "embed"
 		bisectEndpoint      = "bisect"
 	)
 	cronEndpointCounter := g.newEndpointCounter(cronEndpoint)
 	crawlEndpointCounter := g.newEndpointCounter(crawlEndpoint)
+	embedEndpointCounter := g.newEndpointCounter(embedEndpoint)
 	githubEventEndpointCounter := g.newEndpointCounter(githubEventEndpoint)
 
 	mux := http.NewServeMux()
@@ -584,6 +586,23 @@ func (g *Gaby) newServer(report func(error, *http.Request)) *http.ServeMux {
 			}
 		}
 		cronEndpointCounter.Add(r.Context(), 1)
+	})
+
+	// embedEndpoint is meant to be called by hand
+	// when running a binary with a new embedding database configured,
+	// to backfill embeddings.
+	mux.HandleFunc("GET /"+embedEndpoint, func(w http.ResponseWriter, r *http.Request) {
+		g.slog.Info(embedEndpoint + " start")
+		defer g.slog.Info(embedEndpoint + " end")
+
+		// No lock here - g.embedAll already locks.
+
+		if err := g.embedAll(g.ctx); err != nil {
+			report(err, r)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+
+		embedEndpointCounter.Add(r.Context(), 1)
 	})
 
 	// crawlEndpoint triggers the web crawl configured in [Gaby.crawler].

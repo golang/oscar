@@ -59,15 +59,22 @@ func Sync(ctx context.Context, lg *slog.Logger, vdb storage.VectorDB, embed llm.
 		return nil
 	}
 
+	var start, end string
 	for d := range w.Recent() {
-		lg.Debug("embeddocs sync start", "model", model, "doc", d.ID)
+		if start == "" {
+			start = d.ID
+		}
+		end = d.ID
 		batch = append(batch, llm.EmbedDoc{Title: d.Title, Text: d.Text})
 		ids = append(ids, d.ID)
 		batchLast = d.DBTime
 		if len(batch) >= batchSize {
+			lg.Debug("embeddocs sync flush", "model", model, "start", start, "end", end)
 			if err := flush(); err != nil {
 				return err
 			}
+			start = ""
+			end = ""
 		}
 	}
 	if len(batch) > 0 {
@@ -75,6 +82,7 @@ func Sync(ctx context.Context, lg *slog.Logger, vdb storage.VectorDB, embed llm.
 		// which has to be called during an iteration over w.Recent.
 		// Start a new iteration just to call flush and then break out.
 		for _ = range w.Recent() {
+			lg.Debug("embeddocs sync flush", "model", model, "start", start, "end", end)
 			if err := flush(); err != nil {
 				return err
 			}
