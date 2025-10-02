@@ -13,6 +13,8 @@ import (
 
 // An Embedder computes vector embeddings of a list of documents.
 //
+// EmbeddingModel returns the name of the underlying embedding model.
+//
 // EmbedDocs accepts an arbitrary number of documents and returns
 // their embeddings. If the underlying implementation has a limit on
 // the batch size, it should make multiple requests in order to process
@@ -24,6 +26,7 @@ import (
 // can nonetheless be helpful when writing tests,
 // and see [golang.org/x/oscar/internal/gcp/gemini] for a real implementation.
 type Embedder interface {
+	EmbeddingModel() string
 	EmbedDocs(ctx context.Context, docs []EmbedDoc) ([]Vector, error)
 }
 

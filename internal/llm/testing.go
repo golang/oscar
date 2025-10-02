@@ -55,6 +55,8 @@ func quote(text string) Vector {
 // quoter is a quoting Embedder, returned by QuoteEmbedder
 type quoter struct{}
 
+func (quoter) EmbeddingModel() string { return "quote" }
+
 // EmbedDocs implements Embedder by quoting.
 func (quoter) EmbedDocs(ctx context.Context, docs []EmbedDoc) ([]Vector, error) {
 	var vecs []Vector

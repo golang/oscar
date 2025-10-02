@@ -19,12 +19,13 @@ import (
 // Sync reads new documents from dc, embeds them using embed,
 // and then writes the (docid, vector) pairs to vdb.
 //
-// Sync uses [docs.DocWatcher] with the the name “embeddocs” to
+// Sync uses [docs.DocWatcher] with the given watcher name to
 // save its position across multiple calls.
 //
 // Sync logs status and unexpected problems to lg.
 func Sync(ctx context.Context, lg *slog.Logger, vdb storage.VectorDB, embed llm.Embedder, dc *docs.Corpus) error {
-	lg.Info("embeddocs sync")
+	model := embed.EmbeddingModel()
+	lg.Info("embeddocs sync", "model", model)
 
 	const batchSize = 100
 	var (
@@ -32,12 +33,12 @@ func Sync(ctx context.Context, lg *slog.Logger, vdb storage.VectorDB, embed llm.
 		ids       []string
 		batchLast timed.DBTime
 	)
-	w := dc.DocWatcher("embeddocs")
+	w := dc.DocWatcher(watcherKey(model))
 
 	flush := func() error {
 		vecs, err := embed.EmbedDocs(ctx, batch)
 		if len(vecs) > len(ids) {
-			return fmt.Errorf("embeddocs length mismatch: batch=%d vecs=%d ids=%d", len(batch), len(vecs), len(ids))
+			return fmt.Errorf("embeddocs %s length mismatch: batch=%d vecs=%d ids=%d", model, len(batch), len(vecs), len(ids))
 		}
 		vbatch := vdb.Batch()
 		for i, v := range vecs {
@@ -45,10 +46,10 @@ func Sync(ctx context.Context, lg *slog.Logger, vdb storage.VectorDB, embed llm.
 		}
 		vbatch.Apply()
 		if err != nil {
-			return fmt.Errorf("embeddocs EmbedDocs error: %w", err)
+			return fmt.Errorf("embeddocs %s EmbedDocs error: %w", model, err)
 		}
 		if len(vecs) != len(ids) {
-			return fmt.Errorf("embeddocs length mismatch: batch=%d vecs=%d ids=%d", len(batch), len(vecs), len(ids))
+			return fmt.Errorf("embeddocs %s length mismatch: batch=%d vecs=%d ids=%d", model, len(batch), len(vecs), len(ids))
 		}
 		vdb.Flush()
 		w.MarkOld(batchLast)
@@ -59,7 +60,7 @@ func Sync(ctx context.Context, lg *slog.Logger, vdb storage.VectorDB, embed llm.
 	}
 
 	for d := range w.Recent() {
-		lg.Debug("embeddocs sync start", "doc", d.ID)
+		lg.Debug("embeddocs sync start", "model", model, "doc", d.ID)
 		batch = append(batch, llm.EmbedDoc{Title: d.Title, Text: d.Text})
 		ids = append(ids, d.ID)
 		batchLast = d.DBTime
@@ -84,6 +85,18 @@ func Sync(ctx context.Context, lg *slog.Logger, vdb storage.VectorDB, embed llm.
 }
 
 // Latest returns the latest known DBTime marked old by the corpus's Watcher.
-func Latest(dc *docs.Corpus) timed.DBTime {
-	return dc.DocWatcher("embeddocs").Latest()
+func Latest(dc *docs.Corpus, embed llm.Embedder) timed.DBTime {
+	return dc.DocWatcher(watcherKey(embed.EmbeddingModel())).Latest()
+}
+
+// watcherKey returns the watcher key for the given model.
+func watcherKey(model string) string {
+	// Special case: we embedded everything using text-embedding-004
+	// without the model suffix on the watcher key.
+	// TODO: Remove when we stop using text-embedding-004.
+	if model == "text-embedding-004/768" {
+		return "embeddocs"
+	}
+
+	return "embeddocs/" + model
 }

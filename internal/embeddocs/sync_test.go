@@ -141,6 +141,8 @@ func TestBadEmbedders(t *testing.T) {
 
 type tooManyEmbed struct{}
 
+func (tooManyEmbed) EmbeddingModel() string { return "testing" }
+
 func (tooManyEmbed) EmbedDocs(ctx context.Context, docs []llm.EmbedDoc) ([]llm.Vector, error) {
 	vec, _ := llm.QuoteEmbedder().EmbedDocs(ctx, docs)
 	vec = append(vec, vec...)
@@ -149,12 +151,16 @@ func (tooManyEmbed) EmbedDocs(ctx context.Context, docs []llm.EmbedDoc) ([]llm.V
 
 type embedErr struct{}
 
+func (embedErr) EmbeddingModel() string { return "testing" }
+
 func (embedErr) EmbedDocs(ctx context.Context, docs []llm.EmbedDoc) ([]llm.Vector, error) {
 	vec, _ := llm.QuoteEmbedder().EmbedDocs(ctx, docs)
 	return vec, fmt.Errorf("EMBED ERROR")
 }
 
 type embedHalf struct{}
+
+func (embedHalf) EmbeddingModel() string { return "testing" }
 
 func (embedHalf) EmbedDocs(ctx context.Context, docs []llm.EmbedDoc) ([]llm.Vector, error) {
 	vec, _ := llm.QuoteEmbedder().EmbedDocs(ctx, docs)

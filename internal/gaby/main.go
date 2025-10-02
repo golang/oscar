@@ -46,7 +46,6 @@ import (
 	"golang.org/x/oscar/internal/llm"
 	"golang.org/x/oscar/internal/llmapp"
 	"golang.org/x/oscar/internal/overview"
-	"golang.org/x/oscar/internal/pebble"
 	"golang.org/x/oscar/internal/queue"
 	"golang.org/x/oscar/internal/related"
 	"golang.org/x/oscar/internal/rules"
@@ -149,6 +148,15 @@ func main() {
 	shutdown := g.initGCP() // sets up g.db, g.vector, g.secret, ...
 	defer shutdown()
 
+	ai, err := gemini.NewClient(g.ctx, g.slog, g.secret, g.http, gemini.DefaultEmbeddingModel, gemini.DefaultGenerativeModel)
+	if err != nil {
+		log.Fatal(err)
+	}
+	g.embed = ai
+	g.llm = ai
+
+	g.initDB()
+
 	g.github = github.New(g.slog, g.db, g.secret, g.http)
 	for _, project := range g.githubProjects {
 		if err := g.github.Add(project); err != nil {
@@ -178,12 +186,6 @@ func main() {
 
 	g.docs = docs.New(g.slog, g.db)
 
-	ai, err := gemini.NewClient(g.ctx, g.slog, g.secret, g.http, gemini.DefaultEmbeddingModel, gemini.DefaultGenerativeModel)
-	if err != nil {
-		log.Fatal(err)
-	}
-	g.embed = ai
-	g.llm = ai
 	g.llmapp = llmapp.NewWithChecker(g.slog, ai, g.policy, g.db)
 	ov := overview.New(g.slog, g.db, g.github, g.llmapp, "overview", "gabyhelp")
 	for _, proj := range g.githubProjects {
@@ -281,7 +283,7 @@ func main() {
 		crawl.DocWatcherID:        docs.LatestFunc(cr),
 		googlegroups.DocWatcherID: docs.LatestFunc(g.ggroups),
 
-		"embeddocs": func() timed.DBTime { return embeddocs.Latest(g.docs) },
+		"embeddocs": func() timed.DBTime { return embeddocs.Latest(g.docs, g.embed) },
 
 		"gerritlinks fix": cf.Latest,
 		"related":         rp.Latest,
@@ -321,21 +323,6 @@ func parseApprovalPkgs(s string) ([]string, error) {
 	return pkgs, nil
 }
 
-// initLocal initializes a local Gaby instance.
-// No longer used, but here for experimentation.
-func (g *Gaby) initLocal() {
-	g.slog.Info("gaby local init", "flags", flags)
-
-	g.secret = secret.Netrc()
-
-	db, err := pebble.Open(g.slog, "gaby.db")
-	if err != nil {
-		log.Fatal(err)
-	}
-	g.db = db
-	g.vector = storage.MemVectorDB(db, g.slog, "")
-}
-
 // initGCP initializes a Gaby instance to use GCP databases and other resources.
 func (g *Gaby) initGCP() (shutdown func()) {
 	shutdown = func() {}
@@ -367,39 +354,6 @@ func (g *Gaby) initGCP() (shutdown func()) {
 
 	if flags.firestoredb == "" {
 		log.Fatal("missing -firestoredb flag")
-	}
-	spec := &dbspec.Spec{
-		Kind:     "firestore",
-		Location: flags.project,
-		Name:     flags.firestoredb,
-	}
-	db, err := spec.Open(g.ctx, g.slog)
-	if err != nil {
-		log.Fatal(err)
-	}
-	g.db = db
-
-	const vectorDBNamespace = "gaby"
-	if flags.overlay != "" {
-		spec, err := dbspec.Parse(flags.overlay)
-		if err != nil {
-			log.Fatal(err)
-		}
-		if spec.IsVector {
-			log.Fatal("omit vector DB spec for -overlay")
-		}
-		odb, err := spec.Open(g.ctx, g.slog)
-		if err != nil {
-			log.Fatal(err)
-		}
-		g.db = storage.NewOverlayDB(odb, g.db)
-		g.vector = storage.MemVectorDB(g.db, g.slog, vectorDBNamespace)
-	} else {
-		vdb, err := firestore.NewVectorDB(g.ctx, g.slog, spec.Location, spec.Name, vectorDBNamespace)
-		if err != nil {
-			log.Fatal(err)
-		}
-		g.vector = vdb
 	}
 
 	sdb, err := gcpsecret.NewSecretDB(g.ctx, flags.project)
@@ -447,6 +401,42 @@ func (g *Gaby) initGCP() (shutdown func()) {
 		g.meter = noop.Meter{}
 	}
 	return shutdown
+}
+
+func (g *Gaby) initDB() {
+	spec := &dbspec.Spec{
+		Kind:     "firestore",
+		Location: flags.project,
+		Name:     flags.firestoredb,
+	}
+	db, err := spec.Open(g.ctx, g.slog)
+	if err != nil {
+		log.Fatal(err)
+	}
+	g.db = db
+
+	vectorDBNamespace := "gaby" + slashEmbed(g.embed)
+	if flags.overlay != "" {
+		spec, err := dbspec.Parse(flags.overlay)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if spec.IsVector {
+			log.Fatal("omit vector DB spec for -overlay")
+		}
+		odb, err := spec.Open(g.ctx, g.slog)
+		if err != nil {
+			log.Fatal(err)
+		}
+		g.db = storage.NewOverlayDB(odb, g.db)
+		g.vector = storage.MemVectorDB(g.db, g.slog, vectorDBNamespace)
+	} else {
+		vdb, err := firestore.NewVectorDB(g.ctx, g.slog, spec.Location, spec.Name, vectorDBNamespace)
+		if err != nil {
+			log.Fatal(err)
+		}
+		g.vector = vdb
+	}
 }
 
 // taskQueue returns a bisection Cloud Task queue.
@@ -919,10 +909,20 @@ func (g *Gaby) syncGroups(ctx context.Context) error {
 // embedAll store embeddings for all new documents in the vector database.
 // This must happen after all other syncs.
 func (g *Gaby) embedAll(ctx context.Context) error {
-	g.db.Lock(gabyEmbedLock)
-	defer g.db.Unlock(gabyEmbedLock)
+	lock := gabyEmbedLock + slashEmbed(g.embed)
+	g.db.Lock(lock)
+	defer g.db.Unlock(lock)
 
 	return embeddocs.Sync(ctx, g.slog, g.vector, g.embed, g.docs)
+}
+
+func slashEmbed(embed llm.Embedder) string {
+	// Special case: we used a namespace with no extra elements for text-embedding-004.
+	// TODO: Remove when we stop using text-embedding-004.
+	if embed.EmbeddingModel() == "text-embedding-004/768" {
+		return ""
+	}
+	return "/" + embed.EmbeddingModel()
 }
 
 func (g *Gaby) fixAllComments(ctx context.Context) error {
