@@ -1,5 +1,5 @@
 httprr trace v1
-606 1060
+606 959
 POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent HTTP/1.1
 Host: generativelanguage.googleapis.com
 User-Agent: gemini httprecord
@@ -9,9 +9,9 @@ Content-Type: application/json
 {"contents":[{"parts":[{"text":"(confidence is between 0 and 100)"},{"text":"What is the tallest mountain in the world?"}],"role":"user"}],"generationConfig":{"candidateCount":1,"responseMimeType":"application/json","responseSchema":{"nullable":false,"properties":{"answer":{"nullable":false,"type":"STRING"},"confidence":{"nullable":false,"type":"INTEGER"}},"type":"OBJECT"}}}HTTP/2.0 200 OK
 Alt-Svc: h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
 Content-Type: application/json; charset=UTF-8
-Date: Fri, 03 Oct 2025 15:35:33 GMT
+Date: Fri, 03 Oct 2025 15:37:19 GMT
 Server: scaffolding on HTTPServer2
-Server-Timing: gfet4t7; dur=3919
+Server-Timing: gfet4t7; dur=1971
 Vary: Origin
 Vary: X-Origin
 Vary: Referer
@@ -25,7 +25,7 @@ X-Xss-Protection: 0
       "content": {
         "parts": [
           {
-            "text": "{\n  \"answer\": \"Mount Everest is the tallest mountain in the world. Its peak is 8,848.86 meters (29,031.7 feet) above sea level.\",\n  \"confidence\": 100\n}"
+            "text": "{\n  \"answer\": \"Mount Everest\",\n  \"confidence\": 100\n}"
           }
         ],
         "role": "model"
@@ -36,16 +36,16 @@ X-Xss-Protection: 0
   ],
   "usageMetadata": {
     "promptTokenCount": 22,
-    "candidatesTokenCount": 56,
-    "totalTokenCount": 276,
+    "candidatesTokenCount": 21,
+    "totalTokenCount": 95,
     "promptTokensDetails": [
       {
         "modality": "TEXT",
         "tokenCount": 22
       }
     ],
-    "thoughtsTokenCount": 198
+    "thoughtsTokenCount": 52
   },
   "modelVersion": "gemini-2.5-pro",
-  "responseId": "Re3faIyoIfWzjMcPnNaqwQ8"
+  "responseId": "r-3faMDWK7ni_uMPupzmoAc"
 }

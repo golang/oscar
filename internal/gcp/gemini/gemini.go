@@ -56,7 +56,7 @@ type Client struct {
 }
 
 const (
-	DefaultEmbeddingModel  = "text-embedding-004"
+	DefaultEmbeddingModel  = "gemini-embedding-001"
 	DefaultGenerativeModel = "gemini-2.5-pro"
 )
 
