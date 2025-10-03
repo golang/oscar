@@ -1,6 +1,6 @@
 steps:
   - id: Lock
-    name: golang:1.23.0
+    name: golang:1.25.0  # note: Go version also below for Test and in Dockerfile
     entrypoint: bash
     args:
       - -ec
@@ -35,7 +35,7 @@ steps:
         fi
 
   - id: Test
-    name: golang:1.23.0
+    name: golang:1.25.0
     entrypoint: bash
     args:
       - -ec
