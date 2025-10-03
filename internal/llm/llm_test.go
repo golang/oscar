@@ -5,6 +5,7 @@
 package llm
 
 import (
+	"math"
 	"slices"
 	"testing"
 )
@@ -22,5 +23,14 @@ func TestVector(t *testing.T) {
 	v3.Decode(enc)
 	if !slices.Equal(v3, v1) {
 		t.Errorf("Decode(Encode(%v)) = %v, want %v", v1, v3, v1)
+	}
+
+	v1Abs := math.Sqrt(v1.Dot(v1))
+	n := v1.Normal()
+	if dot := v1.Dot(n); math.Abs(dot-v1Abs) > 1e-5 {
+		t.Errorf("v1.Dot(v1) = %v; v1.Dot(v1.Normal()) = %v, want %v", v1Abs, dot, v1Abs)
+	}
+	if dot := n.Dot(n); math.Abs(dot-1) > 1e-5 {
+		t.Errorf("n.Dot(n) = %v, want %v", dot, 1.0)
 	}
 }

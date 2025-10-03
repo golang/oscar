@@ -52,6 +52,24 @@ func (v Vector) Dot(w Vector) float64 {
 	return t
 }
 
+// Normal returns a normalized copy of v.
+// It is useful with APIs that return truncated, denormalized embedding vectors.
+// Vector search works best on normalized vectors so that only the directions
+// are being compared, not the magnitudes.
+func (v Vector) Normal() Vector {
+	abs := math.Sqrt(v.Dot(v))
+	if abs <= 1e-10 {
+		// Give up on very tiny vectors; should not happen.
+		return v
+	}
+	scale := float32(1 / abs)
+	w := make(Vector, len(v))
+	for i, vi := range v {
+		w[i] = vi * scale
+	}
+	return w
+}
+
 // Encode returns a byte encoding of the vector v,
 // suitable for storing in a database.
 func (v Vector) Encode() []byte {
