@@ -62,6 +62,7 @@ type gabyFlags struct {
 	enablesync    bool
 	enablechanges bool
 	testactions   bool
+	netrc         bool
 	level         string
 	overlay       string
 	autoApprove   string // list of packages that do not require manual approval
@@ -81,6 +82,7 @@ func init() {
 	flag.StringVar(&flags.overlay, "overlay", "", "spec for overlay to DB; see internal/dbspec for syntax")
 	flag.StringVar(&flags.autoApprove, "autoapprove", "", "comma-separated list of packages whose actions do not require approval")
 	flag.BoolVar(&flags.enforcePolicy, "enforcepolicy", false, "whether to enforce safety policies on LLM inputs and outputs")
+	flag.BoolVar(&flags.netrc, "netrc", false, "use netrc for secrets")
 }
 
 // Gaby holds the state for gaby's execution.
@@ -356,11 +358,15 @@ func (g *Gaby) initGCP() (shutdown func()) {
 		log.Fatal("missing -firestoredb flag")
 	}
 
-	sdb, err := gcpsecret.NewSecretDB(g.ctx, flags.project)
-	if err != nil {
-		log.Fatal(err)
+	if flags.netrc {
+		g.secret = secret.Netrc()
+	} else {
+		sdb, err := gcpsecret.NewSecretDB(g.ctx, flags.project)
+		if err != nil {
+			log.Fatal(err)
+		}
+		g.secret = sdb
 	}
-	g.secret = sdb
 
 	if flags.enforcePolicy {
 		llmchecker, err := checks.New(g.ctx, g.slog, flags.project, llm.AllPolicyTypes())
