@@ -74,22 +74,33 @@ func (g *Gaby) populateSearchPage(r *http.Request) *searchPage {
 //
 // It returns an error if search fails.
 func (g *Gaby) search(ctx context.Context, q string, opts search.Options) (results []search.Result, err error) {
+	q = strings.TrimSpace(q)
 	if q == "" {
 		return nil, nil
 	}
 
-	if vec, ok := g.vector.Get(q); ok {
-		results = search.Vector(g.vector, g.docs,
-			&search.VectorRequest{
+	// If a document ID is too large, then the g.vector.Get will fail
+	// (and crash the program) due to a Firestore error about the
+	// purported ID being invalid.
+	// Don't try to use large queries as document IDs.
+	const maxKeyForIDLookup = 700
+
+	matchID := false
+	if len(q) < maxKeyForIDLookup {
+		if vec, ok := g.vector.Get(q); ok {
+			matchID = true
+			results = search.Vector(g.vector, g.docs, &search.VectorRequest{
 				Options: opts,
 				Vector:  vec,
 			})
-	} else {
-		if results, err = search.Query(ctx, g.vector, g.docs, g.embed,
-			&search.QueryRequest{
-				EmbedDoc: llm.EmbedDoc{Text: q},
-				Options:  opts,
-			}); err != nil {
+		}
+	}
+	if !matchID {
+		results, err = search.Query(ctx, g.vector, g.docs, g.embed, &search.QueryRequest{
+			EmbedDoc: llm.EmbedDoc{Text: q},
+			Options:  opts,
+		})
+		if err != nil {
 			return nil, err
 		}
 	}
