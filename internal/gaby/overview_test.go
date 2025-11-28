@@ -318,7 +318,7 @@ func TestParseOverviewPageQuery(t *testing.T) {
 				t.Fatalf("parseOverviewPageQuery(%q) error = %v, wantErr %v", tt.in, err, tt.wantErr)
 			}
 			if proj != tt.wantProject || issue != tt.wantIssue {
-				t.Errorf("parseOverviewPageQuery(%q) = (%q, %q, %v), want (%q, %q, _)", tt.in, proj, issue, err, tt.wantProject, tt.wantIssue)
+				t.Errorf("parseOverviewPageQuery(%q) = (%q, %d, %v), want (%q, %d, _)", tt.in, proj, issue, err, tt.wantProject, tt.wantIssue)
 			}
 		})
 	}
