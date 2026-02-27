@@ -1,6 +1,6 @@
 module golang.org/x/oscar
 
-go 1.25.0
+go 1.26.0
 
 require (
 	cloud.google.com/go/cloudtasks v1.13.0
