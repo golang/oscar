@@ -1068,8 +1068,7 @@ func (ev *eval[T]) matchMethods(typ reflect.Type, e *nameExpr, subFn func(contex
 
 	var methodCalls []func(context.Context, reflect.Value) reflect.Value
 	var matchFns []func(context.Context, reflect.Value) bool
-	for i := range typ.NumMethod() {
-		m := typ.Method(i)
+	for m := range typ.Methods() {
 		if !methodTypeOK(typ, m) {
 			continue
 		}
@@ -1638,8 +1637,7 @@ func (ev *eval[T]) multipleCompareVal(op tokenKind, leftType reflect.Type, right
 func (ev *eval[T]) compareStructFields(typ reflect.Type, buildMatchFn func(reflect.Type) func(context.Context, reflect.Value) bool) func(context.Context, reflect.Value) bool {
 	var fieldIndexes [][]int
 	var matchFns []func(context.Context, reflect.Value) bool
-	for i := range typ.NumField() {
-		field := typ.Field(i)
+	for field := range typ.Fields() {
 
 		// Ignore unexported fields. We are matching on types
 		// that are defined by a program that expects them
@@ -1708,8 +1706,7 @@ func methodName(typ reflect.Type, method string) (reflect.Method, bool) {
 		return m, true
 	}
 
-	for i := range typ.NumMethod() {
-		m := typ.Method(i)
+	for m := range typ.Methods() {
 		if camelCaseMatch(method, m.Name) && methodTypeOK(typ, m) {
 			return m, true
 		}
