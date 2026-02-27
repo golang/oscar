@@ -53,8 +53,7 @@ type Post interface {
 
 // Updates contains changes to a value.
 // It is used in conjunction with [Source.Update].
-type Updates interface {
-}
+type Updates any
 
 // PostUpdates holds updates to a [Post].
 type PostUpdates interface {
