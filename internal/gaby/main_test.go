@@ -7,7 +7,8 @@ package main
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
+
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -33,7 +34,7 @@ func TestNewServer(t *testing.T) {
 	defer s.Close()
 
 	read := func(r *http.Response) string {
-		b, _ := ioutil.ReadAll(r.Body)
+		b, _ := io.ReadAll(r.Body)
 		r.Body.Close()
 		return string(b)
 	}
