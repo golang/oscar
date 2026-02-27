@@ -139,13 +139,11 @@ func TestDBLock(t *testing.T, db locker) {
 	db.Lock("abc")
 	c := make(chan struct{})
 	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
+	wg.Go(func() {
 		db.Lock("abc")
 		close(c)
 		db.Unlock("abc")
-		wg.Done()
-	}()
+	})
 
 	// The db.Lock in the goroutine should block, since the lock is already held.
 	select {

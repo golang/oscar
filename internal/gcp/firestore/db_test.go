@@ -175,21 +175,17 @@ func TestLock(t *testing.T) {
 
 		var wg sync.WaitGroup
 		for range 5 {
-			wg.Add(1)
-			go func() {
+			wg.Go(func() {
 				db.Lock(name)
 				time.Sleep(time.Millisecond)
 				db.Unlock(name)
-				wg.Done()
-			}()
+			})
 
-			wg.Add(1)
-			go func() {
+			wg.Go(func() {
 				db2.Lock(name)
 				time.Sleep(time.Millisecond)
 				db2.Unlock(name)
-				wg.Done()
-			}()
+			})
 		}
 
 		wg.Wait()

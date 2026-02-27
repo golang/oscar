@@ -326,23 +326,17 @@ func TestFixGitHubIssue(t *testing.T) {
 		f, project, db := newFixer(t)
 		var wg sync.WaitGroup
 
-		wg.Add(1)
-		go func() {
+		wg.Go(func() {
 			runFix(t, f, project, 20)
-			wg.Done()
-		}()
+		})
 
-		wg.Add(1)
-		go func() {
+		wg.Go(func() {
 			runActions(t, f)
-			wg.Done()
-		}()
+		})
 
-		wg.Add(1)
-		go func() {
+		wg.Go(func() {
 			runFix(t, f, project, 18)
-			wg.Done()
-		}()
+		})
 
 		wg.Wait()
 

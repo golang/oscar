@@ -29,11 +29,9 @@ func collectChanges(ctx context.Context, lg *slog.Logger, client *gerrit.Client,
 	chAccount := make(chan *gerrit.Change, 16)
 
 	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		collectAccounts(client, accounts, chAccount)
-	}()
+	})
 
 	// Collect account data first.
 	for _, project := range projects {

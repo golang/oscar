@@ -30,9 +30,7 @@ func CollectChangePreds(ctx context.Context, lg *slog.Logger, it iter.Seq[Change
 	chOut := make(chan ChangePreds, count)
 
 	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		defer close(chIn)
 		for change := range it {
 			select {
@@ -41,7 +39,7 @@ func CollectChangePreds(ctx context.Context, lg *slog.Logger, it iter.Seq[Change
 				return
 			}
 		}
-	}()
+	})
 
 	wg.Add(count)
 	for range count {
