@@ -15,6 +15,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"time"
 )
 
@@ -185,10 +186,5 @@ func (s *Sandbox) Validate() error {
 }
 
 func isBindMount(m mount) bool {
-	for _, opt := range m.Options {
-		if opt == "bind" {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(m.Options, "bind")
 }
