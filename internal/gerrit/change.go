@@ -283,8 +283,8 @@ func (c *Client) unmarshalLabel(ch *Change, input json.RawMessage) *LabelInfo {
 	// lengthy AccountInfo data each time.
 	type approvalInfo struct {
 		Value                int             `json:"value,omitempty"`
-		PermittedVotingRange VotingRangeInfo `json:"permitted_voting_range,omitempty"`
-		Date                 TimeStamp       `json:"date,omitempty"`
+		PermittedVotingRange VotingRangeInfo `json:"permitted_voting_range"`
+		Date                 TimeStamp       `json:"date"`
 		Tag                  string          `json:"tag,omitempty"`
 		PostSubmit           bool            `json:"post_submit,omitempty"`
 	}
