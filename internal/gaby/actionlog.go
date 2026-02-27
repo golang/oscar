@@ -272,7 +272,7 @@ func (g *Gaby) doActionDecision(r *http.Request) (data []byte, status int, err e
 		Approved: decision == "Approve",
 	}
 	actions.AddDecision(g.db, kind, key, d)
-	return []byte(fmt.Sprintf("decision: %+v", d)), http.StatusOK, nil
+	return fmt.Appendf(nil, "decision: %+v", d), http.StatusOK, nil
 }
 
 func (g *Gaby) handleActionRerun(w http.ResponseWriter, r *http.Request) {

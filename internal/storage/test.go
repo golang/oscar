@@ -42,7 +42,7 @@ func TestDB(t *testing.T, db DB) {
 
 	b := db.Batch()
 	for i := range 10 {
-		b.Set(ordered.Encode(i), []byte(fmt.Sprint(i)))
+		b.Set(ordered.Encode(i), fmt.Append(nil, i))
 		b.MaybeApply()
 	}
 	b.Apply()
@@ -102,7 +102,7 @@ func TestDB(t *testing.T, db DB) {
 	b = db.Batch()
 	for i := range 5 {
 		b.Delete(ordered.Encode(i))
-		b.Set(ordered.Encode(2*i), []byte(fmt.Sprint(2*i)))
+		b.Set(ordered.Encode(2*i), fmt.Append(nil, 2*i))
 	}
 	b.DeleteRange(ordered.Encode(0), ordered.Encode(0))
 	b.Apply()

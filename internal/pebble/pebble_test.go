@@ -66,7 +66,7 @@ func TestDB(t *testing.T) {
 			binary.BigEndian.PutUint64(val[i:], pcg.Uint64())
 		}
 		binary.BigEndian.PutUint64(val, uint64(key))
-		b.Set([]byte(fmt.Sprint(key)), val)
+		b.Set(fmt.Append(nil, key), val)
 		if b.MaybeApply() {
 			if applied++; applied == 2 {
 				break
@@ -76,7 +76,7 @@ func TestDB(t *testing.T) {
 	b.Apply()
 
 	for key := range 200 {
-		val, ok := db.Get([]byte(fmt.Sprint(key)))
+		val, ok := db.Get(fmt.Append(nil, key))
 		if !ok {
 			t.Fatalf("after batch, missing key %d", key)
 		}
