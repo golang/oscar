@@ -266,7 +266,7 @@ func (tc *TestingClient) setField(filename string, line, data string, indent int
 		case reflect.Int:
 			// For ints just put all the values on one line.
 			var ints []int
-			for _, vi := range strings.Fields(val) {
+			for vi := range strings.FieldsSeq(val) {
 				i, err := strconv.Atoi(vi)
 				if err != nil {
 					return "", fmt.Errorf("%s: field %q: %v", filename, key, err)
@@ -279,7 +279,7 @@ func (tc *TestingClient) setField(filename string, line, data string, indent int
 			// For strings just put all the values on one line.
 			// Strings are space separated, no quoting.
 			var strs []string
-			for _, vs := range strings.Fields(val) {
+			for vs := range strings.FieldsSeq(val) {
 				vs = strings.TrimSpace(vs)
 				if vs == "" {
 					continue

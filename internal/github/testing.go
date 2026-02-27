@@ -330,7 +330,7 @@ func (tc *TestingClient) LoadTxtarData(data []byte) error {
 				issue.ClosedAt = tm
 			case "Labels":
 				if val != "" {
-					for _, name := range strings.Split(val, ", ") {
+					for name := range strings.SplitSeq(val, ", ") {
 						issue.Labels = append(issue.Labels, Label{Name: name})
 					}
 				}

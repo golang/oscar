@@ -77,7 +77,7 @@ func Netrc() ReadOnlyMap {
 func openNetrc(file string) ReadOnlyMap {
 	m := make(ReadOnlyMap)
 	if data, err := os.ReadFile(file); err == nil {
-		for _, line := range strings.Split(string(data), "\n") {
+		for line := range strings.SplitSeq(string(data), "\n") {
 			f := strings.Fields(line)
 			if len(f) == 6 && f[0] == "machine" && f[2] == "login" && f[4] == "password" {
 				m[f[1]] = f[3] + ":" + f[5]
