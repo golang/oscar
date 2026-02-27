@@ -72,7 +72,7 @@ func TestRun(t *testing.T) {
 			wantReport: &actions.RunReport{
 				Completed: 2,
 			},
-			autoApprove: ptr(true),
+			autoApprove: new(true),
 			wantEdits: []*github.TestingEdit{
 				{Project: project, Issue: 1, IssueCommentChanges: &github.IssueCommentChanges{
 					Body: mustComment(t, `an overview of issue 1 with 2 comment(s)`, w),
@@ -99,7 +99,7 @@ func TestRun(t *testing.T) {
 				gh.Testing().AddIssue(project, &github.Issue{Number: 2, Body: "issue 2", CreatedAt: dec31_2022})
 				gh.Testing().AddIssueComment(project, 2, &github.IssueComment{Body: "issue 2 comment 1"})
 			},
-			autoApprove: ptr(true),
+			autoApprove: new(true),
 			wantReport: &actions.RunReport{
 				Completed: 1,
 			},
@@ -123,8 +123,8 @@ func TestRun(t *testing.T) {
 				gh.Testing().AddIssue(project, &github.Issue{Number: 2, Body: "issue 2", CreatedAt: dec30_2023})
 				gh.Testing().AddIssueComment(project, 2, &github.IssueComment{Body: "issue 2 comment 1"})
 			},
-			autoApprove: ptr(true),
-			maxAge:      ptr(time.Hour * 24),
+			autoApprove: new(true),
+			maxAge:      new(time.Hour * 24),
 			wantReport: &actions.RunReport{
 				Completed: 1,
 			},
@@ -174,10 +174,6 @@ func TestRun(t *testing.T) {
 			}
 		})
 	}
-}
-
-func ptr[T any](v T) *T {
-	return &v
 }
 
 func mustComment(t *testing.T, s string, w *wrap.Wrapper) string {

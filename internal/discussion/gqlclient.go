@@ -147,7 +147,7 @@ func nodes[N node, Q query[N]](ctx context.Context, gc *gqlClient, q Q, vars var
 			if !page.PageInfo.HasNextPage {
 				return
 			}
-			vars[q.CursorName()] = gql.NewString(page.PageInfo.EndCursor)
+			vars[q.CursorName()] = new(page.PageInfo.EndCursor)
 		}
 	}
 }
