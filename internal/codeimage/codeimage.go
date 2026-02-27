@@ -50,7 +50,7 @@ func InBlob(ctx context.Context, blob llm.Blob, cgen llm.ContentGenerator) (stri
 		Description: "the program",
 	}
 	// Retry several times in the hope that the LLM will eventually produce a valid program.
-	for try := 0; try < 3; try++ {
+	for range 3 {
 		output, err := cgen.GenerateContent(ctx, schema, parts)
 		if err != nil {
 			return "", err

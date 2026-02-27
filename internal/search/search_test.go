@@ -52,7 +52,7 @@ func TestSearch(t *testing.T) {
 	vdb := storage.MemVectorDB(db, lg, "")
 	corpus := docs.New(lg, db)
 
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		id := fmt.Sprintf("id%d", i)
 		doc := llm.EmbedDoc{Title: fmt.Sprintf("title%d", i), Text: fmt.Sprintf("text-%s", strings.Repeat("x", i))}
 		corpus.Add(id, doc.Title, doc.Text)
