@@ -10,6 +10,7 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"golang.org/x/oauth2"
 	oauth2google "golang.org/x/oauth2/google"
@@ -137,11 +138,11 @@ func convertResponse(resp *ClassifyContentResponse) []*llm.PolicyResult {
 // the given text and optional promptParts. If the text represents an input to an LLM,
 // promptParts should be empty.
 func (c *Checker) newClassifyRequest(text string, promptParts []llm.Part) *ClassifyContentRequest {
-	var prompt string
+	var prompt strings.Builder
 	for _, p := range promptParts {
 		switch p := p.(type) {
 		case llm.Text:
-			prompt += string(p)
+			prompt.WriteString(string(p))
 		default:
 			// Not fatal; the prompt is only used for additional context.
 			c.lg.Info("checks.Checker: prompt type not supported", "part", p)
@@ -149,7 +150,7 @@ func (c *Checker) newClassifyRequest(text string, promptParts []llm.Part) *Class
 	}
 	return &ClassifyContentRequest{
 		Context: &RequestContext{
-			Prompt: prompt,
+			Prompt: prompt.String(),
 		},
 		Input: &InputContent{
 			TextInput: &TextInput{

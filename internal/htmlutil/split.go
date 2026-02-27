@@ -71,17 +71,18 @@ func walkHeadings(n *htmlpkg.Node, yield func(*Section) bool) bool {
 	flush := func(level int, id string) bool {
 		if level > 1 {
 			// Construct a title that gives the sequence of heading titles (h1 title > h2 title > ...).
-			title := titles[0]
+			var title strings.Builder
+			title.WriteString(titles[0])
 			for _, s := range titles[1:] {
 				if s != "" {
-					title += " > " + s
+					title.WriteString(" > " + s)
 				}
 			}
 
 			// Emit the section.
 			txt := strings.TrimSpace(text.String())
 			if txt != "" && lastID != "" {
-				if !yield(&Section{Title: title, ID: lastID, Text: txt}) {
+				if !yield(&Section{Title: title.String(), ID: lastID, Text: txt}) {
 					return false
 				}
 			}
