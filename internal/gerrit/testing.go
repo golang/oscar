@@ -259,7 +259,6 @@ func (tc *TestingClient) setField(filename string, line, data string, indent int
 			return "", err
 		}
 		data = rest
-		break
 
 	case reflect.Slice:
 		switch field.Type().Elem().Kind() {

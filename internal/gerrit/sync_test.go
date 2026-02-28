@@ -418,7 +418,7 @@ func TestSyncTesting(t *testing.T) {
 	project := "test"
 	numCLs := func(c *Client) int {
 		cnt := 0
-		for _, _ = range c.ChangeNumbers(project) {
+		for range c.ChangeNumbers(project) {
 			cnt++
 		}
 		return cnt

@@ -424,8 +424,6 @@ func (c *Client) syncIntervalChanges(ctx context.Context, proj *projectSync) (so
 			return some, nil
 		}
 	}
-
-	return some, nil
 }
 
 // syncComments updates the comments of a change in the database.

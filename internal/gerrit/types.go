@@ -260,7 +260,7 @@ type SubmitRecordInfo struct {
 	// CLOSED, closed changes cannot be submitted.
 	// FORCED, the change was submitted bypassing the submit rule.
 	// RULE_ERROR, rule code failed with an error.
-	status string `json:"status"`
+	Status string `json:"status"`
 	// A list of labels, each containing the following fields.
 	// * label: the label name.
 	// * status:
