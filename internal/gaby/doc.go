@@ -25,7 +25,7 @@
 //
 // An explicit goal for the Gaby code base is that it run well in many different environments,
 // ranging from a maintainer's home server or even Raspberry Pi all the way up to a
-// hosted cloud. (At the moment, Gaby runs on a Linux server in my basement.)
+// hosted cloud. Gaby currently runs on Google Cloud.
 // Due to this emphasis on portability, Gaby defines its own interfaces for all the functionality
 // it needs from the surrounding environment and then also defines a variety of
 // implementations of those interfaces.
@@ -35,7 +35,11 @@
 // Abstracting the various external functionality into interfaces also helps make
 // testing easier, and some packages also provide explicit testing support.
 //
-// The result of both these goals is that Gaby defines some basic functionality
+// A third goal is "human-in-the-loop" operation. Most of Gaby's actions are
+// recorded in a persistent action log (see [golang.org/x/oscar/internal/actions])
+// where they can be reviewed and approved by a human before being executed.
+//
+// The result of these goals is that Gaby defines some basic functionality
 // like time-ordered indexing for itself instead of relying on some specific
 // other implementation. In the grand scheme of things, these are a small amount
 // of code to maintain, and the benefits to both portability and testability are
@@ -98,22 +102,26 @@
 //
 // Gaby needs to manage a few secret keys used to access services.
 // The [golang.org/x/oscar/internal/secret] package defines the interface for
-// obtaining those secrets. The only implementations at the moment
-// are an in-memory map and a disk-based implementation that reads
-// $HOME/.netrc. Future implementations may include other file formats
-// as well as cloud-based secret storage services.
+// obtaining those secrets.
+// Implementations include an in-memory map, a disk-based implementation
+// that reads $HOME/.netrc, and a [Google Cloud Secret Manager] implementation
+// (see [golang.org/x/oscar/internal/gcp/gcpsecret]).
 //
 // Secret storage is intentionally separated from the main database storage,
 // described below. The main database should hold public data, not secrets.
 //
 // # Large Language Models
 //
-// Gaby defines the interface it expects from a large language model.
+// Gaby defines the interfaces it expects from a large language model.
 //
 // The [llm.Embedder] interface abstracts an LLM that can take a collection
 // of documents and return their vector embeddings, each of type [llm.Vector].
-// The two implementations to date are [golang.org/x/oscar/internal/gemini]
-// and [golang.org/x/oscar/internal/ollama].
+// The [llm.ContentGenerator] interface abstracts an LLM that can generate
+// text in response to a sequence of messages.
+//
+// The primary implementation is [golang.org/x/oscar/internal/gcp/gemini],
+// which uses [Google Gemini]. Other implementations include
+// [golang.org/x/oscar/internal/ollama].
 //
 // For tests that need an embedder but don't care about the quality of
 // the embeddings, [llm.QuoteEmbedder] copies a prefix of the text
@@ -121,9 +129,9 @@
 // This is good enough for testing functionality like vector search
 // and simplifies tests by avoiding a dependence on a real LLM.
 //
-// At the moment, only the embedding interface is defined.
-// In the future we expect to add more interfaces around text generation
-// and tool use.
+// The [golang.org/x/oscar/internal/llmapp] package provides a high-level
+// application layer on top of these interfaces, including support for
+// prompt templates.
 //
 // # Storage
 //
@@ -139,15 +147,14 @@
 // Other implementations can be put through their paces using
 // [storage.TestDB].
 //
-// The only real [storage.DB] implementation is [golang.org/x/oscar/internal/pebble],
-// which is a [LevelDB]-derived on-disk key-value store developed and used
-// as part of [CockroachDB]. It is a production-quality local storage implementation
-// and maintains the database as a directory of files.
+// The real [storage.DB] implementations are:
 //
-// In the future we plan to add an implementation using [Google Cloud Firestore],
-// which provides a production-quality key-value lookup as a Cloud service
-// without fixed baseline server costs.
-// (Firestore is the successor to Google Cloud Datastore.)
+//   - [golang.org/x/oscar/internal/pebble], which is a [LevelDB]-derived
+//     on-disk key-value store developed and used as part of [CockroachDB].
+//     It is a production-quality local storage implementation.
+//   - [Google Cloud Firestore], which provides a production-quality
+//     key-value lookup as a Cloud service without fixed baseline server costs.
+//     Its implementation is in [golang.org/x/oscar/internal/gcp/firestore].
 //
 // The [storage.DB] makes the simplifying assumption that storage never fails,
 // or rather that if storage has failed then you'd rather crash your program than
@@ -161,9 +168,7 @@
 // Lock and Unlock methods that acquire and release named mutexes managed
 // by the database layer. The purpose of these methods is to enable coordination
 // when multiple instances of a Gaby program are running on a serverless cloud
-// execution platform. So far Gaby has only run on an underground basement server
-// (the opposite of cloud), so these have not been exercised much and the APIs
-// may change.
+// execution platform.
 //
 // In addition to the regular database, package storage also defines [storage.VectorDB],
 // a vector database for use with LLM embeddings.
@@ -171,14 +176,25 @@
 // [storage.MemVectorDB] returns an in-memory implementation that
 // stores the actual vectors in a [storage.DB] for persistence but also
 // keeps a copy in memory and searches by comparing against all the vectors.
-// When backed by a [storage.MemDB], this implementation is useful for testing,
-// but when backed by a persistent database, the implementation suffices for
-// small-scale production use (say, up to a million documents, which would
-// require 3 GB of vectors).
+// There is also a [Google Cloud Firestore] implementation in
+// [golang.org/x/oscar/internal/gcp/firestore].
 //
 // It is possible that the package ordering here is wrong and that VectorDB
 // should be defined in the llm package, built on top of storage,
 // and not the current “storage builds on llm”.
+//
+// # Overlay Databases
+//
+// For local development and testing, Gaby supports an "overlay" database
+// (see [golang.org/x/oscar/internal/storage/NewOverlayDB]).
+// An overlay database combines an "overlay" DB (typically a [storage.MemDB])
+// with a "base" DB (typically a production [Google Cloud Firestore] database).
+// All writes go to the overlay, while reads check the overlay first and
+// then fall back to the base DB if the key is not found.
+//
+// This allows a developer to run Gaby locally against production data
+// without risk of modifying the production database. The `-overlay` flag
+// in the main Gaby program enables this mode.
 //
 // # Ordered Keys
 //
@@ -275,16 +291,22 @@
 //
 // # Gerrit Interactions
 //
-// Gaby will need to download and store Gerrit state into the database and then
-// derive documents from it. That code has not yet been written, although
-// [rsc.io/gerrit/reviewdb] provides a basic version that can be adapted.
+// Gaby downloads and stores Gerrit state into the database and
+// derives documents from it. These operations are provided by
+// [golang.org/x/oscar/internal/gerrit].
 //
 // # Web Crawling
 //
-// Gaby will also need to download and store project documentation into the
-// database and derive documents from it corresponding to cutting the page
-// at each heading. That code has been written but is not yet tested well enough
-// to commit. It will be added later.
+// Gaby downloads and stores project documentation into the
+// database and derives documents from it corresponding to each page.
+// The [golang.org/x/oscar/internal/crawl] package implements the
+// web crawler.
+//
+// # Google Groups Interactions
+//
+// Gaby also downloads and stores Google Groups conversations.
+// The [golang.org/x/oscar/internal/googlegroups] package implements
+// this functionality.
 //
 // # Fixing Comments
 //
@@ -308,6 +330,27 @@
 // is too difficult a judgement to make for an LLM. Even so, the act of bringing forward
 // related context that may have been forgotten or never known by the people reading
 // the issue has turned out to be incredibly helpful.
+//
+// # Rules and Labels
+//
+// Gaby can identify violations of project rules and automatically
+// label issues.
+// The [golang.org/x/oscar/internal/rules] package checks issues
+// against a set of natural language rules using an LLM.
+// The [golang.org/x/oscar/internal/labels] package suggests labels
+// for issues based on their content.
+//
+// # Overviews
+//
+// Gaby can generate overviews of issues and discussions to help
+// maintainers quickly understand the state of a thread.
+// The [golang.org/x/oscar/internal/overview] package implements this.
+//
+// # Bisection
+//
+// Gaby can perform automatic bisection of regressions.
+// The [golang.org/x/oscar/internal/bisect] package manages bisection
+// tasks, which are typically executed as asynchronous jobs in the cloud.
 //
 // # Main Loop
 //
@@ -337,22 +380,16 @@
 //
 // # Future Work and Structure
 //
-// As mentioned above, the two jobs Gaby does already are both fairly simple and straightforward.
-// It seems like a general approach that should work well is well-written, well-tested deterministic
-// traditional functionality such as the comment fixer and related-docs poster, configured by
-// LLMs in response to specific directions or eventually higher-level goals specified by project
-// maintainers. Other functionality that is worth exploring is rules for automatically labeling issues,
-// rules for identifying issues or CLs that need to be pinged, rules for identifying CLs that need
-// maintainer attention or that need submitting, and so on. Another stretch goal might be to identify
-// when an issue needs more information and ask for that information. Of course, it would be very
-// important not to ask for information that is already present or irrelevant, so getting that right would
-// be a very high bar. There is no guarantee that today's LLMs work well enough to build a useful
-// version of that.
+// Gaby's current functionality includes deterministic traditional
+// functionality such as the comment fixer, configured by LLMs in response
+// to specific directions or higher-level goals specified by project
+// maintainers.
 //
-// Another important area of future work will be running Gaby on top of cloud databases
-// and then moving Gaby's own execution into the cloud. Getting it a server with a URL will
-// enable GitHub callbacks instead of the current 2-minute polling loop, which will enable
-// interactive conversations with Gaby.
+// Future work includes improving the natural language interface
+// for configuring Gaby, and adding more functionality like
+// identifying CLs that need maintainer attention.
+// Another area of exploration is interactive conversations with Gaby
+// enabled by GitHub callbacks.
 //
 // Overall, we believe that there are a few good ideas for ways that LLM-based bots can help
 // make project maintainers' jobs easier and less monotonous, and they are waiting to be found.
@@ -365,5 +402,7 @@
 // [LevelDB]: https://github.com/google/leveldb
 // [CockroachDB]: https://github.com/cockroachdb/cockroach
 // [Google Cloud Firestore]: https://cloud.google.com/firestore
+// [Google Cloud Secret Manager]: https://cloud.google.com/secret-manager
+// [Google Gemini]: https://ai.google.dev/
 // [Go Testing talk]: https://research.swtch.com/testing
 package main
