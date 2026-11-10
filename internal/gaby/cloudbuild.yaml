@@ -1,7 +1,9 @@
 steps:
   - id: Lock
-    name: golang:1.25.0  # note: Go version also below for Test and in Dockerfile
+    name: golang:1.27.3  # note: Go version also below for Test and in Dockerfile
     entrypoint: bash
+    # Let go download a newer toolchain if locktrigger@latest needs one.
+    env: ['GOTOOLCHAIN=auto']
     args:
       - -ec
       - |
@@ -35,8 +37,10 @@ steps:
         fi
 
   - id: Test
-    name: golang:1.25.0
+    name: golang:1.27.3
     entrypoint: bash
+    # Let go download a newer toolchain if go.mod needs one.
+    env: ['GOTOOLCHAIN=auto']
     args:
       - -ec
       # Run tests for all submodules.

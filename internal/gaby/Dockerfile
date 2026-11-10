@@ -20,7 +20,11 @@
 ################################################################
 # Note that the Go version on the next line appears again halfway down this file
 # and in cloudbuild.yaml.
-FROM golang:1.26.0 AS builder
+FROM golang:1.27.3 AS builder
+
+# Let go download a newer toolchain if go.mod needs one,
+# so a go.mod bump does not require editing this file.
+ENV GOTOOLCHAIN=auto
 
 # Set the working directory outside $GOPATH to ensure module mode is enabled.
 WORKDIR /src
@@ -45,7 +49,7 @@ RUN go build -mod=readonly ./internal/sandbox/runner.go
 ################################################################
 # Use a a fresh instance but with less things.
 # Among other benefits, the space savings means more room for /tmp on Cloud Run.
-FROM golang:1.26.0
+FROM golang:1.27.3
 
 LABEL maintainer="Go Oscar Team <oscar-team@google.com>"
 
